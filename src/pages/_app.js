@@ -3,14 +3,14 @@ import { useRouter } from "next/router";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/globals.css";
 import { sidebarNav } from "@/data/nav";
-import { Poppins } from "next/font/google";
+import { Nunito } from "next/font/google";
 import { AuthProvider } from "@/context/authContext";
 
-const poppins = Poppins({
-  weight: ["400", "500", "600", "700"],
+const nunito = Nunito({
+  weight: ["300", "400", "500", "600", "700"],
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-poppins",
+  variable: "--font-nunito",
 });
 
 function MyApp({ Component, pageProps }) {
@@ -57,56 +57,33 @@ function MyApp({ Component, pageProps }) {
     if (typeof window === "undefined") return;
 
     const handleError = (event) => {
-      if (
-        event.error &&
-        event.error.message &&
-        event.error.message.includes("insertBefore")
-      ) {
-        console.warn(
-          "Global error handler caught DOM manipulation error:",
-          event.error
-        );
+      if (event.error && event.error.message && event.error.message.includes('insertBefore')) {
+        console.warn('Global error handler caught DOM manipulation error:', event.error);
         event.preventDefault();
         // Optionally show a user-friendly message
-        toast.error(
-          "A display error occurred. Please refresh the page if the issue persists.",
-          {
-            duration: 5000,
-          }
-        );
+        toast.error('A display error occurred. Please refresh the page if the issue persists.', {
+          duration: 5000,
+        });
       }
     };
 
     const handleUnhandledRejection = (event) => {
-      if (
-        event.reason &&
-        event.reason.message &&
-        event.reason.message.includes("insertBefore")
-      ) {
-        console.warn(
-          "Global error handler caught unhandled DOM manipulation error:",
-          event.reason
-        );
+      if (event.reason && event.reason.message && event.reason.message.includes('insertBefore')) {
+        console.warn('Global error handler caught unhandled DOM manipulation error:', event.reason);
         event.preventDefault();
         // Optionally show a user-friendly message
-        toast.error(
-          "A display error occurred. Please refresh the page if the issue persists.",
-          {
-            duration: 5000,
-          }
-        );
+        toast.error('A display error occurred. Please refresh the page if the issue persists.', {
+          duration: 5000,
+        });
       }
     };
 
-    window.addEventListener("error", handleError);
-    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
     return () => {
-      window.removeEventListener("error", handleError);
-      window.removeEventListener(
-        "unhandledrejection",
-        handleUnhandledRejection
-      );
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, []);
 
@@ -178,20 +155,17 @@ function MyApp({ Component, pageProps }) {
   })();
 
   return (
-    <div
-      className={`${mode === "dark" ? "dark" : ""} ${
-        poppins.variable
-      } font-sans`}
-    >
+    <div className={`${mode === "dark" ? "dark" : ""} ${nunito.variable} font-sans`}>
       <Toaster position="top-center" reverseOrder={false} />
-      <AuthProvider>
-        <Component
-          {...pageProps}
-          mode={mode}
-          toggleMode={toggleMode}
-          breadcrumbs={breadcrumbs}
-        />
-      </AuthProvider>
+        <AuthProvider>
+          <Component
+            {...pageProps}
+            mode={mode}
+            toggleMode={toggleMode}
+            breadcrumbs={breadcrumbs}
+          />
+
+        </AuthProvider>
     </div>
   );
 }

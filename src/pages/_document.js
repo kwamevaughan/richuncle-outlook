@@ -5,14 +5,14 @@ class MyDocument extends Document {
     return (
       <Html lang="en">
         <Head>
-          {/* Preload Google Fonts for Poppins */}
+          {/* Preload Google Fonts for Nunito */}
           <link
             rel="preload"
-            href="https://fonts.googleapis.com/css2?family=Poppins&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&display=swap"
             as="style"
           />
           <link
-            href="https://fonts.googleapis.com/css2?family=Poppins&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&display=swap"
             rel="stylesheet"
           />
           {/* Preload Rokt Icons */}
@@ -48,6 +48,7 @@ class MyDocument extends Document {
             content=""
           />
 
+          {/* Google Tag Manager Script */}
           
         </Head>
         <body>
