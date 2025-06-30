@@ -18,11 +18,6 @@ export const sidebarNav = [
         label: "Products",
       },
       {
-        href: "/expired-products",
-        icon: "mdi:clock-alert-outline",
-        label: "Expired Products",
-      },
-      {
         href: "/low-stocks",
         icon: "mdi:alert-circle-outline",
         label: "Low Stocks",
@@ -46,11 +41,6 @@ export const sidebarNav = [
         href: "/variant-attributes",
         icon: "mdi:format-list-bulleted",
         label: "Variant Attributes",
-      },
-      {
-        href: "/warranties",
-        icon: "mdi:shield-check-outline",
-        label: "Warranties",
       },
       {
         href: "/print-barcode",
