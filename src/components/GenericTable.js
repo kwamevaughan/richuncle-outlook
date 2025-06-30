@@ -344,7 +344,9 @@ export function GenericTable({
                       className="px-4 py-12 text-center"
                     >
                       <div className="text-gray-500 dark:text-gray-400">
-                        <div className="text-4xl mb-3">📊</div>
+                        <div className="flex justify-center text-4xl mb-3 ">
+                          <Icon icon="mdi:table-search" className="w-10 h-10" />
+                        </div>
                         <div className="text-sm font-medium">{emptyMessage}</div>
                       </div>
                     </td>
