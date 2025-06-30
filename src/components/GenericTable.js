@@ -130,7 +130,10 @@ export function GenericTable({
         // Use custom render function if provided
         if (typeof col.render === "function") {
           return (
-            <td key={col.accessor} className="px-4 py-4 text-sm text-gray-900 dark:text-white">
+            <td
+              key={col.accessor}
+              className="px-4 py-4 text-sm text-gray-900 dark:text-white"
+            >
               {col.render(row, value, index)}
             </td>
           );
@@ -164,19 +167,19 @@ export function GenericTable({
           {onEdit && (
             <button
               onClick={() => onEdit(row)}
-              className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 transition-colors"
+              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 transition-colors"
               title="Edit"
             >
-              <Icon icon="mdi:pencil" className="w-4 h-4" />
+              <Icon icon="cuida:edit-outline" className="w-4 h-4" />
             </button>
           )}
           {onDelete && (
             <button
               onClick={() => onDelete(row)}
-              className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-colors"
+              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-colors"
               title="Delete"
             >
-              <Icon icon="mdi:delete" className="w-4 h-4" />
+              <Icon icon="mynaui:trash" className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -218,7 +221,7 @@ export function GenericTable({
                 {onAddNew && (
                   <button
                     onClick={onAddNew}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     <Icon icon="mdi:plus" className="w-4 h-4" />
                     {addNewLabel}
@@ -411,7 +414,7 @@ export function GenericTable({
                     onClick={() => table.handlePage(pageNum)}
                     className={`px-3 py-2 text-sm rounded-lg transition-colors ${
                       table.page === pageNum
-                        ? "bg-blue-600 text-white shadow-sm"
+                        ? "bg-blue-900 text-white shadow-sm"
                         : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                     }`}
                   >

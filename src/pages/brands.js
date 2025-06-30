@@ -247,13 +247,13 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
                   </div>
                   <div className="flex justify-center gap-4 mt-6">
                     <button
-                      className="px-6 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
+                      className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
                       onClick={closeConfirm}
                     >
                       Cancel
                     </button>
                     <button
-                      className="px-6 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                      className="px-6 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
                       onClick={handleDelete}
                     >
                       Delete
