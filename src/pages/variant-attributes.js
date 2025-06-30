@@ -14,7 +14,7 @@ import { Icon } from "@iconify/react";
 import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
 
-export default function BrandsPage({ mode = "light", toggleMode }) {
+export default function VariantAttributesPage({ mode = "light", toggleMode }) {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -25,29 +25,29 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
 
-  // Brands state
-  const [brands, setBrands] = useState([]);
+  // Variant Attributes state
+  const [variantAttributes, setVariantAttributes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch brands
-  const fetchBrands = async () => {
+  // Fetch variant attributes
+  const fetchVariantAttributes = async () => {
     setLoading(true);
     const { data, error } = await supabaseClient
-      .from("brands")
+      .from("variant_attributes")
       .select("*")
       .order("sort_order", { ascending: true });
     if (!error) {
-      setBrands(data || []);
+      setVariantAttributes(data || []);
     } else {
-      setError(error.message || "Failed to load brands");
+      setError(error.message || "Failed to load variant attributes");
     }
     setLoading(false);
   };
 
   // Initial fetch
   React.useEffect(() => {
-    fetchBrands();
+    fetchVariantAttributes();
   }, []);
 
   // Modal open/close helpers
@@ -74,38 +74,38 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
   const handleDelete = async () => {
     try {
       const { error } = await supabaseClient
-        .from("brands")
+        .from("variant_attributes")
         .delete()
         .eq("id", deleteItem.id);
       if (error) throw error;
-      setBrands((prev) => prev.filter((b) => b.id !== deleteItem.id));
+      setVariantAttributes((prev) => prev.filter((v) => v.id !== deleteItem.id));
       closeConfirm();
-      toast.success("Brand deleted!");
+      toast.success("Variant Attribute deleted!");
     } catch (err) {
-      toast.error(err.message || "Failed to delete brand");
+      toast.error(err.message || "Failed to delete variant attribute");
     }
   };
 
-  // Add a helper to add a new brand
-  const handleAddBrand = async (newBrand) => {
+  // Add a helper to add a new variant attribute
+  const handleAddVariantAttribute = async (newAttribute) => {
     const { data, error } = await supabaseClient
-      .from("brands")
-      .insert([newBrand])
+      .from("variant_attributes")
+      .insert([newAttribute])
       .select();
     if (error) throw error;
-    setBrands((prev) => [data[0], ...prev]);
+    setVariantAttributes((prev) => [data[0], ...prev]);
   };
 
-  // Add a helper to update a brand
-  const handleUpdateBrand = async (id, updatedFields) => {
+  // Add a helper to update a variant attribute
+  const handleUpdateVariantAttribute = async (id, updatedFields) => {
     const { data, error } = await supabaseClient
-      .from("brands")
+      .from("variant_attributes")
       .update(updatedFields)
       .eq("id", id)
       .select();
     if (error) throw error;
-    setBrands((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, ...updatedFields } : b))
+    setVariantAttributes((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, ...updatedFields } : v))
     );
   };
 
@@ -117,7 +117,7 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
 
   return (
     <div
-      key={`brands-${user?.id}-${mode}`}
+      key={`variant-attributes-${user?.id}-${mode}`}
       className={`min-h-screen flex flex-col ${
         mode === "dark" ? "bg-gray-900 text-white" : " text-gray-900"
       }`}
@@ -146,11 +146,11 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
         >
           <div className="max-w-7xl mx-auto">
             <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:tag" className="w-7 h-7 text-blue-900" />
-              Brand Management
+              <Icon icon="mdi:format-list-bulleted" className="w-7 h-7 text-blue-900" />
+              Variant Attributes Management
             </h1>
             <p className="text-sm text-gray-500 mb-6">
-              Manage your shop brands here.
+              Manage your product variant attributes here.
             </p>
 
             {loading && (
@@ -163,26 +163,31 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
 
             <div className="bg-white dark:bg-gray-900 rounded-xl">
               <GenericTable
-                data={brands}
+                data={variantAttributes}
                 columns={[
-                  { header: "Name", accessor: "name", sortable: true },
-                  { header: "Status", accessor: "is_active", sortable: true, render: (row) => (
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
-                      {row.is_active ? "Active" : "Inactive"}
-                    </span>
-                  ) },
-                  { header: "Image", accessor: "image_url", type: "image" },
+                  { header: "Name/Variant", accessor: "name", sortable: true },
+                  { header: "Values", accessor: "values", sortable: true },
+                  {
+                    header: "Status",
+                    accessor: "is_active",
+                    sortable: true,
+                    render: (row) => (
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
+                        {row.is_active ? "Active" : "Inactive"}
+                      </span>
+                    ),
+                  },
                 ]}
                 onEdit={openEditModal}
                 onDelete={openConfirm}
                 onAddNew={openAddModal}
-                addNewLabel="Add New Brand"
+                addNewLabel="Add New Variant Attribute"
               />
             </div>
 
             {showModal && (
               <AddEditModal
-                type="brands"
+                type="variant_attributes"
                 mode={mode}
                 item={editItem}
                 categories={[]}
@@ -190,16 +195,16 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
                 onSave={async (values) => {
                   try {
                     if (!editItem) {
-                      await handleAddBrand(values);
-                      toast.success("Brand added!");
+                      await handleAddVariantAttribute(values);
+                      toast.success("Variant Attribute added!");
                       closeModal();
                     } else {
-                      await handleUpdateBrand(editItem.id, values);
-                      toast.success("Brand updated!");
+                      await handleUpdateVariantAttribute(editItem.id, values);
+                      toast.success("Variant Attribute updated!");
                       closeModal();
                     }
                   } catch (err) {
-                    toast.error(err.message || "Failed to save brand");
+                    toast.error(err.message || "Failed to save variant attribute");
                   }
                 }}
               />
@@ -208,7 +213,7 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
               <SimpleModal
                 isOpen={true}
                 onClose={() => setErrorModal({ open: false, message: "" })}
-                title="Duplicate Brand"
+                title="Duplicate Variant Attribute"
                 mode={mode}
                 width="max-w-md"
               >

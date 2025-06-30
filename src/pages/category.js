@@ -256,9 +256,10 @@ export default function CategoryPage({ mode = "light", toggleMode }) {
           >
             <div className="max-w-7xl mx-auto">
               <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                
+                <Icon icon="mdi:format-list-bulleted" className="w-7 h-7 text-blue-900" />
                 Category Management
               </h1>
+
               <p className="text-sm text-gray-500 mb-6">
                 Manage your shop categories and subcategories here.
               </p>
@@ -292,7 +293,7 @@ export default function CategoryPage({ mode = "light", toggleMode }) {
                   Sub Categories
                 </button>
               </div>
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow p-4">
+              <div className="bg-white dark:bg-gray-900 rounded-xl">
                 {tab === "categories" ? (
                   <GenericTable
                     data={filteredCategories}

@@ -7,6 +7,8 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
   const [name, setName] = useState(item?.name || "");
   const [description, setDescription] = useState(item?.description || "");
   const [code, setCode] = useState(type === "categories" ? (item?.code || "") : "");
+  const [values, setValues] = useState(item?.values ? (Array.isArray(item.values) ? item.values : item.values.split(',').map(v => v.trim()).filter(Boolean)) : []);
+  const [valueInput, setValueInput] = useState("");
   const [imageUrl, setImageUrl] = useState(item?.image_url || "");
   const [isActive, setIsActive] = useState(item?.is_active ?? true);
   const [loading, setLoading] = useState(false);
@@ -57,17 +59,43 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
     }
   };
 
+  const handleValueInputKeyDown = (e) => {
+    if ((e.key === "," || e.key === "Enter") && valueInput.trim()) {
+      e.preventDefault();
+      if (!values.includes(valueInput.trim())) {
+        setValues([...values, valueInput.trim()]);
+      }
+      setValueInput("");
+    }
+  };
+
+  const handleRemoveValue = (val) => {
+    setValues(values.filter((v) => v !== val));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!name.trim()) {
-      setError("Name is required");
-      return;
+    if (type === "variant_attributes") {
+      if (!name.trim()) {
+        setError("Variant is required");
+        return;
+      }
+      if (!values.length) {
+        setError("At least one value is required");
+        return;
+      }
+    } else {
+      if (!name.trim()) {
+        setError("Name is required");
+        return;
+      }
     }
     setLoading(true);
     try {
       await onSave({
         name: name.trim(),
+        ...(type === "variant_attributes" ? { values: values.join(",") } : {}),
         description: description.trim(),
         ...(type === "categories" ? { code: code.trim() } : {}),
         image_url: imageUrl,
@@ -100,24 +128,69 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
         width="max-w-md"
       >
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block mb-1 font-medium">Name</label>
-            <input
-              className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
-              value={name}
-              onChange={handleNameChange}
-              disabled={loading}
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block mb-1 font-medium">Description</label>
-            <textarea
-              className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              disabled={loading}
-            />
-          </div>
+          {type === "variant_attributes" ? (
+            <>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Variant<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={name}
+                  onChange={handleNameChange}
+                  disabled={loading}
+                  placeholder="e.g. Color, Size, Material"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Values<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={valueInput}
+                  onChange={e => setValueInput(e.target.value)}
+                  onKeyDown={handleValueInputKeyDown}
+                  disabled={loading}
+                  placeholder="Type a value and press comma or Enter"
+                />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {values.map((val, idx) => (
+                    <span key={val + idx} className="inline-flex items-center bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full text-xs font-medium">
+                      {val}
+                      <button
+                        type="button"
+                        className="ml-1 text-blue-500 hover:text-red-500 focus:outline-none"
+                        onClick={() => handleRemoveValue(val)}
+                        tabIndex={-1}
+                        aria-label={`Remove ${val}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="text-xs text-gray-400 mt-1">Enter value separated by comma</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Name</label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={name}
+                  onChange={handleNameChange}
+                  disabled={loading}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Description</label>
+                <textarea
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+            </>
+          )}
           {type === "categories" && (
             <div className="mb-4">
               <label className="block mb-1 font-medium">Category Code</label>
@@ -149,10 +222,12 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
               </select>
             </div>
           )}
-          <div className="mb-4">
-            <label className="block mb-1 font-medium">Image</label>
-            <CategoryImageUpload value={imageUrl} onChange={setImageUrl} />
-          </div>
+          {type !== "variant_attributes" && (
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Image</label>
+              <CategoryImageUpload value={imageUrl} onChange={setImageUrl} />
+            </div>
+          )}
           <div className="mb-4 flex items-center gap-2">
             <input
               type="checkbox"
