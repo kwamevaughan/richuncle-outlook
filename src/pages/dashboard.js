@@ -18,7 +18,6 @@ export default function Dashboard({ mode = "light", toggleMode }) {
   const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
-  const [activeTab, setActiveTab] = useState("opportunities");
   
 
   if (userLoading && LoadingComponent) return LoadingComponent;
@@ -58,7 +57,8 @@ export default function Dashboard({ mode = "light", toggleMode }) {
         >
           <div className="pt-40 ">
             <p>Testing page</p>
-            
+
+                
           </div>
           <ErrorBoundary>{}</ErrorBoundary>
           <SimpleFooter mode={mode} isSidebarOpen={isSidebarOpen} />

@@ -12,12 +12,9 @@ export default function CategoryDragDrop({ items, onReorder, children }) {
     dragOverItem.current = index;
   };
   const handleDragEnd = () => {
-    const listCopy = [...items];
-    const dragged = listCopy.splice(dragItem.current, 1)[0];
-    listCopy.splice(dragOverItem.current, 0, dragged);
+    onReorder(items, dragItem.current, dragOverItem.current);
     dragItem.current = null;
     dragOverItem.current = null;
-    onReorder(listCopy);
   };
 
   return (

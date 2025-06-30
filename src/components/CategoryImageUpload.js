@@ -47,6 +47,17 @@ export default function CategoryImageUpload({ value, onChange }) {
         )}
         {uploading ? "Uploading..." : "Upload"}
       </button>
+      {value && (
+        <button
+          type="button"
+          className="px-3 py-2 rounded bg-red-100 text-red-600 hover:bg-red-200 flex items-center gap-2 text-xs"
+          onClick={() => onChange("")}
+          disabled={uploading}
+        >
+          <Icon icon="mdi:close" className="w-4 h-4" />
+          Remove
+        </button>
+      )}
       <input
         type="file"
         accept="image/*"

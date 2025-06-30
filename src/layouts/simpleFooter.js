@@ -38,7 +38,7 @@ const SimpleFooter = ({ mode, isSidebarOpen }) => {
         backdrop-blur-md
         rounded-xl shadow-lg py-3 px-6
         transition-all duration-300
-        w-full sticky bottom-0 z-50 mt-10 md:mt-10
+        w-full sticky bottom-0 z-10 mt-10 md:mt-10
         ${sidebarHidden ? "md:ml-0" : isSidebarOpen ? "md:ml-0" : "md:ml-0"}
       `}
     >

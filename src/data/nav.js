@@ -38,11 +38,6 @@ export const sidebarNav = [
         label: "Category",
       },
       {
-        href: "/sub-category",
-        icon: "mdi:folder-multiple-outline",
-        label: "Sub Category",
-      },
-      {
         href: "/brands",
         icon: "mdi:tag-outline",
         label: "Brands",
