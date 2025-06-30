@@ -1,12 +1,8 @@
-import { useState, useEffect } from "react";
-import CategoryDragDrop from "../components/CategoryDragDrop";
-import CategoryInlineEdit from "../components/CategoryInlineEdit";
+import { useState } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
-import CategoryImageUpload from "../components/CategoryImageUpload";
 import SimpleModal from "../components/SimpleModal";
 import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
-import Image from "next/image";
 import HrHeader from "../layouts/hrHeader";
 import HrSidebar from "../layouts/hrSidebar";
 import useSidebar from "../hooks/useSidebar";
@@ -16,11 +12,9 @@ import useLogout from "../hooks/useLogout";
 import SimpleFooter from "../layouts/simpleFooter";
 import { Icon } from "@iconify/react";
 import { useCategories } from "../hooks/useCategories";
-import { useTable } from "../hooks/useTable";
-import { CategoryTable } from "../components/CategoryTable";
-import { SubCategoryTable } from "../components/SubCategoryTable";
 import { AddEditModal } from "../components/AddEditModal";
 import { reorderFullList } from "../utils/categoryUtils";
+import { GenericTable } from "../components/GenericTable";
 
 export default function CategoryPage({ mode = "light", toggleMode }) {
   const [tab, setTab] = useState("categories");
@@ -138,7 +132,6 @@ export default function CategoryPage({ mode = "light", toggleMode }) {
 
   // Fetch categories helper
   const fetchCategories = async () => {
-    setLoading(true);
     const { data, error } = await supabaseClient
       .from("categories")
       .select("*")
@@ -157,7 +150,6 @@ export default function CategoryPage({ mode = "light", toggleMode }) {
     } else {
       console.error("fetchCategories - error:", error);
     }
-    setLoading(false);
   };
 
   const persistCategoryOrder = async (categories) => {
@@ -178,18 +170,6 @@ export default function CategoryPage({ mode = "light", toggleMode }) {
       console.error("Failed to update order", err);
       toast.error("Failed to update order");
     }
-  };
-
-  // Inline edit handlers
-  const handleInlineEditCategory = (id, key, value) => {
-    setCategories((prev) =>
-      prev.map((cat) => (cat.id === id ? { ...cat, [key]: value } : cat))
-    );
-  };
-  const handleInlineEditSubCategory = (id, key, value) => {
-    setSubCategories((prev) =>
-      prev.map((sub) => (sub.id === id ? { ...sub, [key]: value } : sub))
-    );
   };
 
   // Add a helper to add a new category
@@ -276,12 +256,13 @@ export default function CategoryPage({ mode = "light", toggleMode }) {
           >
             <div className="max-w-7xl mx-auto">
               <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <Icon
-                  icon="mdi:folder-outline"
-                  className="w-7 h-7 text-blue-600"
-                />
+                
                 Category Management
               </h1>
+              <p className="text-sm text-gray-500 mb-6">
+                Manage your shop categories and subcategories here.
+              </p>
+
               {loading && (
                 <div className="flex items-center gap-2 text-blue-600 mb-4">
                   <Icon icon="mdi:loading" className="animate-spin w-5 h-5" />{" "}
@@ -311,51 +292,63 @@ export default function CategoryPage({ mode = "light", toggleMode }) {
                   Sub Categories
                 </button>
               </div>
-              <div className="flex items-center justify-between mb-4">
-                <input
-                  type="text"
-                  placeholder={`Search ${
-                    tab === "categories" ? "categories" : "sub categories"
-                  }...`}
-                  className="border rounded-lg px-3 py-2 w-64 focus:ring-2 focus:ring-blue-400 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <div className="flex gap-2">
-                  <CategoryCSVExport
-                    data={tab === "categories" ? categories : subCategories}
-                    filename={
-                      tab === "categories"
-                        ? "categories.csv"
-                        : "subcategories.csv"
-                    }
-                  />
-                  <button
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition-all"
-                    onClick={() => openAddModal(tab)}
-                  >
-                    <Icon icon="mdi:plus" className="w-5 h-5" />
-                    Add New {tab === "categories" ? "Category" : "Sub Category"}
-                  </button>
-                </div>
-              </div>
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow p-4">
                 {tab === "categories" ? (
-                  <CategoryTable
+                  <GenericTable
                     data={filteredCategories}
+                    columns={[
+                      { header: "Name", accessor: "name", sortable: true },
+                      { header: "Category Code", accessor: "code", sortable: true },
+                      { header: "Description", accessor: "description", sortable: true },
+                      {
+                        header: "Status",
+                        accessor: "is_active",
+                        sortable: true,
+                        render: (row) => (
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
+                            {row.is_active ? "Active" : "Inactive"}
+                          </span>
+                        ),
+                      },
+                      { header: "Image", accessor: "image_url", type: "image" },
+                    ]}
                     onEdit={(item) => openEditModal("categories", item)}
                     onDelete={openConfirm}
                     onReorder={handleReorderCategories}
-                    onInlineEdit={handleInlineEditCategory}
+                    enableDragDrop={true}
+                    onAddNew={() => openAddModal("categories")}
+                    addNewLabel="Add New Category"
                   />
                 ) : (
-                  <SubCategoryTable
+                  <GenericTable
                     data={filteredSubCategories}
-                    categories={categories}
+                    columns={[
+                      { header: "Name", accessor: "name", sortable: true },
+                      {
+                        header: "Category",
+                        accessor: "category_id",
+                        sortable: false,
+                        render: (row) => categories.find((c) => c.id === row.category_id)?.name || "-",
+                      },
+                      { header: "Description", accessor: "description", sortable: true },
+                      {
+                        header: "Status",
+                        accessor: "is_active",
+                        sortable: true,
+                        render: (row) => (
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
+                            {row.is_active ? "Active" : "Inactive"}
+                          </span>
+                        ),
+                      },
+                      { header: "Image", accessor: "image_url", type: "image" },
+                    ]}
                     onEdit={(item) => openEditModal("subcategories", item)}
                     onDelete={openConfirm}
                     onReorder={handleReorderCategories}
-                    onInlineEdit={handleInlineEditSubCategory}
+                    enableDragDrop={true}
+                    onAddNew={() => openAddModal("subcategories")}
+                    addNewLabel="Add New Sub Category"
                   />
                 )}
               </div>

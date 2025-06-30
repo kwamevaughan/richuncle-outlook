@@ -18,11 +18,6 @@ export const sidebarNav = [
         label: "Products",
       },
       {
-        href: "/create-product",
-        icon: "mdi:plus-outline",
-        label: "Create Product",
-      },
-      {
         href: "/expired-products",
         icon: "mdi:clock-alert-outline",
         label: "Expired Products",
