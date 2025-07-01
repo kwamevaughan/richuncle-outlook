@@ -2,11 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import CategoryImageUpload from "./CategoryImageUpload";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
+import { supabaseClient } from "../lib/supabase";
 
 export function AddEditModal({ type, mode = "light", item, categories, onClose, onSave }) {
   const [name, setName] = useState(item?.name || "");
   const [description, setDescription] = useState(item?.description || "");
   const [code, setCode] = useState(type === "categories" ? (item?.code || "") : "");
+  const [symbol, setSymbol] = useState(type === "units" ? (item?.symbol || "") : "");
+  const [address, setAddress] = useState(type === "stores" ? (item?.address || "") : "");
+  const [phone, setPhone] = useState(type === "stores" ? (item?.phone || "") : "");
+  const [email, setEmail] = useState(type === "stores" ? (item?.email || "") : "");
   const [values, setValues] = useState(item?.values ? (Array.isArray(item.values) ? item.values : item.values.split(',').map(v => v.trim()).filter(Boolean)) : []);
   const [valueInput, setValueInput] = useState("");
   const [imageUrl, setImageUrl] = useState(item?.image_url || "");
@@ -16,6 +21,10 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
   const [codeManuallyEdited, setCodeManuallyEdited] = useState(false);
   // Track selected category for subcategories
   const [categoryId, setCategoryId] = useState(item?.category_id || (categories[0]?.id ?? ""));
+  const [contactPerson, setContactPerson] = useState(type === "warehouses" ? (item?.contact_person || "") : "");
+  const [warehouseEmail, setWarehouseEmail] = useState(type === "warehouses" ? (item?.email || "") : "");
+  const [warehouseAddress, setWarehouseAddress] = useState(type === "warehouses" ? (item?.address || "") : "");
+  const [usersList, setUsersList] = useState([]);
 
   // Helper to generate a code suggestion
   function suggestCategoryCode(name, existingCodes) {
@@ -46,6 +55,17 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
     }
     // eslint-disable-next-line
   }, [name, type, item, categories, codeManuallyEdited]);
+
+  useEffect(() => {
+    if (type === "warehouses") {
+      supabaseClient
+        .from("users")
+        .select("id, full_name")
+        .then(({ data, error }) => {
+          if (!error && data) setUsersList(data);
+        });
+    }
+  }, [type]);
 
   const handleCodeChange = (e) => {
     setCode(e.target.value.toUpperCase());
@@ -85,6 +105,53 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
         setError("At least one value is required");
         return;
       }
+    } else if (type === "units") {
+      if (!name.trim()) {
+        setError("Unit is required");
+        return;
+      }
+      if (!symbol.trim()) {
+        setError("Symbol is required");
+        return;
+      }
+    } else if (type === "stores") {
+      if (!name.trim()) {
+        setError("Store Name is required");
+        return;
+      }
+      if (!address.trim()) {
+        setError("Address is required");
+        return;
+      }
+      if (!phone.trim()) {
+        setError("Phone is required");
+        return;
+      }
+      if (!email.trim()) {
+        setError("Email is required");
+        return;
+      }
+    } else if (type === "warehouses") {
+      if (!name.trim()) {
+        setError("Warehouse is required");
+        return;
+      }
+      if (!contactPerson.trim()) {
+        setError("Contact Person is required");
+        return;
+      }
+      if (!phone.trim()) {
+        setError("Phone is required");
+        return;
+      }
+      if (!warehouseEmail.trim()) {
+        setError("Email is required");
+        return;
+      }
+      if (!warehouseAddress.trim()) {
+        setError("Address is required");
+        return;
+      }
     } else {
       if (!name.trim()) {
         setError("Name is required");
@@ -96,7 +163,19 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
       await onSave({
         name: name.trim(),
         ...(type === "variant_attributes" ? { values: values.join(",") } : {}),
-        description: description.trim(),
+        ...(type === "units" ? { symbol: symbol.trim() } : {}),
+        ...(type === "stores" ? { 
+          address: address.trim(),
+          phone: phone.trim(),
+          email: email.trim()
+        } : {}),
+        ...(type === "warehouses" ? {
+          contact_person: contactPerson.trim(),
+          phone: phone.trim(),
+          email: warehouseEmail.trim(),
+          address: warehouseAddress.trim(),
+        } : {}),
+        ...(type !== "units" && type !== "stores" && type !== "warehouses" ? { description: description.trim() } : {}),
         ...(type === "categories" ? { code: code.trim() } : {}),
         image_url: imageUrl,
         is_active: isActive,
@@ -114,6 +193,9 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
     categories: "Category",
     subcategories: "Sub Category",
     brands: "Brand",
+    units: "Unit",
+    stores: "Store",
+    warehouses: "Warehouse",
   }[type] || "Item";
 
   const modalTitle = `${item ? "Edit" : "Add New"} ${typeLabel}`;
@@ -169,6 +251,133 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                 <div className="text-xs text-gray-400 mt-1">Enter value separated by comma</div>
               </div>
             </>
+          ) : type === "units" ? (
+            <>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Unit<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={name}
+                  onChange={handleNameChange}
+                  disabled={loading}
+                  placeholder="e.g. Kilogram, Meter, Liter"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Symbol<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={symbol}
+                  onChange={e => setSymbol(e.target.value)}
+                  disabled={loading}
+                  placeholder="e.g. kg, m, L"
+                />
+              </div>
+            </>
+          ) : type === "stores" ? (
+            <>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Store Name<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={name}
+                  onChange={handleNameChange}
+                  disabled={loading}
+                  placeholder="e.g. Main Store, Downtown Branch"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Address<span className="text-red-500">*</span></label>
+                <textarea
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  disabled={loading}
+                  placeholder="Enter store address"
+                  rows={3}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Phone<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  disabled={loading}
+                  placeholder="e.g. +1-555-123-4567"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Email<span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  disabled={loading}
+                  placeholder="e.g. store@example.com"
+                />
+              </div>
+            </>
+          ) : type === "warehouses" ? (
+            <>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Warehouse<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={name}
+                  onChange={handleNameChange}
+                  disabled={loading}
+                  placeholder="e.g. Main Warehouse, Central Depot"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Contact Person<span className="text-red-500">*</span></label>
+                <select
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={contactPerson}
+                  onChange={e => setContactPerson(e.target.value)}
+                  disabled={loading}
+                >
+                  <option value="">Select a user</option>
+                  {usersList.map((user) => (
+                    <option key={user.id} value={user.id}>{user.full_name || user.id}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Phone<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  disabled={loading}
+                  placeholder="e.g. +1-555-123-4567"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Email<span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={warehouseEmail}
+                  onChange={e => setWarehouseEmail(e.target.value)}
+                  disabled={loading}
+                  placeholder="e.g. warehouse@example.com"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Address<span className="text-red-500">*</span></label>
+                <textarea
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={warehouseAddress}
+                  onChange={e => setWarehouseAddress(e.target.value)}
+                  disabled={loading}
+                  placeholder="Enter warehouse address"
+                  rows={3}
+                />
+              </div>
+            </>
           ) : (
             <>
               <div className="mb-4">
@@ -222,7 +431,7 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
               </select>
             </div>
           )}
-          {type !== "variant_attributes" && (
+          {type !== "variant_attributes" && type !== "units" && type !== "stores" && type !== "warehouses" && (
             <div className="mb-4">
               <label className="block mb-1 font-medium">Image</label>
               <CategoryImageUpload value={imageUrl} onChange={setImageUrl} />
