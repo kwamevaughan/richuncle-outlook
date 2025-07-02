@@ -11,6 +11,8 @@ import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
 import ErrorBoundary from "../components/ErrorBoundary";
+import Image from "next/image";
+import ViewProductModal from "../components/ViewProductModal";
 
 export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
@@ -27,15 +29,27 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // View modal state
+  const [viewItem, setViewItem] = useState(null);
+
   // Fetch products
   const fetchProducts = async () => {
     setLoading(true);
+    const selectString = "*, category:categories!products_category_id_fkey(name), brand:brands!brand_id(name), unit:units!unit_id(name)";
+    console.log("[fetchProducts] select:", selectString);
     const { data, error } = await supabaseClient
       .from("products")
-      .select("*")
+      .select(selectString)
       .order("created_at", { ascending: false });
+    console.log("[fetchProducts] data:", data);
+    console.log("[fetchProducts] error:", error);
     if (!error) {
-      setProducts(data || []);
+      setProducts((data || []).map(p => ({
+        ...p,
+        category_name: p.category?.name || "",
+        brand_name: p.brand?.name || "",
+        unit_name: p.unit?.name || "",
+      })));
     } else {
       setError(error.message || "Failed to load products");
     }
@@ -139,18 +153,25 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
               <GenericTable
                 data={products}
                 columns={[
-                  { header: "Name", accessor: "name", sortable: true },
-                  { header: "Status", accessor: "is_active", sortable: true, render: (row) => (
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
-                      {row.is_active ? "Active" : "Inactive"}
-                    </span>
-                  ) },
-                  { header: "Image", accessor: "image_url", type: "image" },
+                  { header: "SKU", accessor: "sku", sortable: true },
+                  { header: "Product Name", accessor: "name", sortable: true },
+                  { header: "Category", accessor: "category_id", sortable: false, render: (row) => row.category_name || "-" },
+                  { header: "Brand", accessor: "brand_id", sortable: false, render: (row) => row.brand_name || "-" },
+                  { header: "Price", accessor: "price", sortable: true },
+                  { header: "Unit", accessor: "unit_id", sortable: false, render: (row) => row.unit_name || "-" },
+                  { header: "Qty", accessor: "quantity", sortable: true },
                 ]}
                 onEdit={openEditModal}
                 onDelete={openConfirm}
                 onAddNew={openAddModal}
                 addNewLabel="Add New Product"
+                actions={[
+                  {
+                    label: 'View',
+                    icon: 'mdi:eye-outline',
+                    onClick: (item) => setViewItem(item)
+                  }
+                ]}
               />
             </div>
 
@@ -236,6 +257,14 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                   </div>
                 </div>
               </SimpleModal>
+            )}
+            {viewItem && (
+              <ViewProductModal
+                product={viewItem}
+                isOpen={!!viewItem}
+                onClose={() => setViewItem(null)}
+                mode={mode}
+              />
             )}
           </div>
         </div>

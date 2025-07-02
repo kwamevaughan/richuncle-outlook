@@ -98,6 +98,7 @@ export function GenericTable({
   selectable = true,
   searchable = true,
   enableDragDrop = false,
+  actions = [],
 }) {
   const table = useTable(data);
   const TableBody = enableDragDrop ? CategoryDragDrop : "tbody";
@@ -164,6 +165,18 @@ export function GenericTable({
       })}
       <td className="px-4 py-4">
         <div className="flex items-center gap-2">
+          {/* Custom actions */}
+          {actions.map((action, i) => (
+            <button
+              key={action.label || i}
+              onClick={() => action.onClick(row)}
+              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
+              title={action.label}
+            >
+              <Icon icon={action.icon} className="w-4 h-4" />
+            </button>
+          ))}
+          {/* Edit/Delete */}
           {onEdit && (
             <button
               onClick={() => onEdit(row)}

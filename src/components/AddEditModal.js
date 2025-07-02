@@ -7,8 +7,10 @@ import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import { format } from 'date-fns';
+import Barcode from 'react-barcode';
 
 export function AddEditModal({ type, mode = "light", item, categories, onClose, onSave }) {
+  const [localCategories, setLocalCategories] = useState([]);
   const [name, setName] = useState(item?.name || "");
   const [description, setDescription] = useState(item?.description || "");
   const [code, setCode] = useState(type === "categories" ? (item?.code || "") : "");
@@ -39,6 +41,26 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
     return [{ startDate: new Date(), endDate: new Date(), key: 'selection' }];
   });
   const [validity, setValidity] = useState(item?.validity || "");
+  // --- PRODUCTS MODAL STATE ---
+  const [storeId, setStoreId] = useState(item?.store_id || "");
+  const [warehouseId, setWarehouseId] = useState(item?.warehouse_id || "");
+  const [productName, setProductName] = useState(item?.name || "");
+  const [quantity, setQuantity] = useState(item?.quantity || "");
+  const [price, setPrice] = useState(item?.price || "");
+  const [sku, setSku] = useState(item?.sku || "");
+  const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
+  const [subcategoryId, setSubcategoryId] = useState(item?.subcategory_id || "");
+  const [brandId, setBrandId] = useState(item?.brand_id || "");
+  const [unitId, setUnitId] = useState(item?.unit_id || "");
+  const [barcode, setBarcode] = useState(item?.barcode || "");
+  const [stores, setStores] = useState([]);
+  const [warehouses, setWarehouses] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [units, setUnits] = useState([]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [sellingType, setSellingType] = useState(item?.selling_type || "");
 
   // Helper to generate a code suggestion
   function suggestCategoryCode(name, existingCodes) {
@@ -98,6 +120,40 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
     }
     // eslint-disable-next-line
   }, [dateRange, type]);
+
+  useEffect(() => {
+    if (type === "products") {
+      // Fetch all dropdown data
+      supabaseClient.from("stores").select("id, name").then(({ data }) => setStores(data || []));
+      supabaseClient.from("warehouses").select("id, name").then(({ data }) => setWarehouses(data || []));
+      supabaseClient.from("categories").select("id, name").then(({ data }) => setLocalCategories(data || []));
+      supabaseClient.from("subcategories").select("id, name, category_id").then(({ data }) => setSubcategories(data || []));
+      supabaseClient.from("brands").select("id, name").then(({ data }) => setBrands(data || []));
+      supabaseClient.from("units").select("id, name").then(({ data }) => setUnits(data || []));
+    }
+  }, [type]);
+
+  // Auto-generate SKU from product name if not manually edited
+  useEffect(() => {
+    if (type === "products" && !skuManuallyEdited && productName) {
+      const base = productName.trim().toUpperCase().replace(/\s+/g, "-").substring(0, 10);
+      setSku(base + "-" + Math.floor(1000 + Math.random() * 9000));
+    }
+  }, [productName, type, skuManuallyEdited]);
+
+  // Handle Add New Category
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    setLoading(true);
+    const { data, error } = await supabaseClient.from("categories").insert([{ name: newCategoryName.trim() }]).select();
+    if (!error && data && data[0]) {
+      setLocalCategories((prev) => [...prev, data[0]]);
+      setCategoryId(data[0].id);
+      setShowAddCategory(false);
+      setNewCategoryName("");
+    }
+    setLoading(false);
+  };
 
   const handleCodeChange = (e) => {
     setCode(e.target.value.toUpperCase());
@@ -223,6 +279,43 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
         setError("Address is required");
         return;
       }
+    } else if (type === "products") {
+      if (!storeId) {
+        setError("Store is required");
+        return;
+      }
+      if (!warehouseId) {
+        setError("Warehouse is required");
+        return;
+      }
+      if (!productName.trim()) {
+        setError("Product Name is required");
+        return;
+      }
+      if (!quantity.trim()) {
+        setError("Quantity is required");
+        return;
+      }
+      if (!price.trim()) {
+        setError("Price is required");
+        return;
+      }
+      if (!sku.trim()) {
+        setError("SKU is required");
+        return;
+      }
+      if (!categoryId) {
+        setError("Category is required");
+        return;
+      }
+      if (!brandId) {
+        setError("Brand is required");
+        return;
+      }
+      if (!unitId) {
+        setError("Unit is required");
+        return;
+      }
     } else {
       if (!name.trim()) {
         setError("Name is required");
@@ -244,9 +337,67 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
           name: name.trim(),
           is_active: isActive,
         });
+      } else if (type === "variant_attributes") {
+        await onSave({
+          name: name.trim(),
+          values: values.join(","),
+          is_active: isActive,
+        });
+      } else if (type === "units") {
+        await onSave({
+          name: name.trim(),
+          symbol: symbol.trim(),
+          is_active: isActive,
+        });
+      } else if (type === "stores") {
+        await onSave({
+          name: name.trim(),
+          address: address.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          is_active: isActive,
+        });
+      } else if (type === "warehouses") {
+        await onSave({
+          name: name.trim(),
+          contact_person: contactPerson.trim(),
+          phone: phone.trim(),
+          email: warehouseEmail.trim(),
+          address: warehouseAddress.trim(),
+          is_active: isActive,
+        });
+      } else if (type === "customers") {
+        await onSave({
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          is_active: isActive,
+        });
+      } else if (type === "products") {
+        await onSave({
+          name: productName.trim(),
+          quantity: quantity.trim(),
+          price: price.trim(),
+          sku: sku.trim(),
+          store_id: storeId || null,
+          warehouse_id: warehouseId || null,
+          category_id: categoryId || null,
+          subcategory_id: subcategoryId || null,
+          brand_id: brandId || null,
+          unit_id: unitId || null,
+          barcode: barcode.trim(),
+          selling_type: sellingType,
+          image_url: imageUrl,
+          is_active: isActive,
+        });
       } else {
         await onSave({
           name: name.trim(),
+          ...(type === "categories" ? { code: code.trim() } : {}),
+          ...(type === "subcategories" ? { category_id: categoryId } : {}),
+          image_url: imageUrl,
+          is_active: isActive,
           ...(type === "variant_attributes" ? { values: values.join(",") } : {}),
           ...(type === "units" ? { symbol: symbol.trim() } : {}),
           ...(type === "stores" ? { 
@@ -266,10 +417,6 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
             address: address.trim(),
           } : {}),
           ...(type !== "units" && type !== "stores" && type !== "warehouses" && type !== "customers" ? { description: description.trim() } : {}),
-          ...(type === "categories" ? { code: code.trim() } : {}),
-          image_url: imageUrl,
-          is_active: isActive,
-          ...(type === "subcategories" ? { category_id: categoryId } : {}),
         });
       }
     } catch (err) {
@@ -290,6 +437,7 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
     customers: "Customer",
     discounts: "Discount",
     plans: "Discount Plan",
+    products: "Product",
   }[type] || "Item";
 
   // Custom modal title for discounts
@@ -304,7 +452,7 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
         onClose={onClose}
         title={modalTitle}
         mode={mode}
-        width="max-w-md"
+        width="max-w-4xl"
       >
         <form onSubmit={handleSubmit}>
           {type === "discounts" ? (
@@ -339,7 +487,7 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                   disabled={loading}
                 >
                   <option value="">Select a plan</option>
-                  {categories.map((plan) => (
+                  {localCategories.map((plan) => (
                     <option key={plan.id} value={plan.id}>{plan.name}</option>
                   ))}
                 </select>
@@ -610,6 +758,127 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                 />
               </div>
             </>
+          ) : type === "products" ? (
+            <>
+              <div className="mb-6">
+                <label className="block mb-1 font-medium">Product Name<span className="text-red-500">*</span></label>
+                <input className="w-full border rounded px-3 py-2" value={productName} onChange={e => { setProductName(e.target.value); if (!skuManuallyEdited) setSku(""); }} disabled={loading} placeholder="Product name" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block mb-1 font-medium">Store<span className="text-red-500">*</span></label>
+                  <select className="w-full border rounded px-3 py-2" value={storeId} onChange={e => setStoreId(e.target.value)} disabled={loading}>
+                    <option value="">Select a store</option>
+                    {stores.map(store => <option key={store.id} value={store.id}>{store.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Warehouse<span className="text-red-500">*</span></label>
+                  <select className="w-full border rounded px-3 py-2" value={warehouseId} onChange={e => setWarehouseId(e.target.value)} disabled={loading}>
+                    <option value="">Select a warehouse</option>
+                    {warehouses.map(wh => <option key={wh.id} value={wh.id}>{wh.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block mb-1 font-medium">Quantity<span className="text-red-500">*</span></label>
+                  <input type="number" className="w-full border rounded px-3 py-2" value={quantity} onChange={e => setQuantity(e.target.value)} disabled={loading} placeholder="Quantity" />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Unit</label>
+                  <select className="w-full border rounded px-3 py-2" value={unitId} onChange={e => setUnitId(e.target.value)} disabled={loading}>
+                    <option value="">Select a unit</option>
+                    {units.map(unit => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block mb-1 font-medium">Price (in GHS)<span className="text-red-500">*</span></label>
+                  <input type="number" className="w-full border rounded px-3 py-2" value={price} onChange={e => setPrice(e.target.value)} disabled={loading} placeholder="Price" />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">SKU</label>
+                  <input className="w-full border rounded px-3 py-2" value={sku} onChange={e => setSku(e.target.value)} disabled={loading} placeholder="SKU" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block mb-1 font-medium">Category<span className="text-red-500">*</span></label>
+                  <div className="flex gap-2">
+                    <select className="w-full border rounded px-3 py-2" value={categoryId} onChange={e => setCategoryId(e.target.value)} disabled={loading}>
+                      <option value="">Select a category</option>
+                      {localCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                    </select>
+                    <button type="button" className="w-40 px-2 py-1 bg-blue-500 text-white rounded" onClick={() => setShowAddCategory(true)} disabled={loading}>Add New</button>
+                  </div>
+                  {showAddCategory && (
+                    <div className="mt-2 flex gap-2">
+                      <input className="w-full border rounded px-3 py-2" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="New category name" />
+                      <button type="button" className="px-2 py-1 bg-green-500 text-white rounded" onClick={handleAddCategory} disabled={loading}>Save</button>
+                      <button type="button" className="px-2 py-1 bg-gray-300 text-black rounded" onClick={() => setShowAddCategory(false)} disabled={loading}>Cancel</button>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Sub Category</label>
+                  <select className="w-full border rounded px-3 py-2" value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)} disabled={loading || !categoryId}>
+                    <option value="">Select a subcategory</option>
+                    {subcategories.filter(sc => sc.category_id === categoryId).map(sc => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block mb-1 font-medium">Brand</label>
+                  <select className="w-full border rounded px-3 py-2" value={brandId} onChange={e => setBrandId(e.target.value)} disabled={loading}>
+                    <option value="">Select a brand</option>
+                    {brands.map(brand => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Selling Type<span className="text-red-500">*</span></label>
+                  <select className="w-full border rounded px-3 py-2" value={sellingType} onChange={e => setSellingType(e.target.value)} disabled={loading}>
+                    <option value="">Select selling type</option>
+                    <option value="Online">Online</option>
+                    <option value="POS">POS</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mb-6">
+                <label className="block mb-1 font-medium">Item Barcode</label>
+                <div className="flex gap-2">
+                  <input className="w-full border rounded px-3 py-2" value={barcode} onChange={e => setBarcode(e.target.value)} disabled={loading} placeholder="Barcode" />
+                  <button
+                    type="button"
+                    className="px-2 py-1 bg-blue-500 text-white rounded"
+                    onClick={() => setBarcode('BC' + Math.floor(100000000 + Math.random() * 900000000))}
+                    disabled={loading}
+                  >
+                    Generate
+                  </button>
+                </div>
+              </div>
+              {barcode && (
+                <div className="mt-2 flex justify-center">
+                  <Barcode value={barcode} height={60} width={2} displayValue={false} />
+                </div>
+              )}
+              <div className="mb-6">
+                <label className="block mb-1 font-medium">Image</label>
+                <CategoryImageUpload value={imageUrl} onChange={setImageUrl} />
+              </div>
+              <div className="mb-4 flex items-center gap-2">
+                <input type="checkbox" className="form-checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} disabled={loading} />
+                <span className="text-sm">Active</span>
+              </div>
+              {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
+              <div className="flex justify-end gap-2 mt-6">
+                <button type="button" className="px-4 py-2 rounded bg-gray-200 text-gray-700" onClick={onClose} disabled={loading}>Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white" disabled={loading}>Save</button>
+              </div>
+            </>
           ) : (
             <>
               <div className="mb-4">
@@ -618,15 +887,6 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={name}
                   onChange={handleNameChange}
-                  disabled={loading}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Description</label>
-                <textarea
-                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
                   disabled={loading}
                 />
               </div>
@@ -655,7 +915,7 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                 onChange={e => setCategoryId(e.target.value)}
                 disabled={loading}
               >
-                {categories.map((cat) => (
+                {localCategories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
                   </option>
@@ -663,35 +923,23 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
               </select>
             </div>
           )}
-          {/* Only show the generic Active checkbox if not discounts or plans, since those already render it in their custom block */}
-          {(type !== "discounts" && type !== "plans") && (
-            <div className="mb-4 flex items-center gap-2">
-              <input
-                type="checkbox"
-                className="form-checkbox"
-                checked={isActive}
-                onChange={e => setIsActive(e.target.checked)}
-                disabled={loading}
-              />
-              <span className="text-sm">Active</span>
-            </div>
-          )}
-          {/* Only show the image field for types that are not discounts or plans */}
-          {type !== "variant_attributes" && type !== "units" && type !== "stores" && type !== "warehouses" && type !== "customers" && type !== "discounts" && type !== "plans" && (
+          {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
+          {type !== "variant_attributes" && type !== "units" && type !== "stores" && type !== "warehouses" && type !== "customers" && type !== "discounts" && type !== "plans" && type !== "products" && (
             <div className="mb-4">
               <label className="block mb-1 font-medium">Image</label>
               <CategoryImageUpload value={imageUrl} onChange={setImageUrl} />
             </div>
           )}
-          {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
-          <div className="flex justify-end gap-2 mt-6">
-            <button type="button" className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100" onClick={onClose} disabled={loading}>
-              Cancel
-            </button>
-            <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" disabled={loading}>
-              {loading && <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />} Save
-            </button>
-          </div>
+          {type !== "products" && (
+            <div className="flex justify-end gap-2 mt-6">
+              <button type="button" className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100" onClick={onClose} disabled={loading}>
+                Cancel
+              </button>
+              <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" disabled={loading}>
+                {loading && <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />} Save
+              </button>
+            </div>
+          )}
         </form>
       </SimpleModal>
     </>

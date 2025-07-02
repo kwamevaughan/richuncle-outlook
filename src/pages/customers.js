@@ -15,6 +15,7 @@ import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
 import ErrorBoundary from "../components/ErrorBoundary";
+import Image from "next/image";
 
 export default function CustomersPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
@@ -147,7 +148,7 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
                 { header: "Address", accessor: "address", sortable: true },
                 { header: "Image", accessor: "image_url", render: (row) => (
                   row.image_url ? (
-                    <img src={row.image_url} alt={row.name || "Profile"} className="w-10 h-10 rounded-full object-cover border" />
+                    <Image src={row.image_url} alt={row.name || "Profile"} className="w-10 h-10 rounded-full object-cover border" />
                   ) : (
                     <span className="inline-block w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400">
                       <Icon icon="mdi:account-circle" className="w-6 h-6" />
