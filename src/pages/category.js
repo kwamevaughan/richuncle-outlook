@@ -272,9 +272,17 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                 <GenericTable
                   data={filteredCategories}
                   columns={[
-                    { header: "Name", accessor: "name", sortable: true },
+                    { header: "Name", accessor: "name", sortable: true, render: (row) => (
+                      <span className="flex items-center gap-2">
+                        {row.image_url && (
+                          <img src={row.image_url} alt={row.name} width={32} height={32} className="rounded object-cover border w-8 h-8" />
+                        )}
+                        <span>{row.name}</span>
+                      </span>
+                    )},
                     { header: "Category Code", accessor: "code", sortable: true },
                     { header: "Description", accessor: "description", sortable: true },
+                    { header: "No Of Products", accessor: "product_count", sortable: false },
                     {
                       header: "Status",
                       accessor: "is_active",
@@ -285,7 +293,6 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                         </span>
                       ),
                     },
-                    { header: "Image", accessor: "image_url", type: "image" },
                   ]}
                   onEdit={(item) => openEditModal("categories", item)}
                   onDelete={openConfirm}

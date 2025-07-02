@@ -35,14 +35,29 @@ export default function StoresPage({ mode = "light", toggleMode, ...props }) {
   // Fetch stores
   const fetchStores = async () => {
     setLoading(true);
-    const { data, error } = await supabaseClient
+    const { data: storesData, error: storesError } = await supabaseClient
       .from("stores")
       .select("*")
       .order("sort_order", { ascending: true });
-    if (!error) {
-      setStores(data || []);
+    const { data: productsData, error: productsError } = await supabaseClient
+      .from("products")
+      .select("store_id");
+    if (!storesError && !productsError) {
+      // Count products per store in JS
+      const productCounts = {};
+      (productsData || []).forEach((row) => {
+        if (row.store_id) {
+          productCounts[row.store_id] = (productCounts[row.store_id] || 0) + 1;
+        }
+      });
+      // Add product_count to each store
+      const storesWithCount = (storesData || []).map((store) => ({
+        ...store,
+        product_count: productCounts[store.id] || 0,
+      }));
+      setStores(storesWithCount);
     } else {
-      setError(error.message || "Failed to load stores");
+      setError((storesError || productsError).message || "Failed to load stores");
     }
     setLoading(false);
   };
@@ -148,6 +163,7 @@ export default function StoresPage({ mode = "light", toggleMode, ...props }) {
                   { header: "Address", accessor: "address", sortable: true },
                   { header: "Phone", accessor: "phone", sortable: true },
                   { header: "Email", accessor: "email", sortable: true },
+                  { header: "Total Products", accessor: "product_count", sortable: false },
                   { header: "Status", accessor: "is_active", sortable: true, render: (row) => (
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
                       {row.is_active ? "Active" : "Inactive"}

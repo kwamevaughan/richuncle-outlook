@@ -35,14 +35,29 @@ export default function UnitsPage({ mode = "light", toggleMode, ...props }) {
   // Fetch units
   const fetchUnits = async () => {
     setLoading(true);
-    const { data, error } = await supabaseClient
+    const { data: unitsData, error: unitsError } = await supabaseClient
       .from("units")
       .select("*")
       .order("created_at", { ascending: false });
-    if (!error) {
-      setUnits(data || []);
+    const { data: productsData, error: productsError } = await supabaseClient
+      .from("products")
+      .select("unit_id");
+    if (!unitsError && !productsError) {
+      // Count products per unit in JS
+      const productCounts = {};
+      (productsData || []).forEach((row) => {
+        if (row.unit_id) {
+          productCounts[row.unit_id] = (productCounts[row.unit_id] || 0) + 1;
+        }
+      });
+      // Add product_count to each unit
+      const unitsWithCount = (unitsData || []).map((unit) => ({
+        ...unit,
+        product_count: productCounts[unit.id] || 0,
+      }));
+      setUnits(unitsWithCount);
     } else {
-      setError(error.message || "Failed to load units");
+      setError((unitsError || productsError).message || "Failed to load units");
     }
     setLoading(false);
   };

@@ -16,11 +16,25 @@ export function useCategories() {
         .select("*")
         .order("sort_order", { ascending: true }),
       supabaseClient.from("subcategories").select("*"),
+      supabaseClient.from("products").select("category_id")
     ])
-      .then(([catRes, subRes]) => {
+      .then(([catRes, subRes, prodRes]) => {
         if (catRes.error) throw catRes.error;
         if (subRes.error) throw subRes.error;
-        setCategories(catRes.data || []);
+        if (prodRes.error) throw prodRes.error;
+        // Count products per category in JS
+        const productCounts = {};
+        (prodRes.data || []).forEach((row) => {
+          if (row.category_id) {
+            productCounts[row.category_id] = (productCounts[row.category_id] || 0) + 1;
+          }
+        });
+        // Add product_count to each category
+        const categoriesWithCount = (catRes.data || []).map((cat) => ({
+          ...cat,
+          product_count: productCounts[cat.id] || 0,
+        }));
+        setCategories(categoriesWithCount);
         setSubCategories(subRes.data || []);
       })
       .catch((err) => setError(err.message || "Failed to load data"))

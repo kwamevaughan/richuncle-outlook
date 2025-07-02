@@ -30,14 +30,29 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
   // Fetch brands
   const fetchBrands = async () => {
     setLoading(true);
-    const { data, error } = await supabaseClient
+    const { data: brandsData, error: brandsError } = await supabaseClient
       .from("brands")
       .select("*")
       .order("created_at", { ascending: false });
-    if (!error) {
-      setBrands(data || []);
+    const { data: productsData, error: productsError } = await supabaseClient
+      .from("products")
+      .select("brand_id");
+    if (!brandsError && !productsError) {
+      // Count products per brand in JS
+      const productCounts = {};
+      (productsData || []).forEach((row) => {
+        if (row.brand_id) {
+          productCounts[row.brand_id] = (productCounts[row.brand_id] || 0) + 1;
+        }
+      });
+      // Add product_count to each brand
+      const brandsWithCount = (brandsData || []).map((brand) => ({
+        ...brand,
+        product_count: productCounts[brand.id] || 0,
+      }));
+      setBrands(brandsWithCount);
     } else {
-      setError(error.message || "Failed to load brands");
+      setError((brandsError || productsError).message || "Failed to load brands");
     }
     setLoading(false);
   };
@@ -140,12 +155,12 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
                 data={brands}
                 columns={[
                   { header: "Name", accessor: "name", sortable: true },
+                  { header: "No Of Products", accessor: "product_count", sortable: false },
                   { header: "Status", accessor: "is_active", sortable: true, render: (row) => (
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
                       {row.is_active ? "Active" : "Inactive"}
                     </span>
                   ) },
-                  { header: "Image", accessor: "image_url", type: "image" },
                 ]}
                 onEdit={openEditModal}
                 onDelete={openConfirm}

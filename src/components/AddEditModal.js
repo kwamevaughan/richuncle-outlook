@@ -867,7 +867,7 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
               )}
               <div className="mb-6">
                 <label className="block mb-1 font-medium">Image</label>
-                <CategoryImageUpload value={imageUrl} onChange={setImageUrl} />
+                <CategoryImageUpload value={imageUrl} onChange={setImageUrl} folder="ProductImages" userName={productName} referralCode={sku} />
               </div>
               <div className="mb-4 flex items-center gap-2">
                 <input type="checkbox" className="form-checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} disabled={loading} />

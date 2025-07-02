@@ -36,7 +36,7 @@ export default function CategoryImageUpload({ value, onChange, folder, userName,
     <div className="flex items-center gap-3">
       <div className="w-16 h-16 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden border dark:border-gray-700">
         {value ? (
-          <Image src={value} alt="Preview" className="object-cover w-full h-full" />
+          <Image src={value} alt="Preview" className="object-cover w-full h-full" width={64} height={64} />
         ) : (
           <Icon icon="mdi:image-outline" className="w-8 h-8 text-gray-400" />
         )}

@@ -29,14 +29,29 @@ export default function WarehousesPage({ mode = "light", toggleMode, ...props })
   // Fetch warehouses
   const fetchWarehouses = async () => {
     setLoading(true);
-    const { data, error } = await supabaseClient
+    const { data: warehousesData, error: warehousesError } = await supabaseClient
       .from("warehouses")
       .select("*")
       .order("sort_order", { ascending: true });
-    if (!error) {
-      setWarehouses(data || []);
+    const { data: productsData, error: productsError } = await supabaseClient
+      .from("products")
+      .select("warehouse_id");
+    if (!warehousesError && !productsError) {
+      // Count products per warehouse in JS
+      const productCounts = {};
+      (productsData || []).forEach((row) => {
+        if (row.warehouse_id) {
+          productCounts[row.warehouse_id] = (productCounts[row.warehouse_id] || 0) + 1;
+        }
+      });
+      // Add product_count to each warehouse
+      const warehousesWithCount = (warehousesData || []).map((warehouse) => ({
+        ...warehouse,
+        product_count: productCounts[warehouse.id] || 0,
+      }));
+      setWarehouses(warehousesWithCount);
     } else {
-      setError(error.message || "Failed to load warehouses");
+      setError((warehousesError || productsError).message || "Failed to load warehouses");
     }
     setLoading(false);
   };
@@ -152,9 +167,11 @@ export default function WarehousesPage({ mode = "light", toggleMode, ...props })
                 { header: "Contact Person", accessor: "contact_person", sortable: true, render: (row) => {
                   const user = users.find(u => u.id === row.contact_person);
                   return user ? user.full_name : row.contact_person;
-                } },
+                }
+                },
+                { header: "Address", accessor: "address", sortable: true },
                 { header: "Phone", accessor: "phone", sortable: true },
-                { header: "Total Products", accessor: "total_products", sortable: false, render: () => "" },
+                { header: "Total Products", accessor: "product_count", sortable: false },
                 { header: "Stock", accessor: "stock", sortable: false, render: () => "" },
                 { header: "Qty", accessor: "qty", sortable: false, render: () => "" },
               ]}

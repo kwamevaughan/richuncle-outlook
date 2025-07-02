@@ -42,16 +42,6 @@ export const sidebarNav = [
         icon: "mdi:format-list-bulleted",
         label: "Variant Attributes",
       },
-      {
-        href: "/print-barcode",
-        icon: "mdi:barcode-scan",
-        label: "Print Barcode",
-      },
-      {
-        href: "/print-qr-code",
-        icon: "mdi:qrcode-scan",
-        label: "Print QR Code",
-      },
     ],
   },
   {

@@ -154,7 +154,14 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                 data={products}
                 columns={[
                   { header: "SKU", accessor: "sku", sortable: true },
-                  { header: "Product Name", accessor: "name", sortable: true },
+                  { header: "Product Name", accessor: "name", sortable: true, render: (row) => (
+                    <span className="flex items-center gap-2">
+                      {row.image_url && (
+                        <Image src={row.image_url} alt={row.name} width={32} height={32} className="rounded object-cover border w-8 h-8" />
+                      )}
+                      <span>{row.name}</span>
+                    </span>
+                  )},
                   { header: "Category", accessor: "category_id", sortable: false, render: (row) => row.category_name || "-" },
                   { header: "Brand", accessor: "brand_id", sortable: false, render: (row) => row.brand_name || "-" },
                   { header: "Price", accessor: "price", sortable: true },
