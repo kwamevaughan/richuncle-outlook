@@ -44,7 +44,7 @@ const FullscreenToggle = ({ mode }) => {
         aria-label={
           isFullscreen ? "Exit fullscreen mode" : "Enter fullscreen mode"
         }
-        className={`focus:outline-none p-2 rounded-full bg-white/50 ${
+        className={`focus:outline-none p-2 rounded-full bg-white/50 hover:-mt-1 transition-all duration-500 ${
           mode === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
         }`}
       >

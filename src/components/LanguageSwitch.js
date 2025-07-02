@@ -273,7 +273,7 @@ const LanguageSwitch = ({ mode }) => {
         label={<span className="text-black">Change Language</span>}
         mode={mode}
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-white/50"
+        className="bg-white/50 hover:-mt-1 transition-all duration-500"
       >
         <Icon
           icon={
