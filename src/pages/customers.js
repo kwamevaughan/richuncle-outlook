@@ -148,7 +148,7 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
                 { header: "Address", accessor: "address", sortable: true },
                 { header: "Image", accessor: "image_url", render: (row) => (
                   row.image_url ? (
-                    <Image src={row.image_url} alt={row.name || "Profile"} className="w-10 h-10 rounded-full object-cover border" />
+                    <Image src={row.image_url} alt={row.name || "Profile"} width={40} height={40} className="w-10 h-10 rounded-full object-cover border" />
                   ) : (
                     <span className="inline-block w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400">
                       <Icon icon="mdi:account-circle" className="w-6 h-6" />
