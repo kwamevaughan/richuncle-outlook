@@ -115,7 +115,7 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
       .insert([newDiscount])
       .select("*, plan:discount_plans(*)");
     if (error) throw error;
-    setDiscounts((prev) => [data[0], ...prev]);
+    await fetchDiscounts();
   };
   const handleUpdateDiscount = async (id, updatedFields) => {
     const { data, error } = await supabaseClient
@@ -124,9 +124,7 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
       .eq("id", id)
       .select("*, plan:discount_plans(*)");
     if (error) throw error;
-    setDiscounts((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, ...updatedFields } : d))
-    );
+    await fetchDiscounts();
   };
   const handleAddPlan = async (newPlan) => {
     const { data, error } = await supabaseClient
