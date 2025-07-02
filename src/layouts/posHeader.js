@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react";
 import FullscreenToggle from "@/components/FullscreenToggle";
 import TooltipIconButton from "@/components/TooltipIconButton";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import Link from "next/link";
 
 const PosHeader = ({
   mode,
@@ -11,7 +12,6 @@ const PosHeader = ({
   user,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(null);
   const dropdownRef = useRef(null);
   const headerRef = useRef(null);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -76,13 +76,16 @@ const PosHeader = ({
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center w-full gap-2">
-              <button className="flex items-center justify-center gap-2 bg-blue-950 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500">
+              <Link
+                href="/dashboard"
+                className="flex items-center justify-center gap-2 bg-blue-950 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+              >
                 <Icon
-                  icon="akar-icons:laptop-device"
-                  className={`h-3 w-3 text-white`}
+                  icon="mage:dashboard-3"
+                  className={`h-4 w-4 text-white`}
                 />
                 Back to Dashboard
-              </button>
+              </Link>
             </div>
 
             <div className="flex justify-center items-center w-full gap-4">

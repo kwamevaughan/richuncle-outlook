@@ -5,6 +5,7 @@ import Search from "@/components/Search";
 import FullscreenToggle from "@/components/FullscreenToggle";
 import TooltipIconButton from "@/components/TooltipIconButton";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import Link from "next/link";
 
 const HrHeader = ({
   mode,
@@ -79,7 +80,11 @@ const HrHeader = ({
           className={`
             p-2 m-4 transition-transform duration-300
             ${
-              isMobile ? "ml-0" : isSidebarOpen ? "md:ml-[272px]" : "md:ml-[80px]"
+              isMobile
+                ? "ml-0"
+                : isSidebarOpen
+                ? "md:ml-[272px]"
+                : "md:ml-[80px]"
             }
             ${
               mode === "dark"
@@ -96,7 +101,9 @@ const HrHeader = ({
                 onClick={toggleSidebar}
                 className="text-gray-500 hover:scale-110 transition-transform md:inline-flex mr-2"
                 title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-                aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                aria-label={
+                  isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"
+                }
               >
                 <Icon
                   icon={
@@ -248,7 +255,9 @@ const HrHeader = ({
                             }`}
                           />
                         </span>
-                        <span className={mode === "dark" ? "text-gray-100" : ""}>
+                        <span
+                          className={mode === "dark" ? "text-gray-100" : ""}
+                        >
                           {item.label}
                         </span>
                       </button>
@@ -256,14 +265,16 @@ const HrHeader = ({
                   </div>
                 </div>
               </div>
-
-              <button className="flex items-center justify-center gap-2 bg-blue-950 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500">
-                <Icon
-                  icon="akar-icons:laptop-device"
-                  className={`h-3 w-3 text-white`}
-                />
-                POS
-              </button>
+              
+              <Link href="/pos/">
+                <button className="flex items-center justify-center gap-2 bg-blue-950 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500">
+                  <Icon
+                    icon="akar-icons:laptop-device"
+                    className={`h-3 w-3 text-white`}
+                  />
+                  POS
+                </button>
+              </Link>
 
               <LanguageSwitch mode={mode} />
 
@@ -340,7 +351,9 @@ const HrHeader = ({
 
               <TooltipIconButton
                 label={
-                  <span className={mode === "dark" ? "text-black" : "text-black"}>
+                  <span
+                    className={mode === "dark" ? "text-black" : "text-black"}
+                  >
                     {mode === "dark"
                       ? "Switch to Light Mode"
                       : "Switch to Dark Mode"}
@@ -366,7 +379,9 @@ const HrHeader = ({
 
               <TooltipIconButton
                 label={
-                  <span className={mode === "dark" ? "text-black" : "text-black"}>
+                  <span
+                    className={mode === "dark" ? "text-black" : "text-black"}
+                  >
                     {dropdownOpen ? "Close Profile" : "Open Profile"}
                   </span>
                 }
@@ -395,7 +410,10 @@ const HrHeader = ({
                       <div className="p-4">
                         <div className="flex items-center gap-2 w-full">
                           <div className="overflow-hidden flex-shrink-0">
-                            <Icon icon="hugeicons:ai-user" className="h-6 w-6" />
+                            <Icon
+                              icon="hugeicons:ai-user"
+                              className="h-6 w-6"
+                            />
                           </div>
                           <div className="flex flex-col">
                             <div className="flex gap-2">
