@@ -11,9 +11,10 @@ const HrSidebar = ({
   user,
   isOpen,
   toggleSidebar,
+  disableRouter = false,
 }) => {
   const [windowWidth, setWindowWidth] = useState(null);
-  const router = useRouter();
+  const router = !disableRouter ? useRouter() : null;
   const sidebarRef = useRef(null);
   const [showLogout, setShowLogout] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -50,7 +51,7 @@ const HrSidebar = ({
   };
 
   const setActiveItemRef = useCallback((element) => {
-    if (element) {
+    if (element && router) {
       const href = element.getAttribute('data-href');
       if (href && href.split('?')[0] === router.pathname) {
         setTimeout(() => {
@@ -62,7 +63,7 @@ const HrSidebar = ({
         }, 200);
       }
     }
-  }, [router.pathname]);
+  }, [router && router.pathname]);
 
   const handleResize = useCallback(() => {
     setWindowWidth(window.innerWidth);
@@ -75,6 +76,7 @@ const HrSidebar = ({
   }, [handleResize]);
 
   const isActive = (href) => {
+    if (!router) return "";
     const pathname = href.split('?')[0];
     return router.pathname === pathname
       ? "bg-orange-100 text-blue-900 shadow-md"
@@ -82,6 +84,7 @@ const HrSidebar = ({
   };
 
   const isSubItemActive = (href) => {
+    if (!router) return "";
     const pathname = href.split('?')[0];
     return router.pathname === pathname
       ? "bg-orange-50 text-blue-800 shadow-sm ml-0"
@@ -89,6 +92,7 @@ const HrSidebar = ({
   };
 
   const handleNavigation = async (href, label) => {
+    if (!router) return;
     try {
       console.log(
         "[HrSidebar] Navigating to:",

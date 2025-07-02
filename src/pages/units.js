@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
 import { supabaseClient } from "../lib/supabase";
@@ -13,8 +13,10 @@ import SimpleFooter from "../layouts/simpleFooter";
 import { Icon } from "@iconify/react";
 import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
+import MainLayout from "@/layouts/MainLayout";
+import ErrorBoundary from "../components/ErrorBoundary";
 
-export default function UnitsPage({ mode = "light", toggleMode }) {
+export default function UnitsPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -36,7 +38,7 @@ export default function UnitsPage({ mode = "light", toggleMode }) {
     const { data, error } = await supabaseClient
       .from("units")
       .select("*")
-      .order("sort_order", { ascending: true });
+      .order("created_at", { ascending: false });
     if (!error) {
       setUnits(data || []);
     } else {
@@ -46,7 +48,7 @@ export default function UnitsPage({ mode = "light", toggleMode }) {
   };
 
   // Initial fetch
-  React.useEffect(() => {
+  useEffect(() => {
     fetchUnits();
   }, []);
 
@@ -110,38 +112,19 @@ export default function UnitsPage({ mode = "light", toggleMode }) {
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;
-  if (!user || windowWidth === null) {
-    router.push("/");
+  if (!user) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
     return null;
   }
 
   return (
-    <div
-      key={`units-${user?.id}-${mode}`}
-      className={`min-h-screen flex flex-col ${
-        mode === "dark" ? "bg-gray-900 text-white" : " text-gray-900"
-      }`}
-    >
-      <HrHeader
-        toggleSidebar={toggleSidebar}
-        isSidebarOpen={isSidebarOpen}
-        user={user}
-        mode={mode}
-        toggleMode={toggleMode}
-        onLogout={handleLogout}
-      />
+    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
       <div className="flex flex-1">
-        <HrSidebar
-          isOpen={isSidebarOpen}
-          user={user}
-          mode={mode}
-          toggleSidebar={toggleSidebar}
-          onLogout={handleLogout}
-          toggleMode={toggleMode}
-        />
         <div
           className={`flex-1 p-4 md:p-6 lg:p-8 transition-all ${
-            isSidebarOpen && !isMobile ? "ml-60" : "ml-0"
+            isSidebarOpen && !isMobile ? "ml-0" : "ml-0"
           }`}
         >
           <div className="max-w-7xl mx-auto">
@@ -275,9 +258,8 @@ export default function UnitsPage({ mode = "light", toggleMode }) {
               </SimpleModal>
             )}
           </div>
-          <SimpleFooter mode={mode} isSidebarOpen={isSidebarOpen} />
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 } 

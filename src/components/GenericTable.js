@@ -276,7 +276,7 @@ export function GenericTable({
               {columns.map((col) => (
                 <th
                   key={col.accessor}
-                  className={`px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider ${
+                  className={`px-4 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 ${
                     col.sortable
                       ? "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none"
                       : ""
@@ -288,7 +288,10 @@ export function GenericTable({
                   }
                 >
                   <div className="flex items-center gap-2">
-                    {col.header}
+                    {col.header
+                      .split(" ")
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                      .join(" ")}
                     {col.sortable && (
                       <div className="flex flex-col">
                         <Icon
@@ -314,7 +317,7 @@ export function GenericTable({
                   </div>
                 </th>
               ))}
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">
                 Actions
               </th>
             </tr>

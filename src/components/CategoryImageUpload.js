@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import { uploadImage } from "../utils/imageKitService";
 import toast from "react-hot-toast";
 
-export default function CategoryImageUpload({ value, onChange }) {
+export default function CategoryImageUpload({ value, onChange, folder, userName, referralCode }) {
   const fileInput = useRef();
   const [uploading, setUploading] = useState(false);
 
@@ -13,8 +13,14 @@ export default function CategoryImageUpload({ value, onChange }) {
       setUploading(true);
       const toastId = toast.loading("Uploading image...");
       try {
-        // You can pass dummy userName/referralCode or make these props if needed
-        const { fileUrl } = await uploadImage(file, "category", "category");
+        // Use the provided folder or default to 'CategoryImages'
+        const uploadFolder = folder || "CategoryImages";
+        const { fileUrl } = await uploadImage(
+          file,
+          userName || "category",
+          referralCode || "category",
+          uploadFolder
+        );
         onChange(fileUrl);
         toast.success("Image uploaded!", { id: toastId });
       } catch (err) {

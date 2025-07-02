@@ -22,7 +22,7 @@ export const deleteImage = async (fileId) => {
     }
 };
 
-export const uploadImage = async (file, userName, referralCode) => {
+export const uploadImage = async (file, userName, referralCode, folder = "CategoryImages") => {
     try {
         const timestamp = Date.now();
         const customFileName = `${userName}_${referralCode}_${timestamp}.${file.name.split('.').pop()}`;
@@ -31,7 +31,7 @@ export const uploadImage = async (file, userName, referralCode) => {
           file: file,
           fileName: customFileName,
           useUniqueFileName: false,
-          folder: "CategoryImages",
+          folder: folder,
           options: {
             transformation: [
               {

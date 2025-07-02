@@ -1,26 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
 import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
-import HrHeader from "../layouts/hrHeader";
-import HrSidebar from "../layouts/hrSidebar";
-import useSidebar from "../hooks/useSidebar";
 import { useRouter } from "next/router";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
-import SimpleFooter from "../layouts/simpleFooter";
 import { Icon } from "@iconify/react";
 import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
+import MainLayout from "@/layouts/MainLayout";
+import ErrorBoundary from "../components/ErrorBoundary";
 
-export default function BrandsPage({ mode = "light", toggleMode }) {
+export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
   const [errorModal, setErrorModal] = useState({ open: false, message: "" });
-  const { isSidebarOpen, toggleSidebar, isMobile, windowWidth } = useSidebar();
   const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
@@ -36,7 +33,7 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
     const { data, error } = await supabaseClient
       .from("brands")
       .select("*")
-      .order("sort_order", { ascending: true });
+      .order("created_at", { ascending: false });
     if (!error) {
       setBrands(data || []);
     } else {
@@ -46,7 +43,7 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
   };
 
   // Initial fetch
-  React.useEffect(() => {
+  useEffect(() => {
     fetchBrands();
   }, []);
 
@@ -110,40 +107,17 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;
-  if (!user || windowWidth === null) {
-    router.push("/");
+  if (!user) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
     return null;
   }
 
   return (
-    <div
-      key={`brands-${user?.id}-${mode}`}
-      className={`min-h-screen flex flex-col ${
-        mode === "dark" ? "bg-gray-900 text-white" : " text-gray-900"
-      }`}
-    >
-      <HrHeader
-        toggleSidebar={toggleSidebar}
-        isSidebarOpen={isSidebarOpen}
-        user={user}
-        mode={mode}
-        toggleMode={toggleMode}
-        onLogout={handleLogout}
-      />
+    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
       <div className="flex flex-1">
-        <HrSidebar
-          isOpen={isSidebarOpen}
-          user={user}
-          mode={mode}
-          toggleSidebar={toggleSidebar}
-          onLogout={handleLogout}
-          toggleMode={toggleMode}
-        />
-        <div
-          className={`flex-1 p-4 md:p-6 lg:p-8 transition-all ${
-            isSidebarOpen && !isMobile ? "ml-60" : "ml-0"
-          }`}
-        >
+        <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <Icon icon="mdi:tag" className="w-7 h-7 text-blue-900" />
@@ -264,9 +238,8 @@ export default function BrandsPage({ mode = "light", toggleMode }) {
               </SimpleModal>
             )}
           </div>
-          <SimpleFooter mode={mode} isSidebarOpen={isSidebarOpen} />
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 } 

@@ -1,0 +1,30 @@
+import SimpleFooter from "@/layouts/simpleFooter";
+import HrSidebar from "@/layouts/hrSidebar";
+import HrHeader from "@/layouts/hrHeader";
+import useSidebar from "@/hooks/useSidebar";
+
+export default function MainLayout({ children, mode, ...props }) {
+  const { isSidebarOpen, toggleSidebar, isMobile } = useSidebar();
+
+  // Determine margin-left based on sidebar state
+  const contentMargin = isMobile ? "ml-0" : isSidebarOpen ? "ml-60" : "ml-16";
+
+  return (
+    <div className={`min-h-screen flex flex-col ${mode === "dark" ? "bg-gray-900 text-white" : "text-gray-900"}`}>
+      <HrHeader {...props} isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} mode={mode} />
+      <div className="flex flex-1">
+        <HrSidebar isOpen={isSidebarOpen} mode={mode} toggleSidebar={toggleSidebar} {...props} />
+        <div className={`flex-1 flex flex-col transition-all ${contentMargin}`}>
+          <div className="flex flex-col flex-1">
+            <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col">
+              {children}
+            </div>
+            <div className="p-4 md:p-6 lg:p-8">
+              <SimpleFooter mode={mode} isSidebarOpen={isSidebarOpen} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 

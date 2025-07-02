@@ -5,6 +5,7 @@ import "../styles/globals.css";
 import { sidebarNav } from "@/data/nav";
 import { Nunito } from "next/font/google";
 import { AuthProvider } from "@/context/authContext";
+import useSidebar from "@/hooks/useSidebar";
 
 const nunito = Nunito({
   weight: ["300", "400", "500", "600", "700"],
@@ -16,6 +17,7 @@ const nunito = Nunito({
 function MyApp({ Component, pageProps }) {
   const [mode, setMode] = useState("light");
   const router = useRouter();
+  const { isSidebarOpen } = useSidebar();
 
   const toggleMode = () => {
     const newMode = mode === "light" ? "dark" : "light";
@@ -155,16 +157,18 @@ function MyApp({ Component, pageProps }) {
   })();
 
   return (
-    <div className={`${mode === "dark" ? "dark" : ""} ${nunito.variable} font-sans`}>
+    <div className={`${mode === "dark" ? "dark" : ""} ${nunito.variable} font-sans flex flex-col min-h-screen`}>
       <Toaster position="top-center" reverseOrder={false} />
         <AuthProvider>
-          <Component
-            {...pageProps}
-            mode={mode}
-            toggleMode={toggleMode}
-            breadcrumbs={breadcrumbs}
-          />
-
+          <main className="flex-1">
+            <Component
+              {...pageProps}
+              mode={mode}
+              toggleMode={toggleMode}
+              breadcrumbs={breadcrumbs}
+              isSidebarOpen={isSidebarOpen}
+            />
+          </main>
         </AuthProvider>
     </div>
   );

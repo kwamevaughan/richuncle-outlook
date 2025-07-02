@@ -3,53 +3,48 @@ import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
 import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
-import HrHeader from "../layouts/hrHeader";
-import HrSidebar from "../layouts/hrSidebar";
-import useSidebar from "../hooks/useSidebar";
 import { useRouter } from "next/router";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
-import SimpleFooter from "../layouts/simpleFooter";
 import { Icon } from "@iconify/react";
 import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
 import ErrorBoundary from "../components/ErrorBoundary";
 
-export default function StoresPage({ mode = "light", toggleMode, ...props }) {
+export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
   const [errorModal, setErrorModal] = useState({ open: false, message: "" });
-  const { isSidebarOpen, toggleSidebar, isMobile, windowWidth } = useSidebar();
   const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
 
-  // Stores state
-  const [stores, setStores] = useState([]);
+  // Products state
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch stores
-  const fetchStores = async () => {
+  // Fetch products
+  const fetchProducts = async () => {
     setLoading(true);
     const { data, error } = await supabaseClient
-      .from("stores")
+      .from("products")
       .select("*")
-      .order("sort_order", { ascending: true });
+      .order("created_at", { ascending: false });
     if (!error) {
-      setStores(data || []);
+      setProducts(data || []);
     } else {
-      setError(error.message || "Failed to load stores");
+      setError(error.message || "Failed to load products");
     }
     setLoading(false);
   };
 
   // Initial fetch
   useEffect(() => {
-    fetchStores();
+    fetchProducts();
   }, []);
 
   // Modal open/close helpers
@@ -76,60 +71,60 @@ export default function StoresPage({ mode = "light", toggleMode, ...props }) {
   const handleDelete = async () => {
     try {
       const { error } = await supabaseClient
-        .from("stores")
+        .from("products")
         .delete()
         .eq("id", deleteItem.id);
       if (error) throw error;
-      setStores((prev) => prev.filter((s) => s.id !== deleteItem.id));
+      setProducts((prev) => prev.filter((p) => p.id !== deleteItem.id));
       closeConfirm();
-      toast.success("Store deleted!");
+      toast.success("Product deleted!");
     } catch (err) {
-      toast.error(err.message || "Failed to delete store");
+      toast.error(err.message || "Failed to delete product");
     }
   };
 
-  // Add a helper to add a new store
-  const handleAddStore = async (newStore) => {
+  // Add a helper to add a new product
+  const handleAddProduct = async (newProduct) => {
     const { data, error } = await supabaseClient
-      .from("stores")
-      .insert([newStore])
+      .from("products")
+      .insert([newProduct])
       .select();
     if (error) throw error;
-    setStores((prev) => [data[0], ...prev]);
+    setProducts((prev) => [data[0], ...prev]);
   };
 
-  // Add a helper to update a store
-  const handleUpdateStore = async (id, updatedFields) => {
+  // Add a helper to update a product
+  const handleUpdateProduct = async (id, updatedFields) => {
     const { data, error } = await supabaseClient
-      .from("stores")
+      .from("products")
       .update(updatedFields)
       .eq("id", id)
       .select();
     if (error) throw error;
-    setStores((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updatedFields } : s))
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p))
     );
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;
-  if (!user || windowWidth === null) {
-    router.push("/");
+  if (!user) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
     return null;
   }
 
   return (
     <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
       <div className="flex flex-1">
-        <div
-          className={`flex-1 p-4 md:p-6 lg:p-8 transition-all`}
-        >
+        <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:store" className="w-7 h-7 text-blue-900" />
-              Store Management
+              <Icon icon="mdi:package-variant" className="w-7 h-7 text-blue-900" />
+              Product Management
             </h1>
             <p className="text-sm text-gray-500 mb-6">
-              Manage your stores here.
+              Manage your shop products here.
             </p>
 
             {loading && (
@@ -142,28 +137,26 @@ export default function StoresPage({ mode = "light", toggleMode, ...props }) {
 
             <div className="bg-white dark:bg-gray-900 rounded-xl">
               <GenericTable
-                data={stores}
+                data={products}
                 columns={[
-                  { header: "Store Name", accessor: "name", sortable: true },
-                  { header: "Address", accessor: "address", sortable: true },
-                  { header: "Phone", accessor: "phone", sortable: true },
-                  { header: "Email", accessor: "email", sortable: true },
+                  { header: "Name", accessor: "name", sortable: true },
                   { header: "Status", accessor: "is_active", sortable: true, render: (row) => (
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
                       {row.is_active ? "Active" : "Inactive"}
                     </span>
                   ) },
+                  { header: "Image", accessor: "image_url", type: "image" },
                 ]}
                 onEdit={openEditModal}
                 onDelete={openConfirm}
                 onAddNew={openAddModal}
-                addNewLabel="Add New Store"
+                addNewLabel="Add New Product"
               />
             </div>
 
             {showModal && (
               <AddEditModal
-                type="stores"
+                type="products"
                 mode={mode}
                 item={editItem}
                 categories={[]}
@@ -171,16 +164,16 @@ export default function StoresPage({ mode = "light", toggleMode, ...props }) {
                 onSave={async (values) => {
                   try {
                     if (!editItem) {
-                      await handleAddStore(values);
-                      toast.success("Store added!");
+                      await handleAddProduct(values);
+                      toast.success("Product added!");
                       closeModal();
                     } else {
-                      await handleUpdateStore(editItem.id, values);
-                      toast.success("Store updated!");
+                      await handleUpdateProduct(editItem.id, values);
+                      toast.success("Product updated!");
                       closeModal();
                     }
                   } catch (err) {
-                    toast.error(err.message || "Failed to save store");
+                    toast.error(err.message || "Failed to save product");
                   }
                 }}
               />
@@ -189,7 +182,7 @@ export default function StoresPage({ mode = "light", toggleMode, ...props }) {
               <SimpleModal
                 isOpen={true}
                 onClose={() => setErrorModal({ open: false, message: "" })}
-                title="Duplicate Store"
+                title="Duplicate Product"
                 mode={mode}
                 width="max-w-md"
               >

@@ -3,25 +3,20 @@ import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
 import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
-import HrHeader from "../layouts/hrHeader";
-import HrSidebar from "../layouts/hrSidebar";
-import useSidebar from "../hooks/useSidebar";
-import { useRouter } from "next/router";
-import { useUser } from "../hooks/useUser";
-import useLogout from "../hooks/useLogout";
-import SimpleFooter from "../layouts/simpleFooter";
 import { Icon } from "@iconify/react";
 import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
+import MainLayout from "@/layouts/MainLayout";
+import { useUser } from "../hooks/useUser";
+import useLogout from "../hooks/useLogout";
+import ErrorBoundary from "../components/ErrorBoundary";
 
-export default function WarehousesPage({ mode = "light", toggleMode }) {
+export default function WarehousesPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
   const [errorModal, setErrorModal] = useState({ open: false, message: "" });
-  const { isSidebarOpen, toggleSidebar, isMobile, windowWidth } = useSidebar();
-  const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
 
@@ -122,165 +117,139 @@ export default function WarehousesPage({ mode = "light", toggleMode }) {
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;
-  if (!user || windowWidth === null) {
-    router.push("/");
+  if (!user) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
     return null;
   }
 
   return (
-    <div
-      key={`warehouses-${user?.id}-${mode}`}
-      className={`min-h-screen flex flex-col ${
-        mode === "dark" ? "bg-gray-900 text-white" : " text-gray-900"
-      }`}
-    >
-      <HrHeader
-        toggleSidebar={toggleSidebar}
-        isSidebarOpen={isSidebarOpen}
-        user={user}
-        mode={mode}
-        toggleMode={toggleMode}
-        onLogout={handleLogout}
-      />
-      <div className="flex flex-1">
-        <HrSidebar
-          isOpen={isSidebarOpen}
-          user={user}
-          mode={mode}
-          toggleSidebar={toggleSidebar}
-          onLogout={handleLogout}
-          toggleMode={toggleMode}
-        />
-        <div
-          className={`flex-1 p-4 md:p-6 lg:p-8 transition-all ${
-            isSidebarOpen && !isMobile ? "ml-60" : "ml-0"
-          }`}
-        >
-          <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:warehouse" className="w-7 h-7 text-blue-900" />
-              Warehouse Management
-            </h1>
-            <p className="text-sm text-gray-500 mb-6">
-              Manage your warehouses here.
-            </p>
+    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+      <div className="flex-1 p-4 md:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <Icon icon="mdi:warehouse" className="w-7 h-7 text-blue-900" />
+            Warehouse Management
+          </h1>
+          <p className="text-sm text-gray-500 mb-6">
+            Manage your warehouses here.
+          </p>
 
-            {loading && (
-              <div className="flex items-center gap-2 text-blue-600 mb-4">
-                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" />{" "}
-                Loading...
-              </div>
-            )}
-            {error && <div className="text-red-600 mb-4">{error}</div>}
-
-            <div className="bg-white dark:bg-gray-900 rounded-xl">
-              <GenericTable
-                data={warehouses}
-                columns={[
-                  { header: "Warehouse", accessor: "name", sortable: true },
-                  { header: "Contact Person", accessor: "contact_person", sortable: true, render: (row) => {
-                    const user = users.find(u => u.id === row.contact_person);
-                    return user ? user.full_name : row.contact_person;
-                  } },
-                  { header: "Phone", accessor: "phone", sortable: true },
-                  { header: "Total Products", accessor: "total_products", sortable: false, render: () => "" },
-                  { header: "Stock", accessor: "stock", sortable: false, render: () => "" },
-                  { header: "Qty", accessor: "qty", sortable: false, render: () => "" },
-                ]}
-                onEdit={openEditModal}
-                onDelete={openConfirm}
-                onAddNew={openAddModal}
-                addNewLabel="Add New Warehouse"
-              />
+          {loading && (
+            <div className="flex items-center gap-2 text-blue-600 mb-4">
+              <Icon icon="mdi:loading" className="animate-spin w-5 h-5" />{" "}
+              Loading...
             </div>
+          )}
+          {error && <div className="text-red-600 mb-4">{error}</div>}
 
-            {showModal && (
-              <AddEditModal
-                type="warehouses"
-                mode={mode}
-                item={editItem}
-                categories={[]}
-                onClose={closeModal}
-                onSave={async (values) => {
-                  try {
-                    if (!editItem) {
-                      await handleAddWarehouse(values);
-                      toast.success("Warehouse added!");
-                      closeModal();
-                    } else {
-                      await handleUpdateWarehouse(editItem.id, values);
-                      toast.success("Warehouse updated!");
-                      closeModal();
-                    }
-                  } catch (err) {
-                    toast.error(err.message || "Failed to save warehouse");
+          <div className="bg-white dark:bg-gray-900 rounded-xl">
+            <GenericTable
+              data={warehouses}
+              columns={[
+                { header: "Warehouse", accessor: "name", sortable: true },
+                { header: "Contact Person", accessor: "contact_person", sortable: true, render: (row) => {
+                  const user = users.find(u => u.id === row.contact_person);
+                  return user ? user.full_name : row.contact_person;
+                } },
+                { header: "Phone", accessor: "phone", sortable: true },
+                { header: "Total Products", accessor: "total_products", sortable: false, render: () => "" },
+                { header: "Stock", accessor: "stock", sortable: false, render: () => "" },
+                { header: "Qty", accessor: "qty", sortable: false, render: () => "" },
+              ]}
+              onEdit={openEditModal}
+              onDelete={openConfirm}
+              onAddNew={openAddModal}
+              addNewLabel="Add New Warehouse"
+            />
+          </div>
+
+          {showModal && (
+            <AddEditModal
+              type="warehouses"
+              mode={mode}
+              item={editItem}
+              categories={[]}
+              onClose={closeModal}
+              onSave={async (values) => {
+                try {
+                  if (!editItem) {
+                    await handleAddWarehouse(values);
+                    toast.success("Warehouse added!");
+                    closeModal();
+                  } else {
+                    await handleUpdateWarehouse(editItem.id, values);
+                    toast.success("Warehouse updated!");
+                    closeModal();
                   }
-                }}
-              />
-            )}
-            {errorModal.open && (
-              <SimpleModal
-                isOpen={true}
-                onClose={() => setErrorModal({ open: false, message: "" })}
-                title="Duplicate Warehouse"
-                mode={mode}
-                width="max-w-md"
-              >
-                <div className="py-6 text-center">
-                  <Icon
-                    icon="mdi:alert-circle"
-                    className="w-12 h-12 text-red-500 mx-auto mb-4"
-                  />
-                  <div className="text-lg font-semibold mb-2">
-                    {errorModal.message}
-                  </div>
+                } catch (err) {
+                  toast.error(err.message || "Failed to save warehouse");
+                }
+              }}
+            />
+          )}
+          {errorModal.open && (
+            <SimpleModal
+              isOpen={true}
+              onClose={() => setErrorModal({ open: false, message: "" })}
+              title="Duplicate Warehouse"
+              mode={mode}
+              width="max-w-md"
+            >
+              <div className="py-6 text-center">
+                <Icon
+                  icon="mdi:alert-circle"
+                  className="w-12 h-12 text-red-500 mx-auto mb-4"
+                />
+                <div className="text-lg font-semibold mb-2">
+                  {errorModal.message}
+                </div>
+                <button
+                  className="mt-4 px-6 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                  onClick={() => setErrorModal({ open: false, message: "" })}
+                >
+                  Close
+                </button>
+              </div>
+            </SimpleModal>
+          )}
+          {showConfirm && (
+            <SimpleModal
+              isOpen={true}
+              onClose={closeConfirm}
+              title="Confirm Delete"
+              mode={mode}
+              width="max-w-md"
+            >
+              <div className="py-6 text-center">
+                <Icon
+                  icon="mdi:alert"
+                  className="w-12 h-12 text-red-500 mx-auto mb-4"
+                />
+                <div className="text-lg font-semibold mb-2">
+                  Are you sure you want to delete {" "}
+                  <span className="font-semibold">{deleteItem?.name}</span>?
+                </div>
+                <div className="flex justify-center gap-4 mt-6">
                   <button
-                    className="mt-4 px-6 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                    onClick={() => setErrorModal({ open: false, message: "" })}
+                    className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
+                    onClick={closeConfirm}
                   >
-                    Close
+                    Cancel
+                  </button>
+                  <button
+                    className="px-6 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                    onClick={handleDelete}
+                  >
+                    Delete
                   </button>
                 </div>
-              </SimpleModal>
-            )}
-            {showConfirm && (
-              <SimpleModal
-                isOpen={true}
-                onClose={closeConfirm}
-                title="Confirm Delete"
-                mode={mode}
-                width="max-w-md"
-              >
-                <div className="py-6 text-center">
-                  <Icon
-                    icon="mdi:alert"
-                    className="w-12 h-12 text-red-500 mx-auto mb-4"
-                  />
-                  <div className="text-lg font-semibold mb-2">
-                    Are you sure you want to delete {" "}
-                    <span className="font-semibold">{deleteItem?.name}</span>?
-                  </div>
-                  <div className="flex justify-center gap-4 mt-6">
-                    <button
-                      className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
-                      onClick={closeConfirm}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-6 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
-                      onClick={handleDelete}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </SimpleModal>
-            )}
-          </div>
-          <SimpleFooter mode={mode} isSidebarOpen={isSidebarOpen} />
+              </div>
+            </SimpleModal>
+          )}
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 } 

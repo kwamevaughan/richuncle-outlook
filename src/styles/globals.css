@@ -169,11 +169,3 @@ body.sidebar-hidden .content-container {
   background-size: cover;
   background-repeat: no-repeat;
 }
-
-.bg-login-footer {
-  background-image: url('/assets/images/login-footer-bg.png');
-  background-position: top center;
-  background-repeat: no-repeat;
-  background-size: 100% auto;
-  min-height: 100px;
-}
