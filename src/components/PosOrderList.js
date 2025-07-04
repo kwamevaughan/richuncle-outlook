@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
+import { toast } from "react-hot-toast";
 
 const dummyOrder = {
   id: "ORD123",
@@ -50,7 +51,15 @@ const PosOrderList = ({ selectedProducts = [], quantities = {}, products = [], s
 
   const handleQty = (id, delta) => {
     if (!products.length) return;
+    const product = products.find(p => p.id === id);
     const qty = Math.max(1, (quantities[id] || 1) + delta);
+    
+    // Validate against stock
+    if (product && qty > product.quantity) {
+      toast.error(`Cannot exceed available stock of ${product.quantity} units.`);
+      return;
+    }
+    
     setQuantities(prev => ({ ...prev, [id]: qty }));
   };
 
@@ -179,6 +188,12 @@ const PosOrderList = ({ selectedProducts = [], quantities = {}, products = [], s
                     </button>
                   </div>
                   <div className="text-right font-semibold">GHS {(product.price * qty).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500 text-right mt-1">
+                    Stock: {product.quantity} | Ordered: {qty}
+                    {qty > product.quantity && (
+                      <span className="text-red-500 ml-1">⚠️ Exceeds stock</span>
+                    )}
+                  </div>
                 </div>
               );
             })}

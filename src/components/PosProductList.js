@@ -62,12 +62,29 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   }, [prodLoading]);
 
   const handleQuantityChange = (productId, value) => {
+    const product = products.find(p => p.id === productId);
     const val = Math.max(1, Number(value) || 1);
+    
+    // Validate against stock
+    if (product && val > product.quantity) {
+      toast.error(`Cannot exceed available stock of ${product.quantity} units.`);
+      return;
+    }
+    
     setQuantities((prev) => ({ ...prev, [productId]: val }));
   };
 
   const handleQuantityIncrement = (productId) => {
-    setQuantities((prev) => ({ ...prev, [productId]: (prev[productId] || 1) + 1 }));
+    const product = products.find(p => p.id === productId);
+    const currentQty = quantities[productId] || 1;
+    
+    // Validate against stock
+    if (product && currentQty >= product.quantity) {
+      toast.error(`Cannot exceed available stock of ${product.quantity} units.`);
+      return;
+    }
+    
+    setQuantities((prev) => ({ ...prev, [productId]: currentQty + 1 }));
   };
 
   const handleQuantityDecrement = (productId) => {
@@ -75,11 +92,32 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   };
 
   const toggleProductSelect = (productId) => {
+    const product = products.find(p => p.id === productId);
+    const currentQty = quantities[productId] || 1;
+    
+    // Check if product is already selected
+    if (selectedProducts.includes(productId)) {
+      // Remove from selection
+      setSelectedProducts((prev) => prev.filter((id) => id !== productId));
+      return;
+    }
+    
+    // Validate stock before adding
+    if (product && currentQty > product.quantity) {
+      toast.error(`Insufficient stock! Only ${product.quantity} units available.`);
+      return;
+    }
+    
+    // Add to selection
     setSelectedProducts((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
+      [...prev, productId]
     );
+  };
+
+  const getStockStatus = (quantity) => {
+    if (quantity <= 0) return { status: 'out', color: 'text-red-600', bg: 'bg-red-100' };
+    if (quantity < 10) return { status: 'low', color: 'text-orange-600', bg: 'bg-orange-100' };
+    return { status: 'available', color: 'text-green-600', bg: 'bg-green-100' };
   };
 
   return (
@@ -216,6 +254,20 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   })()}
                 </div>
                 <div className="font-semibold mb-1 self-start truncate max-w-[120px] overflow-hidden">{product.name}</div>
+
+                {/* Stock Status */}
+                <div className="self-start mb-1">
+                  {(() => {
+                    const stockStatus = getStockStatus(product.quantity);
+                    return (
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${stockStatus.bg} ${stockStatus.color}`}>
+                        {stockStatus.status === 'out' ? 'Out of Stock' : 
+                         stockStatus.status === 'low' ? `Low Stock (${product.quantity})` : 
+                         `In Stock (${product.quantity})`}
+                      </span>
+                    );
+                  })()}
+                </div>
 
                 <span className="border-t w-full py-1"></span>
 
