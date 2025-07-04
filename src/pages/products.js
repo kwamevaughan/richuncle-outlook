@@ -99,12 +99,31 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to add a new product
   const handleAddProduct = async (newProduct) => {
+    // Insert the product
     const { data, error } = await supabaseClient
       .from("products")
       .insert([newProduct])
       .select();
     if (error) throw error;
-    setProducts((prev) => [data[0], ...prev]);
+    const inserted = data[0];
+    // Fetch the full product row with joins
+    const selectString = "*, category:categories!products_category_id_fkey(name), brand:brands!brand_id(name), unit:units!unit_id(name)";
+    const { data: fullData, error: fetchError } = await supabaseClient
+      .from("products")
+      .select(selectString)
+      .eq("id", inserted.id)
+      .single();
+    if (fetchError) throw fetchError;
+    // Add the new product with joined fields to the state
+    setProducts((prev) => [
+      {
+        ...fullData,
+        category_name: fullData.category?.name || "",
+        brand_name: fullData.brand?.name || "",
+        unit_name: fullData.unit?.name || "",
+      },
+      ...prev,
+    ]);
   };
 
   // Add a helper to update a product

@@ -60,7 +60,13 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
   const [units, setUnits] = useState([]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [sellingType, setSellingType] = useState(item?.selling_type || "");
+  const [sellingType, setSellingType] = useState(
+    Array.isArray(item?.selling_type)
+      ? item.selling_type
+      : item?.selling_type
+        ? [item.selling_type]
+        : []
+  );
 
   // Helper to generate a code suggestion
   function suggestCategoryCode(name, existingCodes) {
@@ -138,6 +144,10 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
     if (type === "products" && !skuManuallyEdited && productName) {
       const base = productName.trim().toUpperCase().replace(/\s+/g, "-").substring(0, 10);
       setSku(base + "-" + Math.floor(1000 + Math.random() * 9000));
+    }
+    // Auto-generate barcode if not present and not editing an item
+    if (type === "products" && !item && productName && !barcode) {
+      setBarcode('BC' + Math.floor(100000000 + Math.random() * 900000000));
     }
   }, [productName, type, skuManuallyEdited]);
 
@@ -306,10 +316,6 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
       }
       if (!categoryId) {
         setError("Category is required");
-        return;
-      }
-      if (!brandId) {
-        setError("Brand is required");
         return;
       }
       if (!unitId) {
@@ -838,26 +844,41 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1 font-medium">Selling Type<span className="text-red-500">*</span></label>
-                  <select className="w-full border rounded px-3 py-2" value={sellingType} onChange={e => setSellingType(e.target.value)} disabled={loading}>
-                    <option value="">Select selling type</option>
-                    <option value="Online">Online</option>
-                    <option value="POS">POS</option>
-                  </select>
+                  <label className="block mb-1 font-medium">Selling Type</label>
+                  <div className="flex gap-4 mt-2">
+                    <label className="inline-flex items-center">
+                      <input
+                        type="checkbox"
+                        className="form-checkbox"
+                        checked={sellingType.includes('Online')}
+                        onChange={e => {
+                          if (e.target.checked) setSellingType(prev => [...prev, 'Online']);
+                          else setSellingType(prev => prev.filter(v => v !== 'Online'));
+                        }}
+                        disabled={loading}
+                      />
+                      <span className="ml-2">Online</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                      <input
+                        type="checkbox"
+                        className="form-checkbox"
+                        checked={sellingType.includes('POS')}
+                        onChange={e => {
+                          if (e.target.checked) setSellingType(prev => [...prev, 'POS']);
+                          else setSellingType(prev => prev.filter(v => v !== 'POS'));
+                        }}
+                        disabled={loading}
+                      />
+                      <span className="ml-2">POS</span>
+                    </label>
+                  </div>
                 </div>
               </div>
               <div className="mb-6">
                 <label className="block mb-1 font-medium">Item Barcode</label>
                 <div className="flex gap-2">
                   <input className="w-full border rounded px-3 py-2" value={barcode} onChange={e => setBarcode(e.target.value)} disabled={loading} placeholder="Barcode" />
-                  <button
-                    type="button"
-                    className="px-2 py-1 bg-blue-500 text-white rounded"
-                    onClick={() => setBarcode('BC' + Math.floor(100000000 + Math.random() * 900000000))}
-                    disabled={loading}
-                  >
-                    Generate
-                  </button>
                 </div>
               </div>
               {barcode && (
@@ -904,6 +925,31 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                 placeholder="e.g. TSHIR, FS, DJ, ACC"
               />
               <div className="text-xs text-gray-400 mt-1">Short, unique code for this category (e.g. TSHIR, FS, DJ, ACC)</div>
+            </div>
+          )}
+          {type === "categories" && (
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Description</label>
+              <textarea
+                className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                disabled={loading}
+                placeholder="Enter category description"
+                rows={2}
+              />
+            </div>
+          )}
+          {type === "categories" && (
+            <div className="mb-4 flex items-center gap-2">
+              <input
+                type="checkbox"
+                className="form-checkbox"
+                checked={isActive}
+                onChange={e => setIsActive(e.target.checked)}
+                disabled={loading}
+              />
+              <span className="text-sm">Active</span>
             </div>
           )}
           {type === "subcategories" && (
