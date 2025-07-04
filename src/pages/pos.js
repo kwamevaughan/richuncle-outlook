@@ -29,6 +29,20 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     fetchDiscounts();
   }, []);
 
+  // Calculate total for footer
+  const calculateTotal = () => {
+    const subtotal = selectedProducts.reduce((sum, id) => {
+      const product = products.find(p => p.id === id);
+      const qty = quantities[id] || 1;
+      return product ? sum + (product.price * qty) : sum;
+    }, 0);
+    
+    // For now, no discount/tax calculation in footer - just subtotal
+    return subtotal;
+  };
+
+  const totalPayable = calculateTotal();
+
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
     if (typeof window !== "undefined") {
@@ -67,7 +81,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           discounts={discounts}
         />
       </div>
-      <PosFooterActions />
+      <PosFooterActions totalPayable={totalPayable} hasProducts={selectedProducts.length > 0} />
     </MainLayout>
   );
 }

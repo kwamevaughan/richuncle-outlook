@@ -1,7 +1,7 @@
 import React from "react";
 import { Icon } from "@iconify/react";
 
-const PosFooterActions = () => (
+const PosFooterActions = ({ totalPayable = 0, hasProducts = false }) => (
   <div className="fixed bottom-0 left-0 w-full z-50 bg-white py-3 flex justify-center shadow-lg">
     <div className="relative flex justify-center items-center w-full max-w-5xl mx-auto px-4">
       <div className="flex gap-3">
@@ -23,7 +23,11 @@ const PosFooterActions = () => (
           Reset
         </button>
       </div>
-      <div className="font-bold whitespace-nowrap absolute right-6 top-1/2 -translate-y-1/2">Total Payable: N/A</div>
+      {hasProducts && (
+        <div className="font-bold whitespace-nowrap absolute right-6 top-1/2 -translate-y-1/2">
+          Total Payable: GHS {totalPayable.toLocaleString()}
+        </div>
+      )}
     </div>
   </div>
 );
