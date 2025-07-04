@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react";
 import { toast } from "react-hot-toast";
 import { AddEditModal } from "./AddEditModal";
 import SimpleModal from "./SimpleModal";
+import PaymentForm from "./PaymentForm";
 import { supabaseClient } from "../lib/supabase";
 import { playBellBeep } from "../utils/posSounds";
 
@@ -35,7 +36,6 @@ const dummyOrder = {
 const paymentMethods = [
   { key: "cash", label: "Cash", icon: "mdi:cash" },
   { key: "momo", label: "Momo", icon: "mdi:wallet-outline" },
-  { key: "card", label: "Card", icon: "mdi:credit-card-outline" },
   { key: "cheque", label: "Cheque", icon: "mdi:checkbook" },
   { key: "split", label: "Split Bill", icon: "mdi:call-split" },
 ];
@@ -64,17 +64,8 @@ const PosOrderList = ({
   const [barcodeProduct, setBarcodeProduct] = useState(null);
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeQty, setBarcodeQty] = useState(1);
-  const [showCashPaymentModal, setShowCashPaymentModal] = useState(false);
-  const [cashPaymentData, setCashPaymentData] = useState({
-    receivedAmount: "",
-    payingAmount: "",
-    change: 0,
-    paymentType: "cash",
-    paymentReceiver: "",
-    paymentNote: "",
-    saleNote: "",
-    staffNote: ""
-  });
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPaymentType, setSelectedPaymentType] = useState("");
 
   // Generate a unique order ID when component mounts
   useEffect(() => {
@@ -117,68 +108,25 @@ const PosOrderList = ({
 
   const handlePaymentSelection = (paymentMethod) => {
     setSelectedPayment(paymentMethod);
-    if (paymentMethod === "cash") {
-      setShowCashPaymentModal(true);
-      // Set paying amount to total by default
-      setCashPaymentData(prev => ({
-        ...prev,
-        payingAmount: total.toFixed(2)
-      }));
-    }
+    setSelectedPaymentType(paymentMethod);
+    setShowPaymentModal(true);
   };
 
-  const handleCashPaymentSubmit = async (e) => {
-    e.preventDefault();
+  const handlePaymentComplete = (paymentData) => {
+    // Here you would typically save the payment to database
+    console.log("Payment completed:", paymentData);
     
-    const received = parseFloat(cashPaymentData.receivedAmount);
-    const paying = parseFloat(cashPaymentData.payingAmount);
-    
-    if (received < paying) {
-      toast.error("Received amount must be greater than or equal to paying amount");
-      return;
-    }
-    
-    // Calculate change
-    const change = received - paying;
-    
-    // Here you would typically process the payment
-    console.log("Processing cash payment:", {
-      ...cashPaymentData,
-      change,
-      total,
-      orderId
-    });
-    
-    // Play success sound
-    playBellBeep();
-    
-    // Show success message
-    toast.success(`Cash payment processed! Change: GHS ${change.toFixed(2)}`);
-    
-    // Close modal and reset
-    setShowCashPaymentModal(false);
-    setCashPaymentData({
-      receivedAmount: "",
-      payingAmount: "",
-      change: 0,
-      paymentType: "cash",
-      paymentReceiver: "",
-      paymentNote: "",
-      saleNote: "",
-      staffNote: ""
-    });
+    // Reset payment selection
+    setSelectedPayment("");
+    setShowPaymentModal(false);
   };
 
-  const handleReceivedAmountChange = (value) => {
-    const received = parseFloat(value) || 0;
-    const paying = parseFloat(cashPaymentData.payingAmount) || 0;
-    const change = Math.max(0, received - paying);
-    
-    setCashPaymentData(prev => ({
-      ...prev,
-      receivedAmount: value,
-      change: change
-    }));
+  const handleCustomerChange = (selectedCustomer) => {
+    if (selectedCustomer) {
+      setSelectedCustomerId(selectedCustomer.id);
+    } else {
+      setSelectedCustomerId("");
+    }
   };
 
   // Calculate summary
@@ -586,182 +534,21 @@ const PosOrderList = ({
         </SimpleModal>
       )}
 
-      {/* Cash Payment Modal */}
-      {showCashPaymentModal && (
-        <SimpleModal
-          isOpen={true}
-          onClose={() => {
-            setShowCashPaymentModal(false);
-            setSelectedPayment("");
-          }}
-          title="Finalize Sale - Cash Payment"
-          mode="light"
-          width="max-w-2xl"
-        >
-          <form onSubmit={handleCashPaymentSubmit} className="space-y-6">
-            {/* Payment Summary */}
-            <div className="bg-blue-50 rounded-lg p-4 mb-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Order ID:</span>
-                  <span className="font-semibold ml-2">#{orderId}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Total Amount:</span>
-                  <span className="font-semibold ml-2 text-lg text-blue-700">GHS {total.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Amounts */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Received Amount <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={cashPaymentData.receivedAmount}
-                  onChange={(e) => handleReceivedAmountChange(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0.00"
-                  autoFocus
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Paying Amount <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={cashPaymentData.payingAmount}
-                  onChange={(e) => setCashPaymentData(prev => ({
-                    ...prev,
-                    payingAmount: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="0.00"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Change
-                </label>
-                <div className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold bg-gray-50 text-green-600">
-                  GHS {cashPaymentData.change.toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Type - Read Only */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Type
-              </label>
-              <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-700 font-medium flex items-center gap-2">
-                <Icon icon="mdi:cash" className="w-5 h-5 text-green-600" />
-                Cash Payment
-              </div>
-            </div>
-
-            {/* Payment Receiver */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Receiver
-              </label>
-              <input
-                type="text"
-                value={cashPaymentData.paymentReceiver}
-                onChange={(e) => setCashPaymentData(prev => ({
-                  ...prev,
-                  paymentReceiver: e.target.value
-                }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter receiver name"
-              />
-            </div>
-
-            {/* Notes Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Note
-                </label>
-                <textarea
-                  value={cashPaymentData.paymentNote}
-                  onChange={(e) => setCashPaymentData(prev => ({
-                    ...prev,
-                    paymentNote: e.target.value
-                  }))}
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Type your message"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sale Note
-                </label>
-                <textarea
-                  value={cashPaymentData.saleNote}
-                  onChange={(e) => setCashPaymentData(prev => ({
-                    ...prev,
-                    saleNote: e.target.value
-                  }))}
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Type your message"
-                />
-              </div>
-            </div>
-
-            {/* Staff Note */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Staff Note
-              </label>
-              <textarea
-                value={cashPaymentData.staffNote}
-                onChange={(e) => setCashPaymentData(prev => ({
-                  ...prev,
-                  staffNote: e.target.value
-                }))}
-                rows={2}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Internal staff notes"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-4 pt-4 border-t">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCashPaymentModal(false);
-                  setSelectedPayment("");
-                }}
-                className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
-              >
-                <Icon icon="mdi:cash-register" className="w-5 h-5" />
-                Process Payment
-              </button>
-            </div>
-          </form>
-        </SimpleModal>
-      )}
+      {/* Payment Form Modal */}
+      <PaymentForm
+        isOpen={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setSelectedPayment("");
+        }}
+        paymentType={selectedPaymentType}
+        total={total}
+        orderId={orderId}
+        onPaymentComplete={handlePaymentComplete}
+        customer={customers.find(c => c.id === selectedCustomerId)}
+        customers={customers}
+        onCustomerChange={handleCustomerChange}
+      />
     </div>
   );
 };
