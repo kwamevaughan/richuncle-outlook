@@ -36,10 +36,19 @@ const paymentMethods = [
   { key: "split", label: "Split Bill", icon: "mdi:call-split" },
 ];
 
-const PosOrderList = ({ selectedProducts = [], quantities = {}, products = [], setSelectedProducts, setQuantities, discounts = [] }) => {
+const PosOrderList = ({ 
+  selectedProducts = [], 
+  quantities = {}, 
+  products = [], 
+  setSelectedProducts, 
+  setQuantities, 
+  discounts = [],
+  selectedDiscountId,
+  setSelectedDiscountId,
+  roundoffEnabled,
+  setRoundoffEnabled
+}) => {
   const [selectedPayment, setSelectedPayment] = useState("");
-  const [roundoffEnabled, setRoundoffEnabled] = useState(true);
-  const [selectedDiscountId, setSelectedDiscountId] = useState("");
   const [orderId, setOrderId] = useState("");
 
   // Generate a unique order ID when component mounts

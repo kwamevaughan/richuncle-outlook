@@ -17,6 +17,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [quantities, setQuantities] = useState({});
   const [products, setProducts] = useState([]);
   const [discounts, setDiscounts] = useState([]);
+  const [selectedDiscountId, setSelectedDiscountId] = useState("");
+  const [roundoffEnabled, setRoundoffEnabled] = useState(true);
 
   useEffect(() => {
     async function fetchDiscounts() {
@@ -37,8 +39,27 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       return product ? sum + (product.price * qty) : sum;
     }, 0);
     
-    // For now, no discount/tax calculation in footer - just subtotal
-    return subtotal;
+    // Calculate discount
+    let discount = 0;
+    if (selectedDiscountId) {
+      const discountObj = discounts.find(d => d.id === selectedDiscountId);
+      if (discountObj) {
+        const discountType = discountObj.type || "percent";
+        if (discountType === "percent") {
+          discount = Math.round(subtotal * (Number(discountObj.value) / 100));
+        } else {
+          discount = Number(discountObj.value);
+        }
+      }
+    }
+    
+    // Calculate tax and roundoff
+    const tax = 0; // For now, tax is 0
+    const roundoff = roundoffEnabled ? 0 : 0; // For now, roundoff is 0
+    
+    // Calculate total
+    const total = subtotal + tax - discount + roundoff;
+    return total;
   };
 
   const totalPayable = calculateTotal();
@@ -79,6 +100,10 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           setSelectedProducts={setSelectedProducts}
           setQuantities={setQuantities}
           discounts={discounts}
+          selectedDiscountId={selectedDiscountId}
+          setSelectedDiscountId={setSelectedDiscountId}
+          roundoffEnabled={roundoffEnabled}
+          setRoundoffEnabled={setRoundoffEnabled}
         />
       </div>
       <PosFooterActions totalPayable={totalPayable} hasProducts={selectedProducts.length > 0} />
