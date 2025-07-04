@@ -5,15 +5,14 @@ import Image from "next/image";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 
-const PosProductList = ({ user }) => {
+const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts }) => {
   const { categories, loading: catLoading, error: catError } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [products, setProducts] = useState([]);
+  const [products, _setProducts] = useState([]);
   const [prodLoading, setProdLoading] = useState(false);
   const [prodError, setProdError] = useState(null);
   const [search, setSearch] = useState("");
   const [reloadFlag, setReloadFlag] = useState(0);
-  const [quantities, setQuantities] = useState({});
 
   // Fetch products when selectedCategory changes or reloadFlag changes
   useEffect(() => {
@@ -27,6 +26,7 @@ const PosProductList = ({ user }) => {
     query
       .then(({ data, error }) => {
         if (error) setProdError(error.message || "Failed to load products");
+        _setProducts(data || []);
         setProducts(data || []);
       })
       .catch((err) => setProdError(err.message || "Failed to load products"))
@@ -74,9 +74,17 @@ const PosProductList = ({ user }) => {
     setQuantities((prev) => ({ ...prev, [productId]: Math.max(1, (prev[productId] || 1) - 1) }));
   };
 
+  const toggleProductSelect = (productId) => {
+    setSelectedProducts((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
   return (
     <div className="flex-1">
-      <div className="flex rounded-lg  overflow-hidden h-screen min-h-0">
+      <div className="flex rounded-lg overflow-hidden h-screen">
         {/* Vertical Tabs: Categories */}
         <div className="flex flex-col border-r w-30 bg-gray-50 py-2 gap-2 min-h-0 overflow-auto">
           {/* All tab */}
@@ -174,8 +182,20 @@ const PosProductList = ({ user }) => {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="border rounded-lg p-3 flex flex-col items-center bg-gray-50 hover:shadow-lg transition"
+                className={`group relative border-2 rounded-lg p-3 flex flex-col items-center bg-gray-50 hover:shadow-lg transition cursor-pointer
+                  ${selectedProducts.includes(product.id) ? 'border-green-500 shadow-green-100' : 'border-gray-200'}
+                  group-hover:border-green-500 group-hover:shadow-green-100
+                `}
+                style={{ boxShadow: selectedProducts.includes(product.id) ? '0 0 0 0 #22c55e' : undefined }}
+                onMouseEnter={e => e.currentTarget.classList.add('border-green-500', 'shadow-green-100')}
+                onMouseLeave={e => !selectedProducts.includes(product.id) && e.currentTarget.classList.remove('border-green-500', 'shadow-green-100')}
+                onClick={() => toggleProductSelect(product.id)}
               >
+                {(selectedProducts.includes(product.id) || true /* always show on hover */) && (
+                  <span className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-500 ${selectedProducts.includes(product.id) ? 'opacity-100' : ''}`}>
+                    <Icon icon="mdi:check" className="w-2 h-2 text-white" />
+                  </span>
+                )}
                 {product.image_url && (
                   <div className="w-full flex items-center justify-center mb-2 bg-gray-100 rounded p-2 ">
                     <Image
@@ -183,7 +203,7 @@ const PosProductList = ({ user }) => {
                       alt={product.name}
                       width={112}
                       height={112}
-                      className="object-cover rounded w-28 h-28 "
+                      className="object-cover rounded w-28 h-28 transition-transform duration-500 group-hover:scale-110"
                     />
                   </div>
                 )}
@@ -195,37 +215,13 @@ const PosProductList = ({ user }) => {
                     return cat ? cat.name : "";
                   })()}
                 </div>
-                <div className="font-semibold mb-1 self-start">{product.name}</div>
+                <div className="font-semibold mb-1 self-start truncate max-w-[120px] overflow-hidden">{product.name}</div>
 
                 <span className="border-t w-full py-1"></span>
 
                 <div className="flex items-center gap-1 self-start mt-1 whitespace-nowrap">
                   <span className="text-sm font-bold text-blue-700  ">GHS {product.price}</span>
-                  <div className="flex items-center gap-0.5">
-                    <button
-                      type="button"
-                      className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700 transition"
-                      onClick={() => handleQuantityDecrement(product.id)}
-                      aria-label="Decrease quantity"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      value={quantities[product.id] || 1}
-                      onChange={e => handleQuantityChange(product.id, e.target.value)}
-                      className="w-10 text-center bg-transparent border-none focus:ring-0 text-xs font-semibold mx-0"
-                    />
-                    <button
-                      type="button"
-                      className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700 transition"
-                      onClick={() => handleQuantityIncrement(product.id)}
-                      aria-label="Increase quantity"
-                    >
-                      +
-                    </button>
-                  </div>
+                  
                 </div>
               </div>
             ))}
