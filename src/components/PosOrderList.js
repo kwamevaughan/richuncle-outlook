@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "react-hot-toast";
+import { AddEditModal } from "./AddEditModal";
+import SimpleModal from "./SimpleModal";
+import { supabaseClient } from "../lib/supabase";
+import { playBellBeep } from "../utils/posSounds";
 
 const dummyOrder = {
   id: "ORD123",
@@ -46,10 +50,31 @@ const PosOrderList = ({
   selectedDiscountId,
   setSelectedDiscountId,
   roundoffEnabled,
-  setRoundoffEnabled
+  setRoundoffEnabled,
+  customers = [],
+  setCustomers
 }) => {
+
   const [selectedPayment, setSelectedPayment] = useState("");
   const [orderId, setOrderId] = useState("");
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [barcodeProduct, setBarcodeProduct] = useState(null);
+  const [barcodeError, setBarcodeError] = useState("");
+  const [barcodeQty, setBarcodeQty] = useState(1);
+  const [showCashPaymentModal, setShowCashPaymentModal] = useState(false);
+  const [cashPaymentData, setCashPaymentData] = useState({
+    receivedAmount: "",
+    payingAmount: "",
+    change: 0,
+    paymentType: "cash",
+    paymentReceiver: "",
+    paymentNote: "",
+    saleNote: "",
+    staffNote: ""
+  });
 
   // Generate a unique order ID when component mounts
   useEffect(() => {
@@ -84,6 +109,76 @@ const PosOrderList = ({
   const handleClearAll = () => {
     setSelectedProducts([]);
     setQuantities({});
+  };
+
+  const handleAddCustomer = () => {
+    setShowCustomerModal(true);
+  };
+
+  const handlePaymentSelection = (paymentMethod) => {
+    setSelectedPayment(paymentMethod);
+    if (paymentMethod === "cash") {
+      setShowCashPaymentModal(true);
+      // Set paying amount to total by default
+      setCashPaymentData(prev => ({
+        ...prev,
+        payingAmount: total.toFixed(2)
+      }));
+    }
+  };
+
+  const handleCashPaymentSubmit = async (e) => {
+    e.preventDefault();
+    
+    const received = parseFloat(cashPaymentData.receivedAmount);
+    const paying = parseFloat(cashPaymentData.payingAmount);
+    
+    if (received < paying) {
+      toast.error("Received amount must be greater than or equal to paying amount");
+      return;
+    }
+    
+    // Calculate change
+    const change = received - paying;
+    
+    // Here you would typically process the payment
+    console.log("Processing cash payment:", {
+      ...cashPaymentData,
+      change,
+      total,
+      orderId
+    });
+    
+    // Play success sound
+    playBellBeep();
+    
+    // Show success message
+    toast.success(`Cash payment processed! Change: GHS ${change.toFixed(2)}`);
+    
+    // Close modal and reset
+    setShowCashPaymentModal(false);
+    setCashPaymentData({
+      receivedAmount: "",
+      payingAmount: "",
+      change: 0,
+      paymentType: "cash",
+      paymentReceiver: "",
+      paymentNote: "",
+      saleNote: "",
+      staffNote: ""
+    });
+  };
+
+  const handleReceivedAmountChange = (value) => {
+    const received = parseFloat(value) || 0;
+    const paying = parseFloat(cashPaymentData.payingAmount) || 0;
+    const change = Math.max(0, received - paying);
+    
+    setCashPaymentData(prev => ({
+      ...prev,
+      receivedAmount: value,
+      change: change
+    }));
   };
 
   // Calculate summary
@@ -130,13 +225,21 @@ const PosOrderList = ({
             Customer Information
           </label>
           <div className="flex gap-2 mb-2">
-            <select className="border rounded px-3 py-2 w-full">
-              <option>{dummyOrder.customer.type}</option>
+            <select className="border rounded px-3 py-2 w-full" value={selectedCustomerId} onChange={e => setSelectedCustomerId(e.target.value)}>
+              <option value="">Walk In Customer</option>
+              {customers.map(customer => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name} - {customer.phone}
+                </option>
+              ))}
             </select>
-            <button className="bg-green-500 text-white p-2 rounded hover:bg-green-600">
+            <button 
+              className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+              onClick={handleAddCustomer}
+            >
               <Icon icon="mdi:account-plus" className="w-5 h-5" />
             </button>
-            <button className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+            <button className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700" onClick={() => setShowBarcodeModal(true)}>
               <Icon icon="mdi:fullscreen" className="w-5 h-5" />
             </button>
           </div>
@@ -250,10 +353,7 @@ const PosOrderList = ({
             <div className="flex justify-between items-center">
               <span>
                 Tax{" "}
-                <Icon
-                  icon="mdi:pencil"
-                  className="inline w-4 h-4 ml-1 text-gray-400 cursor-pointer"
-                />
+                
               </span>
               <span>GHS {tax.toLocaleString()}</span>
             </div>
@@ -261,16 +361,13 @@ const PosOrderList = ({
             <div className="flex justify-between items-center">
               <span className="text-red-500">
                 Discount
-                <Icon
-                  icon="mdi:pencil"
-                  className="inline w-4 h-4 ml-1 text-gray-400 cursor-pointer"
-                />
+                
               </span>
               <span className="text-red-500">
                 -GHS {discount.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between items-center">
+            {/* <div className="flex justify-between items-center">
               <span className="flex items-center gap-2">
                  Roundoff
                 <span
@@ -293,7 +390,7 @@ const PosOrderList = ({
               {roundoffEnabled && (
                 <span>+GHS {roundoff.toLocaleString()}</span>
               )}
-            </div>
+            </div> */}
             <div className="flex justify-between items-center font-bold mt-2">
               <span>Sub Total</span>
               <span>GHS {subtotal.toLocaleString()}</span>
@@ -310,12 +407,12 @@ const PosOrderList = ({
       {/* Payment Section */}
       <div className="bg-white rounded-lg p-6">
         <div className="mb-4">
-          <h3 className="text-xl font-bold mb-4">Select Payment</h3>
+          <h3 className="text-lg font-bold mb-4">Select Payment</h3>
           <div className="grid grid-cols-3 gap-3">
             {paymentMethods.map((pm) => (
               <button
                 key={pm.key}
-                onClick={() => setSelectedPayment(pm.key)}
+                onClick={() => handlePaymentSelection(pm.key)}
                 className={`
                   flex flex-row items-center justify-center gap-2 rounded-xl border-2 p-2 font-semibold text-sm transition
                   ${selectedPayment === pm.key
@@ -341,6 +438,330 @@ const PosOrderList = ({
             Place Order
           </button>
       </div>
+
+      {/* Customer Modal */}
+      {showCustomerModal && (
+        <AddEditModal
+          type="customers"
+          mode="light"
+          item={null}
+          categories={[]}
+          onClose={() => setShowCustomerModal(false)}
+          onSave={async (customerData) => {
+            try {
+              const { data, error } = await supabaseClient
+                .from("customers")
+                .insert([customerData])
+                .select();
+              if (error) throw error;
+              setCustomers(prev => [data[0], ...prev]);
+              toast.success("Customer added successfully!");
+              setShowCustomerModal(false);
+              setSelectedCustomerId(data[0].id); // auto-select new customer
+            } catch (err) {
+              toast.error(err.message || "Failed to add customer");
+            }
+          }}
+        />
+      )}
+
+      {showBarcodeModal && (
+        <SimpleModal
+          isOpen={true}
+          onClose={() => {
+            setShowBarcodeModal(false);
+            setBarcodeInput("");
+            setBarcodeProduct(null);
+            setBarcodeError("");
+            setBarcodeQty(1);
+          }}
+          title="Add Product by Barcode"
+          mode="light"
+          width="max-w-md"
+        >
+          <div className="space-y-4">
+            <label className="block font-semibold">Enter Barcode</label>
+            <input
+              className="w-full border rounded px-3 py-2"
+              value={barcodeInput}
+              onChange={e => {
+                const value = e.target.value;
+                setBarcodeInput(value);
+                setBarcodeError("");
+                if (!value.trim()) {
+                  setBarcodeProduct(null);
+                  setBarcodeError("");
+                  return;
+                }
+                const found = products.find(p => p.barcode === value.trim());
+                if (!found) {
+                  setBarcodeProduct(null);
+                  setBarcodeError("No product found with this barcode.");
+                } else {
+                  setBarcodeProduct(found);
+                  setBarcodeQty(quantities[found.id] || 1);
+                  setBarcodeError("");
+                  
+                  // Auto-add product to order list
+                  const qty = quantities[found.id] || 1;
+                  if (qty > found.quantity) {
+                    toast.error(`Cannot add ${qty} units. Only ${found.quantity} units available in stock.`);
+                    return;
+                  }
+                  
+                  if (!selectedProducts.includes(found.id)) {
+                    setSelectedProducts([...selectedProducts, found.id]);
+                    setQuantities(q => ({ ...q, [found.id]: qty }));
+                  } else {
+                    setQuantities(currentQuantities => {
+                      const newQty = (currentQuantities[found.id] || 1) + qty;
+                      if (newQty > found.quantity) {
+                        toast.error(`Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`);
+                        return currentQuantities; // Return unchanged quantities
+                      }
+                      return { ...currentQuantities, [found.id]: newQty };
+                    });
+                    return; // Exit early to prevent the success toast and modal close
+                  }
+                  
+                  // Play beep sound and show success message
+                  playBellBeep();
+                  toast.success(`Added ${found.name} to order list!`);
+                  setShowBarcodeModal(false);
+                  setBarcodeInput("");
+                  setBarcodeProduct(null);
+                  setBarcodeError("");
+                  setBarcodeQty(1);
+                }
+              }}
+              placeholder="Scan or enter barcode"
+              autoFocus
+            />
+            {barcodeError && <div className="text-red-500 text-sm">{barcodeError}</div>}
+          </div>
+          {barcodeProduct && (
+            <div className="mt-6 p-4 border rounded bg-gray-50">
+              <div className="font-bold mb-2">{barcodeProduct.name}</div>
+              <div className="mb-2">Price: GHS {barcodeProduct.price?.toLocaleString()}</div>
+              <div className="mb-2">Stock: {barcodeProduct.quantity}</div>
+              <div className="mb-2 flex items-center gap-2">
+                <span>Quantity:</span>
+                <button type="button" className="px-2 py-1 bg-gray-200 rounded" onClick={() => setBarcodeQty(q => Math.max(1, q - 1))}>-</button>
+                <input type="number" min="1" max={barcodeProduct.quantity} value={barcodeQty} onChange={e => setBarcodeQty(Number(e.target.value))} className="w-16 border rounded px-2 py-1" />
+                <button type="button" className="px-2 py-1 bg-gray-200 rounded" onClick={() => setBarcodeQty(q => Math.min(barcodeProduct.quantity, q + 1))}>+</button>
+              </div>
+              <button
+                className="w-full bg-green-600 text-white rounded py-2 font-semibold mt-2"
+                onClick={() => {
+                  if (barcodeQty > barcodeProduct.quantity) {
+                    toast.error(`Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`);
+                    return;
+                  }
+                  
+                  if (!selectedProducts.includes(barcodeProduct.id)) {
+                    setSelectedProducts([...selectedProducts, barcodeProduct.id]);
+                    setQuantities(q => ({ ...q, [barcodeProduct.id]: barcodeQty }));
+                  } else {
+                    const newQty = (q[barcodeProduct.id] || 1) + barcodeQty;
+                    if (newQty > barcodeProduct.quantity) {
+                      toast.error(`Cannot add ${barcodeQty} more units. Total would exceed available stock of ${barcodeProduct.quantity} units.`);
+                      return;
+                    }
+                    setQuantities(q => ({ ...q, [barcodeProduct.id]: newQty }));
+                  }
+                  // Play beep sound and show success message
+                  playBellBeep();
+                  setShowBarcodeModal(false);
+                  setBarcodeInput("");
+                  setBarcodeProduct(null);
+                  setBarcodeError("");
+                  setBarcodeQty(1);
+                  toast.success("Product added to order list!");
+                }}
+              >
+                Add to Order List
+              </button>
+            </div>
+          )}
+        </SimpleModal>
+      )}
+
+      {/* Cash Payment Modal */}
+      {showCashPaymentModal && (
+        <SimpleModal
+          isOpen={true}
+          onClose={() => {
+            setShowCashPaymentModal(false);
+            setSelectedPayment("");
+          }}
+          title="Finalize Sale - Cash Payment"
+          mode="light"
+          width="max-w-2xl"
+        >
+          <form onSubmit={handleCashPaymentSubmit} className="space-y-6">
+            {/* Payment Summary */}
+            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Order ID:</span>
+                  <span className="font-semibold ml-2">#{orderId}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Total Amount:</span>
+                  <span className="font-semibold ml-2 text-lg text-blue-700">GHS {total.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Amounts */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Received Amount <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={cashPaymentData.receivedAmount}
+                  onChange={(e) => handleReceivedAmountChange(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Paying Amount <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={cashPaymentData.payingAmount}
+                  onChange={(e) => setCashPaymentData(prev => ({
+                    ...prev,
+                    payingAmount: e.target.value
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Change
+                </label>
+                <div className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold bg-gray-50 text-green-600">
+                  GHS {cashPaymentData.change.toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Type - Read Only */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Type
+              </label>
+              <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-700 font-medium flex items-center gap-2">
+                <Icon icon="mdi:cash" className="w-5 h-5 text-green-600" />
+                Cash Payment
+              </div>
+            </div>
+
+            {/* Payment Receiver */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Receiver
+              </label>
+              <input
+                type="text"
+                value={cashPaymentData.paymentReceiver}
+                onChange={(e) => setCashPaymentData(prev => ({
+                  ...prev,
+                  paymentReceiver: e.target.value
+                }))}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter receiver name"
+              />
+            </div>
+
+            {/* Notes Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Note
+                </label>
+                <textarea
+                  value={cashPaymentData.paymentNote}
+                  onChange={(e) => setCashPaymentData(prev => ({
+                    ...prev,
+                    paymentNote: e.target.value
+                  }))}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Type your message"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sale Note
+                </label>
+                <textarea
+                  value={cashPaymentData.saleNote}
+                  onChange={(e) => setCashPaymentData(prev => ({
+                    ...prev,
+                    saleNote: e.target.value
+                  }))}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Type your message"
+                />
+              </div>
+            </div>
+
+            {/* Staff Note */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Staff Note
+              </label>
+              <textarea
+                value={cashPaymentData.staffNote}
+                onChange={(e) => setCashPaymentData(prev => ({
+                  ...prev,
+                  staffNote: e.target.value
+                }))}
+                rows={2}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Internal staff notes"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-4 pt-4 border-t">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCashPaymentModal(false);
+                  setSelectedPayment("");
+                }}
+                className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <Icon icon="mdi:cash-register" className="w-5 h-5" />
+                Process Payment
+              </button>
+            </div>
+          </form>
+        </SimpleModal>
+      )}
     </div>
   );
 };

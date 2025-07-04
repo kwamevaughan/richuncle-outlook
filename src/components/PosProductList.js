@@ -4,6 +4,7 @@ import { supabaseClient } from "@/lib/supabase";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
+import { playBellBeep } from "@/utils/posSounds";
 
 const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts }) => {
   const { categories, loading: catLoading, error: catError } = useCategories();
@@ -108,10 +109,9 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
       return;
     }
     
-    // Add to selection
-    setSelectedProducts((prev) =>
-      [...prev, productId]
-    );
+    // Add to selection and play beep sound
+    setSelectedProducts((prev) => [...prev, productId]);
+    playBellBeep();
   };
 
   const getStockStatus = (quantity) => {

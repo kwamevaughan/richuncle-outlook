@@ -19,6 +19,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [discounts, setDiscounts] = useState([]);
   const [selectedDiscountId, setSelectedDiscountId] = useState("");
   const [roundoffEnabled, setRoundoffEnabled] = useState(true);
+  const [customers, setCustomers] = useState([]);
 
   useEffect(() => {
     async function fetchDiscounts() {
@@ -29,6 +30,18 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       if (!error) setDiscounts(data || []);
     }
     fetchDiscounts();
+  }, []);
+
+  useEffect(() => {
+    async function fetchCustomers() {
+      const { data, error } = await supabaseClient
+        .from("customers")
+        .select("*")
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+      if (!error) setCustomers(data || []);
+    }
+    fetchCustomers();
   }, []);
 
   // Calculate total for footer
@@ -104,6 +117,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           setSelectedDiscountId={setSelectedDiscountId}
           roundoffEnabled={roundoffEnabled}
           setRoundoffEnabled={setRoundoffEnabled}
+          customers={customers}
+          setCustomers={setCustomers}
         />
       </div>
       <PosFooterActions totalPayable={totalPayable} hasProducts={selectedProducts.length > 0} />
