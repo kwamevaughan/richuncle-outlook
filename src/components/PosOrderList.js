@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import { AddEditModal } from "./AddEditModal";
 import SimpleModal from "./SimpleModal";
 import PaymentForm from "./PaymentForm";
+import PrintReceipt from "./PrintReceipt";
 import { supabaseClient } from "../lib/supabase";
 import { playBellBeep } from "../utils/posSounds";
 
@@ -136,6 +137,29 @@ const PosOrderList = ({
       setSelectedCustomerId(selectedCustomer.id);
     } else {
       setSelectedCustomerId("");
+    }
+  };
+
+  const handlePrintOrder = () => {
+    const printReceipt = PrintReceipt({
+      orderId,
+      selectedProducts,
+      quantities,
+      products,
+      subtotal,
+      tax,
+      discount,
+      total,
+      selectedCustomerId,
+      customers,
+      paymentData
+    });
+
+    const success = printReceipt.printOrder();
+    if (success) {
+      toast.success("Print dialog should open shortly...");
+    } else {
+      toast.error("No products to print");
     }
   };
 
@@ -548,7 +572,15 @@ const PosOrderList = ({
       </div>
 
         <div className="flex gap-4">
-          <button className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg py-3 font-semibold text-gray-700 hover:bg-gray-100 transition">
+          <button 
+            onClick={handlePrintOrder}
+            disabled={selectedProducts.length === 0}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 font-semibold transition ${
+              selectedProducts.length > 0
+                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
+          >
             <Icon icon="mdi:printer-outline" className="w-5 h-5" />
             Print Order
           </button>
