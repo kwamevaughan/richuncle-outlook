@@ -30,7 +30,16 @@ const PaymentForm = ({
     customerPhone: "",
     transactionId: "",
     chequeNumber: "",
-    bankName: ""
+    bankName: "",
+    accountHolderName: "",
+    accountNumber: "",
+    chequeDate: "",
+    chequeAmount: "",
+    chequeStatus: "pending",
+    expectedClearanceDate: "",
+    // Split payment fields
+    splitPayments: [],
+    remainingAmount: total
   });
 
   // Reset form when payment type changes
@@ -59,12 +68,15 @@ const PaymentForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const received = parseFloat(paymentData.receivedAmount);
-    const paying = parseFloat(paymentData.payingAmount);
-    
-    if (received < paying) {
-      toast.error("Received amount must be greater than or equal to paying amount");
-      return;
+    // Skip received/paying amount validation for split payments
+    if (paymentType !== "split") {
+      const received = parseFloat(paymentData.receivedAmount);
+      const paying = parseFloat(paymentData.payingAmount);
+      
+      if (received < paying) {
+        toast.error("Received amount must be greater than or equal to paying amount");
+        return;
+      }
     }
     
     // Validate MoMo-specific fields
@@ -82,32 +94,121 @@ const PaymentForm = ({
         return;
       }
     }
+
+    // Validate Cheque-specific fields
+    if (paymentType === "cheque") {
+      if (!paymentData.chequeNumber) {
+        toast.error("Please enter cheque number");
+        return;
+      }
+      if (!paymentData.bankName) {
+        toast.error("Please select bank name");
+        return;
+      }
+      if (!paymentData.accountHolderName) {
+        toast.error("Please enter account holder name");
+        return;
+      }
+      if (!paymentData.chequeDate) {
+        toast.error("Please enter cheque date");
+        return;
+      }
+      if (!paymentData.chequeAmount) {
+        toast.error("Please enter cheque amount");
+        return;
+      }
+      
+      // Validate cheque amount matches order total
+      const chequeAmount = parseFloat(paymentData.chequeAmount);
+      if (chequeAmount !== total) {
+        toast.error(`Cheque amount (GHS ${chequeAmount}) must match order total (GHS ${total})`);
+        return;
+      }
+      
+      // Validate cheque date is not post-dated
+      const chequeDate = new Date(paymentData.chequeDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (chequeDate > today) {
+        toast.error("Post-dated cheques are not accepted");
+        return;
+      }
+    }
+
+    // Validate Split Payment-specific fields
+    if (paymentType === "split") {
+      if (paymentData.splitPayments.length === 0) {
+        toast.error("Please add at least one payment method");
+        return;
+      }
+      
+      if (paymentData.remainingAmount > 0) {
+        toast.error(`Payment incomplete. Remaining amount: GHS ${paymentData.remainingAmount.toLocaleString()}`);
+        return;
+      }
+      
+      // Validate each split payment has required fields
+      for (let i = 0; i < paymentData.splitPayments.length; i++) {
+        const payment = paymentData.splitPayments[i];
+        
+        if (payment.method === "momo") {
+          if (!payment.momoProvider) {
+            toast.error(`Please select mobile money provider for payment ${i + 1}`);
+            return;
+          }
+          if (!payment.customerPhone) {
+            toast.error(`Please enter customer phone for payment ${i + 1}`);
+            return;
+          }
+          if (!payment.referenceNumber) {
+            toast.error(`Please enter transaction reference for payment ${i + 1}`);
+            return;
+          }
+        }
+        
+        if (payment.method === "cheque") {
+          if (!payment.chequeNumber) {
+            toast.error(`Please enter cheque number for payment ${i + 1}`);
+            return;
+          }
+          if (!payment.bankName) {
+            toast.error(`Please select bank for payment ${i + 1}`);
+            return;
+          }
+          if (!payment.chequeDate) {
+            toast.error(`Please enter cheque date for payment ${i + 1}`);
+            return;
+          }
+        }
+      }
+    }
     
-    // Calculate change
-    const change = received - paying;
+    // Calculate change (only for non-split payments)
+    let change = 0;
+    if (paymentType !== "split") {
+      const received = parseFloat(paymentData.receivedAmount);
+      const paying = parseFloat(paymentData.payingAmount);
+      change = received - paying;
+    }
     
-    // Here you would typically process the payment
-    console.log("Processing payment:", {
+    // Prepare payment data for parent component
+    const paymentInfo = {
       ...paymentData,
       change,
       total,
-      orderId
-    });
+      orderId,
+      paymentType
+    };
     
-    // Play success sound
-    playBellBeep();
+    if (paymentType === "split") {
+      paymentInfo.splitPayments = paymentData.splitPayments;
+      paymentInfo.totalPaid = total - paymentData.remainingAmount;
+      paymentInfo.remainingAmount = paymentData.remainingAmount;
+    }
     
-    // Show success message
-    toast.success(`${getPaymentTypeLabel(paymentType)} payment processed! Change: GHS ${change.toFixed(2)}`);
-    
-    // Call parent callback
+    // Call parent callback with payment data
     if (onPaymentComplete) {
-      onPaymentComplete({
-        ...paymentData,
-        change,
-        total,
-        orderId
-      });
+      onPaymentComplete(paymentInfo);
     }
     
     // Close modal
@@ -120,7 +221,8 @@ const PaymentForm = ({
       momo: "Mobile Money",
       card: "Card",
       cheque: "Cheque",
-      bank_transfer: "Bank Transfer"
+      bank_transfer: "Bank Transfer",
+      split: "Split Payment"
     };
     return labels[type] || type;
   };
@@ -131,7 +233,8 @@ const PaymentForm = ({
       momo: "mdi:wallet-outline",
       card: "mdi:credit-card-outline",
       cheque: "mdi:checkbook",
-      bank_transfer: "mdi:bank"
+      bank_transfer: "mdi:bank",
+      split: "mdi:call-split"
     };
     return icons[type] || "mdi:cash";
   };
@@ -296,36 +399,236 @@ const PaymentForm = ({
 
       case "cheque":
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cheque Number
-              </label>
-              <input
-                type="text"
-                value={paymentData.chequeNumber}
-                onChange={(e) => setPaymentData(prev => ({
-                  ...prev,
-                  chequeNumber: e.target.value
-                }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter cheque number"
-              />
+          <div className="space-y-4">
+            {/* Cheque Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cheque Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={paymentData.chequeNumber}
+                  onChange={(e) => setPaymentData(prev => ({
+                    ...prev,
+                    chequeNumber: e.target.value
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter cheque number"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bank Name <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={paymentData.bankName}
+                  onChange={(e) => setPaymentData(prev => ({
+                    ...prev,
+                    bankName: e.target.value
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select Bank</option>
+                  <option value="ghana_commercial_bank">Ghana Commercial Bank (GCB)</option>
+                  <option value="ecobank">Ecobank Ghana</option>
+                  <option value="barclays">Barclays Bank Ghana</option>
+                  <option value="standard_chartered">Standard Chartered Bank Ghana</option>
+                  <option value="cal_bank">CAL Bank</option>
+                  <option value="fidelity_bank">Fidelity Bank Ghana</option>
+                  <option value="zenith_bank">Zenith Bank Ghana</option>
+                  <option value="access_bank">Access Bank Ghana</option>
+                  <option value="gt_bank">GT Bank Ghana</option>
+                  <option value="uni_bank">UniBank Ghana</option>
+                  <option value="other">Other Bank</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Bank Name
-              </label>
-              <input
-                type="text"
-                value={paymentData.bankName}
-                onChange={(e) => setPaymentData(prev => ({
-                  ...prev,
-                  bankName: e.target.value
-                }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter bank name"
-              />
+
+            {/* Account Holder Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Account Holder Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={paymentData.accountHolderName || ""}
+                  onChange={(e) => setPaymentData(prev => ({
+                    ...prev,
+                    accountHolderName: e.target.value
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Name on cheque"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Account Number
+                </label>
+                <input
+                  type="text"
+                  value={paymentData.accountNumber || ""}
+                  onChange={(e) => setPaymentData(prev => ({
+                    ...prev,
+                    accountNumber: e.target.value
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Account number (optional)"
+                />
+              </div>
+            </div>
+
+            {/* Cheque Date and Amount */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cheque Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={paymentData.chequeDate || ""}
+                  onChange={(e) => setPaymentData(prev => ({
+                    ...prev,
+                    chequeDate: e.target.value
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cheque Amount <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={paymentData.chequeAmount || ""}
+                  onChange={(e) => setPaymentData(prev => ({
+                    ...prev,
+                    chequeAmount: e.target.value
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Amount on cheque"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Cheque Status and Notes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cheque Status
+                </label>
+                <select
+                  value={paymentData.chequeStatus || "pending"}
+                  onChange={(e) => setPaymentData(prev => ({
+                    ...prev,
+                    chequeStatus: e.target.value
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="pending">Pending Clearance</option>
+                  <option value="cleared">Cleared</option>
+                  <option value="bounced">Bounced</option>
+                  <option value="post_dated">Post Dated</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Expected Clearance Date
+                </label>
+                <input
+                  type="date"
+                  value={paymentData.expectedClearanceDate || ""}
+                  onChange={(e) => setPaymentData(prev => ({
+                    ...prev,
+                    expectedClearanceDate: e.target.value
+                  }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Expected clearance date"
+                />
+              </div>
+            </div>
+
+            {/* Cheque Verification */}
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon icon="mdi:alert-circle-outline" className="w-5 h-5 text-orange-600" />
+                <span className="font-semibold text-orange-800">Cheque Verification Checklist</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="cheque_date_valid"
+                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <label htmlFor="cheque_date_valid" className="text-orange-700">Cheque date is valid (not post-dated)</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="cheque_amount_correct"
+                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <label htmlFor="cheque_amount_correct" className="text-orange-700">Amount matches order total</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="cheque_signed"
+                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <label htmlFor="cheque_signed" className="text-orange-700">Cheque is properly signed</label>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="cheque_not_altered"
+                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <label htmlFor="cheque_not_altered" className="text-orange-700">No alterations on cheque</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="bank_details_correct"
+                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <label htmlFor="bank_details_correct" className="text-orange-700">Bank details are correct</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="customer_id_verified"
+                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <label htmlFor="customer_id_verified" className="text-orange-700">Customer ID verified</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Important Notice */}
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Icon icon="mdi:information-outline" className="w-5 h-5 text-red-600" />
+                <span className="font-semibold text-red-800">Important Notice</span>
+              </div>
+              <div className="text-sm text-red-700">
+                <div>• Cheque payments are subject to clearance (typically 3-5 business days)</div>
+                <div>• Goods will be released only after cheque clearance confirmation</div>
+                <div>• Post-dated cheques are not accepted unless pre-approved</div>
+                <div>• Customer must provide valid ID for cheque payments</div>
+              </div>
             </div>
           </div>
         );
@@ -363,6 +666,600 @@ const PaymentForm = ({
                 placeholder="Enter transfer reference"
               />
             </div>
+          </div>
+        );
+
+      case "split":
+        return (
+          <div className="space-y-4">
+            {/* Split Payment Summary */}
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon icon="mdi:call-split" className="w-5 h-5 text-purple-600" />
+                <span className="font-semibold text-purple-800">Split Payment Summary</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Total Amount:</span>
+                  <span className="font-semibold ml-2 text-lg text-purple-700">GHS {total.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Paid Amount:</span>
+                  <span className="font-semibold ml-2 text-lg text-green-600">
+                    GHS {(total - paymentData.remainingAmount).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Remaining:</span>
+                  <span className="font-semibold ml-2 text-lg text-orange-600">
+                    GHS {paymentData.remainingAmount.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Add Payment Method */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon icon="mdi:plus-circle" className="w-5 h-5 text-blue-600" />
+                <span className="font-semibold text-gray-800">Add Payment Method</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Method <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentData.newSplitMethod || ""}
+                    onChange={(e) => setPaymentData(prev => ({
+                      ...prev,
+                      newSplitMethod: e.target.value
+                    }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Method</option>
+                    <option value="cash">Cash</option>
+                    <option value="momo">Mobile Money</option>
+                    <option value="card">Card</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Amount <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    max={paymentData.remainingAmount}
+                    value={paymentData.newSplitAmount || ""}
+                    onChange={(e) => {
+                      const amount = parseFloat(e.target.value) || 0;
+                      const remaining = paymentData.remainingAmount - amount;
+                      setPaymentData(prev => ({
+                        ...prev,
+                        newSplitAmount: e.target.value,
+                        newSplitRemaining: Math.max(0, remaining)
+                      }));
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={`Max: GHS ${paymentData.remainingAmount.toLocaleString()}`}
+                  />
+                </div>
+                
+                                 <div className="flex items-end gap-2">
+                   {paymentData.editingPayment && (
+                     <button
+                       type="button"
+                       onClick={() => {
+                         setPaymentData(prev => ({
+                           ...prev,
+                           editingPayment: null,
+                           newSplitMethod: "",
+                           newSplitAmount: "",
+                           newSplitRemaining: 0,
+                           momoProvider: "",
+                           customerPhone: "",
+                           referenceNumber: "",
+                           chequeNumber: "",
+                           bankName: "",
+                           chequeDate: ""
+                         }));
+                       }}
+                       className="w-full bg-gray-500 text-white rounded-lg px-4 py-3 font-medium hover:bg-gray-600 transition-colors"
+                     >
+                       Cancel Edit
+                     </button>
+                   )}
+                   <button
+                    type="button"
+                                         onClick={() => {
+                       if (!paymentData.newSplitMethod || !paymentData.newSplitAmount) {
+                         toast.error("Please select payment method and enter amount");
+                         return;
+                       }
+                       
+                       const amount = parseFloat(paymentData.newSplitAmount);
+                       
+                       if (paymentData.editingPayment) {
+                         // Update existing payment
+                         const existingPayment = paymentData.splitPayments.find(p => p.id === paymentData.editingPayment);
+                         if (!existingPayment) {
+                           toast.error("Payment not found for editing");
+                           return;
+                         }
+                         
+                         const amountDifference = amount - existingPayment.amount;
+                         if (amountDifference > paymentData.remainingAmount) {
+                           toast.error("Amount increase cannot exceed remaining balance");
+                           return;
+                         }
+                         
+                         const updatedPayment = {
+                           ...existingPayment,
+                           method: paymentData.newSplitMethod,
+                           amount: amount,
+                           momoProvider: paymentData.momoProvider,
+                           customerPhone: paymentData.customerPhone,
+                           referenceNumber: paymentData.referenceNumber,
+                           chequeNumber: paymentData.chequeNumber,
+                           bankName: paymentData.bankName,
+                           chequeDate: paymentData.chequeDate
+                         };
+                         
+                         setPaymentData(prev => ({
+                           ...prev,
+                           splitPayments: prev.splitPayments.map(p => 
+                             p.id === paymentData.editingPayment ? updatedPayment : p
+                           ),
+                           remainingAmount: prev.remainingAmount - amountDifference,
+                           editingPayment: null,
+                           newSplitMethod: "",
+                           newSplitAmount: "",
+                           newSplitRemaining: 0,
+                           momoProvider: "",
+                           customerPhone: "",
+                           referenceNumber: "",
+                           chequeNumber: "",
+                           bankName: "",
+                           chequeDate: ""
+                         }));
+                         
+                         toast.success(`Payment updated to ${getPaymentTypeLabel(paymentData.newSplitMethod)} - GHS ${amount.toLocaleString()}`);
+                       } else {
+                         // Add new payment
+                         if (amount > paymentData.remainingAmount) {
+                           toast.error("Amount cannot exceed remaining balance");
+                           return;
+                         }
+                         
+                         const newPayment = {
+                           id: Date.now(),
+                           method: paymentData.newSplitMethod,
+                           amount: amount,
+                           status: 'pending',
+                           timestamp: new Date().toISOString(),
+                           momoProvider: paymentData.momoProvider,
+                           customerPhone: paymentData.customerPhone,
+                           referenceNumber: paymentData.referenceNumber,
+                           chequeNumber: paymentData.chequeNumber,
+                           bankName: paymentData.bankName,
+                           chequeDate: paymentData.chequeDate
+                         };
+                         
+                         setPaymentData(prev => ({
+                           ...prev,
+                           splitPayments: [...prev.splitPayments, newPayment],
+                           remainingAmount: prev.remainingAmount - amount,
+                           newSplitMethod: "",
+                           newSplitAmount: "",
+                           newSplitRemaining: 0,
+                           momoProvider: "",
+                           customerPhone: "",
+                           referenceNumber: "",
+                           chequeNumber: "",
+                           bankName: "",
+                           chequeDate: ""
+                         }));
+                         
+                         toast.success(`${getPaymentTypeLabel(paymentData.newSplitMethod)} payment of GHS ${amount.toLocaleString()} added`);
+                       }
+                     }}
+                    className="w-full bg-blue-600 text-white rounded-lg px-4 py-3 font-medium hover:bg-blue-700 transition-colors"
+                  >
+                                         {paymentData.editingPayment ? "Update Payment" : "Add Payment"}
+                  </button>
+                </div>
+              </div>
+              
+              {/* Dynamic Fields for Selected Payment Method */}
+              {paymentData.newSplitMethod && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon icon={getPaymentTypeIcon(paymentData.newSplitMethod)} className="w-5 h-5 text-blue-600" />
+                    <span className="font-semibold text-blue-800">
+                      {getPaymentTypeLabel(paymentData.newSplitMethod)} Details
+                    </span>
+                  </div>
+                  
+                  {paymentData.newSplitMethod === "momo" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Mobile Money Provider <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={paymentData.momoProvider}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            momoProvider: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select Provider</option>
+                          <option value="mtn">MTN Mobile Money</option>
+                          <option value="vodafone">Vodafone Cash</option>
+                          <option value="airtel">Airtel Money</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Customer Phone <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          value={paymentData.customerPhone}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            customerPhone: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="e.g., 0241234567"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Transaction Reference <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={paymentData.referenceNumber}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            referenceNumber: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter transaction reference"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {paymentData.newSplitMethod === "cheque" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Cheque Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={paymentData.chequeNumber}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            chequeNumber: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter cheque number"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Bank Name <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={paymentData.bankName}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            bankName: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select Bank</option>
+                          <option value="gcb">GCB Bank</option>
+                          <option value="ecobank">Ecobank Ghana</option>
+                          <option value="zenith">Zenith Bank Ghana</option>
+                          <option value="access">Access Bank Ghana</option>
+                          <option value="cal">CAL Bank</option>
+                          <option value="fidelity">Fidelity Bank Ghana</option>
+                          <option value="stanbic">Stanbic Bank Ghana</option>
+                          <option value="barclays">Barclays Bank Ghana</option>
+                          <option value="sgssb">SG-SSB</option>
+                          <option value="republic">Republic Bank Ghana</option>
+                          <option value="prudential">Prudential Bank</option>
+                          <option value="uniBank">UniBank Ghana</option>
+                          <option value="agric">Agricultural Development Bank</option>
+                          <option value="national">National Investment Bank</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Cheque Date <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={paymentData.chequeDate}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            chequeDate: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Account Holder Name
+                        </label>
+                        <input
+                          type="text"
+                          value={paymentData.accountHolderName}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            accountHolderName: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter account holder name"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {paymentData.newSplitMethod === "card" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Card Type
+                        </label>
+                        <select
+                          value={paymentData.cardType}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            cardType: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select Card Type</option>
+                          <option value="visa">Visa</option>
+                          <option value="mastercard">Mastercard</option>
+                          <option value="amex">American Express</option>
+                          <option value="local">Local Card</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Reference Number
+                        </label>
+                        <input
+                          type="text"
+                          value={paymentData.referenceNumber}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            referenceNumber: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter transaction reference"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {paymentData.newSplitMethod === "bank_transfer" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Bank Name
+                        </label>
+                        <select
+                          value={paymentData.bankName}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            bankName: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select Bank</option>
+                          <option value="gcb">GCB Bank</option>
+                          <option value="ecobank">Ecobank Ghana</option>
+                          <option value="zenith">Zenith Bank Ghana</option>
+                          <option value="access">Access Bank Ghana</option>
+                          <option value="cal">CAL Bank</option>
+                          <option value="fidelity">Fidelity Bank Ghana</option>
+                          <option value="stanbic">Stanbic Bank Ghana</option>
+                          <option value="barclays">Barclays Bank Ghana</option>
+                          <option value="sgssb">SG-SSB</option>
+                          <option value="republic">Republic Bank Ghana</option>
+                          <option value="prudential">Prudential Bank</option>
+                          <option value="uniBank">UniBank Ghana</option>
+                          <option value="agric">Agricultural Development Bank</option>
+                          <option value="national">National Investment Bank</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Reference Number
+                        </label>
+                        <input
+                          type="text"
+                          value={paymentData.referenceNumber}
+                          onChange={(e) => setPaymentData(prev => ({
+                            ...prev,
+                            referenceNumber: e.target.value
+                          }))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter transfer reference"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Split Payments List */}
+            {paymentData.splitPayments.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon icon="mdi:format-list-bulleted" className="w-5 h-5 text-gray-600" />
+                  <span className="font-semibold text-gray-800">Payment Breakdown</span>
+                </div>
+                
+                <div className="space-y-2">
+                  {paymentData.splitPayments.map((payment, index) => (
+                    <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Icon 
+                            icon={getPaymentTypeIcon(payment.method)} 
+                            className="w-5 h-5 text-blue-600" 
+                          />
+                          <span className="font-medium">{getPaymentTypeLabel(payment.method)}</span>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {new Date(payment.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-green-600">
+                          GHS {payment.amount.toLocaleString()}
+                        </span>
+                                               <div className="flex items-center gap-2">
+                         <button
+                           type="button"
+                           onClick={() => {
+                             // Edit payment details
+                             setPaymentData(prev => ({
+                               ...prev,
+                               editingPayment: payment.id,
+                               newSplitMethod: payment.method,
+                               newSplitAmount: payment.amount.toString(),
+                               // Copy payment-specific fields
+                               momoProvider: payment.momoProvider || "",
+                               customerPhone: payment.customerPhone || "",
+                               referenceNumber: payment.referenceNumber || "",
+                               chequeNumber: payment.chequeNumber || "",
+                               bankName: payment.bankName || "",
+                               chequeDate: payment.chequeDate || ""
+                             }));
+                           }}
+                           className="text-blue-500 hover:text-blue-700"
+                         >
+                           <Icon icon="mdi:pencil" className="w-4 h-4" />
+                         </button>
+                         <button
+                           type="button"
+                           onClick={() => {
+                             setPaymentData(prev => ({
+                               ...prev,
+                               splitPayments: prev.splitPayments.filter(p => p.id !== payment.id),
+                               remainingAmount: prev.remainingAmount + payment.amount
+                             }));
+                             toast.success("Payment removed from split");
+                           }}
+                           className="text-red-500 hover:text-red-700"
+                         >
+                           <Icon icon="mdi:delete" className="w-4 h-4" />
+                         </button>
+                       </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">Total Paid:</span>
+                    <span className="font-semibold text-green-600">
+                      GHS {(total - paymentData.remainingAmount).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="font-semibold">Remaining:</span>
+                    <span className={`font-semibold ${paymentData.remainingAmount > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                      GHS {paymentData.remainingAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Payment Options */}
+            {paymentData.remainingAmount > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon icon="mdi:lightning-bolt" className="w-5 h-5 text-blue-600" />
+                  <span className="font-semibold text-blue-800">Quick Payment Options</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentData(prev => ({
+                        ...prev,
+                        newSplitMethod: "cash",
+                        newSplitAmount: prev.remainingAmount.toString()
+                      }));
+                    }}
+                    className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    Pay Remaining in Cash
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentData(prev => ({
+                        ...prev,
+                        newSplitMethod: "momo",
+                        newSplitAmount: prev.remainingAmount.toString()
+                      }));
+                    }}
+                    className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    Pay Remaining in MoMo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const half = Math.ceil(paymentData.remainingAmount / 2);
+                      setPaymentData(prev => ({
+                        ...prev,
+                        newSplitMethod: "cash",
+                        newSplitAmount: half.toString()
+                      }));
+                    }}
+                    className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    Half in Cash
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const half = Math.ceil(paymentData.remainingAmount / 2);
+                      setPaymentData(prev => ({
+                        ...prev,
+                        newSplitMethod: "momo",
+                        newSplitAmount: half.toString()
+                      }));
+                    }}
+                    className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    Half in MoMo
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -458,51 +1355,53 @@ const PaymentForm = ({
               </div>
             </div>
 
-              {/* Payment Amounts */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Received Amount <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={paymentData.receivedAmount}
-                    onChange={(e) => handleReceivedAmountChange(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
-                    autoFocus
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Paying Amount <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={paymentData.payingAmount}
-                    onChange={(e) => setPaymentData(prev => ({
-                      ...prev,
-                      payingAmount: e.target.value
-                    }))}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Change
-                  </label>
-                  <div className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold bg-gray-50 text-green-600">
-                    GHS {paymentData.change.toFixed(2)}
+              {/* Payment Amounts - Hidden for Split Payments */}
+              {paymentType !== "split" && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Received Amount <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={paymentData.receivedAmount}
+                      onChange={(e) => handleReceivedAmountChange(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0.00"
+                      autoFocus
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Paying Amount <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={paymentData.payingAmount}
+                      onChange={(e) => setPaymentData(prev => ({
+                        ...prev,
+                        payingAmount: e.target.value
+                      }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Change
+                    </label>
+                    <div className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold bg-gray-50 text-green-600">
+                      GHS {paymentData.change.toFixed(2)}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Payment Type - Read Only */}
               <div>
@@ -625,8 +1524,8 @@ const PaymentForm = ({
                   type="submit"
                   className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
                 >
-                  <Icon icon="mdi:cash-register" className="w-5 h-5" />
-                  Process Payment
+                  <Icon icon="mdi:check-circle" className="w-5 h-5" />
+                  Confirm Payment Details
                 </button>
               </div>
             </form>

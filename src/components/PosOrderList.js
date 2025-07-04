@@ -66,6 +66,7 @@ const PosOrderList = ({
   const [barcodeQty, setBarcodeQty] = useState(1);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentType, setSelectedPaymentType] = useState("");
+  const [paymentData, setPaymentData] = useState(null);
 
   // Generate a unique order ID when component mounts
   useEffect(() => {
@@ -107,18 +108,27 @@ const PosOrderList = ({
   };
 
   const handlePaymentSelection = (paymentMethod) => {
+    // Clear previous payment data if selecting a different method
+    if (paymentData && paymentData.paymentType !== paymentMethod) {
+      setPaymentData(null);
+    }
     setSelectedPayment(paymentMethod);
     setSelectedPaymentType(paymentMethod);
     setShowPaymentModal(true);
   };
 
-  const handlePaymentComplete = (paymentData) => {
-    // Here you would typically save the payment to database
-    console.log("Payment completed:", paymentData);
-    
-    // Reset payment selection
-    setSelectedPayment("");
+  const handlePaymentComplete = (paymentInfo) => {
+    // Store payment data for order processing
+    setPaymentData(paymentInfo);
     setShowPaymentModal(false);
+    
+    // Show confirmation message
+    if (paymentInfo.paymentType === "split") {
+      const totalPaid = paymentInfo.total - paymentInfo.remainingAmount;
+      toast.success(`Payment details confirmed! Total: GHS ${totalPaid.toLocaleString()}`);
+    } else {
+      toast.success(`Payment details confirmed! Amount: GHS ${paymentInfo.payingAmount}`);
+    }
   };
 
   const handleCustomerChange = (selectedCustomer) => {
@@ -126,6 +136,112 @@ const PosOrderList = ({
       setSelectedCustomerId(selectedCustomer.id);
     } else {
       setSelectedCustomerId("");
+    }
+  };
+
+  const processCompleteTransaction = async () => {
+    if (!paymentData) {
+      toast.error("Please complete payment details first");
+      return;
+    }
+
+    if (selectedProducts.length === 0) {
+      toast.error("Please add products to the order");
+      return;
+    }
+
+    try {
+      // Show processing message
+      const processingToast = toast.loading("Processing payment and creating order...");
+
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Process payment based on type
+      let paymentResult;
+      if (paymentData.paymentType === "split") {
+        // Process split payments
+        paymentResult = {
+          success: true,
+          method: "split",
+          totalPaid: paymentData.total - paymentData.remainingAmount,
+          payments: paymentData.splitPayments
+        };
+      } else {
+        // Process single payment
+        paymentResult = {
+          success: true,
+          method: paymentData.paymentType,
+          amount: parseFloat(paymentData.payingAmount),
+          change: paymentData.change,
+          reference: paymentData.referenceNumber || null
+        };
+      }
+
+      // Create order data
+      const orderData = {
+        id: orderId,
+        customerId: selectedCustomerId || null,
+        customerName: customers.find(c => c.id === selectedCustomerId)?.name || "Walk In Customer",
+        items: selectedProducts.map(id => {
+          const product = products.find(p => p.id === id);
+          return {
+            productId: id,
+            name: product.name,
+            quantity: quantities[id] || 1,
+            price: product.price,
+            total: product.price * (quantities[id] || 1)
+          };
+        }),
+        subtotal,
+        tax,
+        discount,
+        total,
+        payment: paymentResult,
+        paymentReceiver: paymentData.paymentReceiver,
+        paymentNote: paymentData.paymentNote,
+        saleNote: paymentData.saleNote,
+        staffNote: paymentData.staffNote,
+        timestamp: new Date().toISOString()
+      };
+
+      // Here you would typically save to database
+      console.log("Complete transaction data:", orderData);
+
+      // Update stock quantities (in real app, this would be a database transaction)
+      // For now, we'll just log it
+      console.log("Updating stock quantities...");
+
+      // Play success sound
+      playBellBeep();
+
+      // Show success message
+      toast.dismiss(processingToast);
+      if (paymentData.paymentType === "split") {
+        toast.success(`Order completed! Total paid: GHS ${paymentResult.totalPaid.toLocaleString()}`);
+      } else {
+        toast.success(`Order completed! Payment: GHS ${paymentResult.amount.toLocaleString()}`);
+        if (paymentResult.change > 0) {
+          toast.success(`Change: GHS ${paymentResult.change.toFixed(2)}`);
+        }
+      }
+
+      // Reset everything
+      setSelectedProducts([]);
+      setQuantities({});
+      setSelectedDiscountId("");
+      setSelectedCustomerId("");
+      setPaymentData(null);
+      setSelectedPayment("");
+      
+      // Generate new order ID
+      const timestamp = Date.now().toString().slice(-6);
+      const random = Math.floor(Math.random() * 100);
+      setOrderId(`ORD${timestamp}${random.toString().padStart(2, '0')}`);
+
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      toast.error("Transaction failed. Please try again.");
     }
   };
 
@@ -355,25 +471,80 @@ const PosOrderList = ({
       {/* Payment Section */}
       <div className="bg-white rounded-lg p-6">
         <div className="mb-4">
-          <h3 className="text-lg font-bold mb-4">Select Payment</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {paymentMethods.map((pm) => (
-              <button
-                key={pm.key}
-                onClick={() => handlePaymentSelection(pm.key)}
-                className={`
-                  flex flex-row items-center justify-center gap-2 rounded-xl border-2 p-2 font-semibold text-sm transition
-                  ${selectedPayment === pm.key
-                    ? "border-blue-400 bg-blue-50 text-blue-700"
-                    : "border-gray-200 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-400"}
-                `}
-              >
-                <Icon icon={pm.icon} className="w-6 h-6" />
-                <span>{pm.label}</span>
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold">Select Payment</h3>
+            {paymentData && (
+              <div className="flex items-center gap-2 text-green-600 text-sm">
+                <Icon icon="mdi:check-circle" className="w-5 h-5" />
+                <span className="font-semibold">Payment Details Confirmed</span>
+              </div>
+            )}
           </div>
+                      <div className="grid grid-cols-3 gap-3">
+              {paymentMethods.map((pm) => {
+                const isActive = paymentData ? paymentData.paymentType === pm.key : selectedPayment === pm.key;
+                return (
+                  <button
+                    key={pm.key}
+                    onClick={() => handlePaymentSelection(pm.key)}
+                    className={`
+                      flex flex-row items-center justify-center gap-2 rounded-xl border-2 p-2 font-semibold text-sm transition relative
+                      ${isActive
+                        ? "border-green-500 bg-green-50 text-green-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-400"}
+                    `}
+                  >
+                    <Icon icon={pm.icon} className="w-6 h-6" />
+                    <span>{pm.label}</span>
+                    {paymentData && paymentData.paymentType === pm.key && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                        <Icon icon="mdi:check" className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
         </div>
+        
+        {/* Payment Summary */}
+        {paymentData && (
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Icon icon="mdi:information-outline" className="w-5 h-5 text-green-600" />
+                <span className="font-semibold text-green-800">Payment Summary</span>
+              </div>
+              <button
+                onClick={() => {
+                  setPaymentData(null);
+                  setSelectedPayment("");
+                  toast.success("Payment details cleared");
+                }}
+                className="text-red-500 hover:text-red-700 text-sm"
+              >
+                <Icon icon="mdi:close" className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="text-sm text-green-700">
+              {paymentData.paymentType === "split" ? (
+                <div>
+                  <div>Method: Split Payment</div>
+                  <div>Total Paid: GHS {(paymentData.total - paymentData.remainingAmount).toLocaleString()}</div>
+                  <div>Payments: {paymentData.splitPayments.length} methods</div>
+                </div>
+              ) : (
+                <div>
+                  <div>Method: {paymentData.paymentType === "momo" ? "Mobile Money" : paymentData.paymentType === "cash" ? "Cash" : paymentData.paymentType}</div>
+                  <div>Amount: GHS {parseFloat(paymentData.payingAmount).toLocaleString()}</div>
+                  {paymentData.change > 0 && (
+                    <div>Change: GHS {paymentData.change.toFixed(2)}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
         <div className="flex gap-4">
@@ -381,9 +552,17 @@ const PosOrderList = ({
             <Icon icon="mdi:printer-outline" className="w-5 h-5" />
             Print Order
           </button>
-          <button className="flex-1 flex items-center justify-center gap-2 bg-blue-900 text-white rounded-lg py-3 font-semibold hover:bg-blue-800 transition">
+          <button 
+            onClick={processCompleteTransaction}
+            disabled={!paymentData || selectedProducts.length === 0}
+            className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 font-semibold transition ${
+              paymentData && selectedProducts.length > 0
+                ? "bg-blue-900 text-white hover:bg-blue-800"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
+          >
             <Icon icon="mdi:cart-outline" className="w-5 h-5" />
-            Place Order
+            {paymentData ? "Process Order & Payment" : "Place Order"}
           </button>
       </div>
 
