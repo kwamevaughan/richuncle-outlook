@@ -95,11 +95,6 @@ export const sidebarNav = [
         label: "Sales Return",
       },
       {
-        href: "/quotation",
-        icon: "solar:copy-broken",
-        label: "Quotation",
-      },
-      {
         href: "/pos",
         icon: "akar-icons:laptop-device",
         label: "POS",
