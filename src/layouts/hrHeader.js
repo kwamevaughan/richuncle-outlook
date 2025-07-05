@@ -5,6 +5,7 @@ import Search from "@/components/Search";
 import FullscreenToggle from "@/components/FullscreenToggle";
 import TooltipIconButton from "@/components/TooltipIconButton";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import NotificationButton from "@/components/NotificationButton";
 import Link from "next/link";
 
 const HrHeader = ({
@@ -22,8 +23,6 @@ const HrHeader = ({
   const headerRef = useRef(null);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
   const storeDropdownRef = useRef(null);
-  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
-  const notifDropdownRef = useRef(null);
   const [addNewDropdownOpen, setAddNewDropdownOpen] = useState(false);
   const addNewDropdownRef = useRef(null);
 
@@ -51,20 +50,17 @@ const HrHeader = ({
       if (storeDropdownRef.current && !storeDropdownRef.current.contains(e.target)) {
         setStoreDropdownOpen(false);
       }
-      if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target)) {
-        setNotifDropdownOpen(false);
-      }
       if (addNewDropdownRef.current && !addNewDropdownRef.current.contains(e.target)) {
         setAddNewDropdownOpen(false);
       }
     };
-    if (storeDropdownOpen || notifDropdownOpen || addNewDropdownOpen) {
+    if (storeDropdownOpen || addNewDropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [storeDropdownOpen, notifDropdownOpen, addNewDropdownOpen]);
+  }, [storeDropdownOpen, addNewDropdownOpen]);
 
   const isMobile = windowWidth !== null && windowWidth < 640;
 
@@ -278,76 +274,7 @@ const HrHeader = ({
 
               <LanguageSwitch mode={mode} />
 
-              <div className="relative" ref={notifDropdownRef}>
-                <button
-                  className="flex items-center justify-center p-2 rounded-full bg-white/50 transition-all duration-200 relative"
-                  onClick={() => setNotifDropdownOpen((prev) => !prev)}
-                  aria-label="Notifications"
-                >
-                  <Icon
-                    icon="mdi:bell-outline"
-                    className="h-5 w-5 text-gray-600"
-                  />
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                    3
-                  </span>
-                </button>
-                <div
-                  className={`absolute right-0 mt-2 w-64 rounded-lg shadow-lg overflow-hidden transition-all duration-300 z-20
-                    ${
-                      mode === "dark"
-                        ? "bg-gray-900 text-gray-100"
-                        : "bg-white text-black"
-                    }
-                    ${
-                      notifDropdownOpen
-                        ? "max-h-60 opacity-100 scale-100"
-                        : "max-h-0 opacity-0 scale-95"
-                    }`}
-                >
-                  <ul className="divide-y divide-gray-100">
-                    <li
-                      className={`px-4 py-3 cursor-pointer flex items-center gap-2 ${
-                        mode === "dark"
-                          ? "hover:bg-gray-800 text-gray-100"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <Icon
-                        icon="mdi:cart-arrow-down"
-                        className="h-4 w-4 text-blue-500"
-                      />
-                      <span>New order received</span>
-                    </li>
-                    <li
-                      className={`px-4 py-3 cursor-pointer flex items-center gap-2 ${
-                        mode === "dark"
-                          ? "hover:bg-gray-800 text-gray-100"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <Icon
-                        icon="mdi:alert-outline"
-                        className="h-4 w-4 text-orange-500"
-                      />
-                      <span>Stock running low</span>
-                    </li>
-                    <li
-                      className={`px-4 py-3 cursor-pointer flex items-center gap-2 ${
-                        mode === "dark"
-                          ? "hover:bg-gray-800 text-gray-100"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <Icon
-                        icon="mdi:email-outline"
-                        className="h-4 w-4 text-green-500"
-                      />
-                      <span>New message from admin</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
+              <NotificationButton mode={mode} user={user} />
 
               <TooltipIconButton
                 label={
