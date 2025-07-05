@@ -121,7 +121,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           setCustomers={setCustomers}
         />
       </div>
-      <PosFooterActions totalPayable={totalPayable} hasProducts={selectedProducts.length > 0} />
+      {/* <PosFooterActions totalPayable={totalPayable} hasProducts={selectedProducts.length > 0} /> */}
     </MainLayout>
   );
 }

@@ -164,15 +164,15 @@ const PrintReceipt = ({
     `;
 
     try {
-      // Method 1: Try to open a new window
-      const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+      // Create a minimal popup window
+      const printWindow = window.open('', 'PrintWindow', 'width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no');
       
       if (printWindow) {
-        // Popup was allowed
+        // Write content to the new window
         printWindow.document.write(printContent);
         printWindow.document.close();
         
-        // Wait for content to load then print
+        // Wait for content to load, then print and close
         printWindow.onload = function() {
           setTimeout(() => {
             printWindow.print();
@@ -181,8 +181,18 @@ const PrintReceipt = ({
             }, 1000);
           }, 500);
         };
+        
+        // Fallback: if onload doesn't fire, try printing anyway
+        setTimeout(() => {
+          if (!printWindow.closed) {
+            printWindow.print();
+            setTimeout(() => {
+              printWindow.close();
+            }, 1000);
+          }
+        }, 1500);
       } else {
-        // Popup was blocked, use iframe method
+        // Fallback to iframe method if popup is blocked
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         iframe.style.position = 'fixed';
@@ -211,7 +221,36 @@ const PrintReceipt = ({
     }
   };
 
-  return { printOrder };
+  // New method to get receipt content for modal display
+  const getReceiptContent = () => {
+    if (selectedProducts.length === 0) {
+      return null;
+    }
+
+    return {
+      orderId,
+      customer: customers.find(c => c.id === selectedCustomerId)?.name || "Walk In Customer",
+      customerPhone: customers.find(c => c.id === selectedCustomerId)?.phone,
+      date: new Date().toLocaleDateString('en-GH'),
+      time: new Date().toLocaleTimeString('en-GH'),
+      items: selectedProducts.map(id => {
+        const product = products.find(p => p.id === id);
+        const qty = quantities[id] || 1;
+        return {
+          name: product?.name || 'Unknown Product',
+          qty,
+          price: product?.price * qty
+        };
+      }),
+      subtotal,
+      tax,
+      discount,
+      total,
+      paymentData
+    };
+  };
+
+  return { printOrder, getReceiptContent };
 };
 
 export default PrintReceipt; 

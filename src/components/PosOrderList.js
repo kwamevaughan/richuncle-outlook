@@ -5,6 +5,7 @@ import { AddEditModal } from "./AddEditModal";
 import SimpleModal from "./SimpleModal";
 import PaymentForm from "./PaymentForm";
 import PrintReceipt from "./PrintReceipt";
+import ReceiptPreviewModal from "./ReceiptPreviewModal";
 import { supabaseClient } from "../lib/supabase";
 import { playBellBeep } from "../utils/posSounds";
 
@@ -68,12 +69,19 @@ const PosOrderList = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentType, setSelectedPaymentType] = useState("");
   const [paymentData, setPaymentData] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successOrderData, setSuccessOrderData] = useState(null);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [receiptData, setReceiptData] = useState(null);
+  
+  // Detect if user is on Chrome
+  const isChrome = typeof window !== 'undefined' && /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
 
   // Generate a unique order ID when component mounts
   useEffect(() => {
     const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
     const random = Math.floor(Math.random() * 100); // 0-99
-    setOrderId(`ORD${timestamp}${random.toString().padStart(2, '0')}`);
+    setOrderId(`RUO${timestamp}${random.toString().padStart(2, '0')}`);
   }, []);
 
   const handleQty = (id, delta) => {
@@ -239,29 +247,12 @@ const PosOrderList = ({
       // Play success sound
       playBellBeep();
 
-      // Show success message
+      // Dismiss processing toast
       toast.dismiss(processingToast);
-      if (paymentData.paymentType === "split") {
-        toast.success(`Order completed! Total paid: GHS ${paymentResult.totalPaid.toLocaleString()}`);
-      } else {
-        toast.success(`Order completed! Payment: GHS ${paymentResult.amount.toLocaleString()}`);
-        if (paymentResult.change > 0) {
-          toast.success(`Change: GHS ${paymentResult.change.toFixed(2)}`);
-        }
-      }
 
-      // Reset everything
-      setSelectedProducts([]);
-      setQuantities({});
-      setSelectedDiscountId("");
-      setSelectedCustomerId("");
-      setPaymentData(null);
-      setSelectedPayment("");
-      
-      // Generate new order ID
-      const timestamp = Date.now().toString().slice(-6);
-      const random = Math.floor(Math.random() * 100);
-      setOrderId(`ORD${timestamp}${random.toString().padStart(2, '0')}`);
+      // Show success modal
+      setShowSuccessModal(true);
+      setSuccessOrderData(orderData);
 
     } catch (error) {
       console.error("Transaction failed:", error);
@@ -594,7 +585,7 @@ const PosOrderList = ({
             }`}
           >
             <Icon icon="mdi:cart-outline" className="w-5 h-5" />
-            {paymentData ? "Process Order & Payment" : "Place Order"}
+            {paymentData ? "Process Order" : "Place Order"}
           </button>
       </div>
 
@@ -760,6 +751,161 @@ const PosOrderList = ({
         customers={customers}
         onCustomerChange={handleCustomerChange}
       />
+
+      {/* Receipt Preview Modal */}
+      <ReceiptPreviewModal
+        isOpen={showReceiptModal}
+        onClose={() => {
+          setShowReceiptModal(false);
+          setReceiptData(null);
+        }}
+        receiptData={receiptData}
+      />
+
+      {/* Success Modal */}
+       {showSuccessModal && successOrderData && (
+         <SimpleModal
+           isOpen={true}
+           onClose={() => {
+             setShowSuccessModal(false);
+             setSuccessOrderData(null);
+             // Reset everything after closing
+             setSelectedProducts([]);
+             setQuantities({});
+             setSelectedDiscountId("");
+             setSelectedCustomerId("");
+             setPaymentData(null);
+             setSelectedPayment("");
+             
+             // Generate new order ID
+             const timestamp = Date.now().toString().slice(-6);
+             const random = Math.floor(Math.random() * 100);
+             setOrderId(`ORD${timestamp}${random.toString().padStart(2, '0')}`);
+           }}
+           title="Order Completed Successfully!"
+           mode="light"
+           width="max-w-lg"
+         >
+           <div className="space-y-6">
+             {/* Success Icon */}
+             <div className="flex justify-center">
+               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                 <Icon icon="mdi:check-circle" className="w-10 h-10 text-green-600" />
+               </div>
+             </div>
+
+             {/* Order Details */}
+             <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+               <div className="flex justify-between items-center">
+                 <span className="text-gray-600">Order ID:</span>
+                 <span className="font-semibold">#{successOrderData.id}</span>
+               </div>
+               <div className="flex justify-between items-center">
+                 <span className="text-gray-600">Customer:</span>
+                 <span className="font-semibold">{successOrderData.customerName}</span>
+               </div>
+               <div className="flex justify-between items-center">
+                 <span className="text-gray-600">Total Amount:</span>
+                 <span className="font-semibold text-lg text-blue-700">GHS {successOrderData.total.toLocaleString()}</span>
+               </div>
+               <div className="flex justify-between items-center">
+                 <span className="text-gray-600">Payment Method:</span>
+                 <span className="font-semibold">
+                   {successOrderData.payment.method === "split" 
+                     ? "Split Payment" 
+                     : successOrderData.payment.method === "momo" 
+                     ? "Mobile Money" 
+                     : successOrderData.payment.method === "cash" 
+                     ? "Cash" 
+                     : successOrderData.payment.method}
+                 </span>
+               </div>
+               {successOrderData.payment.method === "split" ? (
+                 <div className="flex justify-between items-center">
+                   <span className="text-gray-600">Total Paid:</span>
+                   <span className="font-semibold">GHS {successOrderData.payment.totalPaid.toLocaleString()}</span>
+                 </div>
+               ) : (
+                 <div className="flex justify-between items-center">
+                   <span className="text-gray-600">Amount Paid:</span>
+                   <span className="font-semibold">GHS {successOrderData.payment.amount.toLocaleString()}</span>
+                 </div>
+               )}
+               {successOrderData.payment.change > 0 && (
+                 <div className="flex justify-between items-center">
+                   <span className="text-gray-600">Change:</span>
+                   <span className="font-semibold text-green-600">GHS {successOrderData.payment.change.toFixed(2)}</span>
+                 </div>
+               )}
+             </div>
+
+             {/* Action Buttons */}
+             <div className="flex gap-3">
+               <button
+                 onClick={() => {
+                   // Get receipt data and show preview modal
+                   const printReceipt = PrintReceipt({
+                     orderId: successOrderData.id,
+                     selectedProducts: successOrderData.items.map(item => item.productId),
+                     quantities: successOrderData.items.reduce((acc, item) => {
+                       acc[item.productId] = item.quantity;
+                       return acc;
+                     }, {}),
+                     products: successOrderData.items.map(item => ({
+                       id: item.productId,
+                       name: item.name,
+                       price: item.price
+                     })),
+                     subtotal: successOrderData.subtotal,
+                     tax: successOrderData.tax,
+                     discount: successOrderData.discount,
+                     total: successOrderData.total,
+                     selectedCustomerId: successOrderData.customerId,
+                     customers: customers,
+                     paymentData: successOrderData.payment
+                   });
+
+                   const receiptContent = printReceipt.getReceiptContent();
+                   if (receiptContent) {
+                     setReceiptData(receiptContent);
+                     setShowReceiptModal(true);
+                     setShowSuccessModal(false);
+                   } else {
+                     toast.error("Failed to generate receipt");
+                   }
+                 }}
+                 className="flex-1 bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+               >
+                 <Icon icon="mdi:printer" className="w-5 h-5" />
+                 Print Receipt
+                 {isChrome && <span className="text-xs opacity-75">(Chrome may open new tab)</span>}
+               </button>
+               <button
+                 onClick={() => {
+                   setShowSuccessModal(false);
+                   setSuccessOrderData(null);
+                   // Reset everything after closing
+                   setSelectedProducts([]);
+                   setQuantities({});
+                   setSelectedDiscountId("");
+                   setSelectedCustomerId("");
+                   setPaymentData(null);
+                   setSelectedPayment("");
+                   
+                   // Generate new order ID
+                   const timestamp = Date.now().toString().slice(-6);
+                   const random = Math.floor(Math.random() * 100);
+                   setOrderId(`ORD${timestamp}${random.toString().padStart(2, '0')}`);
+                 }}
+                 className="flex-1 bg-gray-500 text-white rounded-lg py-3 font-semibold hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+               >
+                 <Icon icon="mdi:check" className="w-5 h-5" />
+                 Continue
+               </button>
+             </div>
+           </div>
+         </SimpleModal>
+       )}
     </div>
   );
 };

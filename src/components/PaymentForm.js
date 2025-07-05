@@ -2,6 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "react-hot-toast";
 import { playBellBeep } from "../utils/posSounds";
+import PaymentSummary from "./payment/PaymentSummary";
+import PaymentAmounts from "./payment/PaymentAmounts";
+import PaymentNotes from "./payment/PaymentNotes";
+import PaymentCustomerInfo from "./payment/PaymentCustomerInfo";
+import MomoPayment from "./payment/types/MomoPayment";
+import ChequePayment from "./payment/types/ChequePayment";
+import { getPaymentTypeLabel, getPaymentTypeIcon, validatePaymentData } from "./payment/utils/paymentHelpers";
 
 const PaymentForm = ({ 
   isOpen, 
@@ -68,119 +75,9 @@ const PaymentForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Skip received/paying amount validation for split payments
-    if (paymentType !== "split") {
-      const received = parseFloat(paymentData.receivedAmount);
-      const paying = parseFloat(paymentData.payingAmount);
-      
-      if (received < paying) {
-        toast.error("Received amount must be greater than or equal to paying amount");
-        return;
-      }
-    }
-    
-    // Validate MoMo-specific fields
-    if (paymentType === "momo") {
-      if (!paymentData.momoProvider) {
-        toast.error("Please select a mobile money provider");
-        return;
-      }
-      if (!paymentData.customerPhone) {
-        toast.error("Please enter customer phone number");
-        return;
-      }
-      if (!paymentData.referenceNumber) {
-        toast.error("Please enter transaction reference number");
-        return;
-      }
-    }
-
-    // Validate Cheque-specific fields
-    if (paymentType === "cheque") {
-      if (!paymentData.chequeNumber) {
-        toast.error("Please enter cheque number");
-        return;
-      }
-      if (!paymentData.bankName) {
-        toast.error("Please select bank name");
-        return;
-      }
-      if (!paymentData.accountHolderName) {
-        toast.error("Please enter account holder name");
-        return;
-      }
-      if (!paymentData.chequeDate) {
-        toast.error("Please enter cheque date");
-        return;
-      }
-      if (!paymentData.chequeAmount) {
-        toast.error("Please enter cheque amount");
-        return;
-      }
-      
-      // Validate cheque amount matches order total
-      const chequeAmount = parseFloat(paymentData.chequeAmount);
-      if (chequeAmount !== total) {
-        toast.error(`Cheque amount (GHS ${chequeAmount}) must match order total (GHS ${total})`);
-        return;
-      }
-      
-      // Validate cheque date is not post-dated
-      const chequeDate = new Date(paymentData.chequeDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (chequeDate > today) {
-        toast.error("Post-dated cheques are not accepted");
-        return;
-      }
-    }
-
-    // Validate Split Payment-specific fields
-    if (paymentType === "split") {
-      if (paymentData.splitPayments.length === 0) {
-        toast.error("Please add at least one payment method");
-        return;
-      }
-      
-      if (paymentData.remainingAmount > 0) {
-        toast.error(`Payment incomplete. Remaining amount: GHS ${paymentData.remainingAmount.toLocaleString()}`);
-        return;
-      }
-      
-      // Validate each split payment has required fields
-      for (let i = 0; i < paymentData.splitPayments.length; i++) {
-        const payment = paymentData.splitPayments[i];
-        
-        if (payment.method === "momo") {
-          if (!payment.momoProvider) {
-            toast.error(`Please select mobile money provider for payment ${i + 1}`);
-            return;
-          }
-          if (!payment.customerPhone) {
-            toast.error(`Please enter customer phone for payment ${i + 1}`);
-            return;
-          }
-          if (!payment.referenceNumber) {
-            toast.error(`Please enter transaction reference for payment ${i + 1}`);
-            return;
-          }
-        }
-        
-        if (payment.method === "cheque") {
-          if (!payment.chequeNumber) {
-            toast.error(`Please enter cheque number for payment ${i + 1}`);
-            return;
-          }
-          if (!payment.bankName) {
-            toast.error(`Please select bank for payment ${i + 1}`);
-            return;
-          }
-          if (!payment.chequeDate) {
-            toast.error(`Please enter cheque date for payment ${i + 1}`);
-            return;
-          }
-        }
-      }
+    // Validate payment data
+    if (!validatePaymentData(paymentData, paymentType, total, toast)) {
+      return;
     }
     
     // Calculate change (only for non-split payments)
@@ -215,147 +112,12 @@ const PaymentForm = ({
     onClose();
   };
 
-  const getPaymentTypeLabel = (type) => {
-    const labels = {
-      cash: "Cash",
-      momo: "Mobile Money",
-      card: "Card",
-      cheque: "Cheque",
-      bank_transfer: "Bank Transfer",
-      split: "Split Payment"
-    };
-    return labels[type] || type;
-  };
 
-  const getPaymentTypeIcon = (type) => {
-    const icons = {
-      cash: "mdi:cash",
-      momo: "mdi:wallet-outline",
-      card: "mdi:credit-card-outline",
-      cheque: "mdi:checkbook",
-      bank_transfer: "mdi:bank",
-      split: "mdi:call-split"
-    };
-    return icons[type] || "mdi:cash";
-  };
 
   const renderPaymentTypeFields = () => {
     switch (paymentType) {
       case "momo":
-        return (
-          <div className="space-y-4">
-            {/* Mobile Money Provider Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mobile Money Provider <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={paymentData.momoProvider}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    momoProvider: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select Provider</option>
-                  <option value="mtn">MTN Mobile Money</option>
-                  <option value="vodafone">Vodafone Cash</option>
-                  <option value="airtel">Airtel Money</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Customer Phone Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={paymentData.customerPhone || ""}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    customerPhone: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., 0241234567"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Store Account Information */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon icon="mdi:information-outline" className="w-5 h-5 text-yellow-600" />
-                <span className="font-semibold text-yellow-800">Store Mobile Money Account</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Account Name:</span>
-                  <span className="font-semibold ml-2 text-yellow-800">STORE NAME</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Account Number:</span>
-                  <span className="font-semibold ml-2 text-yellow-800">0241234567</span>
-                </div>
-              </div>
-              <div className="mt-2 text-xs text-yellow-700">
-                Customer should send payment to this account and provide the reference number below.
-              </div>
-            </div>
-
-            {/* Transaction Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transaction Reference <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={paymentData.referenceNumber}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    referenceNumber: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter transaction reference"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transaction ID
-                </label>
-                <input
-                  type="text"
-                  value={paymentData.transactionId || ""}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    transactionId: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Optional transaction ID"
-                />
-              </div>
-            </div>
-
-            {/* Payment Instructions */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Icon icon="mdi:cellphone-message" className="w-5 h-5 text-blue-600" />
-                <span className="font-semibold text-blue-800">Payment Instructions</span>
-              </div>
-              <div className="text-sm text-blue-700 space-y-1">
-                <div>1. Customer dials the USSD code for {paymentData.momoProvider || "selected provider"}</div>
-                <div>2. Select "Send Money" or "Transfer"</div>
-                <div>3. Enter store account number: <span className="font-semibold">0241234567</span></div>
-                <div>4. Enter amount: <span className="font-semibold">GHS {total.toLocaleString()}</span></div>
-                <div>5. Enter reference: <span className="font-semibold">{paymentData.referenceNumber || "CUSTOMER_REFERENCE"}</span></div>
-                <div>6. Confirm transaction and provide reference number</div>
-              </div>
-            </div>
-          </div>
-        );
+        return <MomoPayment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />;
 
       case "card":
         return (
@@ -398,240 +160,7 @@ const PaymentForm = ({
         );
 
       case "cheque":
-        return (
-          <div className="space-y-4">
-            {/* Cheque Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cheque Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={paymentData.chequeNumber}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    chequeNumber: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter cheque number"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bank Name <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={paymentData.bankName}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    bankName: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select Bank</option>
-                  <option value="ghana_commercial_bank">Ghana Commercial Bank (GCB)</option>
-                  <option value="ecobank">Ecobank Ghana</option>
-                  <option value="barclays">Barclays Bank Ghana</option>
-                  <option value="standard_chartered">Standard Chartered Bank Ghana</option>
-                  <option value="cal_bank">CAL Bank</option>
-                  <option value="fidelity_bank">Fidelity Bank Ghana</option>
-                  <option value="zenith_bank">Zenith Bank Ghana</option>
-                  <option value="access_bank">Access Bank Ghana</option>
-                  <option value="gt_bank">GT Bank Ghana</option>
-                  <option value="uni_bank">UniBank Ghana</option>
-                  <option value="other">Other Bank</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Account Holder Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Account Holder Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={paymentData.accountHolderName || ""}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    accountHolderName: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Name on cheque"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Account Number
-                </label>
-                <input
-                  type="text"
-                  value={paymentData.accountNumber || ""}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    accountNumber: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Account number (optional)"
-                />
-              </div>
-            </div>
-
-            {/* Cheque Date and Amount */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cheque Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={paymentData.chequeDate || ""}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    chequeDate: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cheque Amount <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={paymentData.chequeAmount || ""}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    chequeAmount: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Amount on cheque"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Cheque Status and Notes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cheque Status
-                </label>
-                <select
-                  value={paymentData.chequeStatus || "pending"}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    chequeStatus: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="pending">Pending Clearance</option>
-                  <option value="cleared">Cleared</option>
-                  <option value="bounced">Bounced</option>
-                  <option value="post_dated">Post Dated</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Expected Clearance Date
-                </label>
-                <input
-                  type="date"
-                  value={paymentData.expectedClearanceDate || ""}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    expectedClearanceDate: e.target.value
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Expected clearance date"
-                />
-              </div>
-            </div>
-
-            {/* Cheque Verification */}
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon icon="mdi:alert-circle-outline" className="w-5 h-5 text-orange-600" />
-                <span className="font-semibold text-orange-800">Cheque Verification Checklist</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="cheque_date_valid"
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <label htmlFor="cheque_date_valid" className="text-orange-700">Cheque date is valid (not post-dated)</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="cheque_amount_correct"
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <label htmlFor="cheque_amount_correct" className="text-orange-700">Amount matches order total</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="cheque_signed"
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <label htmlFor="cheque_signed" className="text-orange-700">Cheque is properly signed</label>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="cheque_not_altered"
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <label htmlFor="cheque_not_altered" className="text-orange-700">No alterations on cheque</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="bank_details_correct"
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <label htmlFor="bank_details_correct" className="text-orange-700">Bank details are correct</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="customer_id_verified"
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <label htmlFor="customer_id_verified" className="text-orange-700">Customer ID verified</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Important Notice */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Icon icon="mdi:information-outline" className="w-5 h-5 text-red-600" />
-                <span className="font-semibold text-red-800">Important Notice</span>
-              </div>
-              <div className="text-sm text-red-700">
-                <div>• Cheque payments are subject to clearance (typically 3-5 business days)</div>
-                <div>• Goods will be released only after cheque clearance confirmation</div>
-                <div>• Post-dated cheques are not accepted unless pre-approved</div>
-                <div>• Customer must provide valid ID for cheque payments</div>
-              </div>
-            </div>
-          </div>
-        );
+        return <ChequePayment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />;
 
       case "bank_transfer":
         return (
@@ -1319,88 +848,16 @@ const PaymentForm = ({
           {/* Content */}
           <div className="p-8 overflow-y-auto max-h-[calc(85vh-120px)] bg-white/60">
             <form onSubmit={handleSubmit} className="space-y-6">
-                          {/* Payment Summary */}
-            <div className="bg-blue-50 rounded-lg p-4 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-gray-600">Order ID:</span>
-                    <span className="font-semibold ml-2">#{orderId}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Customer:</span>
-                    <span className="font-semibold ml-2">
-                      {customer ? customer.name : "Walk In Customer"}
-                    </span>
-                  </div>
-                  {customer && (
-                    <div>
-                      <span className="text-gray-600">Phone:</span>
-                      <span className="font-semibold ml-2">{customer.phone}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-gray-600">Total Amount:</span>
-                    <span className="font-semibold ml-2 text-lg text-blue-700">GHS {total.toLocaleString()}</span>
-                  </div>
-                  {customer && (
-                    <div>
-                      <span className="text-gray-600">Email:</span>
-                      <span className="font-semibold ml-2">{customer.email}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+              {/* Payment Summary */}
+              <PaymentSummary orderId={orderId} customer={customer} total={total} />
 
               {/* Payment Amounts - Hidden for Split Payments */}
               {paymentType !== "split" && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Received Amount <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={paymentData.receivedAmount}
-                      onChange={(e) => handleReceivedAmountChange(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="0.00"
-                      autoFocus
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Paying Amount <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={paymentData.payingAmount}
-                      onChange={(e) => setPaymentData(prev => ({
-                        ...prev,
-                        payingAmount: e.target.value
-                      }))}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Change
-                    </label>
-                    <div className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg font-semibold bg-gray-50 text-green-600">
-                      GHS {paymentData.change.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
+                <PaymentAmounts 
+                  paymentData={paymentData} 
+                  setPaymentData={setPaymentData} 
+                  handleReceivedAmountChange={handleReceivedAmountChange} 
+                />
               )}
 
               {/* Payment Type - Read Only */}
@@ -1418,98 +875,16 @@ const PaymentForm = ({
               {renderPaymentTypeFields()}
 
               {/* Customer Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Customer
-                  </label>
-                  <select
-                    value={customer?.id || ""}
-                    onChange={(e) => {
-                      const selectedCustomer = customers.find(c => c.id === e.target.value);
-                      if (onCustomerChange) {
-                        onCustomerChange(selectedCustomer);
-                      }
-                    }}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Walk In Customer</option>
-                    {customers.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} - {c.phone}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Receiver
-                  </label>
-                  <input
-                    type="text"
-                    value={paymentData.paymentReceiver}
-                    onChange={(e) => setPaymentData(prev => ({
-                      ...prev,
-                      paymentReceiver: e.target.value
-                    }))}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter receiver name"
-                  />
-                </div>
-              </div>
+              <PaymentCustomerInfo 
+                customer={customer}
+                customers={customers}
+                onCustomerChange={onCustomerChange}
+                paymentData={paymentData}
+                setPaymentData={setPaymentData}
+              />
 
               {/* Notes Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Note
-                  </label>
-                  <textarea
-                    value={paymentData.paymentNote}
-                    onChange={(e) => setPaymentData(prev => ({
-                      ...prev,
-                      paymentNote: e.target.value
-                    }))}
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Type your message"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sale Note
-                  </label>
-                  <textarea
-                    value={paymentData.saleNote}
-                    onChange={(e) => setPaymentData(prev => ({
-                      ...prev,
-                      saleNote: e.target.value
-                    }))}
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Type your message"
-                  />
-                </div>
-              </div>
-
-              {/* Staff Note */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Staff Note
-                </label>
-                <textarea
-                  value={paymentData.staffNote}
-                  onChange={(e) => setPaymentData(prev => ({
-                    ...prev,
-                    staffNote: e.target.value
-                  }))}
-                  rows={2}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Internal staff notes"
-                />
-              </div>
+              <PaymentNotes paymentData={paymentData} setPaymentData={setPaymentData} />
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-4 pt-4 border-t">
