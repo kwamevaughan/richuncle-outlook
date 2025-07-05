@@ -119,18 +119,20 @@ const PrintReceipt = ({
               <span>Subtotal:</span>
               <span>GHS ${subtotal.toLocaleString()}</span>
             </div>
-            <div class="summary-row">
-              <span>Tax:</span>
-              <span>GHS ${tax.toLocaleString()}</span>
-            </div>
+            ${tax > 0 ? `
+              <div class="summary-row">
+                <span>Tax:</span>
+                <span>GHS ${tax.toLocaleString()}</span>
+              </div>
+            ` : ''}
             ${discount > 0 ? `
               <div class="summary-row">
                 <span>Discount:</span>
                 <span>-GHS ${discount.toLocaleString()}</span>
               </div>
             ` : ''}
-            <div class="summary-row total-row">
-              <span>TOTAL:</span>
+            <div class="summary-row total">
+              <span>Total:</span>
               <span>GHS ${total.toLocaleString()}</span>
             </div>
           </div>
@@ -239,7 +241,9 @@ const PrintReceipt = ({
         return {
           name: product?.name || 'Unknown Product',
           qty,
-          price: product?.price * qty
+          price: product?.price * qty,
+          taxInfo: product?.tax_percentage && product?.tax_percentage > 0 ? 
+            `${product.tax_percentage}% (${product.tax_type === 'inclusive' ? 'Included' : 'Added'})` : null
         };
       }),
       subtotal,

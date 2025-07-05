@@ -8,6 +8,7 @@ import PrintReceipt from "./PrintReceipt";
 import ReceiptPreviewModal from "./ReceiptPreviewModal";
 import { supabaseClient } from "../lib/supabase";
 import { playBellBeep } from "../utils/posSounds";
+import { getPaymentTypeLabel } from "./payment/utils/paymentHelpers";
 
 const dummyOrder = {
   id: "ORD123",
@@ -54,7 +55,9 @@ const PosOrderList = ({
   roundoffEnabled,
   setRoundoffEnabled,
   customers = [],
-  setCustomers
+  setCustomers,
+  onOrderComplete,
+  user
 }) => {
 
   const [selectedPayment, setSelectedPayment] = useState("");
@@ -217,12 +220,31 @@ const PosOrderList = ({
         customerName: customers.find(c => c.id === selectedCustomerId)?.name || "Walk In Customer",
         items: selectedProducts.map(id => {
           const product = products.find(p => p.id === id);
+          const qty = quantities[id] || 1;
+          const itemSubtotal = product.price * qty;
+          
+          // Calculate item tax
+          let itemTax = 0;
+          if (product && product.tax_percentage && product.tax_percentage > 0) {
+            const taxPercentage = Number(product.tax_percentage);
+            if (product.tax_type === 'exclusive') {
+              itemTax = (product.price * taxPercentage / 100) * qty;
+            } else if (product.tax_type === 'inclusive') {
+              const priceWithoutTax = product.price / (1 + taxPercentage / 100);
+              itemTax = (product.price - priceWithoutTax) * qty;
+            }
+          }
+          
           return {
             productId: id,
             name: product.name,
-            quantity: quantities[id] || 1,
+            quantity: qty,
             price: product.price,
-            total: product.price * (quantities[id] || 1)
+            costPrice: product.cost_price || 0,
+            taxType: product.tax_type || 'exclusive',
+            taxPercentage: product.tax_percentage || 0,
+            itemTax: itemTax,
+            total: itemSubtotal
           };
         }),
         subtotal,
@@ -237,12 +259,57 @@ const PosOrderList = ({
         timestamp: new Date().toISOString()
       };
 
-      // Here you would typically save to database
-      console.log("Complete transaction data:", orderData);
+      // Insert order into 'orders' table
+      const { error: orderError } = await supabaseClient
+        .from('orders')
+        .insert([{
+          id: orderData.id,
+          customer_id: orderData.customerId,
+          customer_name: orderData.customerName,
+          subtotal: orderData.subtotal,
+          tax: orderData.tax,
+          discount: orderData.discount,
+          total: orderData.total,
+          payment_method: orderData.payment.method,
+          payment_data: orderData.payment,
+          payment_receiver: orderData.paymentReceiver,
+          payment_note: orderData.paymentNote,
+          sale_note: orderData.saleNote,
+          staff_note: orderData.staffNote,
+          timestamp: orderData.timestamp
+        }]);
+      if (orderError) throw orderError;
 
-      // Update stock quantities (in real app, this would be a database transaction)
-      // For now, we'll just log it
-      console.log("Updating stock quantities...");
+      // Insert order items into 'order_items' table
+      const itemsToInsert = orderData.items.map(item => ({
+        order_id: orderData.id,
+        product_id: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        cost_price: item.costPrice,
+        tax_type: item.taxType,
+        tax_percentage: item.taxPercentage,
+        item_tax: item.itemTax,
+        total: item.total
+      }));
+      const { error: itemsError } = await supabaseClient
+        .from('order_items')
+        .insert(itemsToInsert);
+      if (itemsError) throw itemsError;
+
+      // Update stock quantities for each product
+      for (const item of orderData.items) {
+        const product = products.find(p => p.id === item.productId);
+        const newQty = (product?.quantity || 0) - item.quantity;
+        const { error: updateError } = await supabaseClient
+          .from('products')
+          .update({ quantity: newQty })
+          .eq('id', item.productId);
+        if (updateError) {
+          console.error(`Failed to update stock for product ${item.productId}:`, updateError.message);
+        }
+      }
 
       // Play success sound
       playBellBeep();
@@ -253,6 +320,28 @@ const PosOrderList = ({
       // Show success modal
       setShowSuccessModal(true);
       setSuccessOrderData(orderData);
+      if (typeof onOrderComplete === 'function') onOrderComplete(orderData);
+
+      // After order is saved and stock is updated
+      if (paymentData.paymentType === 'cash') {
+        // Get open session
+        const { data: sessions } = await supabaseClient
+          .from('cash_register_sessions')
+          .select('*')
+          .eq('status', 'open')
+          .order('opened_at', { ascending: false })
+          .limit(1);
+        const session = sessions && sessions[0];
+        if (session && user && user.id) {
+          await supabaseClient.from('cash_movements').insert([{
+            session_id: session.id,
+            type: 'sale',
+            amount: orderData.total,
+            reason: `Order #${orderData.id}`,
+            user_id: user.id,
+          }]);
+        }
+      }
 
     } catch (error) {
       console.error("Transaction failed:", error);
@@ -266,7 +355,36 @@ const PosOrderList = ({
     const qty = quantities[id] || 1;
     return product ? sum + (product.price * qty) : sum;
   }, 0);
-  const tax = 0;
+  
+  const totalCost = selectedProducts.reduce((sum, id) => {
+    const product = products.find(p => p.id === id);
+    const qty = quantities[id] || 1;
+    return product ? sum + ((product.cost_price || 0) * qty) : sum;
+  }, 0);
+  
+  const totalProfit = subtotal - totalCost;
+  
+  // Calculate tax based on product tax configuration
+  const tax = selectedProducts.reduce((sum, id) => {
+    const product = products.find(p => p.id === id);
+    const qty = quantities[id] || 1;
+    if (!product || !product.tax_percentage || product.tax_percentage <= 0) return sum;
+    
+    const taxPercentage = Number(product.tax_percentage);
+    let itemTax = 0;
+    
+    if (product.tax_type === 'exclusive') {
+      // Tax is added on top of the price
+      itemTax = (product.price * taxPercentage / 100) * qty;
+    } else if (product.tax_type === 'inclusive') {
+      // Tax is included in the price, so we need to extract it
+      const priceWithoutTax = product.price / (1 + taxPercentage / 100);
+      itemTax = (product.price - priceWithoutTax) * qty;
+    }
+    
+    return sum + itemTax;
+  }, 0);
+  
   let discount = 0;
   let discountLabel = "No discount";
   let discountType = "";
@@ -437,6 +555,12 @@ const PosOrderList = ({
               <span>GHS {tax.toLocaleString()}</span>
             </div>
             
+            {tax > 0 && (
+              <div className="text-xs text-gray-500 ml-4">
+                (Calculated based on product tax rates)
+              </div>
+            )}
+            
             <div className="flex justify-between items-center">
               <span className="text-red-500">
                 Discount
@@ -446,30 +570,17 @@ const PosOrderList = ({
                 -GHS {discount.toLocaleString()}
               </span>
             </div>
-            {/* <div className="flex justify-between items-center">
-              <span className="flex items-center gap-2">
-                 Roundoff
-                <span
-                  className="relative inline-flex items-center cursor-pointer ml-1"
-                  onClick={() => setRoundoffEnabled((v) => !v)}
-                  role="switch"
-                  aria-checked={roundoffEnabled}
-                  tabIndex={0}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setRoundoffEnabled(v => !v); }}
-                >
-                  <span
-                    className={`w-10 h-6 flex items-center rounded-full p-1 duration-300 ease-in-out ${roundoffEnabled ? 'bg-blue-500' : 'bg-gray-300'}`}
-                  >
-                    <span
-                      className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out${roundoffEnabled ? ' translate-x-4' : ' translate-x-0'}`}
-                    />
-                  </span>
+            
+            {totalProfit > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-green-600 font-medium">
+                  Estimated Profit
                 </span>
-              </span>
-              {roundoffEnabled && (
-                <span>+GHS {roundoff.toLocaleString()}</span>
-              )}
-            </div> */}
+                <span className="text-green-600 font-medium">
+                  GHS {totalProfit.toLocaleString()}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between items-center font-bold mt-2">
               <span>Sub Total</span>
               <span>GHS {subtotal.toLocaleString()}</span>
@@ -546,7 +657,7 @@ const PosOrderList = ({
                 <div>
                   <div>Method: Split Payment</div>
                   <div>Total Paid: GHS {(paymentData.total - paymentData.remainingAmount).toLocaleString()}</div>
-                  <div>Payments: {paymentData.splitPayments.length} methods</div>
+                  <div>Payments: {paymentData.splitPayments.map(p => `${getPaymentTypeLabel(p.method)} (GHS ${(parseFloat(p.amount) || 0).toLocaleString()})`).join(', ')}</div>
                 </div>
               ) : (
                 <div>
@@ -874,7 +985,7 @@ const PosOrderList = ({
                      toast.error("Failed to generate receipt");
                    }
                  }}
-                 className="flex-1 bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                 className="flex-1 flex-col bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                >
                  <Icon icon="mdi:printer" className="w-5 h-5" />
                  Print Receipt

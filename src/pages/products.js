@@ -183,7 +183,16 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                   )},
                   { header: "Category", accessor: "category_id", sortable: false, render: (row) => row.category_name || "-" },
                   { header: "Brand", accessor: "brand_id", sortable: false, render: (row) => row.brand_name || "-" },
-                  { header: "Price", accessor: "price", sortable: true },
+                  { header: "Selling Price", accessor: "price", sortable: true, render: (row) => `GHS ${row.price}` },
+                  { header: "Cost Price", accessor: "cost_price", sortable: true, render: (row) => `GHS ${row.cost_price || 0}` },
+                  { header: "Tax Type", accessor: "tax_type", sortable: true, render: (row) => (
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      row.tax_type === 'inclusive' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                    }`}>
+                      {row.tax_type === 'inclusive' ? 'Inclusive' : 'Exclusive'}
+                    </span>
+                  )},
+                  { header: "Tax %", accessor: "tax_percentage", sortable: true, render: (row) => `${row.tax_percentage || 0}%` },
                   { header: "Unit", accessor: "unit_id", sortable: false, render: (row) => row.unit_name || "-" },
                   { header: "Qty", accessor: "quantity", sortable: true },
                 ]}

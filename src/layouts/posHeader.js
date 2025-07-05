@@ -4,6 +4,9 @@ import FullscreenToggle from "@/components/FullscreenToggle";
 import TooltipIconButton from "@/components/TooltipIconButton";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import Link from "next/link";
+import CashRegisterModal from "@/components/CashRegisterModal";
+import SalesProfitModal from "@/components/SalesProfitModal";
+import { useModal } from "@/components/ModalContext";
 
 // Enhanced DateTime Component
 const EnhancedDateTime = ({ mode }) => {
@@ -177,7 +180,7 @@ const EnhancedDateTime = ({ mode }) => {
   );
 };
 
-const PosHeader = ({ mode, toggleMode, onLogout, user }) => {
+const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrderData, onOpenOrderHistory }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const headerRef = useRef(null);
@@ -187,6 +190,19 @@ const PosHeader = ({ mode, toggleMode, onLogout, user }) => {
   const notifDropdownRef = useRef(null);
   const [addNewDropdownOpen, setAddNewDropdownOpen] = useState(false);
   const addNewDropdownRef = useRef(null);
+  const { showCashRegister, setShowCashRegister } = useModal();
+  const [showSalesModal, setShowSalesModal] = useState(false);
+  const [showProfitModal, setShowProfitModal] = useState(false);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('PosHeader mounted');
+    return () => console.log('PosHeader unmounted');
+  }, []);
+
+  useEffect(() => {
+    console.log('showCashRegister changed:', showCashRegister);
+  }, [showCashRegister]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -263,12 +279,14 @@ const PosHeader = ({ mode, toggleMode, onLogout, user }) => {
             </div>
 
             <div className="flex justify-center items-center w-full gap-4">
-              
-
               <TooltipIconButton
                 label="Cash Register"
                 mode={mode}
                 className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                onClick={() => {
+                  console.log('Cash Register button clicked');
+                  setShowCashRegister(true);
+                }}
               >
                 <Icon
                   icon="iconoir:lot-of-cash"
@@ -280,9 +298,25 @@ const PosHeader = ({ mode, toggleMode, onLogout, user }) => {
                 label="Print Last Receipt"
                 mode={mode}
                 className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                onClick={printLastReceipt}
+                disabled={!lastOrderData}
               >
                 <Icon
                   icon="lets-icons:print-light"
+                  className={`h-7 w-7 ${
+                    lastOrderData ? "text-gray-500" : "text-gray-300"
+                  }`}
+                />
+              </TooltipIconButton>
+
+              <TooltipIconButton
+                label="View Orders"
+                mode={mode}
+                className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                onClick={onOpenOrderHistory}
+              >
+                <Icon
+                  icon="material-symbols-light:order-approve-outline"
                   className="h-7 w-7 text-gray-500"
                 />
               </TooltipIconButton>
@@ -291,6 +325,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user }) => {
                 label="Today's Sales"
                 mode={mode}
                 className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                onClick={() => setShowSalesModal(true)}
               >
                 <Icon icon="mdi:cart-sale" className="h-7 w-7 text-gray-500" />
               </TooltipIconButton>
@@ -299,6 +334,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user }) => {
                 label="Today's Profit"
                 mode={mode}
                 className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                onClick={() => setShowProfitModal(true)}
               >
                 <Icon
                   icon="hugeicons:chart-increase"
@@ -508,6 +544,26 @@ const PosHeader = ({ mode, toggleMode, onLogout, user }) => {
         </div>
       </header>
       <div className="h-[72px]" aria-hidden="true"></div>
+      <CashRegisterModal
+        isOpen={showCashRegister}
+        onClose={() => {
+          console.log('Cash Register modal closing');
+          setShowCashRegister(false);
+        }}
+        user={user}
+      />
+      <SalesProfitModal
+        isOpen={showSalesModal}
+        onClose={() => setShowSalesModal(false)}
+        mode={mode}
+        type="sales"
+      />
+      <SalesProfitModal
+        isOpen={showProfitModal}
+        onClose={() => setShowProfitModal(false)}
+        mode={mode}
+        type="profit"
+      />
     </>
   );
 };

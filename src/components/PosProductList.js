@@ -6,7 +6,7 @@ import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import { playBellBeep } from "@/utils/posSounds";
 
-const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts }) => {
+const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts }) => {
   const { categories, loading: catLoading, error: catError } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, _setProducts] = useState([]);
@@ -61,6 +61,13 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
       }
     }
   }, [prodLoading]);
+
+  // Add this useEffect to reload products when reloadProducts changes
+  useEffect(() => {
+    if (reloadProducts !== undefined) {
+      setReloadFlag(f => f + 1);
+    }
+  }, [reloadProducts]);
 
   const handleQuantityChange = (productId, value) => {
     const product = products.find(p => p.id === productId);
@@ -271,9 +278,21 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
                 <span className="border-t w-full py-1"></span>
 
-                <div className="flex items-center gap-1 self-start mt-1 whitespace-nowrap">
-                  <span className="text-sm font-bold text-blue-700  ">GHS {product.price}</span>
-                  
+                <div className="flex flex-col gap-1 self-start mt-1 w-full">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-sm font-bold text-blue-700">GHS {product.price}</span>
+                    <span className="text-xs text-gray-500">Cost: GHS {product.cost_price || 0}</span>
+                  </div>
+                  {product.cost_price && product.cost_price > 0 && (
+                    <div className="text-xs text-green-600 font-medium">
+                      Profit: GHS {((product.price - product.cost_price) * (quantities[product.id] || 1)).toFixed(2)}
+                    </div>
+                  )}
+                  {product.tax_percentage && product.tax_percentage > 0 && (
+                    <div className="text-xs text-orange-600 font-medium">
+                      Tax: {product.tax_percentage}% ({product.tax_type === 'inclusive' ? 'Included' : 'Added'})
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

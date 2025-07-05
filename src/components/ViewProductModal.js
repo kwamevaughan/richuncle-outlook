@@ -38,6 +38,12 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
     { label: "Brand", value: product.brand_name, icon: "mdi:label-outline" },
     { label: "Unit", value: product.unit_name, icon: "mdi:ruler" },
     { label: "Quantity", value: product.quantity, icon: "mdi:package-variant" },
+    { label: "Cost Price", value: formatPrice(product.cost_price || 0), icon: "mdi:currency-usd" },
+    { 
+      label: "Tax Configuration", 
+      value: `${product.tax_type === 'inclusive' ? 'Inclusive' : 'Exclusive'} (${product.tax_percentage || 0}%)`, 
+      icon: "mdi:receipt-text" 
+    },
     {
       label: "Selling Type",
       value: (() => {
@@ -160,14 +166,24 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
               </div>
 
               {/* Price and Barcode Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Price Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Selling Price Section */}
                 <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700">
                   <div className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
-                    Price
+                    Selling Price
                   </div>
                   <div className="text-3xl font-bold text-slate-900 dark:text-white">
                     {formatPrice(product.price)}
+                  </div>
+                </div>
+
+                {/* Cost Price Section */}
+                <div className="bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700">
+                  <div className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Cost Price
+                  </div>
+                  <div className="text-3xl font-bold text-slate-900 dark:text-white">
+                    {formatPrice(product.cost_price || 0)}
                   </div>
                 </div>
 

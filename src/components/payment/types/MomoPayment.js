@@ -12,10 +12,12 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
           </label>
           <select
             value={paymentData.momoProvider}
-            onChange={(e) => setPaymentData(prev => ({
-              ...prev,
-              momoProvider: e.target.value
-            }))}
+            onChange={(e) =>
+              setPaymentData((prev) => ({
+                ...prev,
+                momoProvider: e.target.value,
+              }))
+            }
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           >
@@ -32,10 +34,12 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
           <input
             type="tel"
             value={paymentData.customerPhone || ""}
-            onChange={(e) => setPaymentData(prev => ({
-              ...prev,
-              customerPhone: e.target.value
-            }))}
+            onChange={(e) =>
+              setPaymentData((prev) => ({
+                ...prev,
+                customerPhone: e.target.value,
+              }))
+            }
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="e.g., 0241234567"
             required
@@ -46,21 +50,31 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
       {/* Store Account Information */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Icon icon="mdi:information-outline" className="w-5 h-5 text-yellow-600" />
-          <span className="font-semibold text-yellow-800">Store Mobile Money Account</span>
+          <Icon
+            icon="mdi:information-outline"
+            className="w-5 h-5 text-yellow-600"
+          />
+          <span className="font-semibold text-yellow-800">
+            Store Mobile Money Account
+          </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-600">Account Name:</span>
-            <span className="font-semibold ml-2 text-yellow-800">STORE NAME</span>
+            <span className="font-semibold ml-2 text-yellow-800">
+              RICHUNCLE OUTLOOK
+            </span>
           </div>
           <div>
             <span className="text-gray-600">Account Number:</span>
-            <span className="font-semibold ml-2 text-yellow-800">0241234567</span>
+            <span className="font-semibold ml-2 text-yellow-800">
+              0598612130
+            </span>
           </div>
         </div>
         <div className="mt-2 text-xs text-yellow-700">
-          Customer should send payment to this account and provide the reference number below.
+          Customer should send payment to this account and provide the reference
+          number below.
         </div>
       </div>
 
@@ -73,10 +87,12 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
           <input
             type="text"
             value={paymentData.referenceNumber}
-            onChange={(e) => setPaymentData(prev => ({
-              ...prev,
-              referenceNumber: e.target.value
-            }))}
+            onChange={(e) =>
+              setPaymentData((prev) => ({
+                ...prev,
+                referenceNumber: e.target.value,
+              }))
+            }
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Enter transaction reference"
             required
@@ -89,10 +105,12 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
           <input
             type="text"
             value={paymentData.transactionId || ""}
-            onChange={(e) => setPaymentData(prev => ({
-              ...prev,
-              transactionId: e.target.value
-            }))}
+            onChange={(e) =>
+              setPaymentData((prev) => ({
+                ...prev,
+                transactionId: e.target.value,
+              }))
+            }
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Optional transaction ID"
           />
@@ -102,15 +120,34 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
       {/* Payment Instructions */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center gap-2 mb-2">
-          <Icon icon="mdi:cellphone-message" className="w-5 h-5 text-blue-600" />
-          <span className="font-semibold text-blue-800">Payment Instructions</span>
+          <Icon
+            icon="mdi:cellphone-message"
+            className="w-5 h-5 text-blue-600"
+          />
+          <span className="font-semibold text-blue-800">
+            Payment Instructions
+          </span>
         </div>
         <div className="text-sm text-blue-700 space-y-1">
-          <div>1. Customer dials the USSD code for {paymentData.momoProvider || "selected provider"}</div>
+          <div>
+            1. Customer dials the USSD code for{" "}
+            {paymentData.momoProvider || "selected provider"}
+          </div>
           <div>2. Select "Send Money" or "Transfer"</div>
-          <div>3. Enter store account number: <span className="font-semibold">0241234567</span></div>
-          <div>4. Enter amount: <span className="font-semibold">GHS {total.toLocaleString()}</span></div>
-          <div>5. Enter reference: <span className="font-semibold">{paymentData.referenceNumber || "CUSTOMER_REFERENCE"}</span></div>
+          <div>
+            3. Enter store account number:{" "}
+            <span className="font-semibold">0598612130</span>
+          </div>
+          <div>
+            4. Enter amount:{" "}
+            <span className="font-semibold">GHS {total.toLocaleString()}</span>
+          </div>
+          <div>
+            5. Enter reference:{" "}
+            <span className="font-semibold">
+              {paymentData.referenceNumber || "CUSTOMER_REFERENCE"}
+            </span>
+          </div>
           <div>6. Confirm transaction and provide reference number</div>
         </div>
       </div>

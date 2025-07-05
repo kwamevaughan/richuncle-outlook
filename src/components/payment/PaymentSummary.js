@@ -1,6 +1,11 @@
 import React from 'react';
 
-const PaymentSummary = ({ orderId, customer, total }) => {
+const PaymentSummary = ({ orderId, customer, total, paymentType, paymentData }) => {
+  const getPaymentTypeLabel = (method) => {
+    // Implement your logic to get a label based on the payment method
+    return method;
+  };
+
   return (
     <div className="bg-blue-50 rounded-lg p-4 mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -35,6 +40,11 @@ const PaymentSummary = ({ orderId, customer, total }) => {
           )}
         </div>
       </div>
+      {paymentType === 'split' && paymentData && paymentData.splitPayments && paymentData.splitPayments.length > 0 && (
+        <div className="text-sm text-gray-700 mt-1">
+          Payments: {paymentData.splitPayments.map(p => `${getPaymentTypeLabel(p.method)} (GHS ${(parseFloat(p.amount) || 0).toLocaleString()})`).join(', ')}
+        </div>
+      )}
     </div>
   );
 };

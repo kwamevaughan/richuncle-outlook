@@ -60,6 +60,27 @@ const PaymentForm = ({
     }));
   }, [paymentType, total]);
 
+  // Add this useEffect to reset split payment state when modal opens or order/total changes
+  useEffect(() => {
+    if (isOpen && paymentType === "split") {
+      setPaymentData(prev => ({
+        ...prev,
+        splitPayments: [],
+        remainingAmount: total,
+        newSplitMethod: "",
+        newSplitAmount: "",
+        newSplitRemaining: 0,
+        editingPayment: null,
+        momoProvider: "",
+        customerPhone: "",
+        referenceNumber: "",
+        chequeNumber: "",
+        bankName: "",
+        chequeDate: ""
+      }));
+    }
+  }, [isOpen, total, paymentType]);
+
   const handleReceivedAmountChange = (value) => {
     const received = parseFloat(value) || 0;
     const paying = parseFloat(paymentData.payingAmount) || 0;
@@ -111,8 +132,6 @@ const PaymentForm = ({
     // Close modal
     onClose();
   };
-
-
 
   const renderPaymentTypeFields = () => {
     switch (paymentType) {
@@ -215,13 +234,13 @@ const PaymentForm = ({
                 <div>
                   <span className="text-gray-600">Paid Amount:</span>
                   <span className="font-semibold ml-2 text-lg text-green-600">
-                    GHS {(total - paymentData.remainingAmount).toLocaleString()}
+                    GHS {paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
                   </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Remaining:</span>
                   <span className="font-semibold ml-2 text-lg text-orange-600">
-                    GHS {paymentData.remainingAmount.toLocaleString()}
+                    GHS {(total - paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -310,41 +329,47 @@ const PaymentForm = ({
                          toast.error("Please select payment method and enter amount");
                          return;
                        }
-                       
-                       const amount = parseFloat(paymentData.newSplitAmount);
-                       
+                       const amount = parseFloat(paymentData.newSplitAmount) || 0;
+                       // Calculate paid/remaining excluding the payment being edited (if any)
+                       let paid = 0;
+                       if (paymentData.editingPayment) {
+                         paid = paymentData.splitPayments
+                           .filter(p => p.id !== paymentData.editingPayment)
+                           .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                       } else {
+                         paid = paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                       }
+                       const remaining = total - paid;
+                       if (amount <= 0) {
+                         toast.error("Amount must be greater than zero");
+                         return;
+                       }
+                       if (amount > remaining) {
+                         toast.error("Amount cannot exceed remaining balance");
+                         return;
+                       }
                        if (paymentData.editingPayment) {
                          // Update existing payment
-                         const existingPayment = paymentData.splitPayments.find(p => p.id === paymentData.editingPayment);
-                         if (!existingPayment) {
-                           toast.error("Payment not found for editing");
-                           return;
-                         }
-                         
-                         const amountDifference = amount - existingPayment.amount;
-                         if (amountDifference > paymentData.remainingAmount) {
-                           toast.error("Amount increase cannot exceed remaining balance");
-                           return;
-                         }
-                         
-                         const updatedPayment = {
-                           ...existingPayment,
-                           method: paymentData.newSplitMethod,
-                           amount: amount,
-                           momoProvider: paymentData.momoProvider,
-                           customerPhone: paymentData.customerPhone,
-                           referenceNumber: paymentData.referenceNumber,
-                           chequeNumber: paymentData.chequeNumber,
-                           bankName: paymentData.bankName,
-                           chequeDate: paymentData.chequeDate
-                         };
-                         
+                         const updatedPayments = paymentData.splitPayments.map(p =>
+                           p.id === paymentData.editingPayment
+                             ? {
+                                 ...p,
+                                 method: paymentData.newSplitMethod,
+                                 amount: amount,
+                                 momoProvider: paymentData.momoProvider,
+                                 customerPhone: paymentData.customerPhone,
+                                 referenceNumber: paymentData.referenceNumber,
+                                 chequeNumber: paymentData.chequeNumber,
+                                 bankName: paymentData.bankName,
+                                 chequeDate: paymentData.chequeDate
+                               }
+                             : p
+                         );
+                         const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
                          setPaymentData(prev => ({
                            ...prev,
-                           splitPayments: prev.splitPayments.map(p => 
-                             p.id === paymentData.editingPayment ? updatedPayment : p
-                           ),
-                           remainingAmount: prev.remainingAmount - amountDifference,
+                           splitPayments: updatedPayments,
+                           remainingAmount: total - updatedPaid,
                            editingPayment: null,
                            newSplitMethod: "",
                            newSplitAmount: "",
@@ -356,15 +381,9 @@ const PaymentForm = ({
                            bankName: "",
                            chequeDate: ""
                          }));
-                         
                          toast.success(`Payment updated to ${getPaymentTypeLabel(paymentData.newSplitMethod)} - GHS ${amount.toLocaleString()}`);
                        } else {
                          // Add new payment
-                         if (amount > paymentData.remainingAmount) {
-                           toast.error("Amount cannot exceed remaining balance");
-                           return;
-                         }
-                         
                          const newPayment = {
                            id: Date.now(),
                            method: paymentData.newSplitMethod,
@@ -378,11 +397,12 @@ const PaymentForm = ({
                            bankName: paymentData.bankName,
                            chequeDate: paymentData.chequeDate
                          };
-                         
+                         const updatedPayments = [...paymentData.splitPayments, newPayment];
+                         const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
                          setPaymentData(prev => ({
                            ...prev,
-                           splitPayments: [...prev.splitPayments, newPayment],
-                           remainingAmount: prev.remainingAmount - amount,
+                           splitPayments: updatedPayments,
+                           remainingAmount: total - updatedPaid,
                            newSplitMethod: "",
                            newSplitAmount: "",
                            newSplitRemaining: 0,
@@ -393,7 +413,6 @@ const PaymentForm = ({
                            bankName: "",
                            chequeDate: ""
                          }));
-                         
                          toast.success(`${getPaymentTypeLabel(paymentData.newSplitMethod)} payment of GHS ${amount.toLocaleString()} added`);
                        }
                      }}
@@ -690,11 +709,15 @@ const PaymentForm = ({
                          <button
                            type="button"
                            onClick={() => {
-                             setPaymentData(prev => ({
-                               ...prev,
-                               splitPayments: prev.splitPayments.filter(p => p.id !== payment.id),
-                               remainingAmount: prev.remainingAmount + payment.amount
-                             }));
+                             setPaymentData(prev => {
+                               const updatedPayments = prev.splitPayments.filter(p => p.id !== payment.id);
+                               const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                               return {
+                                 ...prev,
+                                 splitPayments: updatedPayments,
+                                 remainingAmount: total - updatedPaid
+                               };
+                             });
                              toast.success("Payment removed from split");
                            }}
                            className="text-red-500 hover:text-red-700"
@@ -711,7 +734,7 @@ const PaymentForm = ({
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Total Paid:</span>
                     <span className="font-semibold text-green-600">
-                      GHS {(total - paymentData.remainingAmount).toLocaleString()}
+                      GHS {paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mt-1">
@@ -849,7 +872,7 @@ const PaymentForm = ({
           <div className="p-8 overflow-y-auto max-h-[calc(85vh-120px)] bg-white/60">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Payment Summary */}
-              <PaymentSummary orderId={orderId} customer={customer} total={total} />
+              <PaymentSummary orderId={orderId} customer={customer} total={total} paymentType={paymentType} paymentData={paymentData} />
 
               {/* Payment Amounts - Hidden for Split Payments */}
               {paymentType !== "split" && (

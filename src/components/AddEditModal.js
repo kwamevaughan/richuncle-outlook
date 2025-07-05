@@ -47,6 +47,9 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
   const [productName, setProductName] = useState(item?.name || "");
   const [quantity, setQuantity] = useState(item?.quantity || "");
   const [price, setPrice] = useState(item?.price || "");
+  const [costPrice, setCostPrice] = useState(item?.cost_price || "");
+  const [taxType, setTaxType] = useState(item?.tax_type || "exclusive");
+  const [taxPercentage, setTaxPercentage] = useState(item?.tax_percentage || "");
   const [sku, setSku] = useState(item?.sku || "");
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
   const [subcategoryId, setSubcategoryId] = useState(item?.subcategory_id || "");
@@ -323,6 +326,18 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
         setError("Price is required");
         return;
       }
+      if (!costPrice.trim()) {
+        setError("Cost Price is required");
+        return;
+      }
+      if (!taxPercentage.trim()) {
+        setError("Tax Percentage is required");
+        return;
+      }
+      if (isNaN(Number(taxPercentage)) || Number(taxPercentage) < 0 || Number(taxPercentage) > 100) {
+        setError("Tax Percentage must be a number between 0 and 100");
+        return;
+      }
       if (!sku.trim()) {
         setError("SKU is required");
         return;
@@ -398,6 +413,9 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
           name: productName.trim(),
           quantity: quantity.trim(),
           price: price.trim(),
+          cost_price: costPrice.trim(),
+          tax_type: taxType,
+          tax_percentage: taxPercentage.trim(),
           sku: sku.trim(),
           store_id: storeId || null,
           warehouse_id: warehouseId || null,
@@ -818,8 +836,57 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                   <input type="number" className="w-full border rounded px-3 py-2" value={price} onChange={e => setPrice(e.target.value)} disabled={loading} placeholder="Price" />
                 </div>
                 <div>
+                  <label className="block mb-1 font-medium">Cost Price (in GHS)<span className="text-red-500">*</span></label>
+                  <input type="number" className="w-full border rounded px-3 py-2" value={costPrice} onChange={e => setCostPrice(e.target.value)} disabled={loading} placeholder="Cost Price" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block mb-1 font-medium">Tax Type<span className="text-red-500">*</span></label>
+                  <select className="w-full border rounded px-3 py-2" value={taxType} onChange={e => setTaxType(e.target.value)} disabled={loading}>
+                    <option value="exclusive">Exclusive (Tax added on top)</option>
+                    <option value="inclusive">Inclusive (Tax included in price)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Tax Percentage (%)<span className="text-red-500">*</span></label>
+                  <input type="number" min="0" max="100" step="0.01" className="w-full border rounded px-3 py-2" value={taxPercentage} onChange={e => setTaxPercentage(e.target.value)} disabled={loading} placeholder="0.00" />
+                  <div className="text-xs text-gray-500 mt-1">
+                    {taxType === 'exclusive' 
+                      ? 'Tax will be added on top of the selling price (e.g., GHS 100 + 15% = GHS 115)' 
+                      : 'Tax is included in the selling price (e.g., GHS 115 includes 15% tax = GHS 100 + GHS 15)'
+                    }
+                  </div>
+                  {price && taxPercentage && Number(taxPercentage) > 0 && (
+                    <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2 mt-2">
+                      <div className="font-medium text-blue-800 mb-1">
+                        Tax Calculation for "{productName || 'Product'}":
+                      </div>
+                      {taxType === 'exclusive' ? (
+                        <div className="text-blue-700">
+                          <div>Price: GHS {Number(price).toFixed(2)}</div>
+                          <div>Tax ({taxPercentage}%): GHS {(Number(price) * Number(taxPercentage) / 100).toFixed(2)}</div>
+                          <div className="font-medium">Total: GHS {(Number(price) * (1 + Number(taxPercentage) / 100)).toFixed(2)}</div>
+                        </div>
+                      ) : (
+                        <div className="text-blue-700">
+                          <div>Total Price: GHS {Number(price).toFixed(2)}</div>
+                          <div>Price without tax: GHS {(Number(price) / (1 + Number(taxPercentage) / 100)).toFixed(2)}</div>
+                          <div className="font-medium">Tax included: GHS {(Number(price) - (Number(price) / (1 + Number(taxPercentage) / 100))).toFixed(2)}</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
                   <label className="block mb-1 font-medium">SKU</label>
                   <input className="w-full border rounded px-3 py-2" value={sku} onChange={e => setSku(e.target.value)} disabled={loading} placeholder="SKU" />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Barcode</label>
+                  <input className="w-full border rounded px-3 py-2" value={barcode} onChange={e => setBarcode(e.target.value)} disabled={loading} placeholder="Barcode" />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
