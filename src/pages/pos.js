@@ -2,7 +2,7 @@ import MainLayout from "@/layouts/MainLayout";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import PosHeader from "@/layouts/posHeader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import PosProductList from "@/components/PosProductList";
 import PosOrderList from "@/components/PosOrderList";
 import { Icon } from "@iconify/react";
@@ -86,7 +86,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const totalPayable = calculateTotal();
 
   // Handler to print last receipt
-  const handlePrintLastReceipt = () => {
+  const handlePrintLastReceipt = useCallback(() => {
     if (!lastOrderData) {
       alert("No order has been completed yet.");
       return;
@@ -113,7 +113,25 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       paymentData: lastOrderData.payment
     });
     printReceipt.printOrder();
-  };
+  }, [lastOrderData, customers]);
+
+  // Memoize the header component to prevent unnecessary re-renders
+  const headerComponent = useMemo(() => {
+    return (headerProps) => (
+      <PosHeader
+        {...headerProps}
+        printLastReceipt={handlePrintLastReceipt}
+        lastOrderData={lastOrderData}
+        onOpenOrderHistory={() => setShowOrderHistory(true)}
+      />
+    );
+  }, [handlePrintLastReceipt, lastOrderData, setShowOrderHistory]);
+
+  // Memoize the onOrderComplete callback
+  const handleOrderComplete = useCallback((orderData) => {
+    setReloadProducts(r => r + 1);
+    setLastOrderData(orderData);
+  }, []);
 
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
@@ -131,14 +149,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         user={user}
         toggleMode={toggleMode}
         onLogout={handleLogout}
-        HeaderComponent={(headerProps) => (
-          <PosHeader
-            {...headerProps}
-            printLastReceipt={handlePrintLastReceipt}
-            lastOrderData={lastOrderData}
-            onOpenOrderHistory={() => setShowOrderHistory(true)}
-          />
-        )}
+        HeaderComponent={headerComponent}
         showSidebar={false}
         {...props}
       >
@@ -167,10 +178,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             setRoundoffEnabled={setRoundoffEnabled}
             customers={customers}
             setCustomers={setCustomers}
-            onOrderComplete={(orderData) => {
-              setReloadProducts(r => r + 1);
-              setLastOrderData(orderData);
-            }}
+            onOrderComplete={handleOrderComplete}
             user={user}
           />
         </div>

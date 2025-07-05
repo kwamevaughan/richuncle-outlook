@@ -134,13 +134,18 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
         <div className="flex flex-col border-r w-30 bg-gray-50 py-2 gap-2 min-h-0 overflow-auto">
           {/* All tab */}
           <button
+            type="button"
             key="all"
             className={`flex flex-col items-center justify-center px-2 py-4 text-center text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none bg-white  hover:bg-blue-100 gap-2 ${
               selectedCategory === "all"
                 ? "bg-blue-100 text-blue-700 border-blue-400"
                 : "text-gray-700 border-transparent"
             }`}
-            onClick={() => setSelectedCategory("all")}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedCategory("all");
+            }}
           >
             <Image
               src="https://ik.imagekit.io/164jkw2ne/CategoryImages/all_accessories.jpg?updatedAt=1751485982538"
@@ -161,13 +166,18 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
           )}
           {categories.map((cat) => (
             <button
+              type="button"
               key={cat.id}
               className={`flex flex-col items-center justify-center px-2 py-4 text-center text-sm font-semibold rounded-lg border transition-colors duration-150 focus:outline-none hover:bg-blue-100 bg-white gap-2 ${
                 selectedCategory === cat.id
                   ? "bg-blue-100 text-blue-700 border-blue-400"
                   : "text-gray-700 border-transparent"
               }`}
-              onClick={() => setSelectedCategory(cat.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSelectedCategory(cat.id);
+              }}
             >
               {cat.image_url && (
                 <Image
@@ -198,13 +208,20 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
+                                  onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
                   placeholder="Search products..."
                   className="border rounded pl-10 pr-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
               </div>
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   toast.loading("Refreshing products...", { id: "reload-products" });
                   setReloadFlag(f => f + 1);
                 }}
@@ -234,7 +251,11 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 style={{ boxShadow: selectedProducts.includes(product.id) ? '0 0 0 0 #22c55e' : undefined }}
                 onMouseEnter={e => e.currentTarget.classList.add('border-green-500', 'shadow-green-100')}
                 onMouseLeave={e => !selectedProducts.includes(product.id) && e.currentTarget.classList.remove('border-green-500', 'shadow-green-100')}
-                onClick={() => toggleProductSelect(product.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleProductSelect(product.id);
+                }}
               >
                 {(selectedProducts.includes(product.id) || true /* always show on hover */) && (
                   <span className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-500 ${selectedProducts.includes(product.id) ? 'opacity-100' : ''}`}>
