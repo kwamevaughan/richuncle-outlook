@@ -60,13 +60,26 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
   const [units, setUnits] = useState([]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [sellingType, setSellingType] = useState(
-    Array.isArray(item?.selling_type)
-      ? item.selling_type
-      : item?.selling_type
-        ? [item.selling_type]
-        : []
-  );
+  const [sellingType, setSellingType] = useState(() => {
+    let val = item?.selling_type;
+    if (Array.isArray(val) && val.length === 1 && typeof val[0] === "string" && val[0].startsWith("[")) {
+      try {
+        val = JSON.parse(val[0]);
+      } catch {}
+    }
+    if (typeof val === "string" && val.startsWith("[")) {
+      try {
+        val = JSON.parse(val);
+      } catch {}
+    }
+    if (Array.isArray(val)) {
+      return val;
+    }
+    if (typeof val === "string" && val) {
+      return [val];
+    }
+    return [];
+  });
 
   // Helper to generate a code suggestion
   function suggestCategoryCode(name, existingCodes) {

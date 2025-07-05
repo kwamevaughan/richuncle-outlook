@@ -263,16 +263,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user }) => {
             </div>
 
             <div className="flex justify-center items-center w-full gap-4">
-              <TooltipIconButton
-                label="Calculator"
-                mode={mode}
-                className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
-              >
-                <Icon
-                  icon="solar:calculator-broken"
-                  className="h-7 w-7 text-gray-500"
-                />
-              </TooltipIconButton>
+              
 
               <TooltipIconButton
                 label="Cash Register"

@@ -1,6 +1,8 @@
 import SimpleModal from "./SimpleModal";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
+import Barcode from 'react-barcode';
+import { useRef } from "react";
 
 export default function ViewProductModal({ product, isOpen, onClose, mode }) {
   if (!product) return null;
@@ -38,10 +40,63 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
     { label: "Quantity", value: product.quantity, icon: "mdi:package-variant" },
     {
       label: "Selling Type",
-      value: product.selling_type,
+      value: (() => {
+        let val = product.selling_type;
+        // If it's an array with a single string that looks like a JSON array, parse it
+        if (Array.isArray(val) && val.length === 1 && typeof val[0] === "string" && val[0].startsWith("[")) {
+          try {
+            val = JSON.parse(val[0]);
+          } catch {}
+        }
+        // If it's a string that looks like a JSON array, parse it
+        if (typeof val === "string" && val.startsWith("[")) {
+          try {
+            val = JSON.parse(val);
+          } catch {}
+        }
+        // If it's now an array, join it
+        if (Array.isArray(val)) {
+          return val.join(", ");
+        }
+        // Otherwise, just return as string
+        return val || "—";
+      })(),
       icon: "mdi:briefcase-outline",
     },
   ];
+
+  const printRef = useRef();
+
+  const handlePrint = () => {
+    if (!printRef.current) return;
+    const printContents = printRef.current.innerHTML;
+    const printWindow = window.open('', '', 'width=900,height=650');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Product Details</title>
+          <style>
+            body { font-family: sans-serif; margin: 0; padding: 24px; background: #fff; }
+            .print-barcode { margin: 16px 0; }
+            .print-title { font-size: 2rem; font-weight: bold; margin-bottom: 12px; }
+            .print-section { margin-bottom: 18px; }
+            .print-label { font-weight: 500; color: #555; }
+            .print-value { font-weight: 600; color: #222; }
+            .barcode svg { width: 180px !important; height: 48px !important; }
+          </style>
+        </head>
+        <body>
+          ${printContents}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 400);
+  };
 
   return (
     <SimpleModal
@@ -51,7 +106,7 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
       mode={mode}
       width="max-w-4xl"
     >
-      <div className="space-y-6">
+      <div className="space-y-6" ref={printRef}>
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 p-6">
           <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -96,7 +151,7 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
                   </div>
                 </div>
                 <button
-                  onClick={() => window.print()}
+                  onClick={handlePrint}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm shadow-sm"
                 >
                   <Icon icon="mdi:printer" className="text-lg" />
@@ -123,13 +178,7 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
                       Barcode
                     </div>
                     <div className="flex flex-col items-center">
-                      <img
-                        src={`https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(
-                          product.barcode
-                        )}&code=Code128&translate-esc=true`}
-                        alt={`Barcode: ${product.barcode}`}
-                        className="h-12 w-auto mb-2"
-                      />
+                      <Barcode value={product.barcode} height={48} width={2} displayValue={false} />
                       <div className="text-xs font-mono text-slate-600 dark:text-slate-400">
                         {product.barcode}
                       </div>
