@@ -22,8 +22,6 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [showLargeOutConfirm, setShowLargeOutConfirm] = useState(false);
   const [zReport, setZReport] = useState(null);
-  const sessionSubRef = useRef(null);
-  const movementSubRef = useRef(null);
   const [userMap, setUserMap] = useState({});
   const { showGlobalConfirm } = useModal();
 
@@ -77,76 +75,29 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
     })();
   }, [isOpen, actionLoading, selectedRegister]);
 
-  // Real-time updates for sessions and movements
-  useEffect(() => {
-    if (!isOpen || !selectedRegister) return;
-    // Subscribe to session changes for this register
-    if (sessionSubRef.current) sessionSubRef.current.unsubscribe();
-    sessionSubRef.current = supabaseClient
-      .channel('cash_register_sessions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_register_sessions', filter: `register_id=eq.${selectedRegister}` }, payload => {
-        // Refetch session on any change
-        setLoading(true);
-        (async () => {
-          const { data: sessions } = await supabaseClient
-            .from("cash_register_sessions")
-            .select("*")
-            .eq("status", "open")
-            .eq("register_id", selectedRegister)
-            .order("opened_at", { ascending: false })
-            .limit(1);
-          const currentSession = sessions && sessions[0];
-          setSession(currentSession || null);
-          setLoading(false);
-        })();
-      })
-      .subscribe();
-    return () => {
-      if (sessionSubRef.current) sessionSubRef.current.unsubscribe();
-    };
-  }, [isOpen, selectedRegister]);
-
-  useEffect(() => {
-    if (!isOpen || !session) return;
-    // Subscribe to movement changes for this session
-    if (movementSubRef.current) movementSubRef.current.unsubscribe();
-    movementSubRef.current = supabaseClient
-      .channel('cash_movements')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_movements', filter: `session_id=eq.${session.id}` }, payload => {
-        // Refetch movements on any change
-        setLoading(true);
-        (async () => {
-          const { data: moves } = await supabaseClient
-            .from("cash_movements")
-            .select("*")
-            .eq("session_id", session.id)
-            .order("created_at", { ascending: true });
-          setMovements(moves || []);
-          setLoading(false);
-        })();
-      })
-      .subscribe();
-    return () => {
-      if (movementSubRef.current) movementSubRef.current.unsubscribe();
-    };
-  }, [isOpen, session]);
-
   // Fetch user names for movements
   useEffect(() => {
     if (!movements.length) return;
     const uniqueUserIds = Array.from(new Set(movements.map(m => m.user_id).filter(Boolean)));
     if (!uniqueUserIds.length) return;
-    supabaseClient
-      .from('users')
-      .select('id, name, full_name')
-      .in('id', uniqueUserIds)
-      .then(({ data }) => {
-        const map = {};
-        (data || []).forEach(u => {
-          map[u.id] = u.name || u.full_name || u.id;
-        });
-        setUserMap(map);
-      });
+    
+    (async () => {
+      try {
+        const response = await fetch('/api/users');
+        const result = await response.json();
+        if (result.success) {
+          const map = {};
+          (result.data || []).forEach(u => {
+            if (uniqueUserIds.includes(u.id)) {
+              map[u.id] = u.full_name || u.id;
+            }
+          });
+          setUserMap(map);
+        }
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      }
+    })();
   }, [movements]);
 
   // Permissions check
@@ -200,16 +151,18 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
         },
         body: JSON.stringify({
           session_id: session.id,
-          type: "in",
+          user_id: user.id,
+          type: "cash_in",
           amount: cashInAmount,
           reason: cashInReason,
-          user_id: user.id,
         })
       });
       const result = await response.json();
       if (result.success) {
         setCashInAmount(0);
         setCashInReason("");
+        // Refresh movements
+        setActionLoading(true);
       } else {
         throw new Error(result.error || "Failed to add cash in");
       }
@@ -223,12 +176,13 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
   // Cash out
   const handleCashOut = async () => {
     if (!canOperate) return;
-    if (cashOutAmount > 500) { // Large cash out threshold
+    if (cashOutAmount > 1000) {
       setShowLargeOutConfirm(true);
       return;
     }
     await doCashOut();
   };
+
   const doCashOut = async () => {
     setActionLoading(true);
     setError("");
@@ -240,16 +194,19 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
         },
         body: JSON.stringify({
           session_id: session.id,
-          type: "out",
+          user_id: user.id,
+          type: "cash_out",
           amount: cashOutAmount,
           reason: cashOutReason,
-          user_id: user.id,
         })
       });
       const result = await response.json();
       if (result.success) {
         setCashOutAmount(0);
         setCashOutReason("");
+        setShowLargeOutConfirm(false);
+        // Refresh movements
+        setActionLoading(true);
       } else {
         throw new Error(result.error || "Failed to add cash out");
       }
@@ -257,53 +214,43 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
       setError(err.message || "Failed to add cash out");
     } finally {
       setActionLoading(false);
-      setShowLargeOutConfirm(false);
     }
   };
 
   // Close register
   const handleCloseRegister = async () => {
     if (!canOperate) return;
-    showGlobalConfirm("Are you sure you want to close the register?", doCloseRegister);
+    setShowCloseConfirm(true);
   };
+
   const doCloseRegister = async () => {
     setActionLoading(true);
     setError("");
     try {
-      // Calculate expected cash
-      const cashIn = movements.filter(m => m.type === "in").reduce((sum, m) => sum + Number(m.amount), 0);
-      const cashOut = movements.filter(m => m.type === "out").reduce((sum, m) => sum + Number(m.amount), 0);
-      const sales = movements.filter(m => m.type === "sale").reduce((sum, m) => sum + Number(m.amount), 0);
-      const refunds = movements.filter(m => m.type === "refund").reduce((sum, m) => sum + Number(m.amount), 0);
-      const expected = Number(session.opening_cash) + cashIn - cashOut + sales - refunds;
-      const overShort = Number(closeAmount) - expected;
-      await supabaseClient
-        .from("cash_register_sessions")
-        .update({
-          closed_at: new Date().toISOString(),
-          closing_cash: closeAmount,
-          expected_cash: expected,
-          over_short: overShort,
+      const response = await fetch(`/api/cash-register-sessions/${session.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           status: "closed",
+          closing_cash: closeAmount,
         })
-        .eq("id", session.id);
-      // Generate Z-Report
-      setZReport({
-        opened_at: session.opened_at,
-        closed_at: new Date().toISOString(),
-        user: user.name,
-        opening_cash: session.opening_cash,
-        closing_cash: closeAmount,
-        cash_in: cashIn,
-        cash_out: cashOut,
-        sales,
-        refunds,
-        expected,
-        over_short: overShort,
-        movements,
       });
-      setSession(null);
-      setCloseAmount(0);
+      const result = await response.json();
+      if (result.success) {
+        setSession(null);
+        setCloseAmount(0);
+        setShowCloseConfirm(false);
+        // Generate Z-Report
+        const zReportResponse = await fetch(`/api/cash-register-sessions/${session.id}/z-report`);
+        const zReportResult = await zReportResponse.json();
+        if (zReportResult.success) {
+          setZReport(zReportResult.data);
+        }
+      } else {
+        throw new Error(result.error || "Failed to close register");
+      }
     } catch (err) {
       setError(err.message || "Failed to close register");
     } finally {
@@ -311,70 +258,76 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
     }
   };
 
-  // Session summary
-  const cashIn = movements.filter(m => m.type === "in").reduce((sum, m) => sum + Number(m.amount), 0);
-  const cashOut = movements.filter(m => m.type === "out").reduce((sum, m) => sum + Number(m.amount), 0);
-  const sales = movements.filter(m => m.type === "sale").reduce((sum, m) => sum + Number(m.amount), 0);
-  const refunds = movements.filter(m => m.type === "refund").reduce((sum, m) => sum + Number(m.amount), 0);
-  const expected = session ? Number(session.opening_cash) + cashIn - cashOut + sales - refunds : 0;
-
-  // Print/export Z-Report
+  // Print Z-Report
   const handlePrintZReport = () => {
-    if (!zReport) return;
-    const content = `
-      <html><head><title>Z-Report</title></head><body>
-      <h2>Z-Report</h2>
-      <div>Opened: ${new Date(zReport.opened_at).toLocaleString()}</div>
-      <div>Closed: ${new Date(zReport.closed_at).toLocaleString()}</div>
-      <div>User: ${zReport.user}</div>
-      <div>Opening Cash: GHS ${Number(zReport.opening_cash).toLocaleString()}</div>
-      <div>Closing Cash: GHS ${Number(zReport.closing_cash).toLocaleString()}</div>
-      <div>Cash In: GHS ${Number(zReport.cash_in).toLocaleString()}</div>
-      <div>Cash Out: GHS ${Number(zReport.cash_out).toLocaleString()}</div>
-      <div>Sales: GHS ${Number(zReport.sales).toLocaleString()}</div>
-      <div>Refunds: GHS ${Number(zReport.refunds).toLocaleString()}</div>
-      <div>Expected Cash: GHS ${Number(zReport.expected).toLocaleString()}</div>
-      <div>Over/Short: GHS ${Number(zReport.over_short).toLocaleString()}</div>
-      <hr />
-      <h4>Movements</h4>
-      <table border="1" cellpadding="4" cellspacing="0">
-        <tr><th>Type</th><th>Amount</th><th>Reason</th><th>User</th><th>Time</th></tr>
-        ${zReport.movements.map(m => `<tr><td>${m.type}</td><td>GHS ${Number(m.amount).toLocaleString()}</td><td>${m.reason || '-'}</td><td>${userMap[m.user_id] || m.user_id}</td><td>${new Date(m.created_at).toLocaleTimeString()}</td></tr>`).join('')}
-      </table>
-      </body></html>
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const printContent = `
+      <html>
+        <head>
+          <title>Z-Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .section { margin-bottom: 15px; }
+            .row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+            .total { font-weight: bold; border-top: 1px solid #000; padding-top: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Z-Report</h1>
+            <p>Register: ${registers.find(r => r.id === selectedRegister)?.name || selectedRegister}</p>
+            <p>Date: ${new Date().toLocaleString()}</p>
+          </div>
+          <div class="section">
+            <h3>Session Summary</h3>
+            <div class="row">
+              <span>Opening Cash:</span>
+              <span>GHS ${zReport.opening_cash}</span>
+            </div>
+            <div class="row">
+              <span>Closing Cash:</span>
+              <span>GHS ${zReport.closing_cash}</span>
+            </div>
+            <div class="row">
+              <span>Sales:</span>
+              <span>GHS ${zReport.sales}</span>
+            </div>
+            <div class="row total">
+              <span>Over/Short:</span>
+              <span>GHS ${zReport.over_short}</span>
+            </div>
+          </div>
+        </body>
+      </html>
     `;
-    const win = window.open('', 'ZReport', 'width=800,height=600');
-    win.document.write(content);
-    win.document.close();
-    win.print();
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.print();
   };
 
-  // Add CSV export helper
   function exportZReportCSV(zReport) {
-    if (!zReport) return;
-    let csv = `Field,Value\n`;
-    csv += `Opened,${new Date(zReport.opened_at).toLocaleString()}\n`;
-    csv += `Closed,${new Date(zReport.closed_at).toLocaleString()}\n`;
-    csv += `User,${zReport.user}\n`;
-    csv += `Opening Cash,GHS ${Number(zReport.opening_cash).toLocaleString()}\n`;
-    csv += `Closing Cash,GHS ${Number(zReport.closing_cash).toLocaleString()}\n`;
-    csv += `Cash In,GHS ${Number(zReport.cash_in).toLocaleString()}\n`;
-    csv += `Cash Out,GHS ${Number(zReport.cash_out).toLocaleString()}\n`;
-    csv += `Sales,GHS ${Number(zReport.sales).toLocaleString()}\n`;
-    csv += `Refunds,GHS ${Number(zReport.refunds).toLocaleString()}\n`;
-    csv += `Expected Cash,GHS ${Number(zReport.expected).toLocaleString()}\n`;
-    csv += `Over/Short,GHS ${Number(zReport.over_short).toLocaleString()}\n`;
-    csv += `\nMovements\nType,Amount,Reason,User,Time\n`;
-    csv += zReport.movements.map(m => `${m.type},GHS ${Number(m.amount).toLocaleString()},${m.reason || '-'},${userMap[m.user_id] || m.user_id},${new Date(m.created_at).toLocaleTimeString()}`).join("\n");
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
+    const csvContent = [
+      ['Z-Report'],
+      ['Register', registers.find(r => r.id === selectedRegister)?.name || selectedRegister],
+      ['Date', new Date().toLocaleString()],
+      [''],
+      ['Opening Cash', zReport.opening_cash],
+      ['Closing Cash', zReport.closing_cash],
+      ['Sales', zReport.sales],
+      ['Over/Short', zReport.over_short],
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `z-report-${zReport.opened_at}.csv`;
-    document.body.appendChild(a);
+    a.download = `z-report-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(url);
   }
 
   function AddRegisterForm({ onRegisterAdded }) {
@@ -384,22 +337,42 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-      supabaseClient.from("stores").select("id, name").then(({ data }) => setStores(data || []));
+      (async () => {
+        try {
+          const response = await fetch('/api/stores');
+          const result = await response.json();
+          if (result.success) {
+            setStores(result.data || []);
+          }
+        } catch (err) {
+          console.error("Failed to fetch stores:", err);
+        }
+      })();
     }, []);
 
     const handleAdd = async () => {
       setLoading(true);
-      const { error } = await supabaseClient
-        .from("registers")
-        .insert([{ name, store_id: storeId }]);
-      setLoading(false);
-      if (!error) {
-        setName("");
-        setStoreId("");
-        if (onRegisterAdded) onRegisterAdded();
-        alert("Register added!");
-      } else {
-        alert("Error: " + error.message);
+      try {
+        const response = await fetch('/api/registers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, store_id: storeId })
+        });
+        const result = await response.json();
+        if (result.success) {
+          setName("");
+          setStoreId("");
+          if (onRegisterAdded) onRegisterAdded();
+          alert("Register added!");
+        } else {
+          throw new Error(result.error || "Failed to add register");
+        }
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -443,12 +416,17 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
         {user && user.role === "admin" && (
           <AddRegisterForm
             onRegisterAdded={async () => {
-              const { data } = await supabaseClient
-                .from("registers")
-                .select("*");
-              setRegisters(data || []);
-              if (data && data.length > 0 && !selectedRegister) {
-                setSelectedRegister(data[0].id);
+              try {
+                const response = await fetch('/api/registers');
+                const result = await response.json();
+                if (result.success) {
+                  setRegisters(result.data || []);
+                  if (result.data && result.data.length > 0 && !selectedRegister) {
+                    setSelectedRegister(result.data[0].id);
+                  }
+                }
+              } catch (err) {
+                console.error("Failed to refresh registers:", err);
               }
             }}
           />
@@ -577,367 +555,262 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <h3 className="text-xl font-bold text-gray-800">
-                    Session Active
-                  </h3>
+                  <h3 className="text-xl font-bold text-gray-800">Register Open</h3>
                 </div>
                 <div className="text-sm text-gray-600">
-                  {new Date(session.opened_at).toLocaleString()}
+                  Session Duration: {Math.floor(sessionDuration / 60)}h {sessionDuration % 60}m
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    GHS {Number(session.opening_cash).toLocaleString()}
-                  </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
                   <div className="text-sm text-gray-600">Opening Cash</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {sessionDuration} min
-                  </div>
-                  <div className="text-sm text-gray-600">Duration</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {user.name}
-                  </div>
-                  <div className="text-sm text-gray-600">Operator</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-indigo-600">
-                    GHS {expected.toLocaleString()}
-                  </div>
-                  <div className="text-sm text-gray-600">Expected</div>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <Icon
-                    icon="material-symbols:add-circle"
-                    className="w-6 h-6 text-green-600"
-                  />
-                  <h4 className="text-lg font-semibold text-gray-800">
-                    Cash In
-                  </h4>
-                </div>
-                <div className="space-y-4">
-                  <input
-                    type="number"
-                    className="w-full border border-green-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                    placeholder="Amount (GHS)"
-                    value={cashInAmount}
-                    onChange={(e) => setCashInAmount(e.target.value)}
-                    disabled={!canOperate}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border border-green-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                    placeholder="Reason"
-                    value={cashInReason}
-                    onChange={(e) => setCashInReason(e.target.value)}
-                    disabled={!canOperate}
-                  />
-                  <button
-                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg py-3 font-semibold transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
-                    onClick={handleCashIn}
-                    disabled={actionLoading || !cashInAmount || !canOperate}
-                  >
-                    Add Cash In
-                  </button>
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-6 border border-red-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <Icon
-                    icon="material-symbols:remove-circle"
-                    className="w-6 h-6 text-red-600"
-                  />
-                  <h4 className="text-lg font-semibold text-gray-800">
-                    Cash Out
-                  </h4>
-                </div>
-                <div className="space-y-4">
-                  <input
-                    type="number"
-                    className="w-full border border-red-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
-                    placeholder="Amount (GHS)"
-                    value={cashOutAmount}
-                    onChange={(e) => setCashOutAmount(e.target.value)}
-                    disabled={!canOperate}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border border-red-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
-                    placeholder="Reason"
-                    value={cashOutReason}
-                    onChange={(e) => setCashOutReason(e.target.value)}
-                    disabled={!canOperate}
-                  />
-                  <button
-                    className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg py-3 font-semibold transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
-                    onClick={handleCashOut}
-                    disabled={actionLoading || !cashOutAmount || !canOperate}
-                  >
-                    Add Cash Out
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-              {[
-                {
-                  label: "Cash In",
-                  value: cashIn,
-                  color: "green",
-                  icon: "material-symbols:trending-up",
-                },
-                {
-                  label: "Cash Out",
-                  value: cashOut,
-                  color: "red",
-                  icon: "material-symbols:trending-down",
-                },
-                {
-                  label: "Sales",
-                  value: sales,
-                  color: "blue",
-                  icon: "material-symbols:shopping-cart",
-                },
-                {
-                  label: "Refunds",
-                  value: refunds,
-                  color: "orange",
-                  icon: "material-symbols:undo",
-                },
-              ].map((stat, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg p-4 shadow-sm border border-gray-100"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Icon
-                      icon={stat.icon}
-                      className={`w-5 h-5 text-${stat.color}-600`}
-                    />
-                    <span className="text-sm text-gray-600">{stat.label}</span>
-                  </div>
-                  <div className={`text-xl font-bold text-${stat.color}-600`}>
-                    GHS {stat.value.toLocaleString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="p-4 border-b border-gray-200">
-                <h4 className="text-lg font-semibold text-gray-800">
-                  Transaction History
-                </h4>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Amount
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Reason
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        User
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Time
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {movements.map((m) => (
-                      <tr key={m.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              m.type === "in"
-                                ? "bg-green-100 text-green-800"
-                                : m.type === "out"
-                                ? "bg-red-100 text-red-800"
-                                : m.type === "sale"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-orange-100 text-orange-800"
-                            }`}
-                          >
-                            {m.type.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap font-medium">
-                          GHS {Number(m.amount).toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {m.reason || "-"}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {userMap[m.user_id] || m.user_id}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {new Date(m.created_at).toLocaleTimeString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div className="mt-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-6 border border-orange-200">
-              <div className="flex items-center gap-3 mb-6">
-                <Icon
-                  icon="material-symbols:lock"
-                  className="w-6 h-6 text-orange-600"
-                />
-                <h4 className="text-lg font-semibold text-gray-800">
-                  Close Register Session
-                </h4>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="space-y-4">
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-gray-600">Expected Cash</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      GHS {expected.toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Counted Cash
-                    </label>
-                    <input
-                      type="number"
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                      placeholder="Enter counted amount"
-                      value={closeAmount}
-                      onChange={(e) => setCloseAmount(e.target.value)}
-                      disabled={!canOperate}
-                    />
+                  <div className="font-bold text-lg text-blue-600">
+                    GHS {Number(session.opening_cash).toLocaleString()}
                   </div>
                 </div>
                 <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <div className="text-sm text-gray-600 mb-2">Variance</div>
-                  <div
-                    className={`text-2xl font-bold ${
-                      closeAmount
-                        ? Number(closeAmount) - expected >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                        : "text-gray-400"
-                    }`}
-                  >
-                    {closeAmount
-                      ? `GHS ${(
-                          Number(closeAmount) - expected
-                        ).toLocaleString()}`
-                      : "GHS 0.00"}
+                  <div className="text-sm text-gray-600">Current Cash</div>
+                  <div className="font-bold text-lg text-green-600">
+                    GHS {Number(session.opening_cash + movements.reduce((sum, m) => sum + (m.type === 'cash_in' ? m.amount : -m.amount), 0)).toLocaleString()}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {closeAmount && Number(closeAmount) - expected !== 0
-                      ? Number(closeAmount) - expected > 0
-                        ? "Over"
-                        : "Short"
-                      : "Balanced"}
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="text-sm text-gray-600">Cash In</div>
+                  <div className="font-bold text-lg text-emerald-600">
+                    GHS {Number(movements.filter(m => m.type === 'cash_in').reduce((sum, m) => sum + m.amount, 0)).toLocaleString()}
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="text-sm text-gray-600">Cash Out</div>
+                  <div className="font-bold text-lg text-red-600">
+                    GHS {Number(movements.filter(m => m.type === 'cash_out').reduce((sum, m) => sum + m.amount, 0)).toLocaleString()}
                   </div>
                 </div>
               </div>
-              <button
-                className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white rounded-lg py-4 font-semibold transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 flex items-center justify-center gap-2"
-                onClick={handleCloseRegister}
-                disabled={actionLoading || !closeAmount || !canOperate}
-              >
-                Close Register Session
-              </button>
             </div>
-            {showLargeOutConfirm && (
-              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
-                  <Icon
-                    icon="material-symbols:warning"
-                    className="w-12 h-12 text-orange-500 mx-auto mb-4"
-                  />
-                  <h4 className="text-lg font-bold mb-2">Large Cash Out</h4>
-                  <p className="mb-6 text-gray-600">
-                    This is a large cash out. Are you sure you want to proceed?
-                  </p>
-                  <div className="flex gap-4">
-                    <button
-                      className="flex-1 bg-gray-200 hover:bg-gray-300 rounded-lg py-2 font-semibold"
-                      onClick={() => setShowLargeOutConfirm(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg py-2 font-semibold"
-                      onClick={doCashOut}
-                    >
-                      Yes, Proceed
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="max-w-md mx-auto">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 border border-blue-200 text-center">
-              <Icon
-                icon="material-symbols:point-of-sale"
-                className="w-16 h-16 text-blue-600 mx-auto mb-4"
-              />
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                Open Cash Register
-              </h3>
-              <p className="text-gray-500 mb-6">
-                Enter the starting cash amount to begin a new session.
-              </p>
-              <div className="relative mb-6">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-bold">
-                  GHS
-                </span>
+
+            {/* Cash In Form */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border">
+              <h4 className="font-semibold mb-4 flex items-center gap-2">
+                <Icon icon="material-symbols:add-circle-outline" className="w-5 h-5 text-green-600" />
+                Cash In
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input
                   type="number"
-                  className="w-full border border-blue-200 rounded-lg px-12 py-4 ml-2 text-xl font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="0.00"
-                  value={openAmount}
-                  onChange={(e) => setOpenAmount(e.target.value)}
-                  disabled={!canOperate}
+                  value={cashInAmount || ""}
+                  onChange={(e) => setCashInAmount(Number(e.target.value))}
+                  placeholder="Amount"
+                  className="border rounded px-3 py-2"
                 />
+                <input
+                  type="text"
+                  value={cashInReason}
+                  onChange={(e) => setCashInReason(e.target.value)}
+                  placeholder="Reason"
+                  className="border rounded px-3 py-2"
+                />
+                <button
+                  onClick={handleCashIn}
+                  disabled={actionLoading || !cashInAmount || !cashInReason}
+                  className="bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
+                >
+                  {actionLoading ? "Adding..." : "Add Cash In"}
+                </button>
               </div>
-              <button
-                className="flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg py-4 font-semibold text-lg transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
-                onClick={handleOpenRegister}
-                disabled={actionLoading || !openAmount || !canOperate}
-              >
-                {actionLoading ? (
-                  <Icon
-                    icon="mdi:loading"
-                    className="animate-spin w-5 h-5 mx-auto"
-                  />
+            </div>
+
+            {/* Cash Out Form */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border">
+              <h4 className="font-semibold mb-4 flex items-center gap-2">
+                <Icon icon="material-symbols:remove-circle-outline" className="w-5 h-5 text-red-600" />
+                Cash Out
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  type="number"
+                  value={cashOutAmount || ""}
+                  onChange={(e) => setCashOutAmount(Number(e.target.value))}
+                  placeholder="Amount"
+                  className="border rounded px-3 py-2"
+                />
+                <input
+                  type="text"
+                  value={cashOutReason}
+                  onChange={(e) => setCashOutReason(e.target.value)}
+                  placeholder="Reason"
+                  className="border rounded px-3 py-2"
+                />
+                <button
+                  onClick={handleCashOut}
+                  disabled={actionLoading || !cashOutAmount || !cashOutReason}
+                  className="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
+                >
+                  {actionLoading ? "Adding..." : "Add Cash Out"}
+                </button>
+              </div>
+            </div>
+
+            {/* Movements History */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border">
+              <h4 className="font-semibold mb-4 flex items-center gap-2">
+                <Icon icon="material-symbols:history" className="w-5 h-5 text-blue-600" />
+                Movement History
+              </h4>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {movements.length === 0 ? (
+                  <div className="text-gray-500 text-center py-8">No movements yet</div>
                 ) : (
-                  <>
-                    Open Register
-                    <Icon
-                      icon="material-symbols:lock-open"
-                      className="w-5 h-5 ml-2"
-                    />
-                  </>
+                  movements.map((movement) => (
+                    <div
+                      key={movement.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-3 h-3 rounded-full ${
+                            movement.type === "cash_in"
+                              ? "bg-green-500"
+                              : "bg-red-500"
+                          }`}
+                        ></div>
+                        <div>
+                          <div className="font-medium">
+                            {movement.type === "cash_in" ? "Cash In" : "Cash Out"}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {movement.reason} • {userMap[movement.user_id] || movement.user_id}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div
+                          className={`font-bold ${
+                            movement.type === "cash_in"
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {movement.type === "cash_in" ? "+" : "-"}GHS{" "}
+                          {Number(movement.amount).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(movement.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))
                 )}
-              </button>
+              </div>
+            </div>
+
+            {/* Close Register */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border">
+              <h4 className="font-semibold mb-4 flex items-center gap-2">
+                <Icon icon="material-symbols:close" className="w-5 h-5 text-red-600" />
+                Close Register
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="number"
+                  value={closeAmount || ""}
+                  onChange={(e) => setCloseAmount(Number(e.target.value))}
+                  placeholder="Closing Cash Amount"
+                  className="border rounded px-3 py-2"
+                />
+                <button
+                  onClick={handleCloseRegister}
+                  disabled={actionLoading || !closeAmount}
+                  className="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
+                >
+                  {actionLoading ? "Closing..." : "Close Register"}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Icon icon="material-symbols:point-of-sale" className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Register Closed</h3>
+            <p className="text-gray-600 mb-6">Open the register to start a new session</p>
+            <div className="bg-white rounded-xl p-6 shadow-sm border">
+              <h4 className="font-semibold mb-4 flex items-center gap-2">
+                <Icon icon="material-symbols:open-in-new" className="w-5 h-5 text-green-600" />
+                Open Register
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="number"
+                  value={openAmount || ""}
+                  onChange={(e) => setOpenAmount(Number(e.target.value))}
+                  placeholder="Opening Cash Amount"
+                  className="border rounded px-3 py-2"
+                />
+                <button
+                  onClick={handleOpenRegister}
+                  disabled={actionLoading || !canOperate || !selectedRegister || !openAmount}
+                  className="bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
+                >
+                  {actionLoading ? "Opening..." : "Open Register"}
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Confirmation Modals */}
+      {showCloseConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Close Register?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to close the register? This will end the current session.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCloseConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={doCloseRegister}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded"
+              >
+                Close Register
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLargeOutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Large Cash Out</h3>
+            <p className="text-gray-600 mb-6">
+              You are about to remove GHS {cashOutAmount} from the register. This is a large amount. Are you sure?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLargeOutConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={doCashOut}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded"
+              >
+                Confirm Cash Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </SimpleModal>
   );
 };
