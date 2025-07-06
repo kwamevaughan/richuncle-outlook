@@ -1,4 +1,5 @@
 import supabaseAdmin from "@/lib/supabaseAdmin";
+const bcrypt = require("bcrypt");
 
 export default async function handler(req, res) {
   const { id } = req.query;
@@ -56,6 +57,12 @@ export default async function handler(req, res) {
   } else if (req.method === "PUT") {
     try {
       const updateData = req.body;
+
+      // Hash password if present
+      if (updateData.password) {
+        const saltRounds = 10;
+        updateData.password = await bcrypt.hash(updateData.password, saltRounds);
+      }
 
       const { data, error } = await supabaseAdmin
         .from("users")

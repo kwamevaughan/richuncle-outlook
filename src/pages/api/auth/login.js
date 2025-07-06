@@ -12,10 +12,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log("Login API: Starting login process for email:", email);
+    
     // Find user by email
     const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
-      .select("id, email, full_name, role, avatar_url, is_active, created_at, updated_at, password")
+      .select("id, email, full_name, role, avatar_url, is_active, created_at, updated_at, password, last_login")
       .eq("email", email)
       .single();
 
@@ -23,6 +25,8 @@ export default async function handler(req, res) {
       console.error("API: User not found:", userError);
       return res.status(401).json({ error: "Invalid credentials" });
     }
+
+    console.log("Login API: User found, current last_login:", userData.last_login);
 
     // Check if user is active
     if (!userData.is_active) {
@@ -39,12 +43,20 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    console.log("Login API: Password verified, updating last_login");
+
     // Update last login
     const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from("users")
       .update({ last_login: new Date().toISOString(), last_ip: clientIp })
       .eq("id", userData.id);
+
+    if (updateError) {
+      console.error("Login API: Error updating last_login:", updateError);
+    } else {
+      console.log("Login API: last_login updated successfully");
+    }
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = userData;

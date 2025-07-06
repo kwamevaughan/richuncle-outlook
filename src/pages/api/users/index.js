@@ -1,4 +1,6 @@
 import supabaseAdmin from "@/lib/supabaseAdmin";
+import { randomUUID } from "crypto";
+const bcrypt = require("bcrypt");
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
@@ -40,6 +42,17 @@ export default async function handler(req, res) {
   } else if (req.method === "POST") {
     try {
       const userData = req.body;
+
+      // Generate UUID if not provided
+      if (!userData.id) {
+        userData.id = randomUUID();
+      }
+
+      // Hash password if present
+      if (userData.password) {
+        const saltRounds = 10;
+        userData.password = await bcrypt.hash(userData.password, saltRounds);
+      }
 
       const { data, error } = await supabaseAdmin
         .from("users")
