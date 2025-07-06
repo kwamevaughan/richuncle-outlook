@@ -3,7 +3,6 @@ import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { supabaseClient } from "../lib/supabase";
 import SimpleModal from "@/components/SimpleModal";
 import { GenericTable } from "@/components/GenericTable";
 import toast from "react-hot-toast";
@@ -51,11 +50,15 @@ export default function StockAdjustmentPage({ mode = "light", toggleMode, ...pro
   // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data, error } = await supabaseClient
-        .from("categories")
-        .select("*")
-        .order("name");
-      if (!error) setCategories(data || []);
+      try {
+        const response = await fetch('/api/categories');
+        const result = await response.json();
+        if (result.success) {
+          setCategories(result.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
     };
     fetchCategories();
   }, []);
@@ -63,16 +66,11 @@ export default function StockAdjustmentPage({ mode = "light", toggleMode, ...pro
   // Fetch products
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabaseClient
-        .from("products")
-        .select(`
-          *,
-          category:categories!products_category_id_fkey(name)
-        `)
-        .order("name");
-      
-      if (error) throw error;
-      setProducts(data || []);
+      const response = await fetch('/api/products');
+      const result = await response.json();
+      if (result.success) {
+        setProducts(result.data || []);
+      }
     } catch (err) {
       console.error("Error fetching products:", err);
     }
@@ -84,30 +82,8 @@ export default function StockAdjustmentPage({ mode = "light", toggleMode, ...pro
     setError(null);
     
     try {
-      let query = supabaseClient
-        .from("stock_adjustments")
-        .select(`
-          *,
-          product:products(
-            id,
-            name,
-            sku,
-            price,
-            category:categories(name)
-          )
-        `)
-        .order("adjustment_date", { ascending: false });
-
-      // Apply filters
-      if (categoryFilter !== "all") {
-        query = query.eq("product.category_id", categoryFilter);
-      }
-      
-      if (adjustmentTypeFilter !== "all") {
-        query = query.eq("adjustment_type", adjustmentTypeFilter);
-      }
-
-      const { data, error } = await query;
+      let query = await fetch('/api/stock-adjustments');
+      const { data, error } = await query.json();
       
       if (error) throw error;
       
@@ -219,17 +195,27 @@ export default function StockAdjustmentPage({ mode = "light", toggleMode, ...pro
       };
 
       // Insert adjustment record
-      const { error: adjustmentError } = await supabaseClient
-        .from("stock_adjustments")
-        .insert([adjustmentData]);
+      const response = await fetch('/api/stock-adjustments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(adjustmentData)
+      });
 
-      if (adjustmentError) throw adjustmentError;
+      if (!response.ok) throw new Error("Failed to insert adjustment");
 
       // Update product stock
-      const { error: productError } = await supabaseClient
-        .from("products")
-        .update({ quantity: newStock })
-        .eq("id", selectedProductId);
+      const { error: productError } = await fetch('/api/products', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: selectedProductId,
+          quantity: newStock
+        })
+      });
 
       if (productError) throw productError;
 
@@ -799,8 +785,6 @@ export default function StockAdjustmentPage({ mode = "light", toggleMode, ...pro
                     </div>
                   </div>
                 )}
-
-
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
-import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
 import HrHeader from "../layouts/hrHeader";
 import HrSidebar from "../layouts/hrSidebar";
@@ -35,29 +34,34 @@ export default function UnitsPage({ mode = "light", toggleMode, ...props }) {
   // Fetch units
   const fetchUnits = async () => {
     setLoading(true);
-    const { data: unitsData, error: unitsError } = await supabaseClient
-      .from("units")
-      .select("*")
-      .order("created_at", { ascending: false });
-    const { data: productsData, error: productsError } = await supabaseClient
-      .from("products")
-      .select("unit_id");
-    if (!unitsError && !productsError) {
-      // Count products per unit in JS
-      const productCounts = {};
-      (productsData || []).forEach((row) => {
-        if (row.unit_id) {
-          productCounts[row.unit_id] = (productCounts[row.unit_id] || 0) + 1;
-        }
-      });
-      // Add product_count to each unit
-      const unitsWithCount = (unitsData || []).map((unit) => ({
-        ...unit,
-        product_count: productCounts[unit.id] || 0,
-      }));
-      setUnits(unitsWithCount);
-    } else {
-      setError((unitsError || productsError).message || "Failed to load units");
+    try {
+      const [unitsResponse, productsResponse] = await Promise.all([
+        fetch('/api/units'),
+        fetch('/api/products')
+      ]);
+      
+      const unitsData = await unitsResponse.json();
+      const productsData = await productsResponse.json();
+      
+      if (unitsData.success && productsData.success) {
+        // Count products per unit in JS
+        const productCounts = {};
+        (productsData.data || []).forEach((row) => {
+          if (row.unit_id) {
+            productCounts[row.unit_id] = (productCounts[row.unit_id] || 0) + 1;
+          }
+        });
+        // Add product_count to each unit
+        const unitsWithCount = (unitsData.data || []).map((unit) => ({
+          ...unit,
+          product_count: productCounts[unit.id] || 0,
+        }));
+        setUnits(unitsWithCount);
+      } else {
+        setError("Failed to load units");
+      }
+    } catch (err) {
+      setError("Failed to load units");
     }
     setLoading(false);
   };
@@ -90,14 +94,17 @@ export default function UnitsPage({ mode = "light", toggleMode, ...props }) {
   };
   const handleDelete = async () => {
     try {
-      const { error } = await supabaseClient
-        .from("units")
-        .delete()
-        .eq("id", deleteItem.id);
-      if (error) throw error;
-      setUnits((prev) => prev.filter((u) => u.id !== deleteItem.id));
-      closeConfirm();
-      toast.success("Unit deleted!");
+      const response = await fetch(`/api/units/${deleteItem.id}`, {
+        method: 'DELETE'
+      });
+      const result = await response.json();
+      if (result.success) {
+        setUnits((prev) => prev.filter((u) => u.id !== deleteItem.id));
+        closeConfirm();
+        toast.success("Unit deleted!");
+      } else {
+        throw new Error(result.error || "Failed to delete unit");
+      }
     } catch (err) {
       toast.error(err.message || "Failed to delete unit");
     }
@@ -105,25 +112,38 @@ export default function UnitsPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to add a new unit
   const handleAddUnit = async (newUnit) => {
-    const { data, error } = await supabaseClient
-      .from("units")
-      .insert([newUnit])
-      .select();
-    if (error) throw error;
-    setUnits((prev) => [data[0], ...prev]);
+    const response = await fetch('/api/units', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newUnit)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setUnits((prev) => [result.data, ...prev]);
+    } else {
+      throw new Error(result.error || "Failed to add unit");
+    }
   };
 
   // Add a helper to update a unit
   const handleUpdateUnit = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("units")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
-    if (error) throw error;
-    setUnits((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, ...updatedFields } : u))
-    );
+    const response = await fetch(`/api/units/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedFields)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setUnits((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, ...updatedFields } : u))
+      );
+    } else {
+      throw new Error(result.error || "Failed to update unit");
+    }
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;

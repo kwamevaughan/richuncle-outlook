@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { supabaseClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
 export default function AuthCallback() {

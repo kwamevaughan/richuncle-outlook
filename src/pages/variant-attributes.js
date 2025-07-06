@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
-import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
 import HrHeader from "../layouts/hrHeader";
 import HrSidebar from "../layouts/hrSidebar";
@@ -35,14 +34,16 @@ export default function VariantAttributesPage({ mode = "light", toggleMode, ...p
   // Fetch variant attributes
   const fetchVariantAttributes = async () => {
     setLoading(true);
-    const { data, error } = await supabaseClient
-      .from("variant_attributes")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error) {
-      setVariantAttributes(data || []);
-    } else {
-      setError(error.message || "Failed to load variant attributes");
+    try {
+      const response = await fetch('/api/variant-attributes');
+      const result = await response.json();
+      if (result.success) {
+        setVariantAttributes(result.data || []);
+      } else {
+        setError("Failed to load variant attributes");
+      }
+    } catch (err) {
+      setError("Failed to load variant attributes");
     }
     setLoading(false);
   };
@@ -75,14 +76,17 @@ export default function VariantAttributesPage({ mode = "light", toggleMode, ...p
   };
   const handleDelete = async () => {
     try {
-      const { error } = await supabaseClient
-        .from("variant_attributes")
-        .delete()
-        .eq("id", deleteItem.id);
-      if (error) throw error;
-      setVariantAttributes((prev) => prev.filter((v) => v.id !== deleteItem.id));
-      closeConfirm();
-      toast.success("Variant Attribute deleted!");
+      const response = await fetch(`/api/variant-attributes/${deleteItem.id}`, {
+        method: 'DELETE'
+      });
+      const result = await response.json();
+      if (result.success) {
+        setVariantAttributes((prev) => prev.filter((v) => v.id !== deleteItem.id));
+        closeConfirm();
+        toast.success("Variant Attribute deleted!");
+      } else {
+        throw new Error(result.error || "Failed to delete variant attribute");
+      }
     } catch (err) {
       toast.error(err.message || "Failed to delete variant attribute");
     }
@@ -90,25 +94,38 @@ export default function VariantAttributesPage({ mode = "light", toggleMode, ...p
 
   // Add a helper to add a new variant attribute
   const handleAddVariantAttribute = async (newAttribute) => {
-    const { data, error } = await supabaseClient
-      .from("variant_attributes")
-      .insert([newAttribute])
-      .select();
-    if (error) throw error;
-    setVariantAttributes((prev) => [data[0], ...prev]);
+    const response = await fetch('/api/variant-attributes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newAttribute)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setVariantAttributes((prev) => [result.data, ...prev]);
+    } else {
+      throw new Error(result.error || "Failed to add variant attribute");
+    }
   };
 
   // Add a helper to update a variant attribute
   const handleUpdateVariantAttribute = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("variant_attributes")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
-    if (error) throw error;
-    setVariantAttributes((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, ...updatedFields } : v))
-    );
+    const response = await fetch(`/api/variant-attributes/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedFields)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setVariantAttributes((prev) =>
+        prev.map((v) => (v.id === id ? { ...v, ...updatedFields } : v))
+      );
+    } else {
+      throw new Error(result.error || "Failed to update variant attribute");
+    }
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;

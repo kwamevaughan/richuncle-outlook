@@ -1,88 +1,60 @@
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { supabaseClient } from "../lib/supabase";
 import NotificationSystem from "./NotificationSystem";
 
 const NotificationButton = ({ mode, user }) => {
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Fetch unread count function
+  const fetchUnreadCount = async () => {
+    try {
+      // Get recent orders (last 24 hours)
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const [ordersResponse, productsResponse] = await Promise.all([
+        fetch('/api/orders'),
+        fetch('/api/products')
+      ]);
+      
+      const ordersData = await ordersResponse.json();
+      const productsData = await productsResponse.json();
+      
+      const recentOrders = ordersData.success ? 
+        (ordersData.data || []).filter(order => new Date(order.timestamp) >= yesterday) : [];
+      
+      const lowStockProducts = productsData.success ? 
+        (productsData.data || []).filter(p => p.quantity <= 10 && p.quantity > 0) : [];
+      
+      const outOfStockProducts = productsData.success ? 
+        (productsData.data || []).filter(p => p.quantity <= 0) : [];
+
+      // Calculate total notifications
+      const totalNotifications = 
+        (recentOrders?.length || 0) + 
+        (lowStockProducts?.length || 0) + 
+        (outOfStockProducts?.length || 0);
+      
+      setUnreadCount(totalNotifications);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
   // Fetch initial unread count
   useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        // Get recent orders (last 24 hours)
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        
-        const { data: recentOrders } = await supabaseClient
-          .from('orders')
-          .select('id')
-          .gte('timestamp', yesterday.toISOString());
-
-        // Get low stock products
-        const { data: lowStockProducts } = await supabaseClient
-          .from('products')
-          .select('id')
-          .lte('quantity', 10)
-          .gt('quantity', 0);
-
-        // Get out of stock products
-        const { data: outOfStockProducts } = await supabaseClient
-          .from('products')
-          .select('id')
-          .eq('quantity', 0);
-
-        // Calculate total notifications
-        const totalNotifications = 
-          (recentOrders?.length || 0) + 
-          (lowStockProducts?.length || 0) + 
-          (outOfStockProducts?.length || 0);
-        
-        setUnreadCount(totalNotifications);
-      } catch (error) {
-        console.error('Error fetching unread count:', error);
-      }
-    };
-
     fetchUnreadCount();
   }, []);
 
-  // Real-time updates for unread count
+  // Real-time updates for unread count (simplified - you might want to implement WebSocket or polling)
   useEffect(() => {
-    const orderSubscription = supabaseClient
-      .channel('orders_count')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'orders' 
-      }, () => {
-        setUnreadCount(prev => prev + 1);
-      })
-      .subscribe();
+    const interval = setInterval(() => {
+      // Poll for updates every 30 seconds
+      fetchUnreadCount();
+    }, 30000);
 
-    const productSubscription = supabaseClient
-      .channel('products_count')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'products' 
-      }, (payload) => {
-        const updatedProduct = payload.new;
-        const oldProduct = payload.old;
-        
-        // Check if stock changed to low or out
-        if ((updatedProduct.quantity <= 10 && oldProduct.quantity > 10) ||
-            (updatedProduct.quantity === 0 && oldProduct.quantity > 0)) {
-          setUnreadCount(prev => prev + 1);
-        }
-      })
-      .subscribe();
-
-    return () => {
-      orderSubscription.unsubscribe();
-      productSubscription.unsubscribe();
-    };
+    return () => clearInterval(interval);
   }, []);
 
   return (

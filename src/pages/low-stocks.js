@@ -3,7 +3,6 @@ import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { supabaseClient } from "../lib/supabase";
 import SimpleModal from "@/components/SimpleModal";
 import { GenericTable } from "@/components/GenericTable";
 import toast from "react-hot-toast";
@@ -31,10 +30,8 @@ export default function LowStocksPage({ mode = "light", toggleMode, ...props }) 
   // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data, error } = await supabaseClient
-        .from("categories")
-        .select("*")
-        .order("name");
+      const response = await fetch('/api/categories');
+      const { data, error } = await response.json();
       if (!error) setCategories(data || []);
     };
     fetchCategories();
@@ -47,14 +44,10 @@ export default function LowStocksPage({ mode = "light", toggleMode, ...props }) 
     
     try {
       // Get all products and filter in JavaScript since quantity is stored as string
-      let query = supabaseClient
-        .from("products")
-        .select(`
-          *,
-          category:categories!products_category_id_fkey(name)
-        `);
+      let query = '/api/products';
 
-      const { data, error } = await query;
+      const response = await fetch(query);
+      const { data, error } = await response.json();
       
       if (error) throw error;
       
@@ -148,9 +141,15 @@ export default function LowStocksPage({ mode = "light", toggleMode, ...props }) 
         quantity: quantity
       }));
 
-      const { error } = await supabaseClient
-        .from("products")
-        .upsert(updates);
+      const response = await fetch('/api/products', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ updates })
+      });
+
+      const { error } = await response.json();
 
       if (error) throw error;
 
@@ -179,10 +178,15 @@ export default function LowStocksPage({ mode = "light", toggleMode, ...props }) 
     try {
       const newQuantity = parseInt(selectedProduct.quantity) + quantity;
       
-      const { error } = await supabaseClient
-        .from("products")
-        .update({ quantity: newQuantity })
-        .eq("id", selectedProduct.id);
+      const response = await fetch('/api/products', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: selectedProduct.id, quantity: newQuantity })
+      });
+
+      const { error } = await response.json();
 
       if (error) throw error;
 

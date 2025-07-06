@@ -3,7 +3,6 @@ import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { supabaseClient } from "../lib/supabase";
 import SimpleModal from "@/components/SimpleModal";
 import { GenericTable } from "@/components/GenericTable";
 import TransferDetailsModal from "@/components/TransferDetailsModal";
@@ -62,15 +61,17 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
     const fetchLocations = async () => {
       try {
         const [warehousesRes, storesRes] = await Promise.all([
-          supabaseClient.from("warehouses").select("*").order("name"),
-          supabaseClient.from("stores").select("*").order("name")
+          fetch('/api/warehouses'),
+          fetch('/api/stores')
         ]);
         
-        if (warehousesRes.error) throw warehousesRes.error;
-        if (storesRes.error) throw storesRes.error;
+        const warehousesData = await warehousesRes.json();
+        const storesData = await storesRes.json();
         
-        setWarehouses(warehousesRes.data || []);
-        setStores(storesRes.data || []);
+        if (warehousesData.success && storesData.success) {
+          setWarehouses(warehousesData.data || []);
+          setStores(storesData.data || []);
+        }
       } catch (err) {
         console.error("Error fetching locations:", err);
       }
@@ -82,16 +83,11 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
   // Fetch products
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabaseClient
-        .from("products")
-        .select(`
-          *,
-          category:categories(name)
-        `)
-        .order("name");
-      
-      if (error) throw error;
-      setProducts(data || []);
+      const response = await fetch('/api/products');
+      const result = await response.json();
+      if (result.success) {
+        setProducts(result.data || []);
+      }
     } catch (err) {
       console.error("Error fetching products:", err);
     }
@@ -103,22 +99,22 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
     setError(null);
     
     try {
-      let query = supabaseClient
-        .from("stock_transfers")
-        .select("*")
-        .order("transfer_date", { ascending: false });
-
-      // Apply filters
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+      const response = await fetch('/api/stock-transfers');
+      const result = await response.json();
+      
+      if (result.success) {
+        let transfers = result.data || [];
+        
+        // Apply filters
+        if (statusFilter !== "all") {
+          transfers = transfers.filter(transfer => transfer.status === statusFilter);
+        }
+        
+        setTransfers(transfers);
+        calculateStats(transfers);
+      } else {
+        throw new Error("Failed to load transfers");
       }
-
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      setTransfers(data || []);
-      calculateStats(data || []);
     } catch (err) {
       setError(err.message || "Failed to load transfers");
       toast.error("Failed to load transfers");
@@ -272,47 +268,34 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
         status: 'pending'
       };
 
-      const { data: transfer, error: transferError } = await supabaseClient
-        .from("stock_transfers")
-        .insert([transferData])
-        .select()
-        .single();
+      const response = await fetch('/api/stock_transfers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(transferData)
+      });
 
-      if (transferError) throw transferError;
+      const result = await response.json();
 
-      // Create transfer items
-      const itemsData = transferItems.map(item => ({
-        transfer_id: transfer.id,
-        product_id: item.product_id,
-        quantity_requested: item.quantity_requested,
-        product_name: item.product_name,
-        product_sku: item.product_sku,
-        unit_price: item.unit_price,
-        status: 'pending'
-      }));
-
-      const { error: itemsError } = await supabaseClient
-        .from("stock_transfer_items")
-        .insert(itemsData);
-
-      if (itemsError) throw itemsError;
-
-      toast.success(`Transfer ${transfer.transfer_number} created successfully`);
-      
-      // Reset form
-      setSourceType("warehouse");
-      setSourceId("");
-      setDestinationType("store");
-      setDestinationId("");
-      setExpectedDeliveryDate("");
-      setShippingMethod("");
-      setTrackingNumber("");
-      setTransferNotes("");
-      setTransferItems([]);
-      setShowCreateModal(false);
-      
-      // Refresh data
-      fetchTransfers();
+      if (result.success) {
+        toast.success(`Transfer ${result.data.transfer_number} created successfully`);
+        
+        // Reset form
+        setSourceType("warehouse");
+        setSourceId("");
+        setDestinationType("store");
+        setDestinationId("");
+        setExpectedDeliveryDate("");
+        setShippingMethod("");
+        setTrackingNumber("");
+        setTransferNotes("");
+        setTransferItems([]);
+        setShowCreateModal(false);
+        
+        // Refresh data
+        fetchTransfers();
+      }
     } catch (err) {
       toast.error(err.message || "Failed to create transfer");
     }
@@ -321,13 +304,14 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
   // Update transfer status
   const handleUpdateStatus = async (transferId, newStatus) => {
     try {
-      const { error } = await supabaseClient
-        .from("stock_transfers")
-        .update({ 
-          status: newStatus,
-          ...(newStatus === 'completed' ? { actual_delivery_date: new Date().toISOString() } : {})
-        })
-        .eq("id", transferId);
+      const response = await fetch(`/api/stock_transfers/${transferId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      });
+
+      const { data, error } = await response.json();
 
       if (error) throw error;
 

@@ -6,7 +6,6 @@ import SimpleModal from "./SimpleModal";
 import PaymentForm from "./PaymentForm";
 import PrintReceipt from "./PrintReceipt";
 import ReceiptPreviewModal from "./ReceiptPreviewModal";
-import { supabaseClient } from "../lib/supabase";
 import { playBellBeep } from "../utils/posSounds";
 import { getPaymentTypeLabel } from "./payment/utils/paymentHelpers";
 
@@ -260,9 +259,12 @@ const PosOrderList = ({
       };
 
       // Insert order into 'orders' table
-      const { error: orderError } = await supabaseClient
-        .from('orders')
-        .insert([{
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           id: orderData.id,
           customer_id: orderData.customerId,
           customer_name: orderData.customerName,
@@ -277,7 +279,9 @@ const PosOrderList = ({
           sale_note: orderData.saleNote,
           staff_note: orderData.staffNote,
           timestamp: orderData.timestamp
-        }]);
+        }),
+      });
+      const { error: orderError } = await response.json();
       if (orderError) throw orderError;
 
       // Insert order items into 'order_items' table
@@ -293,19 +297,28 @@ const PosOrderList = ({
         item_tax: item.itemTax,
         total: item.total
       }));
-      const { error: itemsError } = await supabaseClient
-        .from('order_items')
-        .insert(itemsToInsert);
+      const itemsResponse = await fetch('/api/order_items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(itemsToInsert),
+      });
+      const { error: itemsError } = await itemsResponse.json();
       if (itemsError) throw itemsError;
 
       // Update stock quantities for each product
       for (const item of orderData.items) {
         const product = products.find(p => p.id === item.productId);
         const newQty = (product?.quantity || 0) - item.quantity;
-        const { error: updateError } = await supabaseClient
-          .from('products')
-          .update({ quantity: newQty })
-          .eq('id', item.productId);
+        const updateResponse = await fetch(`/api/products/${item.productId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ quantity: newQty }),
+        });
+        const { error: updateError } = await updateResponse.json();
         if (updateError) {
           console.error(`Failed to update stock for product ${item.productId}:`, updateError.message);
         }
@@ -325,21 +338,23 @@ const PosOrderList = ({
       // After order is saved and stock is updated
       if (paymentData.paymentType === 'cash') {
         // Get open session
-        const { data: sessions } = await supabaseClient
-          .from('cash_register_sessions')
-          .select('*')
-          .eq('status', 'open')
-          .order('opened_at', { ascending: false })
-          .limit(1);
+        const sessionsResponse = await fetch('/api/cash_register_sessions?status=open&_order=opened_at');
+        const sessions = await sessionsResponse.json();
         const session = sessions && sessions[0];
         if (session && user && user.id) {
-          await supabaseClient.from('cash_movements').insert([{
-            session_id: session.id,
-            type: 'sale',
-            amount: orderData.total,
-            reason: `Order #${orderData.id}`,
-            user_id: user.id,
-          }]);
+          await fetch('/api/cash_movements', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              session_id: session.id,
+              type: 'sale',
+              amount: orderData.total,
+              reason: `Order #${orderData.id}`,
+              user_id: user.id,
+            }),
+          });
         }
       }
 
@@ -710,10 +725,14 @@ const PosOrderList = ({
           onClose={() => setShowCustomerModal(false)}
           onSave={async (customerData) => {
             try {
-              const { data, error } = await supabaseClient
-                .from("customers")
-                .insert([customerData])
-                .select();
+              const response = await fetch('/api/customers', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(customerData),
+              });
+              const { data, error } = await response.json();
               if (error) throw error;
               setCustomers(prev => [data[0], ...prev]);
               toast.success("Customer added successfully!");

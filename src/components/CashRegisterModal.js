@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { supabaseClient } from "../lib/supabase";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
 import { useModal } from "./ModalContext";
@@ -32,10 +31,17 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
   useEffect(() => {
     if (!isOpen) return;
     (async () => {
-      const { data } = await supabaseClient.from("registers").select("*");
-      setRegisters(data || []);
-      if (data && data.length > 0 && !selectedRegister) {
-        setSelectedRegister(data[0].id);
+      try {
+        const response = await fetch('/api/registers');
+        const result = await response.json();
+        if (result.success) {
+          setRegisters(result.data || []);
+          if (result.data && result.data.length > 0 && !selectedRegister) {
+            setSelectedRegister(result.data[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch registers:", err);
       }
     })();
   }, [isOpen]);
@@ -45,24 +51,27 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
     if (!isOpen || !selectedRegister) return;
     setLoading(true);
     (async () => {
-      const { data: sessions } = await supabaseClient
-        .from("cash_register_sessions")
-        .select("*")
-        .eq("status", "open")
-        .eq("register_id", selectedRegister)
-        .order("opened_at", { ascending: false })
-        .limit(1);
-      const currentSession = sessions && sessions[0];
-      setSession(currentSession || null);
-      if (currentSession) {
-        const { data: moves } = await supabaseClient
-          .from("cash_movements")
-          .select("*")
-          .eq("session_id", currentSession.id)
-          .order("created_at", { ascending: true });
-        setMovements(moves || []);
-      } else {
-        setMovements([]);
+      try {
+        const [sessionsResponse, movementsResponse] = await Promise.all([
+          fetch(`/api/cash-register-sessions?register_id=${selectedRegister}&status=open`),
+          fetch(`/api/cash-movements?session_id=${selectedRegister}`)
+        ]);
+        
+        const sessionsData = await sessionsResponse.json();
+        const movementsData = await movementsResponse.json();
+        
+        if (sessionsData.success) {
+          const currentSession = sessionsData.data && sessionsData.data[0];
+          setSession(currentSession || null);
+          
+          if (currentSession && movementsData.success) {
+            setMovements(movementsData.data || []);
+          } else {
+            setMovements([]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch session data:", err);
       }
       setLoading(false);
     })();
@@ -152,20 +161,25 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
     setActionLoading(true);
     setError("");
     try {
-      const { data, error } = await supabaseClient
-        .from("cash_register_sessions")
-        .insert([
-          {
-            user_id: user.id,
-            opening_cash: openAmount,
-            status: "open",
-            register_id: selectedRegister,
-          },
-        ])
-        .select();
-      if (error) throw error;
-      setSession(data[0]);
-      setOpenAmount(0);
+      const response = await fetch('/api/cash-register-sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          opening_cash: openAmount,
+          status: "open",
+          register_id: selectedRegister,
+        })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setSession(result.data);
+        setOpenAmount(0);
+      } else {
+        throw new Error(result.error || "Failed to open register");
+      }
     } catch (err) {
       setError(err.message || "Failed to open register");
     } finally {
@@ -179,17 +193,26 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
     setActionLoading(true);
     setError("");
     try {
-      await supabaseClient.from("cash_movements").insert([
-        {
+      const response = await fetch('/api/cash-movements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           session_id: session.id,
           type: "in",
           amount: cashInAmount,
           reason: cashInReason,
           user_id: user.id,
-        },
-      ]);
-      setCashInAmount(0);
-      setCashInReason("");
+        })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setCashInAmount(0);
+        setCashInReason("");
+      } else {
+        throw new Error(result.error || "Failed to add cash in");
+      }
     } catch (err) {
       setError(err.message || "Failed to add cash in");
     } finally {
@@ -210,17 +233,26 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
     setActionLoading(true);
     setError("");
     try {
-      await supabaseClient.from("cash_movements").insert([
-        {
+      const response = await fetch('/api/cash-movements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           session_id: session.id,
           type: "out",
           amount: cashOutAmount,
           reason: cashOutReason,
           user_id: user.id,
-        },
-      ]);
-      setCashOutAmount(0);
-      setCashOutReason("");
+        })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setCashOutAmount(0);
+        setCashOutReason("");
+      } else {
+        throw new Error(result.error || "Failed to add cash out");
+      }
     } catch (err) {
       setError(err.message || "Failed to add cash out");
     } finally {

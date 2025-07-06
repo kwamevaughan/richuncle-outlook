@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { supabaseClient } from "../lib/supabase";
 import SimpleModal from "./SimpleModal";
 import toast from "react-hot-toast";
 
@@ -30,14 +29,14 @@ export default function TransferDetailsModal({
     setError(null);
     
     try {
-      const { data, error } = await supabaseClient
-        .from("stock_transfer_items")
-        .select("*")
-        .eq("transfer_id", transfer.id)
-        .order("created_at");
-
-      if (error) throw error;
-      setTransferItems(data || []);
+      const response = await fetch(`/api/stock-transfer-items?transfer_id=${transfer.id}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setTransferItems(result.data || []);
+      } else {
+        throw new Error("Failed to load transfer items");
+      }
     } catch (err) {
       setError(err.message || "Failed to load transfer items");
       toast.error("Failed to load transfer items");

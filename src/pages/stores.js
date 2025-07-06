@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
-import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
 import HrHeader from "../layouts/hrHeader";
 import HrSidebar from "../layouts/hrSidebar";
@@ -35,29 +34,34 @@ export default function StoresPage({ mode = "light", toggleMode, ...props }) {
   // Fetch stores
   const fetchStores = async () => {
     setLoading(true);
-    const { data: storesData, error: storesError } = await supabaseClient
-      .from("stores")
-      .select("*")
-      .order("sort_order", { ascending: true });
-    const { data: productsData, error: productsError } = await supabaseClient
-      .from("products")
-      .select("store_id");
-    if (!storesError && !productsError) {
-      // Count products per store in JS
-      const productCounts = {};
-      (productsData || []).forEach((row) => {
-        if (row.store_id) {
-          productCounts[row.store_id] = (productCounts[row.store_id] || 0) + 1;
-        }
-      });
-      // Add product_count to each store
-      const storesWithCount = (storesData || []).map((store) => ({
-        ...store,
-        product_count: productCounts[store.id] || 0,
-      }));
-      setStores(storesWithCount);
-    } else {
-      setError((storesError || productsError).message || "Failed to load stores");
+    try {
+      const [storesResponse, productsResponse] = await Promise.all([
+        fetch('/api/stores'),
+        fetch('/api/products')
+      ]);
+      
+      const storesData = await storesResponse.json();
+      const productsData = await productsResponse.json();
+      
+      if (storesData.success && productsData.success) {
+        // Count products per store in JS
+        const productCounts = {};
+        (productsData.data || []).forEach((row) => {
+          if (row.store_id) {
+            productCounts[row.store_id] = (productCounts[row.store_id] || 0) + 1;
+          }
+        });
+        // Add product_count to each store
+        const storesWithCount = (storesData.data || []).map((store) => ({
+          ...store,
+          product_count: productCounts[store.id] || 0,
+        }));
+        setStores(storesWithCount);
+      } else {
+        setError("Failed to load stores");
+      }
+    } catch (err) {
+      setError("Failed to load stores");
     }
     setLoading(false);
   };
@@ -90,14 +94,17 @@ export default function StoresPage({ mode = "light", toggleMode, ...props }) {
   };
   const handleDelete = async () => {
     try {
-      const { error } = await supabaseClient
-        .from("stores")
-        .delete()
-        .eq("id", deleteItem.id);
-      if (error) throw error;
-      setStores((prev) => prev.filter((s) => s.id !== deleteItem.id));
-      closeConfirm();
-      toast.success("Store deleted!");
+      const response = await fetch(`/api/stores/${deleteItem.id}`, {
+        method: 'DELETE'
+      });
+      const result = await response.json();
+      if (result.success) {
+        setStores((prev) => prev.filter((s) => s.id !== deleteItem.id));
+        closeConfirm();
+        toast.success("Store deleted!");
+      } else {
+        throw new Error(result.error || "Failed to delete store");
+      }
     } catch (err) {
       toast.error(err.message || "Failed to delete store");
     }
@@ -105,25 +112,38 @@ export default function StoresPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to add a new store
   const handleAddStore = async (newStore) => {
-    const { data, error } = await supabaseClient
-      .from("stores")
-      .insert([newStore])
-      .select();
-    if (error) throw error;
-    setStores((prev) => [data[0], ...prev]);
+    const response = await fetch('/api/stores', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newStore)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setStores((prev) => [result.data, ...prev]);
+    } else {
+      throw new Error(result.error || "Failed to add store");
+    }
   };
 
   // Add a helper to update a store
   const handleUpdateStore = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("stores")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
-    if (error) throw error;
-    setStores((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updatedFields } : s))
-    );
+    const response = await fetch(`/api/stores/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedFields)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setStores((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, ...updatedFields } : s))
+      );
+    } else {
+      throw new Error(result.error || "Failed to update store");
+    }
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;

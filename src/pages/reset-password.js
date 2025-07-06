@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
-import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
@@ -37,35 +36,23 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      if (token) {
-        // Token-based reset
-        const { data: session, error: sessionError } =
-          await supabase.auth.getSession();
-        if (sessionError || !session?.session) {
-          throw new Error(
-            "No active session. Please use the code-based reset."
-          );
-        }
-        const { error } = await supabase.auth.updateUser({
-          password: newPassword,
-        });
-        if (error) throw error;
-      } else if (code && email) {
-        // Code-based reset
-        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           email,
-          token: code,
-          type: "recovery",
-        });
-        if (verifyError) throw verifyError;
+          newPassword,
+          token,
+          code,
+        }),
+      });
 
-        // Update password after OTP verification
-        const { error: updateError } = await supabase.auth.updateUser({
-          password: newPassword,
-        });
-        if (updateError) throw updateError;
-      } else {
-        throw new Error("Please provide email and code or use the reset link");
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to reset password");
       }
 
       toast.success("Password updated successfully!");

@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import toast from "react-hot-toast";
-import { supabase } from "@/lib/supabase";
 import SessionExpiredModal from "@/components/modals/SessionExpiredModal";
 import LoginErrorModal from "@/components/modals/LoginErrorModal";
 
@@ -41,62 +40,19 @@ export const AuthProvider = ({ children }) => {
         } else {
           setUser(parsedUser);
           setLoading(false);
-          const { data: user } = await supabase.auth.getUser();
-          if (!user?.user) {
-            setUser(null);
-            localStorage.removeItem("ruo_user_data");
-            localStorage.removeItem("ruo_member_session");
-            localStorage.removeItem("user_email");
-            if (router.pathname !== "/") {
-              router.push("/");
-            }
-          }
+          
+          // For localStorage-based auth, we trust the cached data
+          // No need to validate with server on every page load
           setIsAuthenticating(false);
           return;
         }
       }
 
-      const { data: user } = await supabase.auth.getUser();
-      const email = user?.user?.email;
-      const authUserId = user?.user?.id;
-
-      if (user?.user && email && authUserId) {
-        const { data, error } = await supabase
-          .from("users")
-          .select(
-            "id, email, full_name, role, avatar_url, is_active, created_at, updated_at"
-          )
-          .eq("id", authUserId)
-          .single();
-
-        if (data && !error) {
-          const userData = {
-            id: data.id,
-            email: data.email,
-            name: data.full_name,
-            role: data.role,
-            avatar_url: data.avatar_url,
-            is_active: data.is_active,
-            created_at: data.created_at,
-            updated_at: data.updated_at,
-          };
-          setUser(userData);
-          localStorage.setItem("ruo_user_data", JSON.stringify(userData));
-          localStorage.setItem("ruo_member_session", "authenticated");
-          localStorage.setItem("user_email", email);
-        } else {
-          setLoginError("No account found for this email.");
-          setUser(null);
-          localStorage.removeItem("ruo_user_data");
-          localStorage.removeItem("ruo_member_session");
-          localStorage.removeItem("user_email");
-        }
-      } else {
-        setUser(null);
-        localStorage.removeItem("ruo_user_data");
-        localStorage.removeItem("ruo_member_session");
-        localStorage.removeItem("user_email");
-      }
+      // No cached user, user is not authenticated
+      setUser(null);
+      localStorage.removeItem("ruo_user_data");
+      localStorage.removeItem("ruo_member_session");
+      localStorage.removeItem("user_email");
     } catch (err) {
       console.error("AuthContext: Initialization error:", err);
       setLoginError("An error occurred during authentication.");
@@ -114,64 +70,31 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     initializeAuth();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("AuthContext: onAuthStateChange event:", event);
-        if (event === "SIGNED_IN" && session?.user?.email) {
-          debouncedInitializeAuth();
-        } else if (event === "SIGNED_OUT" && !skipRedirect) {
-          setUser(null);
-          localStorage.removeItem("ruo_user_data");
-          localStorage.removeItem("ruo_member_session");
-          localStorage.removeItem("user_email");
-          localStorage.removeItem("ruo_remembered_email");
-          localStorage.removeItem("ruo_session_expiry");
-          if (router.pathname !== "/auth/callback") {
-            router.push("/");
-          }
-        }
-      }
-    );
-
-    return () => authListener.subscription?.unsubscribe();
   }, []);
 
   const login = async (email, password, rememberMe) => {
     try {
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      // Use our custom login API
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (authError) {
-        console.error("AuthContext: Supabase auth error:", authError);
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("AuthContext: Login API error:", result.error);
         setLoginError(
           "Invalid email or password. If you recently received a new password, please use it or contact support at kwamevaughan@gmail.com."
         );
-        throw new Error(authError.message);
+        throw new Error(result.error || "Login failed");
       }
 
-      const authUserId = authData.user.id;
-      console.log("[LOGIN] Supabase Auth user:", authData.user);
-      // Now using the 'users' table for user profiles
-      const { data: userData, error } = await supabase
-        .from("users")
-        .select(
-          "id, email, full_name, role, avatar_url, is_active, created_at, updated_at"
-        )
-        .eq("id", authUserId)
-        .single();
-      console.log("[LOGIN] users table query result:", userData, error);
-
-      if (error || !userData) {
-        console.error("AuthContext: User not found:", error);
-        setLoginError(
-          "No account found for this email. Please ensure your account is activated or contact support at kwamevaughan@gmail.com."
-        );
-        throw new Error("No account found.");
-      }
+      const userData = result.user;
+      console.log("[LOGIN] User data from API:", userData);
 
       if (rememberMe) {
         localStorage.setItem("ruo_remembered_email", email);
@@ -221,14 +144,21 @@ export const AuthProvider = ({ children }) => {
       console.log(
         `AuthContext: Initiating ${provider} login with redirectTo: ${redirectTo}`
       );
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: provider.toLowerCase(),
-        options: {
-          redirectTo,
+      
+      // Use API for social login
+      const response = await fetch("/api/auth/social-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ 
+          provider: provider.toLowerCase(),
+          redirectTo 
+        }),
       });
 
-      if (error) {
+      if (!response.ok) {
+        const error = await response.json();
         console.error(
           `AuthContext: Social login error with ${provider}:`,
           error
@@ -236,6 +166,9 @@ export const AuthProvider = ({ children }) => {
         setLoginError(`Failed to sign in with ${provider}. Please try again.`);
         throw new Error(`Failed to sign in with ${provider}`);
       }
+
+      const { url } = await response.json();
+      window.location.href = url;
     } catch (error) {
       console.error("AuthContext: Social login error:", error);
       throw error;
@@ -272,16 +205,21 @@ export const AuthProvider = ({ children }) => {
       console.log("AuthContext: Handling social login callback");
 
       try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+        // Use API to get session info
+        const response = await fetch("/api/auth/session", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
-        if (error) {
-          console.error("AuthContext: Error retrieving session:", error);
+        if (!response.ok) {
+          console.error("AuthContext: Error retrieving session");
           router.push("/");
           return;
         }
+
+        const { session } = await response.json();
 
         if (session?.user) {
           const { user } = session;
@@ -296,15 +234,15 @@ export const AuthProvider = ({ children }) => {
             name,
           });
 
-          const { data: existingUser, error: fetchError } = await supabase
-            .from("users")
-            .select(
-              "id, email, full_name, role, avatar_url, is_active, created_at, updated_at"
-            )
-            .eq("id", authUserId)
-            .single();
+          // Check if user exists via API
+          const userResponse = await fetch(`/api/users/${authUserId}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
 
-          if (fetchError || !existingUser) {
+          if (!userResponse.ok) {
             console.log(
               "AuthContext: No existing candidate, redirecting to membership page"
             );
@@ -314,7 +252,7 @@ export const AuthProvider = ({ children }) => {
               "AuthContext: Calling /api/signout with authUserId:",
               authUserId
             );
-            const response = await fetch("/api/signout", {
+            const signoutResponse = await fetch("/api/signout", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -323,19 +261,34 @@ export const AuthProvider = ({ children }) => {
               }),
             });
 
-            if (!response.ok) {
+            if (!signoutResponse.ok) {
               console.error(
                 "AuthContext: Sign-out error:",
-                await response.json()
+                await signoutResponse.json()
               );
               window.location.assign("https://richuncleoutlook.com/");
               return;
             }
 
-            const { redirectTo } = await response.json();
+            const { redirectTo } = await signoutResponse.json();
             console.log("AuthContext: Redirecting to:", redirectTo);
             window.location.assign(redirectTo);
             return;
+          }
+
+          const existingUser = await userResponse.json();
+
+          // Update last login timestamp
+          try {
+            await fetch("/api/auth/update-last-login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ userId: existingUser.id }),
+            });
+          } catch (error) {
+            console.error("Failed to update last login:", error);
           }
 
           localStorage.setItem("ruo_member_session", "authenticated");
@@ -374,12 +327,19 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     console.log("AuthContext: Logging out...");
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("AuthContext: Sign-out error:", error);
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        console.error("AuthContext: Sign-out error");
         toast.error("Failed to log out. Please try again.");
         return;
       }
+
       setUser(null);
       localStorage.removeItem("ruo_user_data");
       localStorage.removeItem("ruo_member_session");

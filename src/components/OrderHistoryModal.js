@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabaseClient } from "../lib/supabase";
 import PrintReceipt from "./PrintReceipt";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
@@ -14,13 +13,17 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
-    supabaseClient
-      .from("orders")
-      .select("*")
-      .order("timestamp", { ascending: false })
-      .limit(50)
-      .then(({ data }) => {
-        setOrders(data || []);
+    
+    fetch('/api/orders')
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          setOrders(result.data || []);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to fetch orders:", err);
         setLoading(false);
       });
   }, [isOpen]);
@@ -29,34 +32,36 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
     setPrinting(order.id);
     try {
       // Fetch order items
-      const { data: items } = await supabaseClient
-        .from("order_items")
-        .select("*")
-        .eq("order_id", order.id);
+      const response = await fetch(`/api/order-items?order_id=${order.id}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        const items = result.data || [];
 
-      // Prepare data for PrintReceipt
-      const printReceipt = PrintReceipt({
-        orderId: order.id,
-        selectedProducts: items.map((item) => item.product_id),
-        quantities: items.reduce((acc, item) => {
-          acc[item.product_id] = item.quantity;
-          return acc;
-        }, {}),
-        products: items.map((item) => ({
-          id: item.product_id,
-          name: item.name,
-          price: item.price,
-        })),
-        subtotal: order.subtotal,
-        tax: order.tax,
-        discount: order.discount,
-        total: order.total,
-        selectedCustomerId: order.customer_id,
-        customers: customers,
-        paymentData: order.payment_data,
-      });
+        // Prepare data for PrintReceipt
+        const printReceipt = PrintReceipt({
+          orderId: order.id,
+          selectedProducts: items.map((item) => item.product_id),
+          quantities: items.reduce((acc, item) => {
+            acc[item.product_id] = item.quantity;
+            return acc;
+          }, {}),
+          products: items.map((item) => ({
+            id: item.product_id,
+            name: item.name,
+            price: item.price,
+          })),
+          subtotal: order.subtotal,
+          tax: order.tax,
+          discount: order.discount,
+          total: order.total,
+          selectedCustomerId: order.customer_id,
+          customers: customers,
+          paymentData: order.payment_data,
+        });
 
-      printReceipt.printOrder();
+        printReceipt.printOrder();
+      }
     } catch (error) {
       console.error("Print error:", error);
     } finally {

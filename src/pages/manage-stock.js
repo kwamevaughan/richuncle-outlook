@@ -3,7 +3,6 @@ import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { supabaseClient } from "../lib/supabase";
 import SimpleModal from "@/components/SimpleModal";
 import { GenericTable } from "@/components/GenericTable";
 import toast from "react-hot-toast";
@@ -50,10 +49,8 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
   // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data, error } = await supabaseClient
-        .from("categories")
-        .select("*")
-        .order("name");
+      const response = await fetch('/api/categories');
+      const { data, error } = await response.json();
       if (!error) setCategories(data || []);
     };
     fetchCategories();
@@ -65,13 +62,8 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
     setError(null);
     
     try {
-      const { data, error } = await supabaseClient
-        .from("products")
-        .select(`
-          *,
-          category:categories!products_category_id_fkey(name)
-        `)
-        .order("name");
+      const response = await fetch('/api/products');
+      const { data, error } = await response.json();
       
       if (error) throw error;
       
@@ -203,18 +195,24 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
         };
       });
 
-      const { error } = await supabaseClient
-        .from("products")
-        .upsert(updates);
+      const response = await fetch('/api/products/bulk-update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ updates })
+      });
 
-      if (error) throw error;
-
-      toast.success(`Updated stock for ${selectedProducts.length} products`);
-      setBulkUpdateQuantity("");
-      setBulkUpdateType("set");
-      setShowBulkUpdateModal(false);
-      setSelectedProducts([]);
-      fetchProducts();
+      const result = await response.json();
+      if (result.success) {
+        toast.success(`Updated ${selectedProducts.length} products`);
+        setBulkUpdateQuantity("");
+        setShowBulkUpdateModal(false);
+        setSelectedProducts([]);
+        fetchProducts();
+      } else {
+        throw new Error(result.error || "Failed to update products");
+      }
     } catch (err) {
       toast.error("Failed to update products");
     }
@@ -251,71 +249,78 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
           newStock = currentStock;
       }
 
-      const { error } = await supabaseClient
-        .from("products")
-        .update({ quantity: newStock })
-        .eq("id", selectedProduct.id);
+      const response = await fetch(`/api/products/${selectedProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ quantity: newStock })
+      });
 
-      if (error) throw error;
-
-      toast.success(`Updated stock for ${selectedProduct.name}`);
-      setQuickUpdateQuantity("");
-      setQuickUpdateType("add");
-      setShowQuickUpdateModal(false);
-      setSelectedProduct(null);
-      fetchProducts();
+      const result = await response.json();
+      if (result.success) {
+        toast.success(`Updated ${selectedProduct.name}`);
+        setQuickUpdateQuantity("");
+        setShowQuickUpdateModal(false);
+        setSelectedProduct(null);
+        fetchProducts();
+      } else {
+        throw new Error(result.error || "Failed to update product");
+      }
     } catch (err) {
-      toast.error("Failed to update stock");
+      toast.error("Failed to update product");
     }
   };
 
-  // Handle CSV import
+  // Handle import
   const handleImport = async () => {
     if (!importData.trim()) {
-      toast.error("Please paste CSV data");
+      toast.error("Please enter import data");
       return;
     }
 
     try {
+      // Parse CSV data (simplified - you might want to use a proper CSV parser)
       const lines = importData.trim().split('\n');
       const updates = [];
 
       for (let i = 1; i < lines.length; i++) { // Skip header
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        const [sku, quantity] = line.split(',').map(s => s.trim());
-        if (!sku || !quantity) continue;
-
-        const product = products.find(p => p.sku === sku);
-        if (product) {
-          const newQuantity = parseInt(quantity);
-          if (!isNaN(newQuantity) && newQuantity >= 0) {
+        const [sku, quantity] = lines[i].split(',').map(s => s.trim());
+        if (sku && quantity) {
+          const product = products.find(p => p.sku === sku);
+          if (product) {
             updates.push({
               id: product.id,
-              quantity: newQuantity
+              quantity: parseInt(quantity) || 0
             });
           }
         }
       }
 
       if (updates.length === 0) {
-        toast.error("No valid updates found in CSV data");
+        toast.error("No valid products found in import data");
         return;
       }
 
-      const { error } = await supabaseClient
-        .from("products")
-        .upsert(updates);
+      const response = await fetch('/api/products/bulk-update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ updates })
+      });
 
-      if (error) throw error;
-
-      toast.success(`Updated stock for ${updates.length} products`);
-      setImportData("");
-      setShowImportModal(false);
-      fetchProducts();
+      const result = await response.json();
+      if (result.success) {
+        toast.success(`Imported ${updates.length} products`);
+        setImportData("");
+        setShowImportModal(false);
+        fetchProducts();
+      } else {
+        throw new Error(result.error || "Failed to import products");
+      }
     } catch (err) {
-      toast.error("Failed to import stock data");
+      toast.error("Failed to import products");
     }
   };
 
@@ -350,7 +355,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
             <p className="text-sm text-gray-500 mb-2">SKU: {product.sku}</p>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Icon icon="mdi:tag-outline" className="w-4 h-4" />
-              {product.category?.name || 'N/A'}
+              {product.categories?.name || 'N/A'}
             </div>
           </div>
 
@@ -429,7 +434,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
       render: (row) => (
         <div className="flex items-center gap-2">
           <Icon icon="mdi:tag-outline" className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-900">{row.category?.name || 'N/A'}</span>
+          <span className="text-sm text-gray-900">{row.categories?.name || 'N/A'}</span>
         </div>
       )
     },

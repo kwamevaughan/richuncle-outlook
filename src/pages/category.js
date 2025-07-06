@@ -1,7 +1,6 @@
 import { useState } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
-import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import { useUser } from "../hooks/useUser";
@@ -71,19 +70,15 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
   const handleDelete = async () => {
     try {
       if (tab === "categories") {
-        const { error } = await supabaseClient
-          .from("categories")
-          .delete()
-          .eq("id", deleteItem.id);
+        const response = await fetch('/api/categories');
+        const { data, error } = await response.json();
         if (error) throw error;
-        setCategories((prev) => prev.filter((c) => c.id !== deleteItem.id));
+        setCategories(data || []);
       } else {
-        const { error } = await supabaseClient
-          .from("subcategories")
-          .delete()
-          .eq("id", deleteItem.id);
+        const response = await fetch('/api/subcategories');
+        const { data, error } = await response.json();
         if (error) throw error;
-        setSubCategories((prev) => prev.filter((s) => s.id !== deleteItem.id));
+        setSubCategories(data || []);
       }
       closeConfirm();
       toast.success("Category deleted!");
@@ -129,10 +124,8 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
 
   // Fetch categories helper
   const fetchCategories = async () => {
-    const { data, error } = await supabaseClient
-      .from("categories")
-      .select("*")
-      .order("sort_order", { ascending: true });
+    const response = await fetch('/api/categories');
+    const { data, error } = await response.json();
     console.log("fetchCategories - response:", { data, error });
     if (!error) {
       setCategories(data || []);
@@ -153,9 +146,14 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
     try {
       // Log what will be updated
       console.log("persistCategoryOrder - sending categories:", categories);
-      const { data, error } = await supabaseClient
-        .from("categories")
-        .upsert(categories, { onConflict: "id" });
+      const response = await fetch('/api/categories', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(categories),
+      });
+      const { data, error } = await response.json();
       console.log("persistCategoryOrder - response:", { data, error });
       if (error) {
         console.error("Batch update error:", error);
@@ -171,10 +169,14 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to add a new category
   const handleAddCategory = async (newCategory) => {
-    const { data, error } = await supabaseClient
-      .from("categories")
-      .insert([newCategory])
-      .select();
+    const response = await fetch('/api/categories', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([newCategory]),
+    });
+    const { data, error } = await response.json();
     if (error) throw error;
     // Prepend or append the new category to the list
     setCategories((prev) => [data[0], ...prev]);
@@ -182,11 +184,14 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to update a category
   const handleUpdateCategory = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("categories")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
+    const response = await fetch('/api/categories', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([{ id, ...updatedFields }]),
+    });
+    const { data, error } = await response.json();
     if (error) throw error;
     setCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, ...updatedFields } : cat))
@@ -195,21 +200,28 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to add a new subcategory
   const handleAddSubCategory = async (newSubCategory) => {
-    const { data, error } = await supabaseClient
-      .from("subcategories")
-      .insert([newSubCategory])
-      .select();
+    const response = await fetch('/api/subcategories', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([newSubCategory]),
+    });
+    const { data, error } = await response.json();
     if (error) throw error;
     setSubCategories((prev) => [data[0], ...prev]);
   };
 
   // Add a helper to update a subcategory
   const handleUpdateSubCategory = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("subcategories")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
+    const response = await fetch('/api/subcategories', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([{ id, ...updatedFields }]),
+    });
+    const { data, error } = await response.json();
     if (error) throw error;
     setSubCategories((prev) =>
       prev.map((sub) => (sub.id === id ? { ...sub, ...updatedFields } : sub))

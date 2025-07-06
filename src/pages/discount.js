@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import { useUser } from "../hooks/useUser";
@@ -30,20 +29,28 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
   // Fetch discounts and plans
   const fetchDiscounts = async () => {
     setLoading(true);
-    const { data, error } = await supabaseClient
-      .from("discounts")
-      .select("*, plan:discount_plans(*)")
-      .order("id", { ascending: false });
-    if (!error) setDiscounts(data || []);
+    try {
+      const response = await fetch('/api/discounts');
+      const result = await response.json();
+      if (result.success) {
+        setDiscounts(result.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch discounts:", err);
+    }
     setLoading(false);
   };
   const fetchPlans = async () => {
     setLoading(true);
-    const { data, error } = await supabaseClient
-      .from("discount_plans")
-      .select("*")
-      .order("id", { ascending: false });
-    if (!error) setPlans(data || []);
+    try {
+      const response = await fetch('/api/discount-plans');
+      const result = await response.json();
+      if (result.success) {
+        setPlans(result.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch plans:", err);
+    }
     setLoading(false);
   };
 
@@ -87,19 +94,25 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
   const handleDelete = async () => {
     try {
       if (tab === "discounts") {
-        const { error } = await supabaseClient
-          .from("discounts")
-          .delete()
-          .eq("id", deleteItem.id);
-        if (error) throw error;
-        setDiscounts((prev) => prev.filter((d) => d.id !== deleteItem.id));
+        const response = await fetch(`/api/discounts/${deleteItem.id}`, {
+          method: 'DELETE'
+        });
+        const result = await response.json();
+        if (result.success) {
+          setDiscounts((prev) => prev.filter((d) => d.id !== deleteItem.id));
+        } else {
+          throw new Error(result.error || "Failed to delete discount");
+        }
       } else {
-        const { error } = await supabaseClient
-          .from("discount_plans")
-          .delete()
-          .eq("id", deleteItem.id);
-        if (error) throw error;
-        setPlans((prev) => prev.filter((p) => p.id !== deleteItem.id));
+        const response = await fetch(`/api/discount-plans/${deleteItem.id}`, {
+          method: 'DELETE'
+        });
+        const result = await response.json();
+        if (result.success) {
+          setPlans((prev) => prev.filter((p) => p.id !== deleteItem.id));
+        } else {
+          throw new Error(result.error || "Failed to delete plan");
+        }
       }
       closeConfirm();
       toast.success("Deleted!");
@@ -110,40 +123,66 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
 
   // Add/update helpers
   const handleAddDiscount = async (newDiscount) => {
-    const { data, error } = await supabaseClient
-      .from("discounts")
-      .insert([newDiscount])
-      .select("*, plan:discount_plans(*)");
-    if (error) throw error;
-    await fetchDiscounts();
+    const response = await fetch('/api/discounts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newDiscount)
+    });
+    const result = await response.json();
+    if (result.success) {
+      await fetchDiscounts();
+    } else {
+      throw new Error(result.error || "Failed to add discount");
+    }
   };
   const handleUpdateDiscount = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("discounts")
-      .update(updatedFields)
-      .eq("id", id)
-      .select("*, plan:discount_plans(*)");
-    if (error) throw error;
-    await fetchDiscounts();
+    const response = await fetch(`/api/discounts/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedFields)
+    });
+    const result = await response.json();
+    if (result.success) {
+      await fetchDiscounts();
+    } else {
+      throw new Error(result.error || "Failed to update discount");
+    }
   };
   const handleAddPlan = async (newPlan) => {
-    const { data, error } = await supabaseClient
-      .from("discount_plans")
-      .insert([newPlan])
-      .select();
-    if (error) throw error;
-    setPlans((prev) => [data[0], ...prev]);
+    const response = await fetch('/api/discount-plans', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newPlan)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setPlans((prev) => [result.data, ...prev]);
+    } else {
+      throw new Error(result.error || "Failed to add plan");
+    }
   };
   const handleUpdatePlan = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("discount_plans")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
-    if (error) throw error;
-    setPlans((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p))
-    );
+    const response = await fetch(`/api/discount-plans/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedFields)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setPlans((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p))
+      );
+    } else {
+      throw new Error(result.error || "Failed to update plan");
+    }
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;

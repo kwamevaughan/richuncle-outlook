@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
-import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
 import { Icon } from "@iconify/react";
 import { AddEditModal } from "../components/AddEditModal";
@@ -29,40 +28,48 @@ export default function WarehousesPage({ mode = "light", toggleMode, ...props })
   // Fetch warehouses
   const fetchWarehouses = async () => {
     setLoading(true);
-    const { data: warehousesData, error: warehousesError } = await supabaseClient
-      .from("warehouses")
-      .select("*")
-      .order("sort_order", { ascending: true });
-    const { data: productsData, error: productsError } = await supabaseClient
-      .from("products")
-      .select("warehouse_id");
-    if (!warehousesError && !productsError) {
-      // Count products per warehouse in JS
-      const productCounts = {};
-      (productsData || []).forEach((row) => {
-        if (row.warehouse_id) {
-          productCounts[row.warehouse_id] = (productCounts[row.warehouse_id] || 0) + 1;
-        }
-      });
-      // Add product_count to each warehouse
-      const warehousesWithCount = (warehousesData || []).map((warehouse) => ({
-        ...warehouse,
-        product_count: productCounts[warehouse.id] || 0,
-      }));
-      setWarehouses(warehousesWithCount);
-    } else {
-      setError((warehousesError || productsError).message || "Failed to load warehouses");
+    try {
+      const [warehousesResponse, productsResponse] = await Promise.all([
+        fetch('/api/warehouses'),
+        fetch('/api/products')
+      ]);
+      
+      const warehousesData = await warehousesResponse.json();
+      const productsData = await productsResponse.json();
+      
+      if (warehousesData.success && productsData.success) {
+        // Count products per warehouse in JS
+        const productCounts = {};
+        (productsData.data || []).forEach((row) => {
+          if (row.warehouse_id) {
+            productCounts[row.warehouse_id] = (productCounts[row.warehouse_id] || 0) + 1;
+          }
+        });
+        // Add product_count to each warehouse
+        const warehousesWithCount = (warehousesData.data || []).map((warehouse) => ({
+          ...warehouse,
+          product_count: productCounts[warehouse.id] || 0,
+        }));
+        setWarehouses(warehousesWithCount);
+      } else {
+        setError("Failed to load warehouses");
+      }
+    } catch (err) {
+      setError("Failed to load warehouses");
     }
     setLoading(false);
   };
 
   // Fetch users
   const fetchUsers = async () => {
-    const { data, error } = await supabaseClient
-      .from("users")
-      .select("id, full_name");
-    if (!error) {
-      setUsers(data || []);
+    try {
+      const response = await fetch('/api/users');
+      const result = await response.json();
+      if (result.success) {
+        setUsers(result.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
     }
   };
 
@@ -95,10 +102,8 @@ export default function WarehousesPage({ mode = "light", toggleMode, ...props })
   };
   const handleDelete = async () => {
     try {
-      const { error } = await supabaseClient
-        .from("warehouses")
-        .delete()
-        .eq("id", deleteItem.id);
+      const response = await fetch('/api/warehouses');
+      const { data, error } = await response.json();
       if (error) throw error;
       setWarehouses((prev) => prev.filter((w) => w.id !== deleteItem.id));
       closeConfirm();
@@ -110,21 +115,16 @@ export default function WarehousesPage({ mode = "light", toggleMode, ...props })
 
   // Add a helper to add a new warehouse
   const handleAddWarehouse = async (newWarehouse) => {
-    const { data, error } = await supabaseClient
-      .from("warehouses")
-      .insert([newWarehouse])
-      .select();
+    const response = await fetch('/api/warehouses');
+    const { data, error } = await response.json();
     if (error) throw error;
     setWarehouses((prev) => [data[0], ...prev]);
   };
 
   // Add a helper to update a warehouse
   const handleUpdateWarehouse = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("warehouses")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
+    const response = await fetch('/api/warehouses');
+    const { data, error } = await response.json();
     if (error) throw error;
     setWarehouses((prev) =>
       prev.map((w) => (w.id === id ? { ...w, ...updatedFields } : w))

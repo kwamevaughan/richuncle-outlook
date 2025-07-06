@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
-import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import { useUser } from "../hooks/useUser";
@@ -35,25 +34,23 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   // Fetch products
   const fetchProducts = async () => {
     setLoading(true);
-    const selectString = "*, category:categories!products_category_id_fkey(name), brand:brands!brand_id(name), unit:units!unit_id(name)";
-    console.log("[fetchProducts] select:", selectString);
-    const { data, error } = await supabaseClient
-      .from("products")
-      .select(selectString)
-      .order("created_at", { ascending: false });
-    console.log("[fetchProducts] data:", data);
-    console.log("[fetchProducts] error:", error);
-    if (!error) {
-      setProducts((data || []).map(p => ({
-        ...p,
-        category_name: p.category?.name || "",
-        brand_name: p.brand?.name || "",
-        unit_name: p.unit?.name || "",
-      })));
-    } else {
-      setError(error.message || "Failed to load products");
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/products');
+      const { data, error } = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(error || 'Failed to load products');
+      }
+      
+      setProducts(data || []);
+    } catch (err) {
+      setError(err.message || "Failed to load products");
+      toast.error("Failed to load products");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Initial fetch
@@ -84,11 +81,15 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   };
   const handleDelete = async () => {
     try {
-      const { error } = await supabaseClient
-        .from("products")
-        .delete()
-        .eq("id", deleteItem.id);
-      if (error) throw error;
+      const response = await fetch('/api/products', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: deleteItem.id }),
+      });
+      const result = await response.json();
+      if (result.error) throw new Error(result.error);
       setProducts((prev) => prev.filter((p) => p.id !== deleteItem.id));
       closeConfirm();
       toast.success("Product deleted!");
@@ -100,19 +101,19 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   // Add a helper to add a new product
   const handleAddProduct = async (newProduct) => {
     // Insert the product
-    const { data, error } = await supabaseClient
-      .from("products")
-      .insert([newProduct])
-      .select();
+    const response = await fetch('/api/products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newProduct),
+    });
+    const { data, error } = await response.json();
     if (error) throw error;
-    const inserted = data[0];
     // Fetch the full product row with joins
     const selectString = "*, category:categories!products_category_id_fkey(name), brand:brands!brand_id(name), unit:units!unit_id(name)";
-    const { data: fullData, error: fetchError } = await supabaseClient
-      .from("products")
-      .select(selectString)
-      .eq("id", inserted.id)
-      .single();
+    const selectResponse = await fetch(`/api/products/${data.id}?select=${selectString}`);
+    const { data: fullData, error: fetchError } = await selectResponse.json();
     if (fetchError) throw fetchError;
     // Add the new product with joined fields to the state
     setProducts((prev) => [
@@ -128,11 +129,14 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to update a product
   const handleUpdateProduct = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("products")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
+    const response = await fetch('/api/products', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id, ...updatedFields }),
+    });
+    const { data, error } = await response.json();
     if (error) throw error;
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p))

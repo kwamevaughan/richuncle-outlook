@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
-import { supabaseClient } from "../lib/supabase";
 
 // Notification types and their configurations
 const NOTIFICATION_TYPES = {
@@ -61,37 +60,27 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
-      const { data: recentOrders } = await supabaseClient
-        .from('orders')
-        .select('id, customer_name, total, timestamp')
-        .gte('timestamp', yesterday.toISOString())
-        .order('timestamp', { ascending: false })
-        .limit(5);
-
-      // Get low stock products
-      const { data: lowStockProducts } = await supabaseClient
-        .from('products')
-        .select('id, name, quantity')
-        .lte('quantity', 10)
-        .gt('quantity', 0)
-        .order('quantity', { ascending: true })
-        .limit(5);
-
-      // Get out of stock products
-      const { data: outOfStockProducts } = await supabaseClient
-        .from('products')
-        .select('id, name, quantity')
-        .eq('quantity', 0)
-        .order('updated_at', { ascending: false })
-        .limit(3);
-
-      // Get recent cash register activities
-      const { data: cashActivities } = await supabaseClient
-        .from('cash_movements')
-        .select('id, type, amount, reason, created_at, user_id')
-        .gte('created_at', yesterday.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(3);
+      const [ordersResponse, productsResponse, cashResponse] = await Promise.all([
+        fetch('/api/orders'),
+        fetch('/api/products'),
+        fetch('/api/cash-movements')
+      ]);
+      
+      const ordersData = await ordersResponse.json();
+      const productsData = await productsResponse.json();
+      const cashData = await cashResponse.json();
+      
+      const recentOrders = ordersData.success ? 
+        (ordersData.data || []).filter(order => new Date(order.timestamp) >= yesterday).slice(0, 5) : [];
+      
+      const lowStockProducts = productsData.success ? 
+        (productsData.data || []).filter(p => p.quantity <= 10 && p.quantity > 0).slice(0, 5) : [];
+      
+      const outOfStockProducts = productsData.success ? 
+        (productsData.data || []).filter(p => p.quantity <= 0).slice(0, 3) : [];
+      
+      const cashActivities = cashData.success ? 
+        (cashData.data || []).filter(activity => new Date(activity.created_at) >= yesterday).slice(0, 3) : [];
 
       // Build notifications array
       const allNotifications = [];
@@ -172,88 +161,6 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
       setLoading(false);
     }
   };
-
-  // Real-time updates for new orders
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const orderSubscription = supabaseClient
-      .channel('orders_notifications')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'orders' 
-      }, payload => {
-        const newOrder = payload.new;
-        const notification = {
-          id: `order_${newOrder.id}`,
-          type: 'new_order',
-          title: `New Order #${newOrder.id}`,
-          message: `${newOrder.customer_name || 'Walk-in Customer'} - GHS ${newOrder.total.toLocaleString()}`,
-          timestamp: newOrder.timestamp,
-          data: newOrder,
-          read: false
-        };
-        
-        setNotifications(prev => [notification, ...prev.slice(0, 9)]); // Keep max 10 notifications
-        setUnreadCount(prev => prev + 1);
-      })
-      .subscribe();
-
-    return () => {
-      orderSubscription.unsubscribe();
-    };
-  }, [isOpen]);
-
-  // Real-time updates for product stock changes
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const productSubscription = supabaseClient
-      .channel('products_notifications')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'products' 
-      }, payload => {
-        const updatedProduct = payload.new;
-        const oldProduct = payload.old;
-        
-        // Check if stock changed to low or out
-        if (updatedProduct.quantity <= 10 && oldProduct.quantity > 10) {
-          const notification = {
-            id: `low_stock_${updatedProduct.id}`,
-            type: 'low_stock',
-            title: `Low Stock Alert`,
-            message: `${updatedProduct.name} - Only ${updatedProduct.quantity} units left`,
-            timestamp: new Date().toISOString(),
-            data: updatedProduct,
-            read: false
-          };
-          
-          setNotifications(prev => [notification, ...prev.slice(0, 9)]);
-          setUnreadCount(prev => prev + 1);
-        } else if (updatedProduct.quantity === 0 && oldProduct.quantity > 0) {
-          const notification = {
-            id: `out_of_stock_${updatedProduct.id}`,
-            type: 'out_of_stock',
-            title: `Out of Stock`,
-            message: `${updatedProduct.name} is completely out of stock`,
-            timestamp: new Date().toISOString(),
-            data: updatedProduct,
-            read: false
-          };
-          
-          setNotifications(prev => [notification, ...prev.slice(0, 9)]);
-          setUnreadCount(prev => prev + 1);
-        }
-      })
-      .subscribe();
-
-    return () => {
-      productSubscription.unsubscribe();
-    };
-  }, [isOpen]);
 
   // Fetch notifications when dropdown opens
   useEffect(() => {

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
-import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import { useUser } from "../hooks/useUser";
@@ -30,29 +29,34 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
   // Fetch brands
   const fetchBrands = async () => {
     setLoading(true);
-    const { data: brandsData, error: brandsError } = await supabaseClient
-      .from("brands")
-      .select("*")
-      .order("created_at", { ascending: false });
-    const { data: productsData, error: productsError } = await supabaseClient
-      .from("products")
-      .select("brand_id");
-    if (!brandsError && !productsError) {
-      // Count products per brand in JS
-      const productCounts = {};
-      (productsData || []).forEach((row) => {
-        if (row.brand_id) {
-          productCounts[row.brand_id] = (productCounts[row.brand_id] || 0) + 1;
-        }
-      });
-      // Add product_count to each brand
-      const brandsWithCount = (brandsData || []).map((brand) => ({
-        ...brand,
-        product_count: productCounts[brand.id] || 0,
-      }));
-      setBrands(brandsWithCount);
-    } else {
-      setError((brandsError || productsError).message || "Failed to load brands");
+    try {
+      const [brandsResponse, productsResponse] = await Promise.all([
+        fetch('/api/brands'),
+        fetch('/api/products')
+      ]);
+      
+      const brandsData = await brandsResponse.json();
+      const productsData = await productsResponse.json();
+      
+      if (brandsData.success && productsData.success) {
+        // Count products per brand in JS
+        const productCounts = {};
+        (productsData.data || []).forEach((row) => {
+          if (row.brand_id) {
+            productCounts[row.brand_id] = (productCounts[row.brand_id] || 0) + 1;
+          }
+        });
+        // Add product_count to each brand
+        const brandsWithCount = (brandsData.data || []).map((brand) => ({
+          ...brand,
+          product_count: productCounts[brand.id] || 0,
+        }));
+        setBrands(brandsWithCount);
+      } else {
+        setError("Failed to load brands");
+      }
+    } catch (err) {
+      setError("Failed to load brands");
     }
     setLoading(false);
   };
@@ -85,14 +89,17 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
   };
   const handleDelete = async () => {
     try {
-      const { error } = await supabaseClient
-        .from("brands")
-        .delete()
-        .eq("id", deleteItem.id);
-      if (error) throw error;
-      setBrands((prev) => prev.filter((b) => b.id !== deleteItem.id));
-      closeConfirm();
-      toast.success("Brand deleted!");
+      const response = await fetch(`/api/brands/${deleteItem.id}`, {
+        method: 'DELETE'
+      });
+      const result = await response.json();
+      if (result.success) {
+        setBrands((prev) => prev.filter((b) => b.id !== deleteItem.id));
+        closeConfirm();
+        toast.success("Brand deleted!");
+      } else {
+        throw new Error(result.error || "Failed to delete brand");
+      }
     } catch (err) {
       toast.error(err.message || "Failed to delete brand");
     }
@@ -100,25 +107,38 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to add a new brand
   const handleAddBrand = async (newBrand) => {
-    const { data, error } = await supabaseClient
-      .from("brands")
-      .insert([newBrand])
-      .select();
-    if (error) throw error;
-    setBrands((prev) => [data[0], ...prev]);
+    const response = await fetch('/api/brands', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newBrand)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setBrands((prev) => [result.data, ...prev]);
+    } else {
+      throw new Error(result.error || "Failed to add brand");
+    }
   };
 
   // Add a helper to update a brand
   const handleUpdateBrand = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("brands")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
-    if (error) throw error;
-    setBrands((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, ...updatedFields } : b))
-    );
+    const response = await fetch(`/api/brands/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedFields)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setBrands((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, ...updatedFields } : b))
+      );
+    } else {
+      throw new Error(result.error || "Failed to update brand");
+    }
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;

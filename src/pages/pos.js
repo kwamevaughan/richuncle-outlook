@@ -7,7 +7,7 @@ import PosProductList from "@/components/PosProductList";
 import PosOrderList from "@/components/PosOrderList";
 import { Icon } from "@iconify/react";
 import PosFooterActions from "@/components/PosFooterActions";
-import { supabaseClient } from "../lib/supabase";
+
 import PrintReceipt from "@/components/PrintReceipt";
 import OrderHistoryModal from "@/components/OrderHistoryModal";
 import { ModalProvider, useModal } from "@/components/ModalContext";
@@ -31,23 +31,32 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
 
   useEffect(() => {
     async function fetchDiscounts() {
-      const { data, error } = await supabaseClient
-        .from("discounts")
-        .select("*")
-        .eq("is_active", true);
-      if (!error) setDiscounts(data || []);
+      try {
+        const response = await fetch('/api/discounts');
+        const result = await response.json();
+        if (result.success) {
+          const activeDiscounts = (result.data || []).filter(d => d.is_active);
+          setDiscounts(activeDiscounts);
+        }
+      } catch (err) {
+        console.error("Failed to fetch discounts:", err);
+      }
     }
     fetchDiscounts();
   }, []);
 
   useEffect(() => {
     async function fetchCustomers() {
-      const { data, error } = await supabaseClient
-        .from("customers")
-        .select("*")
-        .eq("is_active", true)
-        .order("name", { ascending: true });
-      if (!error) setCustomers(data || []);
+      try {
+        const response = await fetch('/api/customers');
+        const result = await response.json();
+        if (result.success) {
+          const activeCustomers = (result.data || []).filter(c => c.is_active).sort((a, b) => a.name.localeCompare(b.name));
+          setCustomers(activeCustomers);
+        }
+      } catch (err) {
+        console.error("Failed to fetch customers:", err);
+      }
     }
     fetchCustomers();
   }, []);

@@ -100,7 +100,9 @@ export function GenericTable({
   enableDragDrop = false,
   actions = [],
 }) {
-  const table = useTable(data);
+  // Ensure data is an array and filter out any null/undefined items
+  const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
+  const table = useTable(safeData);
   const TableBody = enableDragDrop ? CategoryDragDrop : "tbody";
 
   const handleBulkDelete = () => {
@@ -113,7 +115,10 @@ export function GenericTable({
   };
 
   // Helper to render a table row's cells
-  const renderRowCells = (row, index) => (
+  const renderRowCells = (row, index) => {
+    if (!row) return null;
+    
+    return (
     <>
       {selectable && (
         <td className="px-4 py-4">
@@ -166,16 +171,23 @@ export function GenericTable({
       <td className="px-4 py-4">
         <div className="flex items-center gap-2">
           {/* Custom actions */}
-          {actions.map((action, i) => (
-            <button
-              key={action.label || i}
-              onClick={() => action.onClick(row)}
-              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors"
-              title={action.label}
-            >
-              <Icon icon={action.icon} className="w-4 h-4" />
-            </button>
-          ))}
+          {actions.map((action, i) => {
+            if (!action || typeof action.onClick !== 'function') return null;
+            
+            const label = typeof action.label === 'function' ? action.label(row) : action.label;
+            const icon = typeof action.icon === 'function' ? action.icon(row) : action.icon;
+            
+            return (
+              <button
+                key={label || i}
+                onClick={() => action.onClick(row)}
+                className={`p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors ${action.className || ''}`}
+                title={label || ''}
+              >
+                <Icon icon={icon || 'mdi:help'} className="w-4 h-4" />
+              </button>
+            );
+          })}
           {/* Edit/Delete */}
           {onEdit && (
             <button
@@ -198,7 +210,8 @@ export function GenericTable({
         </div>
       </td>
     </>
-  );
+    );
+  };
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -230,7 +243,7 @@ export function GenericTable({
               )}
               {/* Export and Add New on the right */}
               <div className="flex items-center gap-3 ml-auto">
-                <CategoryCSVExport data={data} filename={`${title?.replace(/\s+/g, "_") || "data"}.csv`} />
+                <CategoryCSVExport data={safeData} filename={`${title?.replace(/\s+/g, "_") || "data"}.csv`} />
                 {onAddNew && (
                   <button
                     onClick={onAddNew}

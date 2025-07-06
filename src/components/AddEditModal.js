@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import CategoryImageUpload from "./CategoryImageUpload";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
-import { supabaseClient } from "../lib/supabase";
 import { DateRange } from 'react-date-range';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
@@ -116,11 +115,15 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
 
   useEffect(() => {
     if (type === "warehouses") {
-      supabaseClient
-        .from("users")
-        .select("id, full_name")
-        .then(({ data, error }) => {
-          if (!error && data) setUsersList(data);
+      fetch('/api/users')
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            setUsersList(result.data || []);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch users:", err);
         });
     }
   }, [type]);
@@ -146,12 +149,26 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
   useEffect(() => {
     if (type === "products") {
       // Fetch all dropdown data
-      supabaseClient.from("stores").select("id, name").then(({ data }) => setStores(data || []));
-      supabaseClient.from("warehouses").select("id, name").then(({ data }) => setWarehouses(data || []));
-      supabaseClient.from("categories").select("id, name").then(({ data }) => setLocalCategories(data || []));
-      supabaseClient.from("subcategories").select("id, name, category_id").then(({ data }) => setSubcategories(data || []));
-      supabaseClient.from("brands").select("id, name").then(({ data }) => setBrands(data || []));
-      supabaseClient.from("units").select("id, name").then(({ data }) => setUnits(data || []));
+      Promise.all([
+        fetch('/api/stores'),
+        fetch('/api/warehouses'),
+        fetch('/api/categories'),
+        fetch('/api/subcategories'),
+        fetch('/api/brands'),
+        fetch('/api/units')
+      ])
+      .then(responses => Promise.all(responses.map(r => r.json())))
+      .then(results => {
+        if (results[0].success) setStores(results[0].data || []);
+        if (results[1].success) setWarehouses(results[1].data || []);
+        if (results[2].success) setLocalCategories(results[2].data || []);
+        if (results[3].success) setSubcategories(results[3].data || []);
+        if (results[4].success) setBrands(results[4].data || []);
+        if (results[5].success) setUnits(results[5].data || []);
+      })
+      .catch(err => {
+        console.error("Failed to fetch dropdown data:", err);
+      });
     }
   }, [type]);
 
@@ -171,12 +188,23 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
     setLoading(true);
-    const { data, error } = await supabaseClient.from("categories").insert([{ name: newCategoryName.trim() }]).select();
-    if (!error && data && data[0]) {
-      setLocalCategories((prev) => [...prev, data[0]]);
-      setCategoryId(data[0].id);
-      setShowAddCategory(false);
-      setNewCategoryName("");
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: newCategoryName.trim() })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setLocalCategories((prev) => [...prev, result.data]);
+        setCategoryId(result.data.id);
+        setShowAddCategory(false);
+        setNewCategoryName("");
+      }
+    } catch (err) {
+      console.error("Failed to add category:", err);
     }
     setLoading(false);
   };

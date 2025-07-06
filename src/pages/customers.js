@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
-import { supabaseClient } from "../lib/supabase";
 import toast from "react-hot-toast";
 import HrHeader from "../layouts/hrHeader";
 import HrSidebar from "../layouts/hrSidebar";
@@ -36,14 +35,16 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
   // Fetch customers
   const fetchCustomers = async () => {
     setLoading(true);
-    const { data, error } = await supabaseClient
-      .from("customers")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error) {
-      setCustomers(data || []);
-    } else {
-      setError(error.message || "Failed to load customers");
+    try {
+      const response = await fetch('/api/customers');
+      const result = await response.json();
+      if (result.success) {
+        setCustomers(result.data || []);
+      } else {
+        setError("Failed to load customers");
+      }
+    } catch (err) {
+      setError("Failed to load customers");
     }
     setLoading(false);
   };
@@ -76,14 +77,17 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
   };
   const handleDelete = async () => {
     try {
-      const { error } = await supabaseClient
-        .from("customers")
-        .delete()
-        .eq("id", deleteItem.id);
-      if (error) throw error;
-      setCustomers((prev) => prev.filter((c) => c.id !== deleteItem.id));
-      closeConfirm();
-      toast.success("Customer deleted!");
+      const response = await fetch(`/api/customers/${deleteItem.id}`, {
+        method: 'DELETE'
+      });
+      const result = await response.json();
+      if (result.success) {
+        setCustomers((prev) => prev.filter((c) => c.id !== deleteItem.id));
+        closeConfirm();
+        toast.success("Customer deleted!");
+      } else {
+        throw new Error(result.error || "Failed to delete customer");
+      }
     } catch (err) {
       toast.error(err.message || "Failed to delete customer");
     }
@@ -91,25 +95,38 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
 
   // Add a helper to add a new customer
   const handleAddCustomer = async (newCustomer) => {
-    const { data, error } = await supabaseClient
-      .from("customers")
-      .insert([newCustomer])
-      .select();
-    if (error) throw error;
-    setCustomers((prev) => [data[0], ...prev]);
+    const response = await fetch('/api/customers', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newCustomer)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setCustomers((prev) => [result.data, ...prev]);
+    } else {
+      throw new Error(result.error || "Failed to add customer");
+    }
   };
 
   // Add a helper to update a customer
   const handleUpdateCustomer = async (id, updatedFields) => {
-    const { data, error } = await supabaseClient
-      .from("customers")
-      .update(updatedFields)
-      .eq("id", id)
-      .select();
-    if (error) throw error;
-    setCustomers((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updatedFields } : c))
-    );
+    const response = await fetch(`/api/customers/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedFields)
+    });
+    const result = await response.json();
+    if (result.success) {
+      setCustomers((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, ...updatedFields } : c))
+      );
+    } else {
+      throw new Error(result.error || "Failed to update customer");
+    }
   };
 
   if (userLoading && LoadingComponent) return LoadingComponent;

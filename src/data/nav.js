@@ -260,11 +260,6 @@ export const sidebarNav = [
         ],
       },
       {
-        href: "/invoice-report",
-        icon: "mdi:file-chart-outline",
-        label: "Invoice Report",
-      },
-      {
         href: "/supplier-report",
         icon: "mdi:truck-delivery-outline",
         label: "Supplier Report",

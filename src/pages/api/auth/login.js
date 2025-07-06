@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+const bcrypt = require("bcrypt");
+import supabaseAdmin from "../../../lib/supabaseAdmin";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -11,53 +12,45 @@ export default async function handler(req, res) {
   }
 
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
-
-    // Authenticate with Supabase
-    const { data: authData, error: authError } =
-      await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-    if (authError) {
-      console.error("API: Supabase auth error:", authError);
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    // Fetch user data from users table
-    const { data: userData, error: userError } = await supabase
+    // Find user by email
+    const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
-      .select("id, email, full_name, role, avatar_url, is_active, created_at, updated_at")
-      .eq("id", authData.user.id)
+      .select("id, email, full_name, role, avatar_url, is_active, created_at, updated_at, password")
+      .eq("email", email)
       .single();
 
     if (userError || !userData) {
       console.error("API: User not found:", userError);
-      return res.status(401).json({ error: "No account found for this email" });
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Check if user is active
+    if (!userData.is_active) {
+      return res.status(401).json({ error: "Account is deactivated" });
+    }
+
+    // Verify password
+    if (!userData.password) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, userData.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     // Update last login
     const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-    await supabase
+    await supabaseAdmin
       .from("users")
       .update({ last_login: new Date().toISOString(), last_ip: clientIp })
-      .eq("id", authData.user.id);
+      .eq("id", userData.id);
+
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = userData;
 
     return res.status(200).json({
-      user: {
-        id: userData.id,
-        email: userData.email,
-        full_name: userData.full_name,
-        role: userData.role,
-        avatar_url: userData.avatar_url,
-        is_active: userData.is_active,
-        created_at: userData.created_at,
-        updated_at: userData.updated_at,
-      },
+      user: userWithoutPassword,
     });
   } catch (error) {
     console.error("API: Login error:", error);

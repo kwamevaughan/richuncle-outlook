@@ -38,7 +38,7 @@ const SimpleModal = ({
   return (
     <>
       <div
-        className="fixed inset-0 z-[9999] overflow-y-auto"
+        className="fixed inset-0 z-50 overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Enhanced Glassmorphic Background */}
@@ -166,7 +166,7 @@ const SimpleModal = ({
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
         <div
-          className="fixed inset-0 z-[9999] overflow-y-auto"
+          className="fixed inset-0 z-50 overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div

@@ -1,6 +1,6 @@
 // pages/api/auth/refresh-token.js
 import { SignJWT, jwtVerify } from "jose";
-import supabaseAdmin from "lib/supabaseAdmin";
+import supabaseAdmin from "@/lib/supabaseAdmin";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useCategories } from "@/hooks/useCategories";
-import { supabaseClient } from "@/lib/supabase";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
@@ -20,18 +19,18 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     if (!selectedCategory) return;
     setProdLoading(true);
     setProdError(null);
-    let query = supabaseClient.from("products").select("*");
-    if (selectedCategory !== "all") {
-      query = query.eq("category_id", selectedCategory);
-    }
-    query
-      .then(({ data, error }) => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products');
+        const { data, error } = await response.json();
         if (error) setProdError(error.message || "Failed to load products");
         _setProducts(data || []);
         setProducts(data || []);
-      })
-      .catch((err) => setProdError(err.message || "Failed to load products"))
-      .finally(() => setProdLoading(false));
+      } finally {
+        setProdLoading(false);
+      }
+    }
+    fetchProducts();
   }, [selectedCategory, reloadFlag]);
 
   // Select 'All' as default if no category selected

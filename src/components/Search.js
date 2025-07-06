@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 
 // Configuration constants
 const SECTION_CONFIG = {
@@ -78,42 +77,20 @@ const Search = ({ mode = "light", onSearchModalToggle, user }) => {
       setError(null);
 
       try {
-        const tables = Object.entries(SECTION_CONFIG).map(([name, { section }]) => ({
-          name: name.replace(" ", "_"),
-          section: section || name.charAt(0).toUpperCase() + name.slice(1),
-        }));
+        // Use API for search
+        const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
-        const results = await Promise.all(
-          tables.map(async ({ name, section }) => {
-            const { data, error } = await supabase
-              .from(name)
-              .select("id, title, tier_restriction, created_at, updated_at")
-              .ilike("title", `%${searchQuery}%`)
-              .order("updated_at", { ascending: false })
-              .order("created_at", { ascending: false })
-              .limit(5);
+        if (!response.ok) {
+          throw new Error("Failed to fetch search results");
+        }
 
-            if (error) {
-              console.error(`[Search] Error fetching from ${name}:`, error);
-              return { section, items: [] };
-            }
-
-            const filteredItems = data
-              .map((item) => ({
-                id: item.id,
-                title: item.title,
-                timestamp: item.updated_at || item.created_at,
-              }));
-
-            return { section, items: filteredItems };
-          })
-        );
-
-        setSearchResults(
-          results
-            .filter(({ items }) => items.length > 0)
-            .reduce((acc, { section, items }) => ({ ...acc, [section]: items }), {})
-        );
+        const data = await response.json();
+        setSearchResults(data);
       } catch (err) {
         console.error("[Search] Unexpected error:", err);
         setError("Failed to fetch search results.");

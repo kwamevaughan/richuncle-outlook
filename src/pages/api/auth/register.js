@@ -1,5 +1,14 @@
 const bcrypt = require("bcrypt");
-import supabaseAdmin from "lib/supabaseAdmin";
+import supabaseAdmin from "@/lib/supabaseAdmin";
+
+// Generate a UUID for the user ID
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 const handler = async (req, res) => {
   if (req.method !== "POST") {
@@ -10,6 +19,7 @@ const handler = async (req, res) => {
     email,
     password,
     full_name,
+    role = "cashier", // Default role
     agency_id,
   } = req.body;
 
@@ -35,11 +45,15 @@ const handler = async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    // Generate UUID for the user ID
+    const userId = generateUUID();
+
     // Insert new user
     const { data: user, error } = await supabaseAdmin
       .from("users")
       .insert([
         {
+          id: userId,
           email,
           password: hashedPassword,
           full_name,

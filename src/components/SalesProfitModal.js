@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabaseClient } from "../lib/supabase";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
 
@@ -22,54 +21,54 @@ const SalesProfitModal = ({ isOpen, onClose, mode, type }) => {
 
         if (type === 'sales') {
           // Fetch today's sales
-          const { data: orders, error: ordersError } = await supabaseClient
-            .from('orders')
-            .select('*')
-            .gte('timestamp', startOfDay)
-            .lte('timestamp', endOfDay)
-            .order('timestamp', { ascending: false });
+          const response = await fetch('/api/orders');
+          const result = await response.json();
+          
+          if (result.success) {
+            const orders = (result.data || []).filter(order => 
+              order.timestamp >= startOfDay && order.timestamp <= endOfDay
+            );
 
-          if (ordersError) throw ordersError;
+            const totalSales = orders.reduce((sum, order) => sum + Number(order.total), 0);
+            const totalOrders = orders.length;
 
-          const totalSales = orders.reduce((sum, order) => sum + Number(order.total), 0);
-          const totalOrders = orders.length;
-
-          setData({
-            type: 'sales',
-            totalSales,
-            totalOrders,
-            orders
-          });
+            setData({
+              type: 'sales',
+              totalSales,
+              totalOrders,
+              orders
+            });
+          } else {
+            throw new Error("Failed to fetch orders");
+          }
         } else if (type === 'profit') {
           // Fetch today's profit
-          const { data: orderItems, error: itemsError } = await supabaseClient
-            .from('order_items')
-            .select(`
-              *,
-              orders!inner(
-                timestamp
-              )
-            `)
-            .gte('orders.timestamp', startOfDay)
-            .lte('orders.timestamp', endOfDay);
+          const response = await fetch('/api/order-items');
+          const result = await response.json();
+          
+          if (result.success) {
+            const orderItems = (result.data || []).filter(item => 
+              item.orders && item.orders.timestamp >= startOfDay && item.orders.timestamp <= endOfDay
+            );
 
-          if (itemsError) throw itemsError;
+            const totalProfit = orderItems.reduce((sum, item) => {
+              const profit = (Number(item.price) - Number(item.cost_price || 0)) * Number(item.quantity);
+              return sum + profit;
+            }, 0);
 
-          const totalProfit = orderItems.reduce((sum, item) => {
-            const profit = (Number(item.price) - Number(item.cost_price || 0)) * Number(item.quantity);
-            return sum + profit;
-          }, 0);
+            const totalRevenue = orderItems.reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0);
+            const totalCost = orderItems.reduce((sum, item) => sum + (Number(item.cost_price || 0) * Number(item.quantity)), 0);
 
-          const totalRevenue = orderItems.reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0);
-          const totalCost = orderItems.reduce((sum, item) => sum + (Number(item.cost_price || 0) * Number(item.quantity)), 0);
-
-          setData({
-            type: 'profit',
-            totalProfit,
-            totalRevenue,
-            totalCost,
-            orderItems
-          });
+            setData({
+              type: 'profit',
+              totalProfit,
+              totalRevenue,
+              totalCost,
+              orderItems
+            });
+          } else {
+            throw new Error("Failed to fetch order items");
+          }
         }
       } catch (err) {
         setError(err.message || 'Failed to fetch data');
