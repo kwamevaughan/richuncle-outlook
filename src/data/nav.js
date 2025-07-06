@@ -201,6 +201,11 @@ export const sidebarNav = [
         label: "Customers",
       },
       {
+        href: "/suppliers",
+        icon: "mdi:truck-outline",
+        label: "Suppliers",
+      },
+      {
         href: "/stores",
         icon: "mdi:store-outline",
         label: "Stores",

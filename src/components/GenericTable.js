@@ -4,6 +4,7 @@ import CategoryDragDrop from "./CategoryDragDrop";
 import CategoryInlineEdit from "./CategoryInlineEdit";
 import Image from "next/image";
 import CategoryCSVExport from "./CategoryCSVExport";
+import CategoryCSVImport from "./CategoryCSVImport";
 
 // Enhanced useTable hook
 function useTable(data, initialPageSize = 10) {
@@ -127,6 +128,7 @@ export function GenericTable({
   searchable = true,
   enableDragDrop = false,
   actions = [],
+  onImport,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
@@ -300,9 +302,12 @@ export function GenericTable({
                   </select>
                 </div>
               </div>
-              {/* Export and Add New on the right */}
+              {/* Export, Import, and Add New on the right */}
               <div className="flex items-center gap-3 ml-auto">
                 <CategoryCSVExport data={safeData} filename={`${title?.replace(/\s+/g, "_") || "data"}.csv`} />
+                {onImport && (
+                  <CategoryCSVImport onImport={onImport} />
+                )}
                 {onAddNew && (
                   <button
                     onClick={onAddNew}
