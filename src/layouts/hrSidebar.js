@@ -288,7 +288,7 @@ const HrSidebar = ({
               {isOpen || isMobile ? (
                 <div className="flex items-center gap-2 transition-all duration-300">
                   <span className="text-xs font-medium text-black">
-                    {user.name}
+                    {user && user.name ? user.name : "Guest"}
                   </span>
                   <div className="w-3 h-3 bg-green-400 rounded-full border border-green-400 flex items-center justify-center aspect-square"></div>
                 </div>

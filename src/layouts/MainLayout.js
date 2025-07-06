@@ -3,7 +3,7 @@ import HrSidebar from "@/layouts/hrSidebar";
 import HrHeader from "@/layouts/hrHeader";
 import useSidebar from "@/hooks/useSidebar";
 
-export default function MainLayout({ children, mode, HeaderComponent = HrHeader, showSidebar = true, ...props }) {
+export default function MainLayout({ children, mode, HeaderComponent = HrHeader, showSidebar = true, user, onLogout, ...props }) {
   const { isSidebarOpen, toggleSidebar, isMobile } = useSidebar();
 
   // Determine margin-left based on sidebar state
@@ -11,10 +11,10 @@ export default function MainLayout({ children, mode, HeaderComponent = HrHeader,
 
   return (
     <div className={`min-h-screen flex flex-col ${mode === "dark" ? "bg-gray-900 text-white" : "text-gray-900"}`}>
-      <HeaderComponent {...props} isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} mode={mode} />
+      <HeaderComponent {...props} isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} mode={mode} user={user} onLogout={onLogout} />
       <div className="flex flex-1">
         {showSidebar && (
-          <HrSidebar isOpen={isSidebarOpen} mode={mode} toggleSidebar={toggleSidebar} {...props} />
+          <HrSidebar isOpen={isSidebarOpen} mode={mode} toggleSidebar={toggleSidebar} user={user} onLogout={onLogout} />
         )}
         <div className={`flex-1 flex flex-col transition-all ${contentMargin}`}>
           <div className="flex flex-col flex-1">
