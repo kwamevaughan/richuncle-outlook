@@ -13,29 +13,53 @@ function useTable(data, initialPageSize = 10) {
   const [sortDir, setSortDir] = useState("asc");
   const [selected, setSelected] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("recent");
 
+  // Filtering
   const filteredData = useMemo(() => {
-    if (!searchTerm) return data;
+    let result = data;
+    // Status filter
+    if (statusFilter !== "all") {
+      result = result.filter(row => {
+        if (statusFilter === "active") return row.is_active === true;
+        if (statusFilter === "inactive") return row.is_active === false;
+        return true;
+      });
+    }
+    // Search filter
+    if (searchTerm) {
+      result = result.filter((row) =>
+        Object.values(row).some((value) =>
+          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+    // Date filters for sortBy
+    if (sortBy === "last_month") {
+      const now = new Date();
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      result = result.filter(row => row.created_at && new Date(row.created_at) >= lastMonth);
+    } else if (sortBy === "last_7_days") {
+      const now = new Date();
+      const last7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      result = result.filter(row => row.created_at && new Date(row.created_at) >= last7);
+    }
+    return result;
+  }, [data, searchTerm, statusFilter, sortBy]);
 
-    return data.filter((row) =>
-      Object.values(row).some((value) =>
-        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-  }, [data, searchTerm]);
-
+  // Sorting
   const sortedData = useMemo(() => {
-    if (!sortKey) return filteredData;
-
-    return [...filteredData].sort((a, b) => {
-      const aVal = a[sortKey];
-      const bVal = b[sortKey];
-
-      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [filteredData, sortKey, sortDir]);
+    if (sortBy === "recent") {
+      return [...filteredData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } else if (sortBy === "asc") {
+      return [...filteredData].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    } else if (sortBy === "desc") {
+      return [...filteredData].sort((a, b) => (b.name || "").localeCompare(a.name || ""));
+    }
+    // Default to filteredData
+    return filteredData;
+  }, [filteredData, sortBy]);
 
   const totalPages = Math.ceil(sortedData.length / pageSize);
   const paged = sortedData.slice((page - 1) * pageSize, page * pageSize);
@@ -82,6 +106,10 @@ function useTable(data, initialPageSize = 10) {
     selectAll,
     setSearchTerm,
     totalItems: sortedData.length,
+    statusFilter,
+    setStatusFilter,
+    sortBy,
+    setSortBy,
   };
 }
 
@@ -218,29 +246,60 @@ export function GenericTable({
       {/* Header */}
       {(title || searchable || onAddNew) && (
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {title && (
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 sm:mb-0">
                 {title}
               </h2>
             )}
-            <div className="flex flex-1 items-center justify-between w-full gap-3">
-              {/* Search on the left */}
-              {searchable && (
-                <div className="relative">
-                  <Icon
-                    icon="mdi:magnify"
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={table.searchTerm}
-                    onChange={(e) => table.setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-64 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                  />
+            <div className="flex flex-1 flex-col sm:flex-row sm:items-center gap-4 w-full">
+              {/* Unified Filter/Search Row */}
+              <div className="flex flex-1 flex-wrap gap-3 items-center">
+                {/* Search */}
+                {searchable && (
+                  <div className="relative">
+                    <Icon
+                      icon="mdi:magnify"
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={table.searchTerm}
+                      onChange={(e) => table.setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 w-56 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    />
+                  </div>
+                )}
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Status</label>
+                  <select
+                    value={table.statusFilter}
+                    onChange={e => table.setStatusFilter(e.target.value)}
+                    className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  >
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
                 </div>
-              )}
+                {/* Sort By Filter */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Sort By</label>
+                  <select
+                    value={table.sortBy}
+                    onChange={e => table.setSortBy(e.target.value)}
+                    className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  >
+                    <option value="recent">Recently Added</option>
+                    <option value="asc">Ascending (A-Z)</option>
+                    <option value="desc">Descending (Z-A)</option>
+                    <option value="last_month">Last Month</option>
+                    <option value="last_7_days">Last 7 Days</option>
+                  </select>
+                </div>
+              </div>
               {/* Export and Add New on the right */}
               <div className="flex items-center gap-3 ml-auto">
                 <CategoryCSVExport data={safeData} filename={`${title?.replace(/\s+/g, "_") || "data"}.csv`} />

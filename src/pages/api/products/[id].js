@@ -57,9 +57,19 @@ export default async function handler(req, res) {
         });
       }
 
+      // Transform the data to flatten the nested join results
+      const transformedData = {
+        ...data,
+        category_name: data.categories?.name || null,
+        brand_name: data.brands?.name || null,
+        unit_name: data.units?.name || null,
+        store_name: data.stores?.name || null,
+        warehouse_name: data.warehouses?.name || null
+      };
+
       return res.status(200).json({ 
         success: true, 
-        data 
+        data: transformedData
       });
     } catch (error) {
       console.error("Product API error:", error);

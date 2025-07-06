@@ -41,9 +41,19 @@ export default async function handler(req, res) {
         });
       }
 
+      // Transform the data to flatten the nested join results
+      const transformedData = (data || []).map(product => ({
+        ...product,
+        category_name: product.categories?.name || null,
+        brand_name: product.brands?.name || null,
+        unit_name: product.units?.name || null,
+        store_name: product.stores?.name || null,
+        warehouse_name: product.warehouses?.name || null
+      }));
+
       return res.status(200).json({ 
         success: true, 
-        data: data || [] 
+        data: transformedData
       });
     } catch (error) {
       console.error("Products API error:", error);
