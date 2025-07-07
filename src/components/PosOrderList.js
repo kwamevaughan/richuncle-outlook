@@ -8,6 +8,7 @@ import PrintReceipt from "./PrintReceipt";
 import ReceiptPreviewModal from "./ReceiptPreviewModal";
 import { playBellBeep } from "../utils/posSounds";
 import { getPaymentTypeLabel } from "./payment/utils/paymentHelpers";
+import useUsers from "../hooks/useUsers";
 
 const dummyOrder = {
   id: "ORD123",
@@ -418,6 +419,8 @@ const PosOrderList = ({
   }
   const roundoff = roundoffEnabled ? 0 : 0;
   const total = subtotal + tax - discount + roundoff;
+
+  const { users: allUsers } = useUsers();
 
   return (
     <div className="w-full md:w-full lg:w-5/12 xl:w-4/12 p-4 gap-6 flex flex-col bg-gray-200 rounded-lg h-screen overflow-auto">
@@ -882,6 +885,7 @@ const PosOrderList = ({
         customers={customers}
         onCustomerChange={handleCustomerChange}
         user={user}
+        allUsers={allUsers}
       />
 
       {/* Receipt Preview Modal */}

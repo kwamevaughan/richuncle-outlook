@@ -20,7 +20,8 @@ const PaymentForm = ({
   customer = null,
   customers = [],
   onCustomerChange = null,
-  user = null
+  user = null,
+  allUsers = []
 }) => {
   const [paymentData, setPaymentData] = useState({
     receivedAmount: "",
@@ -871,7 +872,7 @@ const PaymentForm = ({
           <div className="p-8 overflow-y-auto max-h-[calc(85vh-120px)] bg-white/60">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Payment Summary */}
-              <PaymentSummary orderId={orderId} customer={customer} total={total} paymentType={paymentType} paymentData={paymentData} />
+              <PaymentSummary orderId={orderId} customer={customer} total={total} paymentType={paymentType} paymentData={paymentData} users={allUsers} />
 
               {/* Payment Amounts - Hidden for Split Payments */}
               {paymentType !== "split" && (
