@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/layouts/MainLayout";
 import { Icon } from "@iconify/react";
 import usePurchaseOrders from "../hooks/usePurchaseOrders";
@@ -111,6 +111,11 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
       setRowLineItems((prev) => ({ ...prev, [orderId]: data || [] }));
     }
   };
+
+  // Add useEffect to fetch purchase orders on mount
+  useEffect(() => {
+    fetchPurchaseOrders();
+  }, []);
 
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {

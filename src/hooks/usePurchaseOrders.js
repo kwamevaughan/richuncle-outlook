@@ -31,7 +31,7 @@ export default function usePurchaseOrders() {
       });
       const { data, error } = await response.json();
       if (error) throw new Error(error);
-      setPurchaseOrders((prev) => [data, ...prev]);
+      await fetchPurchaseOrders();
       return data;
     } catch (err) {
       setError(err.message || "Failed to add purchase order");

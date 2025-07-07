@@ -17,7 +17,7 @@ export default function PurchaseOrderModals({
     supplier_id: "",
     warehouse_id: "",
     date: "",
-    status: "Pending",
+    status: "draft",
     total: "",
     notes: "",
   });
@@ -41,7 +41,7 @@ export default function PurchaseOrderModals({
         supplier_id: purchaseOrder.supplier_id || "",
         warehouse_id: purchaseOrder.warehouse_id || "",
         date: purchaseOrder.date || "",
-        status: purchaseOrder.status || "Pending",
+        status: (purchaseOrder.status || "draft").toLowerCase(),
         total: purchaseOrder.total || "",
         notes: purchaseOrder.notes || "",
       });
@@ -51,7 +51,7 @@ export default function PurchaseOrderModals({
         supplier_id: "",
         warehouse_id: "",
         date: "",
-        status: "Pending",
+        status: "draft",
         total: "",
         notes: "",
       });
@@ -170,10 +170,11 @@ export default function PurchaseOrderModals({
               required
               disabled={loading}
             >
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Received">Received</option>
-              <option value="Cancelled">Cancelled</option>
+              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="received">Received</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
         </div>
