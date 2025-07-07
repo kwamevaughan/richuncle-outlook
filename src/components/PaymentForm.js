@@ -21,7 +21,8 @@ const PaymentForm = ({
   customers = [],
   onCustomerChange = null,
   user = null,
-  allUsers = []
+  allUsers = [],
+  isOnlinePurchase = false
 }) => {
   const [paymentData, setPaymentData] = useState({
     receivedAmount: "",
@@ -117,7 +118,7 @@ const PaymentForm = ({
       change,
       total,
       orderId,
-      paymentType
+      paymentType,
     };
     
     if (paymentType === "split") {

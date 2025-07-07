@@ -30,10 +30,14 @@ const PaymentSummary = ({
           <div>
             <span className="text-gray-600">Customer:</span>
             <span className="font-semibold ml-2">
-              {customer ? customer.name : "Walk In Customer"}
+              {customer
+                ? customer.id === "__online__"
+                  ? "Online Purchase"
+                  : customer.name
+                : "Walk In Customer"}
             </span>
           </div>
-          {customer && (
+          {customer && customer.id !== "__online__" && (
             <div>
               <span className="text-gray-600">Phone:</span>
               <span className="font-semibold ml-2">{customer.phone}</span>
@@ -55,7 +59,7 @@ const PaymentSummary = ({
               GHS {total.toLocaleString()}
             </span>
           </div>
-          {customer && (
+          {customer && customer.id !== "__online__" && (
             <div>
               <span className="text-gray-600">Email:</span>
               <span className="font-semibold ml-2">{customer.email}</span>

@@ -76,6 +76,9 @@ const PosOrderList = ({
   const [successOrderData, setSuccessOrderData] = useState(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
+  const [isOnlinePurchase, setIsOnlinePurchase] = useState(false);
+  const [onlineEmail, setOnlineEmail] = useState("");
+  const [onlineOrderRef, setOnlineOrderRef] = useState("");
   
   // Detect if user is on Chrome
   const isChrome = typeof window !== 'undefined' && /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
@@ -262,7 +265,10 @@ const PosOrderList = ({
         paymentNote: paymentData.paymentNote,
         saleNote: paymentData.saleNote,
         staffNote: paymentData.staffNote,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        order_type: isOnlinePurchase ? 'online' : 'pos',
+        online_email: isOnlinePurchase ? onlineEmail : undefined,
+        online_order_ref: isOnlinePurchase ? onlineOrderRef : undefined,
       };
 
       // Insert order into 'orders' table
@@ -450,8 +456,21 @@ const PosOrderList = ({
             Customer Information
           </label>
           <div className="flex gap-2 mb-2">
-            <select className="border rounded px-3 py-2 w-full" value={selectedCustomerId} onChange={e => setSelectedCustomerId(e.target.value)}>
+            <select
+              className="border rounded px-3 py-2 w-full"
+              value={selectedCustomerId}
+              onChange={e => {
+                if (e.target.value === "__online__") {
+                  setIsOnlinePurchase(true);
+                  setSelectedCustomerId("__online__");
+                } else {
+                  setIsOnlinePurchase(false);
+                  setSelectedCustomerId(e.target.value);
+                }
+              }}
+            >
               <option value="">Walk In Customer</option>
+              <option value="__online__">Online Purchase</option>
               {customers.map(customer => (
                 <option key={customer.id} value={customer.id}>
                   {customer.name} - {customer.phone}
@@ -468,7 +487,6 @@ const PosOrderList = ({
               <Icon icon="mdi:fullscreen" className="w-5 h-5" />
             </button>
           </div>
-          
         </div>
         {/* Order Details */}
         <div className="mb-4">
@@ -890,11 +908,12 @@ const PosOrderList = ({
         total={total}
         orderId={orderId}
         onPaymentComplete={handlePaymentComplete}
-        customer={customers.find(c => c.id === selectedCustomerId)}
+        customer={selectedCustomerId === "__online__" ? { id: "__online__", name: "Online Purchase" } : customers.find(c => c.id === selectedCustomerId)}
         customers={customers}
         onCustomerChange={handleCustomerChange}
         user={user}
         allUsers={allUsers}
+        isOnlinePurchase={isOnlinePurchase}
       />
 
       {/* Receipt Preview Modal */}

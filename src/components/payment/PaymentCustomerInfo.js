@@ -44,7 +44,12 @@ const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentDat
         <select
           value={customer?.id || ""}
           onChange={(e) => {
-            const selectedCustomer = customers.find(c => c.id === e.target.value);
+            let selectedCustomer;
+            if (e.target.value === "__online__") {
+              selectedCustomer = { id: "__online__", name: "Online Purchase" };
+            } else {
+              selectedCustomer = customers.find(c => c.id === e.target.value);
+            }
             if (onCustomerChange) {
               onCustomerChange(selectedCustomer);
             }
@@ -52,6 +57,7 @@ const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentDat
           className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">Walk In Customer</option>
+          <option value="__online__">Online Purchase</option>
           {customers.map(c => (
             <option key={c.id} value={c.id}>
               {c.name} - {c.phone}
