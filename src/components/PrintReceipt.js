@@ -147,7 +147,7 @@ const PrintReceipt = ({
                 <div>Amount Paid: GHS ${parseFloat(paymentData.payingAmount).toLocaleString()}</div>
                 ${paymentData.change > 0 ? `<div>Change: GHS ${paymentData.change.toFixed(2)}</div>` : ''}
               `}
-              ${paymentData.paymentReceiver ? `<div>Receiver: ${paymentData.paymentReceiverName || paymentData.paymentReceiver}</div>` : ''}
+              ${paymentData.paymentReceiver ? `<div>Receiver: ${paymentData.paymentReceiverName || paymentData.payment_receiver_name || paymentData.paymentReceiver || paymentData.payment_receiver}</div>` : ''}
             </div>
           ` : `
             <div class="payment-info">
@@ -250,7 +250,10 @@ const PrintReceipt = ({
       tax,
       discount,
       total,
-      paymentData
+      paymentData: {
+        ...paymentData,
+        paymentReceiverName: paymentData?.paymentReceiverName || paymentData?.payment_receiver_name || paymentData?.paymentReceiver || paymentData?.payment_receiver
+      }
     };
   };
 

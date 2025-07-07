@@ -185,17 +185,18 @@ const PosOrderList = ({
       return;
     }
 
+    let orderData = null;
+    let paymentResult = null;
+    let processingToast = null;
     try {
       // Show processing message
-      const processingToast = toast.loading("Processing payment and creating order...");
+      processingToast = toast.loading("Processing payment and creating order...");
 
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Process payment based on type
-      let paymentResult;
       if (paymentData.paymentType === "split") {
-        // Process split payments
         paymentResult = {
           success: true,
           method: "split",
@@ -203,7 +204,6 @@ const PosOrderList = ({
           payments: paymentData.splitPayments
         };
       } else {
-        // Process single payment
         paymentResult = {
           success: true,
           method: paymentData.paymentType,
@@ -214,7 +214,7 @@ const PosOrderList = ({
       }
 
       // Create order data
-      const orderData = {
+      orderData = {
         id: orderId,
         customerId: selectedCustomerId || null,
         customerName: customers.find(c => c.id === selectedCustomerId)?.name || "Walk In Customer",
@@ -222,7 +222,6 @@ const PosOrderList = ({
           const product = products.find(p => p.id === id);
           const qty = quantities[id] || 1;
           const itemSubtotal = product.price * qty;
-          
           // Calculate item tax
           let itemTax = 0;
           if (product && product.tax_percentage && product.tax_percentage > 0) {
@@ -234,7 +233,6 @@ const PosOrderList = ({
               itemTax = (product.price - priceWithoutTax) * qty;
             }
           }
-          
           return {
             productId: id,
             name: product.name,
@@ -277,14 +275,15 @@ const PosOrderList = ({
           payment_method: orderData.payment.method,
           payment_data: orderData.payment,
           payment_receiver: orderData.paymentReceiver,
+          payment_receiver_name: orderData.paymentReceiverName,
           payment_note: orderData.paymentNote,
           sale_note: orderData.saleNote,
           staff_note: orderData.staffNote,
           timestamp: orderData.timestamp
         }),
       });
-      const { error: orderError } = await response.json();
-      if (orderError) throw orderError;
+      const orderResJson = await response.json();
+      if (orderResJson.error) throw orderResJson.error;
 
       // Insert order items into 'order_items' table
       const itemsToInsert = orderData.items.map(item => ({
@@ -306,8 +305,8 @@ const PosOrderList = ({
         },
         body: JSON.stringify(itemsToInsert),
       });
-      const { error: itemsError } = await itemsResponse.json();
-      if (itemsError) throw itemsError;
+      const itemsResJson = await itemsResponse.json();
+      if (itemsResJson.error) throw itemsResJson.error;
 
       // Update stock quantities for each product
       for (const item of orderData.items) {
@@ -320,31 +319,24 @@ const PosOrderList = ({
           },
           body: JSON.stringify({ quantity: newQty }),
         });
-        const { error: updateError } = await updateResponse.json();
-        if (updateError) {
-          console.error(`Failed to update stock for product ${item.productId}:`, updateError.message);
+        const updateResJson = await updateResponse.json();
+        if (updateResJson.error) {
+          console.error(`Failed to update stock for product ${item.productId}:`, updateResJson.error.message);
         }
       }
 
       // Play success sound
       playBellBeep();
 
-      // Dismiss processing toast
-      toast.dismiss(processingToast);
-
-      // Show success modal
-      setShowSuccessModal(true);
-      setSuccessOrderData(orderData);
-      if (typeof onOrderComplete === 'function') onOrderComplete(orderData);
-
       // After order is saved and stock is updated
       if (paymentData.paymentType === 'cash') {
         // Get open session
-        const sessionsResponse = await fetch('/api/cash_register_sessions?status=open&_order=opened_at');
+        const sessionsResponse = await fetch('/api/cash-register-sessions?status=open');
+        if (!sessionsResponse.ok) throw new Error('Failed to fetch cash register session');
         const sessions = await sessionsResponse.json();
         const session = sessions && sessions[0];
         if (session && user && user.id) {
-          await fetch('/api/cash_movements', {
+          const cashMoveRes = await fetch('/api/cash_movements', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -357,10 +349,20 @@ const PosOrderList = ({
               user_id: user.id,
             }),
           });
+          if (!cashMoveRes.ok) throw new Error('Failed to record cash movement');
         }
       }
 
+      // Dismiss processing toast
+      toast.dismiss(processingToast);
+
+      // Show success modal
+      setShowSuccessModal(true);
+      setSuccessOrderData(orderData);
+      if (typeof onOrderComplete === 'function') onOrderComplete(orderData);
+
     } catch (error) {
+      if (processingToast) toast.dismiss(processingToast);
       console.error("Transaction failed:", error);
       toast.error("Transaction failed. Please try again.");
     }
