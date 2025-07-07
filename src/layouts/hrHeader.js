@@ -236,51 +236,45 @@ const HrHeader = ({
                 >
                   <div className="grid grid-cols-6 gap-3 p-4">
                     {[
-                      { label: "Category", icon: "mdi:folder-outline" },
-                      { label: "Product", icon: "mdi:package-variant" },
-                      { label: "Purchase", icon: "mdi:cart-arrow-down" },
-                      { label: "Sale", icon: "mdi:cart-arrow-up" },
-                      { label: "Expense", icon: "mdi:cash-minus" },
-                      { label: "Quotation", icon: "mdi:file-document-outline" },
-                      { label: "Return", icon: "mdi:undo-variant" },
-                      { label: "User", icon: "mdi:account-outline" },
-                      { label: "Customer", icon: "mdi:account-group-outline" },
-                      { label: "Biller", icon: "mdi:account-cash-outline" },
-                      { label: "Supplier", icon: "mdi:truck-outline" },
-                      { label: "Transfer", icon: "mdi:bank-transfer" },
+                      { label: "Category", icon: "mdi:folder-outline", href: "/category" },
+                      { label: "Product", icon: "mdi:package-variant", href: "/products" },
+                      { label: "Purchase", icon: "mdi:cart-arrow-down", href: "/purchases" },
+                      { label: "Sale", icon: "mdi:cart-arrow-up", href: "/sales" },
+                      { label: "Expense", icon: "mdi:cash-minus", href: "/expenses" },
+                      { label: "Return", icon: "mdi:undo-variant", href: "/sales-return" },
+                      { label: "User", icon: "mdi:account-outline", href: "/users" },
+                      { label: "Customer", icon: "mdi:account-group-outline", href: "/customers" },
+                      { label: "Supplier", icon: "mdi:truck-outline", href: "/suppliers" },
+                      { label: "Transfer", icon: "mdi:bank-transfer", href: "/stock-transfer" },
+                      { label: "Store", icon: "mdi:store-outline", href: "/stores" },
                     ].map((item) => (
-                      <button
-                        key={item.label}
-                        className={`flex flex-col items-center justify-center rounded-lg p-2 text-xs font-medium shadow-sm transition-all duration-200
-                          ${
-                            mode === "dark"
-                              ? "bg-gray-800 border border-gray-700 text-gray-100 hover:bg-gray-700 hover:border-orange-400"
-                              : "bg-white border border-gray-200 hover:bg-orange-50 hover:border-orange-400"
-                          }`}
-                      >
-                        <span
-                          className={`flex items-center justify-center h-8 w-8 rounded-full mb-1
-                          ${
-                            mode === "dark"
-                              ? "bg-gray-900 hover:bg-gray-700"
-                              : "bg-gray-100 hover:bg-orange-50"
-                          } transition-all duration-200`}
+                      <Link key={item.label} href={item.href} legacyBehavior passHref>
+                        <a className="flex flex-col items-center justify-center rounded-lg p-2 text-xs font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          tabIndex={0}
+                          onClick={() => setAddNewDropdownOpen(false)}
                         >
-                          <Icon
-                            icon={item.icon}
-                            className={`h-5 w-5 ${
-                              mode === "dark"
-                                ? "text-orange-300"
-                                : "text-blue-950"
-                            }`}
-                          />
-                        </span>
-                        <span
-                          className={mode === "dark" ? "text-gray-100" : ""}
-                        >
-                          {item.label}
-                        </span>
-                      </button>
+                          <span
+                            className={`flex items-center justify-center h-8 w-8 rounded-full mb-1
+                              ${
+                                mode === "dark"
+                                  ? "bg-gray-900 hover:bg-gray-700"
+                                  : "bg-gray-100 hover:bg-orange-50"
+                              } transition-all duration-200`}
+                          >
+                            <Icon
+                              icon={item.icon}
+                              className={`h-5 w-5 ${
+                                mode === "dark"
+                                  ? "text-orange-300"
+                                  : "text-blue-950"
+                              }`}
+                            />
+                          </span>
+                          <span className={mode === "dark" ? "text-gray-100" : ""}>
+                            {item.label}
+                          </span>
+                        </a>
+                      </Link>
                     ))}
                   </div>
                 </div>
