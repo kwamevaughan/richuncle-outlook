@@ -135,6 +135,7 @@ export default function SuppliersPage({ mode = "light", toggleMode, ...props }) 
                 title="Suppliers"
                 emptyMessage="No suppliers found"
                 onImport={handleImportSuppliers}
+                importType="suppliers"
               />
             </div>
             <SupplierModals

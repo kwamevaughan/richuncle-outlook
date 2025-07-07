@@ -110,7 +110,7 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
       onClose={onClose}
       title={product.name || "Product Details"}
       mode={mode}
-      width="max-w-4xl"
+      width="max-w-5xl"
     >
       <div className="space-y-6" ref={printRef}>
         {/* Hero Section */}

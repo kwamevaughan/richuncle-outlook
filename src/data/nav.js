@@ -148,7 +148,7 @@ export const sidebarNav = [
       },
       {
         href: "/purchase-return",
-        icon: "mdi:undo-variant",
+        icon: "prime:undo",
         label: "Purchase Return",
       },
     ],

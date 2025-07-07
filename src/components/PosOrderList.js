@@ -252,6 +252,7 @@ const PosOrderList = ({
         total,
         payment: paymentResult,
         paymentReceiver: paymentData.paymentReceiver,
+        paymentReceiverName: user?.full_name || user?.email || 'Unknown',
         paymentNote: paymentData.paymentNote,
         saleNote: paymentData.saleNote,
         staffNote: paymentData.staffNote,
@@ -297,7 +298,7 @@ const PosOrderList = ({
         item_tax: item.itemTax,
         total: item.total
       }));
-      const itemsResponse = await fetch('/api/order_items', {
+      const itemsResponse = await fetch('/api/order-items', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -880,6 +881,7 @@ const PosOrderList = ({
         customer={customers.find(c => c.id === selectedCustomerId)}
         customers={customers}
         onCustomerChange={handleCustomerChange}
+        user={user}
       />
 
       {/* Receipt Preview Modal */}
@@ -992,7 +994,16 @@ const PosOrderList = ({
                      total: successOrderData.total,
                      selectedCustomerId: successOrderData.customerId,
                      customers: customers,
-                     paymentData: successOrderData.payment
+                     paymentData: {
+                       paymentType: successOrderData.payment.method,
+                       payingAmount: successOrderData.payment.amount || successOrderData.total,
+                       change: successOrderData.payment.change || 0,
+                       paymentReceiver: successOrderData.paymentReceiver,
+                       paymentReceiverName: successOrderData.paymentReceiverName,
+                       total: successOrderData.total,
+                       remainingAmount: successOrderData.payment.remainingAmount || 0,
+                       splitPayments: successOrderData.payment.payments || []
+                     }
                    });
 
                    const receiptContent = printReceipt.getReceiptContent();

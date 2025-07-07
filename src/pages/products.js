@@ -129,12 +129,12 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to update a product
   const handleUpdateProduct = async (id, updatedFields) => {
-    const response = await fetch('/api/products', {
+    const response = await fetch(`/api/products/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ id, ...updatedFields }),
+      body: JSON.stringify(updatedFields),
     });
     const { data, error } = await response.json();
     if (error) throw error;

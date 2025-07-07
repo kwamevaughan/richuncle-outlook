@@ -5,16 +5,30 @@ export default async function handler(req, res) {
     try {
       const { data, error } = await supabaseAdmin
         .from("orders")
-        .select("*")
+        .select(`
+          *,
+          payment_receiver_user:payment_receiver(
+            id,
+            full_name,
+            email
+          )
+        `)
         .order("created_at", { ascending: false });
 
       if (error) {
         throw error;
       }
 
+      // Transform the data to include payment receiver name
+      const transformedData = data?.map(order => ({
+        ...order,
+        payment_receiver_name: order.payment_receiver_user?.full_name || order.payment_receiver_user?.email || 'Unknown',
+        payment_receiver_user: undefined // Remove the nested object
+      })) || [];
+
       return res.status(200).json({
         success: true,
-        data: data || []
+        data: transformedData
       });
     } catch (error) {
       console.error("Orders API error:", error);

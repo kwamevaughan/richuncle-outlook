@@ -3,14 +3,40 @@ import { createPortal } from "react-dom";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 
-// Configuration constants
+// Section config for icons and hrefs
 const SECTION_CONFIG = {
-  "business opportunities": { href: "/business-opportunities", icon: "lucide:briefcase" },
-  events: { href: "/events", icon: "lucide:calendar" },
-  resources: { href: "/resources", icon: "lucide:book-open" },
-  "market intel": { href: "/market-intel", icon: "lucide:trending-up" },
-  offers: { href: "/offers", icon: "lucide:tag" },
-  updates: { href: "/updates", icon: "lucide:bell" },
+  products: {
+    icon: "mdi:cart-outline",
+    href: "/products"
+  },
+  suppliers: {
+    icon: "mdi:truck-outline",
+    href: "/suppliers"
+  },
+  customers: {
+    icon: "mdi:account-group-outline",
+    href: "/customers"
+  },
+  categories: {
+    icon: "mdi:folder-outline",
+    href: "/category"
+  },
+  brands: {
+    icon: "mdi:tag-outline",
+    href: "/brands"
+  },
+  warehouses: {
+    icon: "material-symbols-light:warehouse-outline",
+    href: "/warehouses"
+  },
+  stores: {
+    icon: "mdi:store-outline",
+    href: "/stores"
+  },
+  purchases: {
+    icon: "mdi:cart-outline",
+    href: "/purchases"
+  }
 };
 
 const Search = ({ mode = "light", onSearchModalToggle, user }) => {
@@ -325,7 +351,7 @@ const Search = ({ mode = "light", onSearchModalToggle, user }) => {
                       Start typing to search
                     </h3>
                     <p className={`text-sm ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
-                      Search across business opportunities, events, resources, and more
+                      ...
                     </p>
                   </div>
                 )}

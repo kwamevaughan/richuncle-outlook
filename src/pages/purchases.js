@@ -31,6 +31,9 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
   const [lineItems, setLineItems] = useState([]);
+  const [expandedRows, setExpandedRows] = useState([]);
+  const [rowLineItems, setRowLineItems] = useState({});
+  const [viewItemsModal, setViewItemsModal] = useState({ open: false, items: [] });
 
   useEffect(() => {
     fetchPurchases();
@@ -81,13 +84,48 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
   const handleSave = async (values) => {
     setModalLoading(true);
     setModalError(null);
+    // Validation
+    const requiredFields = ["supplier_id", "warehouse_id", "date", "status"];
+    for (const field of requiredFields) {
+      if (!values[field]) {
+        setModalError(`Missing required field: ${field.replace(/_/g, ' ')}`);
+        setModalLoading(false);
+        return;
+      }
+    }
+    if (!lineItems || lineItems.length === 0) {
+      setModalError("At least one line item is required.");
+      setModalLoading(false);
+      return;
+    }
+    for (let i = 0; i < lineItems.length; i++) {
+      const item = lineItems[i];
+      if (!item.product_id) {
+        setModalError(`Line item ${i + 1}: Product is required.`);
+        setModalLoading(false);
+        return;
+      }
+      if (!item.quantity || isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+        setModalError(`Line item ${i + 1}: Quantity must be greater than 0.`);
+        setModalLoading(false);
+        return;
+      }
+      if (item.unit_cost === undefined || isNaN(Number(item.unit_cost)) || Number(item.unit_cost) < 0) {
+        setModalError(`Line item ${i + 1}: Unit cost must be 0 or greater.`);
+        setModalLoading(false);
+        return;
+      }
+    }
+    // Auto-calculate total
+    const total = lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_cost) || 0), 0);
+    const purchaseData = { ...values, total };
     try {
       // Save purchase and line items
       let purchase;
       if (editItem) {
-        purchase = await updatePurchase(editItem.id, values);
+        purchase = await updatePurchase(editItem.id, purchaseData);
       } else {
-        purchase = await addPurchase(values);
+        purchase = await addPurchase(purchaseData);
       }
       // Save line items
       await fetch("/api/purchase-items", {
@@ -159,6 +197,21 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
     fetchPurchases();
   };
 
+  // Expand/collapse handler
+  const handleExpandRow = async (purchaseId) => {
+    setExpandedRows((prev) =>
+      prev.includes(purchaseId)
+        ? prev.filter((id) => id !== purchaseId)
+        : [...prev, purchaseId]
+    );
+    // Fetch line items if not already loaded
+    if (!rowLineItems[purchaseId]) {
+      const res = await fetch(`/api/purchase-items?purchase_id=${purchaseId}`);
+      const { data } = await res.json();
+      setRowLineItems((prev) => ({ ...prev, [purchaseId]: data || [] }));
+    }
+  };
+
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
     if (typeof window !== "undefined") {
@@ -189,12 +242,47 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
               <GenericTable
                 data={purchases}
                 columns={[
+                  {
+                    header: "",
+                    accessor: "expand",
+                    render: (row) => (
+                      <button
+                        onClick={() => handleExpandRow(row.id)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        title={expandedRows.includes(row.id) ? "Collapse" : "Expand"}
+                      >
+                        <Icon icon={expandedRows.includes(row.id) ? "mdi:chevron-up" : "mdi:chevron-down"} className="w-5 h-5" />
+                      </button>
+                    ),
+                  },
                   { header: "Purchase Number", accessor: "purchase_number", sortable: true },
                   { header: "Supplier", accessor: "supplier_name", sortable: true },
                   { header: "Warehouse", accessor: "warehouse_name", sortable: true },
                   { header: "Date", accessor: "date", sortable: true },
                   { header: "Status", accessor: "status", sortable: true },
                   { header: "Total", accessor: "total", sortable: true, render: (row) => `GHS ${row.total}` },
+                  {
+                    header: "Line Items",
+                    accessor: "view_items",
+                    render: (row) => (
+                      <button
+                        onClick={async () => {
+                          if (!rowLineItems[row.id]) {
+                            const res = await fetch(`/api/purchase-items?purchase_id=${row.id}`);
+                            const { data } = await res.json();
+                            setRowLineItems((prev) => ({ ...prev, [row.id]: data || [] }));
+                            setViewItemsModal({ open: true, items: data || [] });
+                          } else {
+                            setViewItemsModal({ open: true, items: rowLineItems[row.id] });
+                          }
+                        }}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        title="View Items"
+                      >
+                        <Icon icon="mdi:eye-outline" className="w-5 h-5" />
+                      </button>
+                    ),
+                  },
                 ]}
                 onEdit={openEditModal}
                 onDelete={openConfirm}
@@ -204,6 +292,20 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                 emptyMessage="No purchases found"
                 onImport={handleImportPurchases}
                 mode={mode}
+                // Custom row rendering for expand/collapse
+                customRowRender={(row, index, defaultRow) => (
+                  <>
+                    {defaultRow}
+                    {expandedRows.includes(row.id) && (
+                      <tr className="bg-gray-50 dark:bg-gray-800">
+                        <td colSpan={9} className="p-4">
+                          <div className="font-semibold mb-2">Line Items</div>
+                          <PurchaseItemsEditor items={rowLineItems[row.id] || []} disabled={true} />
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                )}
               />
             </div>
             <PurchaseModals
@@ -214,6 +316,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
               mode={mode}
               loading={modalLoading}
               error={modalError}
+              calculatedTotal={lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_cost) || 0), 0)}
             >
               <PurchaseItemsEditor
                 items={lineItems}
@@ -253,6 +356,18 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                     </button>
                   </div>
                 </div>
+              </SimpleModal>
+            )}
+            {/* View Items Modal */}
+            {viewItemsModal.open && (
+              <SimpleModal
+                isOpen={true}
+                onClose={() => setViewItemsModal({ open: false, items: [] })}
+                title="Line Items"
+                mode={mode}
+                width="max-w-2xl"
+              >
+                <PurchaseItemsEditor items={viewItemsModal.items} disabled={true} />
               </SimpleModal>
             )}
           </div>

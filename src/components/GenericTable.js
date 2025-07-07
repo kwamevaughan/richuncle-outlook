@@ -129,6 +129,8 @@ export function GenericTable({
   enableDragDrop = false,
   actions = [],
   onImport,
+  customRowRender,
+  importType,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
@@ -306,7 +308,7 @@ export function GenericTable({
               <div className="flex items-center gap-3 ml-auto">
                 <CategoryCSVExport data={safeData} filename={`${title?.replace(/\s+/g, "_") || "data"}.csv`} />
                 {onImport && (
-                  <CategoryCSVImport onImport={onImport} />
+                  <CategoryCSVImport onImport={onImport} type={importType} />
                 )}
                 {onAddNew && (
                   <button
@@ -445,15 +447,21 @@ export function GenericTable({
                     </td>
                   </tr>
                 )
-                : table.paged.map((row, index) => (
-                    <tr
-                      key={row.id || index}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                    >
-                      {enableDragDrop && <td className="px-3 py-4"></td>}
-                      {renderRowCells(row, index)}
-                    </tr>
-                  ))
+                : table.paged.map((row, index) => {
+                    const defaultRow = (
+                      <tr
+                        key={row.id || index}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        {enableDragDrop && <td className="px-3 py-4"></td>}
+                        {renderRowCells(row, index)}
+                      </tr>
+                    );
+                    // If customRowRender is provided, use it to render extra content (e.g. expanded row)
+                    return customRowRender
+                      ? customRowRender(row, index, defaultRow)
+                      : defaultRow;
+                  })
             }
           </TableBody>
         </table>

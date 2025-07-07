@@ -147,7 +147,7 @@ const PrintReceipt = ({
                 <div>Amount Paid: GHS ${parseFloat(paymentData.payingAmount).toLocaleString()}</div>
                 ${paymentData.change > 0 ? `<div>Change: GHS ${paymentData.change.toFixed(2)}</div>` : ''}
               `}
-              ${paymentData.paymentReceiver ? `<div>Receiver: ${paymentData.paymentReceiver}</div>` : ''}
+              ${paymentData.paymentReceiver ? `<div>Receiver: ${paymentData.paymentReceiverName || paymentData.paymentReceiver}</div>` : ''}
             </div>
           ` : `
             <div class="payment-info">

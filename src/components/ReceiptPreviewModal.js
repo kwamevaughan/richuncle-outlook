@@ -133,7 +133,7 @@ const ReceiptPreviewModal = ({
                 <div>Amount Paid: GHS ${parseFloat(receiptData.paymentData.payingAmount).toLocaleString()}</div>
                 ${receiptData.paymentData.change > 0 ? `<div>Change: GHS ${receiptData.paymentData.change.toFixed(2)}</div>` : ''}
               `}
-              ${receiptData.paymentData.paymentReceiver ? `<div>Receiver: ${receiptData.paymentData.paymentReceiver}</div>` : ''}
+              ${receiptData.paymentData.paymentReceiver ? `<div>Receiver: ${receiptData.paymentData.paymentReceiverName || receiptData.paymentData.payment_receiver_name || receiptData.paymentData.paymentReceiver || receiptData.paymentData.payment_receiver}</div>` : ''}
             </div>
           ` : `
             <div class="payment-info">
@@ -272,9 +272,9 @@ const ReceiptPreviewModal = ({
                   )}
                 </>
               )}
-              {receiptData.paymentData.paymentReceiver && (
-                <div>Receiver: {receiptData.paymentData.paymentReceiver}</div>
-              )}
+              {receiptData.paymentData.paymentReceiver ? (
+                <div>Receiver: {receiptData.paymentData.paymentReceiverName || receiptData.paymentData.payment_receiver_name || receiptData.paymentData.paymentReceiver || receiptData.paymentData.payment_receiver}</div>
+              ) : ''}
             </div>
           )}
           

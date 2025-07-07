@@ -19,7 +19,8 @@ const PaymentForm = ({
   onPaymentComplete,
   customer = null,
   customers = [],
-  onCustomerChange = null
+  onCustomerChange = null,
+  user = null
 }) => {
   const [paymentData, setPaymentData] = useState({
     receivedAmount: "",

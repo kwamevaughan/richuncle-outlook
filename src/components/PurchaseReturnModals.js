@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
+import PurchaseReturnItemsEditor from "./PurchaseReturnItemsEditor";
 
-export default function PurchaseModals({
+export default function PurchaseReturnModals({
   show,
   onClose,
   onSave,
-  purchase,
+  onDelete,
+  purchaseReturn,
   mode = "light",
   loading = false,
   error = null,
-  calculatedTotal = 0,
 }) {
   const [form, setForm] = useState({
     supplier_id: "",
@@ -21,35 +22,30 @@ export default function PurchaseModals({
     notes: "",
   });
   const [suppliers, setSuppliers] = useState([]);
-  const [suppliersLoading, setSuppliersLoading] = useState(false);
   const [warehouses, setWarehouses] = useState([]);
-  const [warehousesLoading, setWarehousesLoading] = useState(false);
+  const [lineItems, setLineItems] = useState([]);
+  const [modalError, setModalError] = useState(null);
 
   useEffect(() => {
-    setSuppliersLoading(true);
     fetch("/api/suppliers")
       .then((res) => res.json())
-      .then(({ data }) => setSuppliers(data || []))
-      .catch(() => setSuppliers([]))
-      .finally(() => setSuppliersLoading(false));
-    setWarehousesLoading(true);
+      .then(({ data }) => setSuppliers(data || []));
     fetch("/api/warehouses")
       .then((res) => res.json())
-      .then(({ data }) => setWarehouses(data || []))
-      .catch(() => setWarehouses([]))
-      .finally(() => setWarehousesLoading(false));
+      .then(({ data }) => setWarehouses(data || []));
   }, []);
 
   useEffect(() => {
-    if (purchase) {
+    if (purchaseReturn) {
       setForm({
-        supplier_id: purchase.supplier_id || "",
-        warehouse_id: purchase.warehouse_id || "",
-        date: purchase.date || "",
-        status: purchase.status || "Pending",
-        total: purchase.total || "",
-        notes: purchase.notes || "",
+        supplier_id: purchaseReturn.supplier_id || "",
+        warehouse_id: purchaseReturn.warehouse_id || "",
+        date: purchaseReturn.date || "",
+        status: purchaseReturn.status || "Pending",
+        total: purchaseReturn.total || "",
+        notes: purchaseReturn.notes || "",
       });
+      // TODO: fetch line items for this return if needed
     } else {
       setForm({
         supplier_id: "",
@@ -59,8 +55,10 @@ export default function PurchaseModals({
         total: "",
         notes: "",
       });
+      setLineItems([]);
     }
-  }, [purchase, show]);
+    setModalError(null);
+  }, [purchaseReturn, show]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -69,14 +67,44 @@ export default function PurchaseModals({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSave) onSave(form);
+    // Validation
+    const requiredFields = ["supplier_id", "warehouse_id", "date", "status"];
+    for (const field of requiredFields) {
+      if (!form[field]) {
+        setModalError(`Missing required field: ${field.replace(/_/g, ' ')}`);
+        return;
+      }
+    }
+    if (!lineItems || lineItems.length === 0) {
+      setModalError("At least one line item is required.");
+      return;
+    }
+    for (let i = 0; i < lineItems.length; i++) {
+      const item = lineItems[i];
+      if (!item.product_id) {
+        setModalError(`Line item ${i + 1}: Product is required.`);
+        return;
+      }
+      if (!item.quantity || isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+        setModalError(`Line item ${i + 1}: Quantity must be greater than 0.`);
+        return;
+      }
+      if (item.unit_cost === undefined || isNaN(Number(item.unit_cost)) || Number(item.unit_cost) < 0) {
+        setModalError(`Line item ${i + 1}: Unit cost must be 0 or greater.`);
+        return;
+      }
+    }
+    // Auto-calculate total
+    const total = lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_cost) || 0), 0);
+    const returnData = { ...form, total };
+    if (onSave) onSave(returnData, lineItems);
   };
 
   return (
     <SimpleModal
       isOpen={show}
       onClose={onClose}
-      title={purchase ? "Edit Purchase" : "Add Purchase"}
+      title={purchaseReturn ? "Edit Purchase Return" : "Add Purchase Return"}
       mode={mode}
       width="max-w-4xl"
     >
@@ -90,7 +118,7 @@ export default function PurchaseModals({
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
               required
-              disabled={loading || suppliersLoading}
+              disabled={loading}
             >
               <option value="">Select supplier</option>
               {suppliers.map((s) => (
@@ -108,7 +136,7 @@ export default function PurchaseModals({
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
               required
-              disabled={loading || warehousesLoading}
+              disabled={loading}
             >
               <option value="">Select warehouse</option>
               {warehouses.map((w) => (
@@ -143,7 +171,7 @@ export default function PurchaseModals({
               disabled={loading}
             >
               <option value="Pending">Pending</option>
-              <option value="Received">Received</option>
+              <option value="Returned">Returned</option>
               <option value="Cancelled">Cancelled</option>
             </select>
           </div>
@@ -155,7 +183,7 @@ export default function PurchaseModals({
             type="number"
             min="0"
             step="0.01"
-            value={calculatedTotal}
+            value={lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_cost) || 0), 0)}
             readOnly
             className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
             required
@@ -176,8 +204,13 @@ export default function PurchaseModals({
             placeholder="Notes (optional)"
           />
         </div>
-        {error && (
-          <div className="text-red-600 text-sm">{error}</div>
+        <PurchaseReturnItemsEditor
+          items={lineItems}
+          onChange={setLineItems}
+          disabled={loading}
+        />
+        {(modalError || error) && (
+          <div className="text-red-600 text-sm">{modalError || error}</div>
         )}
         <div className="flex gap-2 pt-2">
           <button
@@ -193,7 +226,7 @@ export default function PurchaseModals({
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             disabled={loading}
           >
-            {loading ? "Saving..." : purchase ? "Update" : "Add"}
+            {loading ? "Saving..." : purchaseReturn ? "Update" : "Add"}
           </button>
         </div>
       </form>

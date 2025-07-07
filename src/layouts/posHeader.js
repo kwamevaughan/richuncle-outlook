@@ -9,174 +9,104 @@ import SalesProfitModal from "@/components/SalesProfitModal";
 import NotificationButton from "@/components/NotificationButton";
 import { useModal } from "@/components/ModalContext";
 
-// Enhanced DateTime Component
-const EnhancedDateTime = ({ mode }) => {
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [showCalendar, setShowCalendar] = useState(false);
-  const calendarRef = useRef(null);
+// Session Duration Component with Register Selector
+const SessionDuration = ({ mode, user }) => {
+  const [registers, setRegisters] = useState([]);
+  const [selectedRegister, setSelectedRegister] = useState(null);
+  const [session, setSession] = useState(null);
+  const [duration, setDuration] = useState(0);
 
+  // Fetch registers on mount
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (calendarRef.current && !calendarRef.current.contains(e.target)) {
-        setShowCalendar(false);
+    (async () => {
+      try {
+        const res = await fetch('/api/registers');
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          setRegisters(data.data);
+          // Try to load last used register from localStorage
+          const last = localStorage.getItem('pos_selected_register');
+          const found = data.data.find(r => r.id === last);
+          setSelectedRegister(found ? found.id : data.data[0].id);
+        }
+      } catch (err) {
+        setRegisters([]);
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    })();
   }, []);
 
-  const formatTime = (date) => {
-    return date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    });
-  };
+  // Persist selected register
+  useEffect(() => {
+    if (selectedRegister) {
+      localStorage.setItem('pos_selected_register', selectedRegister);
+    }
+  }, [selectedRegister]);
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString(undefined, {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  // Fetch open session for selected register
+  useEffect(() => {
+    if (!selectedRegister) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/cash-register-sessions?status=open&register_id=${selectedRegister}`);
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          setSession(data.data[0]);
+        } else {
+          setSession(null);
+        }
+      } catch (err) {
+        setSession(null);
+      }
+    })();
+  }, [selectedRegister]);
 
-  const getFullDate = (date) => {
-    return date.toLocaleDateString(undefined, {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  // Update duration every second
+  useEffect(() => {
+    if (!session) return;
+    const interval = setInterval(() => {
+      setDuration(Math.floor((Date.now() - new Date(session.opened_at).getTime()) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [session]);
 
-
-  const isBusinessHours = () => {
-    const hour = currentTime.getHours();
-    return hour >= 9 && hour < 18; // 9 AM to 6 PM
+  const formatDuration = (seconds) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}h ${m}m ${s}s`;
   };
 
   return (
-    <div className="relative" ref={calendarRef}>
-      <button
-        onClick={() => setShowCalendar(!showCalendar)}
-        className={`
-          flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg
-          ${
-            mode === "dark"
-              ? "bg-gray-800/80 text-white hover:bg-gray-700/80"
-              : "bg-white/80 text-gray-700 hover:bg-white/95"
-          }
-          backdrop-blur-sm border border-white/20
-        `}
+    <div className="relative flex items-center gap-3">
+      <select
+        className={`border rounded px-2 py-1 text-sm ${mode === 'dark' ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`}
+        value={selectedRegister || ''}
+        onChange={e => setSelectedRegister(e.target.value)}
+        style={{ minWidth: 120 }}
       >
-        <div className="flex items-center gap-2">
-          <Icon
-            icon="mdi:calendar-today"
-            className={`h-4 w-4 ${
-              mode === "dark" ? "text-blue-400" : "text-blue-600"
-            }`}
-          />
-          <span className="text-sm font-medium">{formatDate(currentTime)}</span>
-        </div>
-
-        <div className="flex items-center gap-2 border-l border-gray-300/50 pl-3">
-          <Icon
-            icon="mdi:clock-outline"
-            className={`h-4 w-4 ${
-              mode === "dark" ? "text-green-400" : "text-green-600"
-            }`}
-          />
-          <span className="text-sm font-semibold">
-            {formatTime(currentTime)}
-          </span>
-        </div>
+        {registers.map(r => (
+          <option key={r.id} value={r.id}>{r.name || `Register ${r.id}`}</option>
+        ))}
+      </select>
+      <button
+        className={
+          `flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg ` +
+          (mode === "dark"
+            ? "bg-gray-800/80 text-white hover:bg-gray-700/80"
+            : "bg-white/80 text-gray-700 hover:bg-white/95") +
+          " backdrop-blur-sm border border-white/20"
+        }
+        disabled
+      >
+        <span className="font-semibold">Session Duration :</span>
+        <Icon
+          icon="mdi:clock-outline"
+          className={`h-4 w-4 ${mode === "dark" ? "text-green-400" : "text-green-600"}`}
+        />
+        <span className="text-sm font-semibold">
+          {session ? formatDuration(duration) : "No session open"}
+        </span>
       </button>
-
-      {showCalendar && (
-        <div
-          className={`
-            absolute top-full mt-2 left-0 w-80 rounded-2xl shadow-2xl overflow-hidden z-50
-            ${
-              mode === "dark"
-                ? "bg-gray-900/95 text-white border border-gray-700"
-                : "bg-white/95 text-gray-800 border border-gray-200"
-            }
-            backdrop-blur-md
-          `}
-        >
-          <div
-            className={`p-4 border-b ${
-              mode === "dark" ? "border-gray-700" : "border-gray-200"
-            }`}
-          >
-            <div className="text-center">
-              <div className="text-lg font-semibold">
-                {getFullDate(currentTime)}
-              </div>
-              <div
-                className={`text-2xl font-mono mt-2 ${
-                  mode === "dark" ? "text-blue-400" : "text-blue-900"
-                }`}
-              >
-                {formatTime(currentTime)}
-              </div>
-              
-            </div>
-          </div>
-
-          <div className="p-4 space-y-3">
-            
-
-            <div
-              className={`p-3 rounded-lg ${
-                mode === "dark" ? "bg-gray-800" : "bg-gray-50"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span
-                  className={`text-sm ${
-                    mode === "dark" ? "text-gray-300" : "text-gray-600"
-                  }`}
-                >
-                  Business Hours
-                </span>
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      isBusinessHours()
-                        ? "bg-green-500 animate-pulse"
-                        : "bg-red-500"
-                    }`}
-                  ></div>
-                  <span
-                    className={`text-sm font-medium ${
-                      isBusinessHours() ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {isBusinessHours() ? "Open" : "Closed"}
-                  </span>
-                </div>
-              </div>
-              <div
-                className={`text-xs mt-1 ${
-                  mode === "dark" ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
-                9:00 AM - 6:00 PM
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -268,7 +198,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 Back to Dashboard
               </Link>
 
-              <EnhancedDateTime mode={mode} />
+              <SessionDuration mode={mode} user={user} />
             </div>
 
             <div className="flex justify-center items-center w-full gap-4">

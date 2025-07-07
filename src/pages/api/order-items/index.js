@@ -24,9 +24,10 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     try {
+      const items = Array.isArray(req.body) ? req.body : [req.body];
       const { data, error } = await supabaseAdmin
         .from("order_items")
-        .insert([req.body])
+        .insert(items)
         .select();
 
       if (error) {
@@ -35,7 +36,7 @@ export default async function handler(req, res) {
 
       return res.status(201).json({
         success: true,
-        data: data[0]
+        data: data
       });
     } catch (error) {
       console.error("Create order item error:", error);
