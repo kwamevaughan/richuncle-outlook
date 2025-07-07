@@ -249,30 +249,28 @@ const HrHeader = ({
                       { label: "Store", icon: "mdi:store-outline", href: "/stores" },
                     ].map((item) => (
                       <Link key={item.label} href={item.href} legacyBehavior passHref>
-                        <a className="flex flex-col items-center justify-center rounded-lg p-2 text-xs font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        <a
+                          className={`flex flex-col items-center justify-center rounded-lg p-2 text-xs font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 border ${
+                            mode === "dark"
+                              ? "bg-gray-800 border-gray-700 text-gray-100 hover:bg-gray-700"
+                              : "bg-white border-gray-200 hover:bg-orange-50"
+                          } hover:border-orange-400`}
                           tabIndex={0}
                           onClick={() => setAddNewDropdownOpen(false)}
                         >
                           <span
-                            className={`flex items-center justify-center h-8 w-8 rounded-full mb-1
-                              ${
-                                mode === "dark"
-                                  ? "bg-gray-900 hover:bg-gray-700"
-                                  : "bg-gray-100 hover:bg-orange-50"
-                              } transition-all duration-200`}
+                            className={`flex items-center justify-center h-8 w-8 rounded-full mb-1 ${
+                              mode === "dark"
+                                ? "bg-gray-900 hover:bg-gray-700"
+                                : "bg-gray-100 hover:bg-orange-50"
+                            } transition-all duration-200`}
                           >
                             <Icon
                               icon={item.icon}
-                              className={`h-5 w-5 ${
-                                mode === "dark"
-                                  ? "text-orange-300"
-                                  : "text-blue-950"
-                              }`}
+                              className={`h-5 w-5 ${mode === "dark" ? "text-orange-300" : "text-blue-950"}`}
                             />
                           </span>
-                          <span className={mode === "dark" ? "text-gray-100" : ""}>
-                            {item.label}
-                          </span>
+                          <span className={mode === "dark" ? "text-gray-100" : ""}>{item.label}</span>
                         </a>
                       </Link>
                     ))}
