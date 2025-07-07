@@ -321,16 +321,8 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
         setError("Name is required");
         return;
       }
-      if (!email.trim()) {
-        setError("Email is required");
-        return;
-      }
       if (!phone.trim()) {
         setError("Phone is required");
-        return;
-      }
-      if (!address.trim()) {
-        setError("Address is required");
         return;
       }
     } else if (type === "products") {
@@ -727,7 +719,7 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Email<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">Email</label>
                 <input
                   type="email"
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
@@ -748,7 +740,7 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Address<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">Address</label>
                 <textarea
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={address}
@@ -757,6 +749,17 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                   placeholder="Enter address"
                   rows={2}
                 />
+              </div>
+              <div className="mb-4 flex items-center gap-2">
+                <input
+                  id="customer-is-active"
+                  type="checkbox"
+                  className="form-checkbox"
+                  checked={isActive}
+                  onChange={e => setIsActive(e.target.checked)}
+                  disabled={loading}
+                />
+                <label htmlFor="customer-is-active" className="text-sm cursor-pointer select-none">Active</label>
               </div>
               <div className="mb-4">
                 <label className="block mb-1 font-medium">Profile Picture</label>

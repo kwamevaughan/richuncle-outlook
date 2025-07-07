@@ -145,9 +145,9 @@ export default function ProfitLossChart({ onRangeChange }) {
   }, [selectedRange]);
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
+    <div className="bg-white rounded-lg shadow-md">
+      <div className="flex items-center justify-between mb-2 border-b-2 border-gray-100 p-4">
+        <div className="flex items-center gap-2 ">
           <span className="bg-green-50 p-2 rounded-full">
             <Icon
               icon="hugeicons:chart-increase"
@@ -175,7 +175,7 @@ export default function ProfitLossChart({ onRangeChange }) {
           ))}
         </div>
       </div>
-      <div className="flex gap-4 mb-4">
+      <div className="flex gap-4 mb-4 p-4">
         <div className="border border-gray-200 rounded-lg p-3 flex flex-col items-start justify-center">
           <span className="flex items-center gap-1 text-xs text-green-600">
             <span className="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
@@ -187,7 +187,11 @@ export default function ProfitLossChart({ onRangeChange }) {
             />
           </span>
           <span className="text-2xl font-bold text-gray-800">
-            {loading ? "..." : `GHS ${totalProfit.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+            {loading
+              ? "..."
+              : `GHS ${totalProfit.toLocaleString("en-US", {
+                  maximumFractionDigits: 0,
+                })}`}
           </span>
         </div>
         <div className="border border-gray-200 rounded-lg p-3 flex flex-col items-start justify-center">
@@ -201,11 +205,15 @@ export default function ProfitLossChart({ onRangeChange }) {
             />
           </span>
           <span className="text-2xl font-bold text-gray-800">
-            {loading ? "..." : `GHS ${totalLoss.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+            {loading
+              ? "..."
+              : `GHS ${totalLoss.toLocaleString("en-US", {
+                  maximumFractionDigits: 0,
+                })}`}
           </span>
         </div>
       </div>
-      <div className="w-full h-64">
+      <div className="w-full p-4">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} barGap={0}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -215,7 +223,12 @@ export default function ProfitLossChart({ onRangeChange }) {
               tick={{ fontSize: 13 }}
             />
             <Tooltip formatter={(value) => `GHS ${value.toLocaleString()}`} />
-            <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ display: 'none' }} />
+            <Legend
+              verticalAlign="top"
+              height={36}
+              iconType="circle"
+              wrapperStyle={{ display: "none" }}
+            />
             <Bar
               dataKey="profit"
               stackId="a"

@@ -7,6 +7,8 @@ import { useRouter } from "next/router";
 import DashboardStatsGridContainer from "@/components/DashboardStatsGridContainer";
 import DateRangePicker from "@/components/DateRangePicker";
 import ProfitLossChart from "@/components/ProfitLossChart";
+import OverallInfoCard from "@/components/OverallInfoCard";
+import CustomersOverviewCard from "@/components/CustomersOverviewCard";
 
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -166,12 +168,15 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
 
       <DashboardStatsGridContainer dateRange={dateRange} />
 
-      <div className="flex gap-4 mt-4">
-        <div className="w-2/3">
+      <div className="flex gap-4 mt-4 ">
+        <div className="w-2/3 ">
           <ProfitLossChart />
         </div>
-        <div className="gap-2 bg-red-200 p-4 rounded-lg shadow-md w-1/3">
-          Test 2
+        <div className="w-1/3 flex flex-col gap-4 bg-white rounded-lg shadow-md h-full">
+          <div className="border-b-2 border-gray-100 pb-4">
+            <OverallInfoCard />
+          </div>
+          <CustomersOverviewCard />
         </div>
       </div>
     </MainLayout>
