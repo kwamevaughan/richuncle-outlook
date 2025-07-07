@@ -106,17 +106,17 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
               ) : (
                 <>
                   You have{" "}
-                  <span className="font-bold text-blue-800">{orderCount}{orderCount > 0 ? "+" : ""}</span>{" "}
+                  <span className="font-bold text-blue-800">
+                    {orderCount}
+                    {orderCount > 0 ? "+" : ""}
+                  </span>{" "}
                   Orders, Today.
                 </>
               )}
             </p>
           </div>
 
-          <DateRangePicker
-            value={dateRange}
-            onChange={setDateRange}
-          />
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
 
         {/* Low Stock Notification Box */}
@@ -164,6 +164,16 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       </div>
 
       <DashboardStatsGridContainer dateRange={dateRange} />
+
+      <div className="flex gap-4 mt-4">
+        <div className=" gap-2 bg-white p-4 rounded-lg shadow-md w-2/3">
+          <h2 className="text-lg font-bold">Sales & Purchase</h2>
+          
+        </div>
+        <div className="gap-2 bg-red-200 p-4 rounded-lg shadow-md w-1/3">
+          Test 2
+        </div>
+      </div>
     </MainLayout>
   );
 }

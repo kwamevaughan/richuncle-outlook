@@ -118,7 +118,7 @@ const HrSidebar = ({
           ${isMobile ? "block" : "block"}
           ${mode === "dark" ? "" : "bg-white"}
           group shadow-lg shadow-black/20 custom-scrollbar
-          border ${mode === 'dark' ? 'border-gray-500' : 'border-gray-200'}
+          border ${mode === "dark" ? "border-gray-500" : "border-gray-200"}
           ${!isOpen && !isMobile ? "sidebar-collapsed" : ""}`}
         style={{
           width: isMobile ? "100vw" : isOpen ? "240px" : "64px",
@@ -126,11 +126,15 @@ const HrSidebar = ({
         }}
       >
         <div className="flex flex-col h-full relative">
-          <div className={`flex items-center ${!isOpen && !isMobile ? "justify-center" : "justify-between"} py-4 px-4 shadow-sm`}>
-            <div className="flex items-center gap-2">
+          <div
+            className={`flex items-center ${
+              !isOpen && !isMobile ? "justify-center" : "justify-between"
+            } py-4 px-4 shadow-sm bg-blue-900 rounded-t-md`}
+          >
+            <div className="flex items-center gap-2 ">
               <p
                 className={`text-xl font-bold transition-all duration-300 ${
-                  mode === "dark" ? "text-white" : "text-black"
+                  mode === "dark" ? "text-white" : "text-white"
                 }`}
               >
                 {!isOpen && !isMobile ? "R" : "Rich Uncle Outlook"}
@@ -138,25 +142,50 @@ const HrSidebar = ({
             </div>
           </div>
 
-          <div className={`flex-grow px-2 overflow-y-auto flex flex-col scrollbar-thin ${!isOpen && !isMobile ? "items-center" : ""}`}>
+          <div
+            className={`flex-grow px-2 overflow-y-auto flex flex-col scrollbar-thin ${
+              !isOpen && !isMobile ? "items-center" : ""
+            }`}
+          >
             {filteredNav.map(({ category, items }, index) => (
-              <div key={category} className={`w-full mb-1 ${!isOpen && !isMobile ? "flex flex-col items-center" : ""}`}>
+              <div
+                key={category}
+                className={`w-full mb-1 ${
+                  !isOpen && !isMobile ? "flex flex-col items-center" : ""
+                }`}
+              >
                 {index !== 0 && (
-                  <hr className={`border-t my-2 ${mode === 'dark' ? 'border-gray-500' : 'border-gray-300'}`} />
+                  <hr
+                    className={`border-t my-2 ${
+                      mode === "dark" ? "border-gray-500" : "border-gray-300"
+                    }`}
+                  />
                 )}
 
                 <div
-                  className={`flex items-center justify-between text-xs tracking-wide font-bold text-gray-600 px-2 pt-4 pb-1 cursor-pointer ${!isOpen && !isMobile ? "justify-center" : ""}`}
+                  className={`flex items-center justify-between text-xs tracking-wide font-bold text-gray-600 px-2 pt-4 pb-1 cursor-pointer ${
+                    !isOpen && !isMobile ? "justify-center" : ""
+                  }`}
                   onClick={() => toggleCategory(category)}
                 >
-                  <span className={`${!isOpen && !isMobile ? "opacity-0 w-0 overflow-hidden" : ""} transition-all duration-300 capitalize`}>{category}</span>
+                  <span
+                    className={`${
+                      !isOpen && !isMobile
+                        ? "opacity-0 w-0 overflow-hidden"
+                        : ""
+                    } transition-all duration-300 capitalize`}
+                  >
+                    {category}
+                  </span>
                   <Icon
                     icon={
                       expandedCategories[category]
                         ? "mdi:chevron-down"
                         : "mdi:chevron-right"
                     }
-                    className={`w-4 h-4 transition-transform duration-200 ${mode === 'dark' ? 'text-white' : 'text-gray-400'}`}
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      mode === "dark" ? "text-white" : "text-gray-400"
+                    }`}
                   />
                 </div>
 
@@ -167,7 +196,11 @@ const HrSidebar = ({
                       : "max-h-0 opacity-0"
                   }`}
                 >
-                  <ul className={`${!isOpen && !isMobile ? "flex flex-col items-center" : ""}`}>
+                  <ul
+                    className={`${
+                      !isOpen && !isMobile ? "flex flex-col items-center" : ""
+                    }`}
+                  >
                     {Array.isArray(items) && items.length > 0 ? (
                       items.map(({ href, icon, label, subItems }) => {
                         const isActiveItem = isActive(href);
@@ -186,14 +219,38 @@ const HrSidebar = ({
                                   handleNavigation(href, label);
                                 }
                               }}
-                              className={`relative py-2 px-2 flex items-center justify-between font-medium text-sm w-full text-gray-700 cursor-pointer rounded-lg hover:shadow-md transition-all duration-200 group mb-1 ${isActiveItem} ${!isOpen && !isMobile ? "justify-center" : ""} ${mode === 'dark' ? 'bg-white/10 text-gray-200 hover:bg-white/20' : ''}`}
+                              className={`relative py-2 px-2 flex items-center justify-between font-medium text-sm w-full text-gray-700 cursor-pointer rounded-lg hover:shadow-md transition-all duration-200 group mb-1 ${isActiveItem} ${
+                                !isOpen && !isMobile ? "justify-center" : ""
+                              } ${
+                                mode === "dark"
+                                  ? "bg-white/10 text-gray-200 hover:bg-white/20"
+                                  : ""
+                              }`}
                             >
-                              <div className={`flex items-center ${!isOpen && !isMobile ? "justify-center w-full" : ""}`}>
+                              <div
+                                className={`flex items-center ${
+                                  !isOpen && !isMobile
+                                    ? "justify-center w-full"
+                                    : ""
+                                }`}
+                              >
                                 <Icon
                                   icon={icon}
-                                  className={`h-5 w-5 transition-all${isOpen || isMobile ? ' mr-3' : ''} ${mode === 'dark' ? 'text-white' : 'text-gray-500'}`}
+                                  className={`h-5 w-5 transition-all${
+                                    isOpen || isMobile ? " mr-3" : ""
+                                  } ${
+                                    mode === "dark"
+                                      ? "text-white"
+                                      : "text-gray-500"
+                                  }`}
                                 />
-                                <span className={`text-sm transition-all duration-300 ${!isOpen && !isMobile ? "opacity-0 w-0 overflow-hidden" : ""} ${mode === 'dark' ? 'text-gray-100' : ''}`}>
+                                <span
+                                  className={`text-sm transition-all duration-300 ${
+                                    !isOpen && !isMobile
+                                      ? "opacity-0 w-0 overflow-hidden"
+                                      : ""
+                                  } ${mode === "dark" ? "text-gray-100" : ""}`}
+                                >
                                   {typeof label === "function"
                                     ? label(user?.job_type)
                                     : label}
@@ -219,7 +276,13 @@ const HrSidebar = ({
                                     : "max-h-0 opacity-0"
                                 }`}
                               >
-                                <ul className={`${!isOpen && !isMobile ? "flex flex-col items-center" : ""} ml-4`}>
+                                <ul
+                                  className={`${
+                                    !isOpen && !isMobile
+                                      ? "flex flex-col items-center"
+                                      : ""
+                                  } ml-4`}
+                                >
                                   {subItems.map(
                                     ({
                                       href: subHref,
@@ -235,17 +298,45 @@ const HrSidebar = ({
                                           onClick={() =>
                                             handleNavigation(subHref, subLabel)
                                           }
-                                          className={`relative py-2 px-2 flex items-center font-normal text-sm w-full cursor-pointer rounded-lg hover:shadow-sm transition-all duration-200 group mb-1 ${isSubActive} ${!isOpen && !isMobile ? "justify-center" : ""} ${mode === 'dark' ? 'bg-white/10 text-gray-200 hover:bg-white/20' : ''}`}
+                                          className={`relative py-2 px-2 flex items-center font-normal text-sm w-full cursor-pointer rounded-lg hover:shadow-sm transition-all duration-200 group mb-1 ${isSubActive} ${
+                                            !isOpen && !isMobile
+                                              ? "justify-center"
+                                              : ""
+                                          } ${
+                                            mode === "dark"
+                                              ? "bg-white/10 text-gray-200 hover:bg-white/20"
+                                              : ""
+                                          }`}
                                         >
                                           <Icon
                                             icon="mdi:circle-small"
-                                            className={`h-4 w-4 mr-1 ${mode === 'dark' ? 'text-white' : 'text-gray-400'}`}
+                                            className={`h-4 w-4 mr-1 ${
+                                              mode === "dark"
+                                                ? "text-white"
+                                                : "text-gray-400"
+                                            }`}
                                           />
                                           <Icon
                                             icon={subIcon}
-                                            className={`h-4 w-4 transition-all${isOpen || isMobile ? ' mr-3' : ''} ${mode === 'dark' ? 'text-white' : 'text-gray-400'}`}
+                                            className={`h-4 w-4 transition-all${
+                                              isOpen || isMobile ? " mr-3" : ""
+                                            } ${
+                                              mode === "dark"
+                                                ? "text-white"
+                                                : "text-gray-400"
+                                            }`}
                                           />
-                                          <span className={`text-sm transition-all duration-300 ${!isOpen && !isMobile ? "opacity-0 w-0 overflow-hidden" : ""} ${mode === 'dark' ? 'text-gray-100' : ''}`}>
+                                          <span
+                                            className={`text-sm transition-all duration-300 ${
+                                              !isOpen && !isMobile
+                                                ? "opacity-0 w-0 overflow-hidden"
+                                                : ""
+                                            } ${
+                                              mode === "dark"
+                                                ? "text-gray-100"
+                                                : ""
+                                            }`}
+                                          >
                                             {typeof subLabel === "function"
                                               ? subLabel(user?.job_type)
                                               : subLabel}
@@ -324,7 +415,15 @@ const HrSidebar = ({
                   className="flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors hover:bg-gray-200 rounded-2xl p-2"
                 >
                   <Icon icon="mdi:logout" className="h-5 w-5" />
-                  <span className={`transition-all duration-300 ${!isOpen && !isMobile ? "opacity-0 w-0 overflow-hidden" : ""}`}>Sign Out</span>
+                  <span
+                    className={`transition-all duration-300 ${
+                      !isOpen && !isMobile
+                        ? "opacity-0 w-0 overflow-hidden"
+                        : ""
+                    }`}
+                  >
+                    Sign Out
+                  </span>
                 </button>
               </div>
             </div>
