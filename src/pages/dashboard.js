@@ -24,6 +24,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const [lowStockProduct, setLowStockProduct] = useState(null);
   const [stockError, setStockError] = useState(null);
   const [stockLoading, setStockLoading] = useState(true);
+  const [showLowStock, setShowLowStock] = useState(true);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -119,41 +120,47 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
         </div>
 
         {/* Low Stock Notification Box */}
-        <div className="flex items-center justify-between mt-4 bg-orange-100 p-4 rounded-md">
-          <p className="text-sm text-gray-500 flex gap-2">
-            {stockLoading ? (
-              <span>Loading stock info...</span>
-            ) : stockError ? (
-              <span className="text-red-600">{stockError}</span>
-            ) : lowStockProduct ? (
-              <>
-                Your Product{" "}
-                <span className="font-bold text-blue-900">
-                  {lowStockProduct.name}
-                </span>{" "}
-                is running Low, already below {lowStockProduct.quantity} Pcs.
-                <button
-                  className="text-blue-900 font-bold underline"
-                  onClick={() =>
-                    router.push(
-                      `/manage-stock?quickUpdateId=${lowStockProduct.id}`
-                    )
-                  }
-                >
-                  Add Stock
-                </button>
-              </>
-            ) : (
-              <span>All products are sufficiently stocked.</span>
-            )}
-          </p>
-          <div className="flex items-center justify-end cursor-pointer">
-            <Icon
-              icon="iconamoon:close"
-              className="text-2xl text-gray-500 hover:text-gray-700"
-            />
+        {showLowStock && (
+          <div className="flex items-center justify-between mt-4 bg-orange-100 p-2 rounded-md">
+            <p className="text-sm text-gray-500 flex gap-2">
+              {stockLoading ? (
+                <span>Loading stock info...</span>
+              ) : stockError ? (
+                <span className="text-red-600">{stockError}</span>
+              ) : lowStockProduct ? (
+                <>
+                  Your Product{" "}
+                  <span className="font-bold text-blue-900">
+                    {lowStockProduct.name}
+                  </span>{" "}
+                  is running Low, already below {lowStockProduct.quantity} Pcs.
+                  <button
+                    className="text-blue-900 font-bold underline"
+                    onClick={() =>
+                      router.push(
+                        `/manage-stock?quickUpdateId=${lowStockProduct.id}`
+                      )
+                    }
+                  >
+                    Add Stock
+                  </button>
+                </>
+              ) : (
+                <span>All products are sufficiently stocked.</span>
+              )}
+            </p>
+            <button
+              className="flex items-center justify-end cursor-pointer"
+              onClick={() => setShowLowStock(false)}
+              aria-label="Close notification"
+            >
+              <Icon
+                icon="iconamoon:close"
+                className="text-2xl text-gray-500 hover:text-gray-700"
+              />
+            </button>
           </div>
-        </div>
+        )}
       </div>
 
       <DashboardStatsGridContainer dateRange={dateRange} />

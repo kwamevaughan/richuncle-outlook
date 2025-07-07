@@ -1,5 +1,6 @@
 import React from "react";
 import { Icon } from "@iconify/react";
+import Link from "next/link";
 
 const cardStyles = {
   sales: "bg-orange-400 text-white",
@@ -24,6 +25,7 @@ const DashboardStatsGrid = ({
       color: "sales",
       change: "+22%",
       changeType: "up",
+      link: undefined,
     },
     {
       label: "Total Sales Return",
@@ -32,6 +34,7 @@ const DashboardStatsGrid = ({
       color: "salesReturn",
       change: "-22%",
       changeType: "down",
+      link: undefined,
     },
     {
       label: "Total Purchase",
@@ -40,6 +43,7 @@ const DashboardStatsGrid = ({
       color: "purchase",
       change: "+22%",
       changeType: "up",
+      link: undefined,
     },
     {
       label: "Total Purchase Return",
@@ -48,33 +52,63 @@ const DashboardStatsGrid = ({
       color: "purchaseReturn",
       change: "+22%",
       changeType: "up",
+      link: undefined,
     },
   ],
 }) => {
   return (
-    <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-6">
-      {stats.map((stat, idx) => (
-        <div
-          key={stat.label}
-          className={`rounded-lg p-4 flex flex-col gap-2 shadow-md ${cardStyles[stat.color]} transition-transform duration-500 hover:-translate-y-1.5 hover:shadow-xl cursor-pointer`}
-        >
-          <div className="flex items-center justify-between">
-            <div className={`rounded-full p-2 text-xl ${iconBgStyles[stat.color]}`}> 
-              <Icon icon={stat.icon} className="text-2xl" />
+    <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-6 items-stretch">
+      {stats.map((stat, idx) => {
+        const card = (
+          <div
+            key={stat.label}
+            className={`h-full flex flex-col rounded-lg p-4 gap-2 shadow-md ${
+              cardStyles[stat.color]
+            } transition-transform duration-500 hover:-translate-y-1.5 hover:shadow-xl cursor-pointer`}
+          >
+            <div className="flex items-center justify-start gap-4">
+              <div
+                className={`rounded-lg p-2 text-xl ${iconBgStyles[stat.color]}`}
+              >
+                <Icon icon={stat.icon} className="text-2xl" />
+              </div>
+
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold tracking-wide">
+                  {stat.label}
+                </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-lg font-bold">{stat.value}</span>
+                  <span
+                    className={`flex items-center text-xs font-normal rounded-md px-2 py-1
+                      ${stat.changeType === "up"
+                        ? "text-green-700 bg-green-100"
+                        : "text-red-700 bg-red-100"
+                      }`}
+                  >
+                    <Icon
+                      icon={
+                        stat.changeType === "up"
+                          ? "mdi:arrow-up-bold"
+                          : "mdi:arrow-down-bold"
+                      }
+                      className="mr-0.5"
+                    />
+                    {stat.change}
+                  </span>
+                </div>
+              </div>
             </div>
-            <span className="text-lg font-bold">{stat.value}</span>
           </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs font-semibold uppercase tracking-wide">
-              {stat.label}
-            </span>
-            <span className={`flex items-center text-xs font-bold ${stat.changeType === "up" ? "text-green-200" : "text-red-200"}`}>
-              <Icon icon={stat.changeType === "up" ? "mdi:arrow-up-bold" : "mdi:arrow-down-bold"} className="mr-1" />
-              {stat.change}
-            </span>
-          </div>
-        </div>
-      ))}
+        );
+        return stat.link ? (
+          <Link href={stat.link} key={stat.label} legacyBehavior>
+            <a style={{ textDecoration: "none" }}>{card}</a>
+          </Link>
+        ) : (
+          card
+        );
+      })}
     </div>
   );
 };

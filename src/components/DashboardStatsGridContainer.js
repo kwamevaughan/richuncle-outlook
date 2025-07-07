@@ -90,7 +90,8 @@ export default function DashboardStatsGridContainer({ dateRange }) {
           icon: "mdi:file-document-outline",
           color: "sales",
           change: `${salesChange > 0 ? "+" : ""}${salesChange.toFixed(1)}%`,
-          changeType: salesChange >= 0 ? "up" : "down",
+          changeType: salesChange > 0 ? "up" : "down",
+          link: "/orders",
         },
         {
           label: "Total Sales Return",
@@ -98,7 +99,8 @@ export default function DashboardStatsGridContainer({ dateRange }) {
           icon: "mdi:swap-horizontal",
           color: "salesReturn",
           change: `${salesReturnChange > 0 ? "+" : ""}${salesReturnChange.toFixed(1)}%`,
-          changeType: salesReturnChange >= 0 ? "up" : "down",
+          changeType: salesReturnChange > 0 ? "up" : "down",
+          link: "/sales-returns",
         },
         {
           label: "Total Purchase",
@@ -106,7 +108,8 @@ export default function DashboardStatsGridContainer({ dateRange }) {
           icon: "mdi:gift-outline",
           color: "purchase",
           change: `${purchaseChange > 0 ? "+" : ""}${purchaseChange.toFixed(1)}%`,
-          changeType: purchaseChange >= 0 ? "up" : "down",
+          changeType: purchaseChange > 0 ? "up" : "down",
+          link: "/purchases",
         },
         {
           label: "Total Purchase Return",
@@ -114,7 +117,8 @@ export default function DashboardStatsGridContainer({ dateRange }) {
           icon: "mdi:shield-check-outline",
           color: "purchaseReturn",
           change: `${purchaseReturnChange > 0 ? "+" : ""}${purchaseReturnChange.toFixed(1)}%`,
-          changeType: purchaseReturnChange >= 0 ? "up" : "down",
+          changeType: purchaseReturnChange > 0 ? "up" : "down",
+          link: "/purchase-returns",
         },
       ]);
     }
