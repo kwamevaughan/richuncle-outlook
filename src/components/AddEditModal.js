@@ -452,7 +452,6 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
           brand_id: brandId || null,
           unit_id: unitId || null,
           barcode: barcode.trim(),
-          selling_type: sellingType,
           image_url: imageUrl,
           is_active: isActive,
         });
@@ -950,37 +949,6 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                     <option value="">Select a brand</option>
                     {brands.map(brand => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
                   </select>
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Selling Type</label>
-                  <div className="flex gap-4 mt-2">
-                    <label className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        className="form-checkbox"
-                        checked={sellingType.includes('Online')}
-                        onChange={e => {
-                          if (e.target.checked) setSellingType(prev => [...prev, 'Online']);
-                          else setSellingType(prev => prev.filter(v => v !== 'Online'));
-                        }}
-                        disabled={loading}
-                      />
-                      <span className="ml-2">Online</span>
-                    </label>
-                    <label className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        className="form-checkbox"
-                        checked={sellingType.includes('POS')}
-                        onChange={e => {
-                          if (e.target.checked) setSellingType(prev => [...prev, 'POS']);
-                          else setSellingType(prev => prev.filter(v => v !== 'POS'));
-                        }}
-                        disabled={loading}
-                      />
-                      <span className="ml-2">POS</span>
-                    </label>
-                  </div>
                 </div>
               </div>
               <div className="mb-6">
