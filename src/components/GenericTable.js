@@ -1,10 +1,15 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import CategoryDragDrop from "./CategoryDragDrop";
 import CategoryInlineEdit from "./CategoryInlineEdit";
 import Image from "next/image";
 import CategoryCSVExport from "./CategoryCSVExport";
 import CategoryCSVImport from "./CategoryCSVImport";
+import { DateRange } from 'react-date-range';
+import { format, parseISO, isWithinInterval } from 'date-fns';
+import 'react-date-range/dist/styles.css';
+import 'react-date-range/dist/theme/default.css';
+import ReactDOM from 'react-dom';
 
 // Enhanced useTable hook
 function useTable(data, initialPageSize = 10) {
@@ -131,10 +136,53 @@ export function GenericTable({
   onImport,
   customRowRender,
   importType,
+  enableDateFilter = false,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
-  const table = useTable(safeData);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateRange, setDateRange] = useState([
+    {
+      startDate: null,
+      endDate: null,
+      key: 'selection',
+    },
+  ]);
+  const datePickerRef = useRef();
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef();
+
+  // Close popover on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target)) {
+        setShowDatePicker(false);
+      }
+    }
+    if (showDatePicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDatePicker]);
+
+  // Filter data by date range
+  const filteredByDate = useMemo(() => {
+    if (!enableDateFilter) return safeData;
+    const { startDate, endDate } = dateRange[0] || {};
+    if (!startDate || !endDate) return safeData;
+    return safeData.filter((row) => {
+      if (!row.created_at) return false;
+      const created = parseISO(row.created_at);
+      return isWithinInterval(created, { start: startDate, end: endDate });
+    });
+  }, [safeData, dateRange, enableDateFilter]);
+
+  // Use filtered data for table
+  const table = useTable(filteredByDate);
   const TableBody = enableDragDrop ? CategoryDragDrop : "tbody";
 
   const handleBulkDelete = () => {
@@ -245,10 +293,22 @@ export function GenericTable({
     );
   };
 
+  // Open popover and set position
+  const handleDateButtonClick = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPopoverPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+      });
+    }
+    setShowDatePicker((v) => !v);
+  };
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      {(title || searchable || onAddNew) && (
+      {(title || searchable || onAddNew || enableDateFilter) && (
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {title && (
@@ -303,6 +363,59 @@ export function GenericTable({
                     <option value="last_7_days">Last 7 Days</option>
                   </select>
                 </div>
+                {/* Date Filter Button */}
+                {enableDateFilter && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      ref={buttonRef}
+                      className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      onClick={handleDateButtonClick}
+                    >
+                      <Icon icon="mdi:calendar-range" className="w-4 h-4" />
+                      Filter by Date
+                    </button>
+                    {showDatePicker && ReactDOM.createPortal(
+                      <div
+                        ref={datePickerRef}
+                        className="z-[9999] fixed bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4"
+                        style={{ top: popoverPosition.top, left: popoverPosition.left }}
+                      >
+                        <DateRange
+                          ranges={dateRange}
+                          onChange={(ranges) => setDateRange([ranges.selection])}
+                          moveRangeOnFirstSelection={false}
+                          showDateDisplay={true}
+                          editableDateInputs={true}
+                          maxDate={new Date()}
+                        />
+                        <div className="flex justify-end mt-2 gap-2">
+                          <button
+                            className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
+                            onClick={() => {
+                              setDateRange([{ startDate: null, endDate: null, key: 'selection' }]);
+                              setShowDatePicker(false);
+                            }}
+                          >
+                            Clear
+                          </button>
+                          <button
+                            className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+                            onClick={() => setShowDatePicker(false)}
+                          >
+                            Apply
+                          </button>
+                        </div>
+                        {(dateRange[0].startDate && dateRange[0].endDate) && (
+                          <div className="mt-2 text-xs text-gray-600 dark:text-gray-300">
+                            Showing from {format(dateRange[0].startDate, 'yyyy-MM-dd')} to {format(dateRange[0].endDate, 'yyyy-MM-dd')}
+                          </div>
+                        )}
+                      </div>,
+                      document.body
+                    )}
+                  </div>
+                )}
               </div>
               {/* Export, Import, and Add New on the right */}
               <div className="flex items-center gap-3 ml-auto">

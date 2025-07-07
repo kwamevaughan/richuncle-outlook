@@ -211,6 +211,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                     onClick: (item) => setViewItem(item)
                   }
                 ]}
+                enableDateFilter={true}
               />
             </div>
 

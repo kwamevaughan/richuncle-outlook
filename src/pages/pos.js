@@ -28,6 +28,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [reloadProducts, setReloadProducts] = useState(0);
   const [lastOrderData, setLastOrderData] = useState(null);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [showNoOrderModal, setShowNoOrderModal] = useState(false);
 
   useEffect(() => {
     async function fetchDiscounts() {
@@ -97,7 +98,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   // Handler to print last receipt
   const handlePrintLastReceipt = useCallback(() => {
     if (!lastOrderData) {
-      alert("No order has been completed yet.");
+      setShowNoOrderModal(true);
       return;
     }
     // Prepare data for PrintReceipt
@@ -197,6 +198,22 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           customers={customers}
         />
         {/* <PosFooterActions totalPayable={totalPayable} hasProducts={selectedProducts.length > 0} /> */}
+        <SimpleModal
+          isOpen={showNoOrderModal}
+          onClose={() => setShowNoOrderModal(false)}
+          title="No Order Completed"
+          width="max-w-md"
+        >
+          <div className="mb-4">No order has been completed yet.</div>
+          <div className="flex justify-end">
+            <button
+              className="bg-blue-700 text-white rounded px-6 py-2"
+              onClick={() => setShowNoOrderModal(false)}
+            >
+              OK
+            </button>
+          </div>
+        </SimpleModal>
       </MainLayout>
     </ModalProvider>
   );
