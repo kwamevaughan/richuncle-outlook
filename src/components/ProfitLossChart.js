@@ -59,7 +59,10 @@ export default function ProfitLossChart({ onRangeChange }) {
         const res = await fetch("/api/order-items");
         const json = await res.json();
         const items = json.data || [];
+        console.log('Fetched order-items:', items);
+        console.log('Selected Range:', selectedRange);
         const grouped = groupProfitLossByHourToday(items);
+        console.log('Grouped by hour result:', grouped);
         setChartData(grouped);
         setTotalProfit(grouped.reduce((sum, h) => sum + h.profit, 0));
         setTotalLoss(grouped.reduce((sum, h) => sum + h.loss, 0));

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import DashboardStatsGridContainer from "@/components/DashboardStatsGridContainer";
 import DateRangePicker from "@/components/DateRangePicker";
+import ProfitLossChart from "@/components/ProfitLossChart";
 
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -166,9 +167,8 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       <DashboardStatsGridContainer dateRange={dateRange} />
 
       <div className="flex gap-4 mt-4">
-        <div className=" gap-2 bg-white p-4 rounded-lg shadow-md w-2/3">
-          <h2 className="text-lg font-bold">Sales & Purchase</h2>
-          
+        <div className="w-2/3">
+          <ProfitLossChart />
         </div>
         <div className="gap-2 bg-red-200 p-4 rounded-lg shadow-md w-1/3">
           Test 2
