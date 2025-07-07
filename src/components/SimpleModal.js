@@ -13,8 +13,6 @@ const SimpleModal = ({
 }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  if (!isOpen) return null;
-
   const handleClose = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -40,6 +38,7 @@ const SimpleModal = ({
       <div
         className="fixed inset-0 z-50 overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        style={{ display: isOpen ? 'block' : 'none' }}
       >
         {/* Enhanced Glassmorphic Background */}
         <div

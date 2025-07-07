@@ -4,6 +4,7 @@ import useLogout from "../hooks/useLogout";
 import { Icon } from "@iconify/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import DashboardStatsGridContainer from "@/components/DashboardStatsGridContainer";
 
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -88,7 +89,9 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
             <span className="text-red-600">{orderError}</span>
           ) : (
             <>
-              You have <span className="font-bold text-blue-800">{orderCount}</span> Orders, Today.
+              You have{" "}
+              <span className="font-bold text-blue-800">{orderCount}</span>{" "}
+              Orders, Today.
             </>
           )}
         </p>
@@ -100,10 +103,18 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
               <span className="text-red-600">{stockError}</span>
             ) : lowStockProduct ? (
               <>
-                Your Product <span className="font-bold text-blue-900">{lowStockProduct.name}</span> is running Low, already below {lowStockProduct.quantity} Pcs.
+                Your Product{" "}
+                <span className="font-bold text-blue-900">
+                  {lowStockProduct.name}
+                </span>{" "}
+                is running Low, already below {lowStockProduct.quantity} Pcs.
                 <button
                   className="text-blue-900 font-bold underline"
-                  onClick={() => router.push(`/manage-stock?quickUpdateId=${lowStockProduct.id}`)}
+                  onClick={() =>
+                    router.push(
+                      `/manage-stock?quickUpdateId=${lowStockProduct.id}`
+                    )
+                  }
                 >
                   Add Stock
                 </button>
@@ -113,10 +124,14 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
             )}
           </p>
           <div className="flex items-center justify-end cursor-pointer">
-            <Icon icon="iconamoon:close-bold" className="text-2xl" />
+            <Icon
+              icon="iconamoon:close"
+              className="text-2xl text-gray-500 hover:text-gray-700"
+            />
           </div>
         </div>
       </div>
+      <DashboardStatsGridContainer />
     </MainLayout>
   );
 }
