@@ -11,6 +11,7 @@ export default function PurchaseModals({
   loading = false,
   error = null,
   calculatedTotal = 0,
+  children,
 }) {
   const [form, setForm] = useState({
     supplier_id: "",
@@ -176,6 +177,7 @@ export default function PurchaseModals({
             placeholder="Notes (optional)"
           />
         </div>
+        {children}
         {error && (
           <div className="text-red-600 text-sm">{error}</div>
         )}
