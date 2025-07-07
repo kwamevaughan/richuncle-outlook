@@ -71,23 +71,6 @@ export const sidebarNav = [
         href: "/sales",
         icon: "mdi:bullhorn-outline",
         label: "Sales",
-        subItems: [
-          {
-            href: "/online-orders",
-            icon: "mdi:web-outline",
-            label: "Online Orders",
-          },
-          {
-            href: "/pos-orders",
-            icon: "mdi:point-of-sale-outline",
-            label: "POS Orders",
-          },
-        ],
-      },
-      {
-        href: "/invoices",
-        icon: "mdi:file-document-outline",
-        label: "Invoices",
       },
       {
         href: "/sales-return",
@@ -411,11 +394,6 @@ export const sidebarNav = [
             href: "/app-settings",
             icon: "mdi:cellphone-cog-outline",
             label: "App Settings",
-          },
-          {
-            href: "/invoice",
-            icon: "mdi:file-document-outline",
-            label: "Invoice",
           },
           {
             href: "/printer",
