@@ -322,6 +322,7 @@ export function GenericTable({
                 {/* Search */}
                 {searchable && (
                   <div className="relative">
+                    
                     <Icon
                       icon="mdi:magnify"
                       className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -337,7 +338,7 @@ export function GenericTable({
                 )}
                 {/* Status Filter */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Status</label>
+                  {/* <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Status</label> */}
                   <select
                     value={table.statusFilter}
                     onChange={e => table.setStatusFilter(e.target.value)}
@@ -350,7 +351,7 @@ export function GenericTable({
                 </div>
                 {/* Sort By Filter */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Sort By</label>
+                  {/* <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Sort By</label> */}
                   <select
                     value={table.sortBy}
                     onChange={e => table.setSortBy(e.target.value)}
