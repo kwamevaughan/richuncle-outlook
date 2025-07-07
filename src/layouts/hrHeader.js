@@ -25,6 +25,8 @@ const HrHeader = ({
   const storeDropdownRef = useRef(null);
   const [addNewDropdownOpen, setAddNewDropdownOpen] = useState(false);
   const addNewDropdownRef = useRef(null);
+  const [stores, setStores] = useState([]);
+  const [selectedStore, setSelectedStore] = useState(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -61,6 +63,33 @@ const HrHeader = ({
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [storeDropdownOpen, addNewDropdownOpen]);
+
+  useEffect(() => {
+    // Fetch stores on mount
+    const fetchStores = async () => {
+      try {
+        const res = await fetch('/api/stores');
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          setStores(data.data);
+          // Try to load last used store from localStorage
+          const last = localStorage.getItem('selected_store_id');
+          const found = data.data.find(s => s.id === last);
+          setSelectedStore(found ? found.id : data.data[0].id);
+        }
+      } catch (err) {
+        setStores([]);
+      }
+    };
+    fetchStores();
+  }, []);
+
+  // Persist selected store
+  useEffect(() => {
+    if (selectedStore) {
+      localStorage.setItem('selected_store_id', selectedStore);
+    }
+  }, [selectedStore]);
 
   const isMobile = windowWidth !== null && windowWidth < 640;
 
@@ -135,7 +164,9 @@ const HrHeader = ({
                       mode === "dark" ? "text-gray-200" : ""
                     }`}
                   />
-                  Select Store
+                  {stores.length > 0 && selectedStore
+                    ? stores.find(s => s.id === selectedStore)?.name || "Select Store"
+                    : "Select Store"}
                   <Icon
                     icon={
                       storeDropdownOpen ? "mdi:chevron-up" : "mdi:chevron-down"
@@ -159,33 +190,26 @@ const HrHeader = ({
                     }`}
                 >
                   <ul className="divide-y divide-gray-100">
-                    <li
-                      className={`px-4 py-2 cursor-pointer ${
-                        mode === "dark"
-                          ? "hover:bg-gray-800 text-gray-100"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      Store 1
-                    </li>
-                    <li
-                      className={`px-4 py-2 cursor-pointer ${
-                        mode === "dark"
-                          ? "hover:bg-gray-800 text-gray-100"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      Store 2
-                    </li>
-                    <li
-                      className={`px-4 py-2 cursor-pointer ${
-                        mode === "dark"
-                          ? "hover:bg-gray-800 text-gray-100"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      Store 3
-                    </li>
+                    {stores.length > 0 ? (
+                      stores.map(store => (
+                        <li
+                          key={store.id}
+                          className={`px-4 py-2 cursor-pointer ${
+                            mode === "dark"
+                              ? "hover:bg-gray-800 text-gray-100"
+                              : "hover:bg-gray-50"
+                          } ${selectedStore === store.id ? 'font-bold bg-gray-200 dark:bg-gray-800' : ''}`}
+                          onClick={() => {
+                            setSelectedStore(store.id);
+                            setStoreDropdownOpen(false);
+                          }}
+                        >
+                          {store.name}
+                        </li>
+                      ))
+                    ) : (
+                      <li className="px-4 py-2 text-gray-400">No stores found</li>
+                    )}
                   </ul>
                 </div>
               </div>
