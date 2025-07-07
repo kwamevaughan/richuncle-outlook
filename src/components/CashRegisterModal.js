@@ -5,7 +5,7 @@ import { useModal } from "./ModalContext";
 
 const allowedRoles = ["cashier", "manager", "admin"];
 
-const CashRegisterModal = ({ isOpen, onClose, user }) => {
+const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
   const [registers, setRegisters] = useState([]);
   const [selectedRegister, setSelectedRegister] = useState(null);
   const [session, setSession] = useState(null);
@@ -128,6 +128,7 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
       if (result.success) {
         setSession(result.data);
         setOpenAmount(0);
+        if (onSessionChanged) onSessionChanged();
       } else {
         throw new Error(result.error || "Failed to open register");
       }
@@ -242,6 +243,7 @@ const CashRegisterModal = ({ isOpen, onClose, user }) => {
         setSession(null);
         setCloseAmount(0);
         setShowCloseConfirm(false);
+        if (onSessionChanged) onSessionChanged();
         // Generate Z-Report
         const zReportResponse = await fetch(`/api/cash-register-sessions/${session.id}/z-report`);
         const zReportResult = await zReportResponse.json();

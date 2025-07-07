@@ -10,7 +10,7 @@ import NotificationButton from "@/components/NotificationButton";
 import { useModal } from "@/components/ModalContext";
 
 // Session Duration Component with Register Selector
-const SessionDuration = ({ mode, user }) => {
+const SessionDuration = ({ mode, user, sessionRefreshKey }) => {
   const [registers, setRegisters] = useState([]);
   const [selectedRegister, setSelectedRegister] = useState(null);
   const [session, setSession] = useState(null);
@@ -58,7 +58,7 @@ const SessionDuration = ({ mode, user }) => {
         setSession(null);
       }
     })();
-  }, [selectedRegister]);
+  }, [selectedRegister, sessionRefreshKey]);
 
   // Update duration every second
   useEffect(() => {
@@ -122,6 +122,8 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
   const { showCashRegister, setShowCashRegister } = useModal();
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showProfitModal, setShowProfitModal] = useState(false);
+  const [sessionRefreshKey, setSessionRefreshKey] = useState(0);
+  const handleSessionChanged = () => setSessionRefreshKey(k => k + 1);
 
   // Debug logging
   useEffect(() => {
@@ -198,7 +200,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 Back to Dashboard
               </Link>
 
-              <SessionDuration mode={mode} user={user} />
+              <SessionDuration mode={mode} user={user} sessionRefreshKey={sessionRefreshKey} />
             </div>
 
             <div className="flex justify-center items-center w-full gap-4">
@@ -405,6 +407,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
           setShowCashRegister(false);
         }}
         user={user}
+        onSessionChanged={handleSessionChanged}
       />
       <SalesProfitModal
         isOpen={showSalesModal}
