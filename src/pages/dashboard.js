@@ -5,13 +5,19 @@ import { Icon } from "@iconify/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import DashboardStatsGridContainer from "@/components/DashboardStatsGridContainer";
+import DateRangePicker from "@/components/DateRangePicker";
 
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
   const router = useRouter();
 
-  // Dashboard data state
+  // Date range state
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    return { startDate: today, endDate: today, label: "Today" };
+  });
+
   const [orderCount, setOrderCount] = useState(null);
   const [orderError, setOrderError] = useState(null);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -19,7 +25,6 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const [stockError, setStockError] = useState(null);
   const [stockLoading, setStockLoading] = useState(true);
 
-  // Fetch today's orders count
   useEffect(() => {
     const fetchOrders = async () => {
       setOrdersLoading(true);
@@ -27,13 +32,19 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       try {
         const res = await fetch("/api/orders");
         const result = await res.json();
-        if (!result.success) throw new Error(result.error || "Failed to fetch orders");
-        const today = new Date().toDateString();
-        const todaysOrders = (result.data || []).filter(order => {
+        if (!result.success)
+          throw new Error(result.error || "Failed to fetch orders");
+        const { startDate, endDate } = dateRange;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        // Normalize end date to end of day
+        end.setHours(23, 59, 59, 999);
+        const filteredOrders = (result.data || []).filter((order) => {
           if (!order.timestamp) return false;
-          return new Date(order.timestamp).toDateString() === today;
+          const ts = new Date(order.timestamp);
+          return ts >= start && ts <= end;
         });
-        setOrderCount(todaysOrders.length);
+        setOrderCount(filteredOrders.length);
       } catch (err) {
         setOrderError(err.message || "Failed to fetch orders");
       } finally {
@@ -41,9 +52,8 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       }
     };
     fetchOrders();
-  }, []);
+  }, [dateRange]);
 
-  // Fetch low stock products
   useEffect(() => {
     const fetchLowStock = async () => {
       setStockLoading(true);
@@ -51,9 +61,11 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       try {
         const res = await fetch("/api/products");
         const result = await res.json();
-        if (!result.success) throw new Error(result.error || "Failed to fetch products");
-        // Find first product with quantity <= 5
-        const lowStock = (result.data || []).filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 5);
+        if (!result.success)
+          throw new Error(result.error || "Failed to fetch products");
+        const lowStock = (result.data || []).filter(
+          (p) => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 5
+        );
         setLowStockProduct(lowStock.length > 0 ? lowStock[0] : null);
       } catch (err) {
         setStockError(err.message || "Failed to fetch products");
@@ -80,21 +92,33 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-col  justify-center p-4">
-        <h1 className="text-2xl font-bold mb-2">Welcome, {user.name}</h1>
-        <p className="text-sm text-gray-500">
-          {ordersLoading ? (
-            <span>Loading orders...</span>
-          ) : orderError ? (
-            <span className="text-red-600">{orderError}</span>
-          ) : (
-            <>
-              You have{" "}
-              <span className="font-bold text-blue-800">{orderCount}</span>{" "}
-              Orders, Today.
-            </>
-          )}
-        </p>
+      <div className="flex flex-col justify-center p-4">
+        {/* Header Row: Welcome Text on Left, Hello on Right */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold">Welcome, {user.name}</h1>
+            <p className="text-sm text-gray-500">
+              {ordersLoading ? (
+                <span>Loading orders...</span>
+              ) : orderError ? (
+                <span className="text-red-600">{orderError}</span>
+              ) : (
+                <>
+                  You have{" "}
+                  <span className="font-bold text-blue-800">{orderCount}</span>{" "}
+                  Orders, Today.
+                </>
+              )}
+            </p>
+          </div>
+
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+          />
+        </div>
+
+        {/* Low Stock Notification Box */}
         <div className="flex items-center justify-between mt-4 bg-orange-100 p-4 rounded-md">
           <p className="text-sm text-gray-500 flex gap-2">
             {stockLoading ? (
@@ -131,7 +155,8 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
           </div>
         </div>
       </div>
-      <DashboardStatsGridContainer />
+
+      <DashboardStatsGridContainer dateRange={dateRange} />
     </MainLayout>
   );
 }
