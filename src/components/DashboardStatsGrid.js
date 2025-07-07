@@ -56,30 +56,22 @@ const DashboardStatsGrid = ({
       {stats.map((stat, idx) => (
         <div
           key={stat.label}
-          className={`flex items-center rounded-xl p-4 shadow-sm ${cardStyles[stat.color]}`}
+          className={`rounded-lg p-4 flex flex-col gap-2 shadow-md ${cardStyles[stat.color]} transition-transform duration-500 hover:-translate-y-1.5 hover:shadow-xl cursor-pointer`}
         >
-          <div className={`flex items-center justify-center w-10 h-10 rounded-lg mr-6 ${iconBgStyles[stat.color]}`}>
-            <Icon icon={stat.icon} className="text-2xl" />
-          </div>
-          <div className="flex-1">
-            <div className="text-md font-medium mb-1">{stat.label}</div>
-            <div className="flex items-center gap-3">
-              <span className="text-md font-bold tracking-tight">{stat.value}</span>
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${
-                  stat.changeType === "up"
-                    ? "bg-white/80 text-green-700"
-                    : "bg-white/80 text-red-600"
-                }`}
-              >
-                {stat.changeType === "up" ? (
-                  <Icon icon="mdi:arrow-up" className="w-4 h-4 mr-1" />
-                ) : (
-                  <Icon icon="mdi:arrow-down" className="w-4 h-4 mr-1" />
-                )}
-                {stat.change}
-              </span>
+          <div className="flex items-center justify-between">
+            <div className={`rounded-full p-2 text-xl ${iconBgStyles[stat.color]}`}> 
+              <Icon icon={stat.icon} className="text-2xl" />
             </div>
+            <span className="text-lg font-bold">{stat.value}</span>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs font-semibold uppercase tracking-wide">
+              {stat.label}
+            </span>
+            <span className={`flex items-center text-xs font-bold ${stat.changeType === "up" ? "text-green-200" : "text-red-200"}`}>
+              <Icon icon={stat.changeType === "up" ? "mdi:arrow-up-bold" : "mdi:arrow-down-bold"} className="mr-1" />
+              {stat.change}
+            </span>
           </div>
         </div>
       ))}

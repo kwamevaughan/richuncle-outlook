@@ -92,7 +92,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-col justify-center p-4">
+      <div className="flex flex-col justify-center p-">
         {/* Header Row: Welcome Text on Left, Hello on Right */}
         <div className="flex items-center justify-between mb-4">
           <div>
