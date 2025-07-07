@@ -214,6 +214,13 @@ const PosOrderList = ({
       }
 
       // Create order data
+      let paymentReceiverName = 'Unknown';
+      if (paymentData.paymentReceiver && allUsers && allUsers.length > 0) {
+        const receiverUser = allUsers.find(u => u.id === paymentData.paymentReceiver);
+        paymentReceiverName = receiverUser?.full_name || receiverUser?.name || receiverUser?.email || paymentData.paymentReceiver;
+      } else {
+        paymentReceiverName = user?.full_name || user?.email || 'Unknown';
+      }
       orderData = {
         id: orderId,
         customerId: selectedCustomerId || null,
@@ -251,7 +258,7 @@ const PosOrderList = ({
         total,
         payment: paymentResult,
         paymentReceiver: paymentData.paymentReceiver,
-        paymentReceiverName: user?.full_name || user?.email || 'Unknown',
+        paymentReceiverName,
         paymentNote: paymentData.paymentNote,
         saleNote: paymentData.saleNote,
         staffNote: paymentData.staffNote,

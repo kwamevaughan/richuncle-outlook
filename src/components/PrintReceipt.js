@@ -77,18 +77,27 @@ const PrintReceipt = ({
           <div class="header">
             <div class="store-name">RICH UNCLE OUTLOOK</div>
             <div class="store-info">Accra, Ghana</div>
-            <div class="store-info">Tel: +233 24 123 4567</div>
+            <div class="store-info">Tel: +233 059 861 2130</div>
           </div>
           
           <div class="order-info">
             <div class="order-id">Order ID: ${orderId}</div>
-            <div>Date: ${new Date().toLocaleDateString('en-GH')}</div>
-            <div>Time: ${new Date().toLocaleTimeString('en-GH')}</div>
+            <div>Date: ${new Date().toLocaleDateString("en-GH")}</div>
+            <div>Time: ${new Date().toLocaleTimeString("en-GH")}</div>
           </div>
           
           <div class="customer-info">
-            <div>Customer: ${customers.find(c => c.id === selectedCustomerId)?.name || "Walk In Customer"}</div>
-            ${customers.find(c => c.id === selectedCustomerId)?.phone ? `<div>Phone: ${customers.find(c => c.id === selectedCustomerId)?.phone}</div>` : ''}
+            <div>Customer: ${
+              customers.find((c) => c.id === selectedCustomerId)?.name ||
+              "Walk In Customer"
+            }</div>
+            ${
+              customers.find((c) => c.id === selectedCustomerId)?.phone
+                ? `<div>Phone: ${
+                    customers.find((c) => c.id === selectedCustomerId)?.phone
+                  }</div>`
+                : ""
+            }
           </div>
           
           <table class="items-table">
@@ -100,17 +109,23 @@ const PrintReceipt = ({
               </tr>
             </thead>
             <tbody>
-              ${selectedProducts.map(id => {
-                const product = products.find(p => p.id === id);
-                const qty = quantities[id] || 1;
-                return `
+              ${selectedProducts
+                .map((id) => {
+                  const product = products.find((p) => p.id === id);
+                  const qty = quantities[id] || 1;
+                  return `
                   <tr>
-                    <td class="item-name">${product?.name || 'Unknown Product'}</td>
+                    <td class="item-name">${
+                      product?.name || "Unknown Product"
+                    }</td>
                     <td class="item-qty">${qty}</td>
-                    <td class="item-price">GHS ${(product?.price * qty).toLocaleString()}</td>
+                    <td class="item-price">GHS ${(
+                      product?.price * qty
+                    ).toLocaleString()}</td>
                   </tr>
                 `;
-              }).join('')}
+                })
+                .join("")}
             </tbody>
           </table>
           
@@ -119,46 +134,89 @@ const PrintReceipt = ({
               <span>Subtotal:</span>
               <span>GHS ${subtotal.toLocaleString()}</span>
             </div>
-            ${tax > 0 ? `
+            ${
+              tax > 0
+                ? `
               <div class="summary-row">
                 <span>Tax:</span>
                 <span>GHS ${tax.toLocaleString()}</span>
               </div>
-            ` : ''}
-            ${discount > 0 ? `
+            `
+                : ""
+            }
+            ${
+              discount > 0
+                ? `
               <div class="summary-row">
                 <span>Discount:</span>
                 <span>-GHS ${discount.toLocaleString()}</span>
               </div>
-            ` : ''}
+            `
+                : ""
+            }
             <div class="summary-row total">
               <span>Total:</span>
               <span>GHS ${total.toLocaleString()}</span>
             </div>
           </div>
           
-          ${paymentData ? `
+          ${
+            paymentData
+              ? `
             <div class="payment-info">
-              <div><strong>Payment Method:</strong> ${paymentData.paymentType === 'momo' ? 'Mobile Money' : paymentData.paymentType === 'cash' ? 'Cash' : paymentData.paymentType === 'split' ? 'Split Payment' : paymentData.paymentType}</div>
-              ${paymentData.paymentType === 'split' ? `
-                <div>Total Paid: GHS ${(paymentData.total - paymentData.remainingAmount).toLocaleString()}</div>
+              <div><strong>Payment Method:</strong> ${
+                paymentData.paymentType === "momo"
+                  ? "Mobile Money"
+                  : paymentData.paymentType === "cash"
+                  ? "Cash"
+                  : paymentData.paymentType === "split"
+                  ? "Split Payment"
+                  : paymentData.paymentType
+              }</div>
+              ${
+                paymentData.paymentType === "split"
+                  ? `
+                <div>Total Paid: GHS ${(
+                  paymentData.total - paymentData.remainingAmount
+                ).toLocaleString()}</div>
                 <div>Payment Methods: ${paymentData.splitPayments.length}</div>
-              ` : `
-                <div>Amount Paid: GHS ${parseFloat(paymentData.payingAmount).toLocaleString()}</div>
-                ${paymentData.change > 0 ? `<div>Change: GHS ${paymentData.change.toFixed(2)}</div>` : ''}
-              `}
-              ${paymentData.paymentReceiver ? `<div>Receiver: ${paymentData.paymentReceiverName || paymentData.payment_receiver_name || paymentData.paymentReceiver || paymentData.payment_receiver}</div>` : ''}
+              `
+                  : `
+                <div>Amount Paid: GHS ${parseFloat(
+                  paymentData.payingAmount
+                ).toLocaleString()}</div>
+                ${
+                  paymentData.change > 0
+                    ? `<div>Change: GHS ${paymentData.change.toFixed(2)}</div>`
+                    : ""
+                }
+              `
+              }
+              ${
+                paymentData.paymentReceiver
+                  ? `<div>Receiver: ${
+                      paymentData.paymentReceiverName ||
+                      paymentData.payment_receiver_name ||
+                      paymentData.paymentReceiver ||
+                      paymentData.payment_receiver
+                    }</div>`
+                  : ""
+              }
             </div>
-          ` : `
+          `
+              : `
             <div class="payment-info">
               <div><strong>Payment:</strong> Pending</div>
             </div>
-          `}
+          `
+          }
           
           <div class="footer">
             <div class="thank-you">Thank You!</div>
             <div>Please come again</div>
-            <div class="timestamp">Printed: ${new Date().toLocaleString('en-GH')}</div>
+            <div class="timestamp">Printed: ${new Date().toLocaleString(
+              "en-GH"
+            )}</div>
           </div>
         </div>
       </body>

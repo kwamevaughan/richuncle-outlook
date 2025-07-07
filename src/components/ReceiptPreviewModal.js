@@ -69,7 +69,7 @@ const ReceiptPreviewModal = ({
           <div class="header">
             <div class="store-name">RICH UNCLE OUTLOOK</div>
             <div class="store-info">Accra, Ghana</div>
-            <div class="store-info">Tel: +233 24 123 4567</div>
+            <div class="store-info">Tel: +233 059 861 2130</div>
           </div>
           
           <div class="order-info">
@@ -80,7 +80,11 @@ const ReceiptPreviewModal = ({
           
           <div class="customer-info">
             <div>Customer: ${receiptData.customer}</div>
-            ${receiptData.customerPhone ? `<div>Phone: ${receiptData.customerPhone}</div>` : ''}
+            ${
+              receiptData.customerPhone
+                ? `<div>Phone: ${receiptData.customerPhone}</div>`
+                : ""
+            }
           </div>
           
           <table class="items-table">
@@ -92,13 +96,17 @@ const ReceiptPreviewModal = ({
               </tr>
             </thead>
             <tbody>
-              ${receiptData.items.map(item => `
+              ${receiptData.items
+                .map(
+                  (item) => `
                 <tr>
                   <td class="item-name">${item.name}</td>
                   <td class="item-qty">${item.qty}</td>
                   <td class="item-price">GHS ${item.price.toLocaleString()}</td>
                 </tr>
-              `).join('')}
+              `
+                )
+                .join("")}
             </tbody>
           </table>
           
@@ -111,40 +119,84 @@ const ReceiptPreviewModal = ({
               <span>Tax:</span>
               <span>GHS ${receiptData.tax.toLocaleString()}</span>
             </div>
-            ${receiptData.discount > 0 ? `
+            ${
+              receiptData.discount > 0
+                ? `
               <div class="summary-row">
                 <span>Discount:</span>
                 <span>-GHS ${receiptData.discount.toLocaleString()}</span>
               </div>
-            ` : ''}
+            `
+                : ""
+            }
             <div class="summary-row total-row">
               <span>TOTAL:</span>
               <span>GHS ${receiptData.total.toLocaleString()}</span>
             </div>
           </div>
           
-          ${receiptData.paymentData ? `
+          ${
+            receiptData.paymentData
+              ? `
             <div class="payment-info">
-              <div><strong>Payment Method:</strong> ${receiptData.paymentData.paymentType === 'momo' ? 'Mobile Money' : receiptData.paymentData.paymentType === 'cash' ? 'Cash' : receiptData.paymentData.paymentType === 'split' ? 'Split Payment' : receiptData.paymentData.paymentType}</div>
-              ${receiptData.paymentData.paymentType === 'split' ? `
-                <div>Total Paid: GHS ${(receiptData.paymentData.total - receiptData.paymentData.remainingAmount).toLocaleString()}</div>
-                <div>Payment Methods: ${receiptData.paymentData.splitPayments.length}</div>
-              ` : `
-                <div>Amount Paid: GHS ${parseFloat(receiptData.paymentData.payingAmount).toLocaleString()}</div>
-                ${receiptData.paymentData.change > 0 ? `<div>Change: GHS ${receiptData.paymentData.change.toFixed(2)}</div>` : ''}
-              `}
-              ${receiptData.paymentData.paymentReceiver ? `<div>Receiver: ${receiptData.paymentData.paymentReceiverName || receiptData.paymentData.payment_receiver_name || receiptData.paymentData.paymentReceiver || receiptData.paymentData.payment_receiver}</div>` : ''}
+              <div><strong>Payment Method:</strong> ${
+                receiptData.paymentData.paymentType === "momo"
+                  ? "Mobile Money"
+                  : receiptData.paymentData.paymentType === "cash"
+                  ? "Cash"
+                  : receiptData.paymentData.paymentType === "split"
+                  ? "Split Payment"
+                  : receiptData.paymentData.paymentType
+              }</div>
+              ${
+                receiptData.paymentData.paymentType === "split"
+                  ? `
+                <div>Total Paid: GHS ${(
+                  receiptData.paymentData.total -
+                  receiptData.paymentData.remainingAmount
+                ).toLocaleString()}</div>
+                <div>Payment Methods: ${
+                  receiptData.paymentData.splitPayments.length
+                }</div>
+              `
+                  : `
+                <div>Amount Paid: GHS ${parseFloat(
+                  receiptData.paymentData.payingAmount
+                ).toLocaleString()}</div>
+                ${
+                  receiptData.paymentData.change > 0
+                    ? `<div>Change: GHS ${receiptData.paymentData.change.toFixed(
+                        2
+                      )}</div>`
+                    : ""
+                }
+              `
+              }
+              ${
+                receiptData.paymentData.paymentReceiver
+                  ? `<div>Receiver: ${
+                      receiptData.paymentData.paymentReceiverName ||
+                      receiptData.paymentData.payment_receiver_name ||
+                      receiptData.paymentData.paymentReceiver ||
+                      receiptData.paymentData.payment_receiver
+                    }</div>`
+                  : ""
+              }
             </div>
-          ` : `
+          `
+              : `
             <div class="payment-info">
               <div><strong>Payment:</strong> Pending</div>
             </div>
-          `}
+          `
+          }
           
           <div class="footer">
             <div class="thank-you">Thank You!</div>
             <div>Please come again</div>
-            <div class="timestamp">Printed: ${new Date().toLocaleString('en-GH')}</div>
+            <div class="timestamp">Printed: ${new Date().toLocaleString(
+              "en-GH"
+            )}</div>
           </div>
         </div>
       </body>
@@ -197,20 +249,22 @@ const ReceiptPreviewModal = ({
           <div className="text-center border-b border-dashed border-gray-400 pb-3 mb-4">
             <div className="text-lg font-bold">RICH UNCLE OUTLOOK</div>
             <div className="text-xs">Accra, Ghana</div>
-            <div className="text-xs">Tel: +233 24 123 4567</div>
+            <div className="text-xs">Tel: +233 059 861 2130</div>
           </div>
-          
+
           <div className="mb-4">
             <div className="font-bold">Order ID: {receiptData.orderId}</div>
             <div>Date: {receiptData.date}</div>
             <div>Time: {receiptData.time}</div>
           </div>
-          
+
           <div className="mb-4">
             <div>Customer: {receiptData.customer}</div>
-            {receiptData.customerPhone && <div>Phone: {receiptData.customerPhone}</div>}
+            {receiptData.customerPhone && (
+              <div>Phone: {receiptData.customerPhone}</div>
+            )}
           </div>
-          
+
           <table className="w-full mb-4">
             <thead>
               <tr className="border-b border-gray-400">
@@ -224,12 +278,14 @@ const ReceiptPreviewModal = ({
                 <tr key={index}>
                   <td className="py-1">{item.name}</td>
                   <td className="text-center py-1">{item.qty}</td>
-                  <td className="text-right py-1">GHS {item.price.toLocaleString()}</td>
+                  <td className="text-right py-1">
+                    GHS {item.price.toLocaleString()}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          
+
           <div className="border-t border-dashed border-gray-400 pt-3 mb-4">
             <div className="flex justify-between">
               <span>Subtotal:</span>
@@ -250,38 +306,68 @@ const ReceiptPreviewModal = ({
               <span>GHS {receiptData.total.toLocaleString()}</span>
             </div>
           </div>
-          
+
           {receiptData.paymentData && (
             <div className="mb-4">
-              <div><strong>Payment Method:</strong> {
-                receiptData.paymentData.paymentType === 'momo' ? 'Mobile Money' : 
-                receiptData.paymentData.paymentType === 'cash' ? 'Cash' : 
-                receiptData.paymentData.paymentType === 'split' ? 'Split Payment' : 
-                receiptData.paymentData.paymentType
-              }</div>
-              {receiptData.paymentData.paymentType === 'split' ? (
+              <div>
+                <strong>Payment Method:</strong>{" "}
+                {receiptData.paymentData.paymentType === "momo"
+                  ? "Mobile Money"
+                  : receiptData.paymentData.paymentType === "cash"
+                  ? "Cash"
+                  : receiptData.paymentData.paymentType === "split"
+                  ? "Split Payment"
+                  : receiptData.paymentData.paymentType}
+              </div>
+              {receiptData.paymentData.paymentType === "split" ? (
                 <>
-                  <div>Total Paid: GHS {(receiptData.paymentData.total - receiptData.paymentData.remainingAmount).toLocaleString()}</div>
-                  <div>Payment Methods: {receiptData.paymentData.splitPayments.length}</div>
+                  <div>
+                    Total Paid: GHS{" "}
+                    {(
+                      receiptData.paymentData.total -
+                      receiptData.paymentData.remainingAmount
+                    ).toLocaleString()}
+                  </div>
+                  <div>
+                    Payment Methods:{" "}
+                    {receiptData.paymentData.splitPayments.length}
+                  </div>
                 </>
               ) : (
                 <>
-                  <div>Amount Paid: GHS {parseFloat(receiptData.paymentData.payingAmount).toLocaleString()}</div>
+                  <div>
+                    Amount Paid: GHS{" "}
+                    {parseFloat(
+                      receiptData.paymentData.payingAmount
+                    ).toLocaleString()}
+                  </div>
                   {receiptData.paymentData.change > 0 && (
-                    <div>Change: GHS {receiptData.paymentData.change.toFixed(2)}</div>
+                    <div>
+                      Change: GHS {receiptData.paymentData.change.toFixed(2)}
+                    </div>
                   )}
                 </>
               )}
               {receiptData.paymentData.paymentReceiver ? (
-                <div>Receiver: {receiptData.paymentData.paymentReceiverName || receiptData.paymentData.payment_receiver_name || receiptData.paymentData.paymentReceiver || receiptData.paymentData.payment_receiver}</div>
-              ) : ''}
+                <div>
+                  Receiver:{" "}
+                  {receiptData.paymentData.paymentReceiverName ||
+                    receiptData.paymentData.payment_receiver_name ||
+                    receiptData.paymentData.paymentReceiver ||
+                    receiptData.paymentData.payment_receiver}
+                </div>
+              ) : (
+                ""
+              )}
             </div>
           )}
-          
+
           <div className="text-center border-t border-dashed border-gray-400 pt-3">
             <div className="font-bold">Thank You!</div>
             <div className="text-xs">Please come again</div>
-            <div className="text-xs mt-2">Printed: {new Date().toLocaleString('en-GH')}</div>
+            <div className="text-xs mt-2">
+              Printed: {new Date().toLocaleString("en-GH")}
+            </div>
           </div>
         </div>
 
