@@ -241,26 +241,19 @@
           {/* Reference/Original Sale FIRST */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">
-                Reference/Original Sale
-              </label>
+              <label className="block text-sm font-medium mb-1">Reference/Original Sale</label>
               <input
                 type="text"
                 placeholder="Search sale/invoice..."
                 className="w-full border rounded px-3 py-2 mb-1"
                 value={orderSearch}
-                onChange={(e) => setOrderSearch(e.target.value)}
+                onChange={e => setOrderSearch(e.target.value)}
                 disabled={loading}
               />
               <select
                 name="reference"
-                value={selectedReference || ""}
-                onChange={(e) => {
-                  const value = String(e.target.value);
-                  if (onReferenceChange) {
-                    onReferenceChange(value);
-                  }
-                }}
+                value={selectedReference}
+                onChange={e => onReferenceChange(String(e.target.value))}
                 className="w-full border rounded px-3 py-2"
                 disabled={loading}
               >
@@ -286,46 +279,37 @@
               )}
             </div>
           </div>
-          {/* Customer fields, now after reference */}
+          {/* Line Items Editor comes right after Reference/Original Sale */}
+          {children}
+          {/* Customer fields, now after line items */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">
-                Customer *
-              </label>
+              <label className="block text-sm font-medium mb-1">Customer *</label>
               <input
                 type="text"
                 name="customer_search"
                 placeholder="Search customer..."
                 className="w-full border rounded px-3 py-2 mb-1"
-                onChange={(e) => {
+                onChange={e => {
                   const val = e.target.value;
-                  setCustomers((prev) =>
-                    prev.map((c) => ({
-                      ...c,
-                      _hidden:
-                        val &&
-                        !c.name.toLowerCase().includes(val.toLowerCase()),
-                    }))
-                  );
+                  setCustomers((prev) => prev.map(c => ({ ...c, _hidden: val && !c.name.toLowerCase().includes(val.toLowerCase()) })));
                 }}
                 disabled={loading || !!selectedReference}
               />
               <select
                 name="customer_id"
                 value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
+                onChange={e => setCustomerId(e.target.value)}
                 className="w-full border rounded px-3 py-2"
                 required
                 disabled={loading || !!selectedReference}
               >
                 <option value="">Walk In Customer</option>
-                {customers
-                  .filter((c) => !c._hidden)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
+                {customers.filter(c => !c._hidden).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
               {/* Walk In Customer fields */}
               {customerId === "" && (
@@ -335,7 +319,7 @@
                     className="w-full border rounded px-3 py-2"
                     placeholder="Walk In Customer Name"
                     value={walkInName}
-                    onChange={(e) => setWalkInName(e.target.value)}
+                    onChange={e => setWalkInName(e.target.value)}
                     disabled={loading || !!selectedReference}
                   />
                   <input
@@ -343,7 +327,7 @@
                     className="w-full border rounded px-3 py-2"
                     placeholder="Walk In Customer Phone"
                     value={walkInPhone}
-                    onChange={(e) => setWalkInPhone(e.target.value)}
+                    onChange={e => setWalkInPhone(e.target.value)}
                     disabled={loading || !!selectedReference}
                   />
                 </div>
@@ -351,9 +335,7 @@
             </div>
             {/* Warehouse field remains */}
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">
-                Warehouse *
-              </label>
+              <label className="block text-sm font-medium mb-1">Warehouse *</label>
               <select
                 name="warehouse_id"
                 value={form.warehouse_id}
@@ -447,8 +429,6 @@
               placeholder="Notes (optional)"
             />
           </div>
-          {/* Line Items Editor */}
-          {children}
           {(modalError || error) && (
             <div className="text-red-600 text-sm">{modalError || error}</div>
           )}
