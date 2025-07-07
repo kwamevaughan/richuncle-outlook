@@ -97,7 +97,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
         {/* Header Row: Welcome Text on Left, Hello on Right */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold">Welcome, {user.name}</h1>
+            <h1 className="text-2xl font-bold mb-2">Welcome, {user.name}</h1>
             <p className="text-sm text-gray-500">
               {ordersLoading ? (
                 <span>Loading orders...</span>
@@ -106,7 +106,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
               ) : (
                 <>
                   You have{" "}
-                  <span className="font-bold text-blue-800">{orderCount}</span>{" "}
+                  <span className="font-bold text-blue-800">{orderCount}{orderCount > 0 ? "+" : ""}</span>{" "}
                   Orders, Today.
                 </>
               )}
