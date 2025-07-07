@@ -1,11 +1,67 @@
 import MainLayout from "@/layouts/MainLayout";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
-import ErrorBoundary from "../components/ErrorBoundary";
+import { Icon } from "@iconify/react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
+  const router = useRouter();
+
+  // Dashboard data state
+  const [orderCount, setOrderCount] = useState(null);
+  const [orderError, setOrderError] = useState(null);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [lowStockProduct, setLowStockProduct] = useState(null);
+  const [stockError, setStockError] = useState(null);
+  const [stockLoading, setStockLoading] = useState(true);
+
+  // Fetch today's orders count
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setOrdersLoading(true);
+      setOrderError(null);
+      try {
+        const res = await fetch("/api/orders");
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error || "Failed to fetch orders");
+        const today = new Date().toDateString();
+        const todaysOrders = (result.data || []).filter(order => {
+          if (!order.timestamp) return false;
+          return new Date(order.timestamp).toDateString() === today;
+        });
+        setOrderCount(todaysOrders.length);
+      } catch (err) {
+        setOrderError(err.message || "Failed to fetch orders");
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  // Fetch low stock products
+  useEffect(() => {
+    const fetchLowStock = async () => {
+      setStockLoading(true);
+      setStockError(null);
+      try {
+        const res = await fetch("/api/products");
+        const result = await res.json();
+        if (!result.success) throw new Error(result.error || "Failed to fetch products");
+        // Find first product with quantity <= 5
+        const lowStock = (result.data || []).filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 5);
+        setLowStockProduct(lowStock.length > 0 ? lowStock[0] : null);
+      } catch (err) {
+        setStockError(err.message || "Failed to fetch products");
+      } finally {
+        setStockLoading(false);
+      }
+    };
+    fetchLowStock();
+  }, []);
 
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
@@ -16,11 +72,51 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
-      <div className="pt-40 ">
-        <p>Testing page</p>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
+      <div className="flex flex-col  justify-center p-4">
+        <h1 className="text-2xl font-bold mb-2">Welcome, {user.name}</h1>
+        <p className="text-sm text-gray-500">
+          {ordersLoading ? (
+            <span>Loading orders...</span>
+          ) : orderError ? (
+            <span className="text-red-600">{orderError}</span>
+          ) : (
+            <>
+              You have <span className="font-bold text-blue-800">{orderCount}</span> Orders, Today.
+            </>
+          )}
+        </p>
+        <div className="flex items-center justify-between mt-4 bg-orange-100 p-4 rounded-md">
+          <p className="text-sm text-gray-500 flex gap-2">
+            {stockLoading ? (
+              <span>Loading stock info...</span>
+            ) : stockError ? (
+              <span className="text-red-600">{stockError}</span>
+            ) : lowStockProduct ? (
+              <>
+                Your Product <span className="font-bold text-blue-900">{lowStockProduct.name}</span> is running Low, already below {lowStockProduct.quantity} Pcs.
+                <button
+                  className="text-blue-900 font-bold underline"
+                  onClick={() => router.push(`/manage-stock?quickUpdateId=${lowStockProduct.id}`)}
+                >
+                  Add Stock
+                </button>
+              </>
+            ) : (
+              <span>All products are sufficiently stocked.</span>
+            )}
+          </p>
+          <div className="flex items-center justify-end cursor-pointer">
+            <Icon icon="iconamoon:close-bold" className="text-2xl" />
+          </div>
+        </div>
       </div>
-      <ErrorBoundary>{}</ErrorBoundary>
     </MainLayout>
   );
 }

@@ -6,10 +6,12 @@ import { Icon } from "@iconify/react";
 import SimpleModal from "@/components/SimpleModal";
 import { GenericTable } from "@/components/GenericTable";
 import toast from "react-hot-toast";
+import { useRouter } from "next/router";
 
 export default function ManageStockPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
+  const router = useRouter();
   
   // State for products
   const [products, setProducts] = useState([]);
@@ -96,6 +98,19 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Open Quick Update modal if quickUpdateId is present in query
+  useEffect(() => {
+    if (!loading && products.length > 0 && router.query.quickUpdateId) {
+      const product = products.find(p => p.id === router.query.quickUpdateId);
+      if (product) {
+        setSelectedProduct(product);
+        setQuickUpdateType("add");
+        setQuickUpdateQuantity("");
+        setShowQuickUpdateModal(true);
+      }
+    }
+  }, [loading, products, router.query.quickUpdateId]);
 
   // Filter products
   const filteredProducts = products.filter(product => {
