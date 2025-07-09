@@ -269,6 +269,7 @@ const PosOrderList = ({
         order_type: isOnlinePurchase ? 'online' : 'pos',
         online_email: isOnlinePurchase ? onlineEmail : undefined,
         online_order_ref: isOnlinePurchase ? onlineOrderRef : undefined,
+        status: "Completed",
       };
 
       // Insert order into 'orders' table
@@ -292,7 +293,11 @@ const PosOrderList = ({
           payment_note: orderData.paymentNote,
           sale_note: orderData.saleNote,
           staff_note: orderData.staffNote,
-          timestamp: orderData.timestamp
+          timestamp: orderData.timestamp,
+          order_type: orderData.order_type,
+          online_email: orderData.online_email,
+          online_order_ref: orderData.online_order_ref,
+          status: orderData.status,
         }),
       });
       const orderResJson = await response.json();

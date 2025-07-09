@@ -9,6 +9,9 @@ import DateRangePicker from "@/components/DateRangePicker";
 import ProfitLossChart from "@/components/ProfitLossChart";
 import OverallInfoCard from "@/components/OverallInfoCard";
 import CustomersOverviewCard from "@/components/CustomersOverviewCard";
+import TopSellingProductsCard from "@/components/TopSellingProductsCard";
+import LowStockProductsCard from "@/components/LowStockProductsCard";
+import RecentSalesCard from "@/components/RecentSalesCard";
 
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -168,7 +171,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
 
       <DashboardStatsGridContainer dateRange={dateRange} />
 
-      <div className="flex gap-4 mt-4 ">
+      <div className="flex gap-4 mt-4 mb-4">
         <div className="w-2/3 ">
           <ProfitLossChart />
         </div>
@@ -177,6 +180,19 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
             <OverallInfoCard />
           </div>
           <CustomersOverviewCard />
+        </div>
+      </div>
+      <div className="flex gap-4 mt-4">
+        <div className="flex-1 bg-white rounded-lg shadow-md p-4">
+          <TopSellingProductsCard />
+        </div>
+
+        <div className="flex-1 bg-white rounded-lg shadow-md p-4">
+          <LowStockProductsCard />
+        </div>
+
+        <div className="flex-1 bg-white rounded-lg shadow-md p-4">
+          <RecentSalesCard />
         </div>
       </div>
     </MainLayout>

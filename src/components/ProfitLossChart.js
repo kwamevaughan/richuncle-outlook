@@ -214,7 +214,7 @@ export default function ProfitLossChart({ onRangeChange }) {
         </div>
       </div>
       <div className="w-full p-4">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartData} barGap={0}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="time" tick={{ fontSize: 13 }} />
