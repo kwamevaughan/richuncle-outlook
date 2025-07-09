@@ -14,6 +14,7 @@ import LowStockProductsCard from "@/components/LowStockProductsCard";
 import RecentSalesCard from "@/components/RecentSalesCard";
 import SalesStaticsCard from "@/components/SalesStaticsCard";
 import RecentTransactionsCard from "@/components/RecentTransactionsCard";
+import TopCustomersCard from "@/components/TopCustomersCard";
 
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -206,8 +207,15 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
           <RecentTransactionsCard />
         </div>
+      </div>
+      <div className="flex gap-4 mt-4">
+        <div className="flex-1 bg-white rounded-lg shadow-md p-4">
+          <TopCustomersCard />
+        </div>
 
-        
+        <div className="flex-1 bg-white rounded-lg shadow-md p-4"></div>
+
+        <div className="flex-1 bg-white rounded-lg shadow-md p-4"></div>
       </div>
     </MainLayout>
   );
