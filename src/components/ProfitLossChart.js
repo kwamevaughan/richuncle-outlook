@@ -145,7 +145,7 @@ export default function ProfitLossChart({ onRangeChange }) {
   }, [selectedRange]);
 
   return (
-    <div className="bg-white rounded-lg shadow-md">
+    <div className="">
       <div className="flex items-center justify-between mb-2 border-b-2 border-gray-100 p-4">
         <div className="flex items-center gap-2 ">
           <span className="bg-green-50 p-2 rounded-full">

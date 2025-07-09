@@ -169,10 +169,13 @@ export default function TopSellingProductsCard() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-gray-100">
         <div className="flex items-center gap-2 ">
           <span className="bg-blue-50 p-2 rounded-full">
-            <Icon icon="hugeicons:chart-increase" className="text-blue-500 text-lg" />
+            <Icon
+              icon="hugeicons:chart-increase"
+              className="text-blue-500 text-lg"
+            />
           </span>
           <span className="font-bold text-lg">Top Selling Products</span>
         </div>
@@ -210,17 +213,21 @@ export default function TopSellingProductsCard() {
         ) : error ? (
           <div className="py-8 text-center text-red-500">{error}</div>
         ) : topProducts.length === 0 ? (
-          <div className="py-8 text-center text-gray-400">No sales found for this period.</div>
+          <div className="py-8 text-center text-gray-400">
+            No sales found for this period.
+          </div>
         ) : (
           topProducts.map((product, idx) => (
             <div
               key={product.id}
-              className={`flex items-center gap-4 py-4 ${idx === 0 ? "pt-0" : ""}`}
+              className={`flex items-center gap-4 py-4 ${
+                idx === 0 ? "pt-0" : ""
+              }`}
             >
               <Image
                 src={product.image || "/placeholder.png"}
                 alt={product.name}
-                className="w-14 h-14 rounded-lg object-cover border" 
+                className="w-14 h-14 rounded-lg object-cover border"
                 width={56}
                 height={56}
               />
@@ -229,7 +236,12 @@ export default function TopSellingProductsCard() {
                   {product.name}
                 </div>
                 <div className="text-gray-500 text-sm flex items-center gap-2 mt-1">
-                  <span>GHS {product.price.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+                  <span>
+                    GHS{" "}
+                    {product.price.toLocaleString("en-US", {
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
                   <span className="text-orange-500 text-xs">•</span>
                   <span>{product.sales}+ Sales</span>
                 </div>
@@ -237,12 +249,22 @@ export default function TopSellingProductsCard() {
               <div className="flex flex-col items-end min-w-[60px]">
                 <span
                   className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold
-                    ${product.up ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600 border border-red-200"}
+                    ${
+                      product.up
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-600 border border-red-200"
+                    }
                   `}
                 >
                   <Icon
-                    icon={product.up ? "mdi:arrow-up-bold" : "mdi:arrow-down-bold"}
-                    className={product.up ? "text-green-500 text-sm" : "text-red-500 text-sm"}
+                    icon={
+                      product.up ? "mdi:arrow-up-bold" : "mdi:arrow-down-bold"
+                    }
+                    className={
+                      product.up
+                        ? "text-green-500 text-sm"
+                        : "text-red-500 text-sm"
+                    }
                   />
                   {product.change}%
                 </span>

@@ -8,7 +8,7 @@ import 'react-date-range/dist/theme/default.css';
 import { format } from 'date-fns';
 import Barcode from 'react-barcode';
 
-export function AddEditModal({ type, mode = "light", item, categories, onClose, onSave }) {
+export function AddEditModal({ type, mode = "light", item, categories = [], onClose, onSave }) {
   const [localCategories, setLocalCategories] = useState([]);
   const [name, setName] = useState(item?.name || "");
   const [description, setDescription] = useState(item?.description || "");
@@ -82,6 +82,16 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
     }
     return [];
   });
+
+  // --- EXPENSES MODAL STATE ---
+  const [expenseTitle, setExpenseTitle] = useState(item?.title || "");
+  const [expenseAmount, setExpenseAmount] = useState(item?.amount || "");
+  const [expenseDate, setExpenseDate] = useState(item?.expense_date || new Date().toISOString().split('T')[0]);
+  const [expenseCategoryId, setExpenseCategoryId] = useState(item?.expense_category_id || "");
+  const [paymentMethod, setPaymentMethod] = useState(item?.payment_method || "cash");
+  const [expenseStatus, setExpenseStatus] = useState(item?.status || "paid");
+  const [expenseDescription, setExpenseDescription] = useState(item?.description || "");
+  const [expenseCategories, setExpenseCategories] = useState([]);
 
   // Helper to generate a code suggestion
   function suggestCategoryCode(name, existingCodes) {
@@ -169,6 +179,18 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
       .catch(err => {
         console.error("Failed to fetch dropdown data:", err);
       });
+    } else if (type === "expenses") {
+      // Fetch expense categories
+      fetch('/api/expense-categories')
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            setExpenseCategories(result.data || []);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch expense categories:", err);
+        });
     }
   }, [type]);
 
@@ -370,6 +392,28 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
         setError("Unit is required");
         return;
       }
+    } else if (type === "expenses") {
+      if (!expenseTitle.trim()) {
+        setError("Title is required");
+        return;
+      }
+      if (!expenseAmount || expenseAmount.toString().trim() === "") {
+        setError("Amount is required");
+        return;
+      }
+      if (!expenseDate) {
+        setError("Date is required");
+        return;
+      }
+      if (isNaN(Number(expenseAmount)) || Number(expenseAmount) <= 0) {
+        setError("Amount must be a positive number");
+        return;
+      }
+    } else if (type === "expense-categories") {
+      if (!name.trim()) {
+        setError("Name is required");
+        return;
+      }
     } else {
       if (!name.trim()) {
         setError("Name is required");
@@ -447,6 +491,21 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
           image_url: imageUrl,
           is_active: isActive,
         });
+      } else if (type === "expenses") {
+        await onSave({
+          title: expenseTitle.trim(),
+          amount: expenseAmount.toString(),
+          expense_date: expenseDate,
+          expense_category_id: expenseCategoryId || null,
+          payment_method: paymentMethod,
+          status: expenseStatus,
+          description: expenseDescription.trim(),
+        });
+      } else if (type === "expense-categories") {
+        await onSave({
+          name: name.trim(),
+          description: description.trim(),
+        });
       } else {
         await onSave({
           name: name.trim(),
@@ -494,6 +553,8 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
     discounts: "Discount",
     plans: "Discount Plan",
     products: "Product",
+    expenses: "Expense",
+    "expense-categories": "Expense Category",
   }[type] || "Item";
 
   // Custom modal title for discounts
@@ -979,6 +1040,140 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
                 <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white" disabled={loading}>Save</button>
               </div>
             </>
+          ) : type === "expenses" ? (
+            <>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Title<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={expenseTitle}
+                  onChange={e => setExpenseTitle(e.target.value)}
+                  disabled={loading}
+                  placeholder="e.g. Office Supplies, Rent Payment"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block mb-1 font-medium">Amount (GHS)<span className="text-red-500">*</span></label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                    value={expenseAmount}
+                    onChange={e => setExpenseAmount(e.target.value)}
+                    disabled={loading}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Date<span className="text-red-500">*</span></label>
+                  <input
+                    type="date"
+                    className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                    value={expenseDate}
+                    onChange={e => setExpenseDate(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block mb-1 font-medium">Category</label>
+                  <select
+                    className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                    value={expenseCategoryId}
+                    onChange={e => setExpenseCategoryId(e.target.value)}
+                    disabled={loading}
+                  >
+                    <option value="">Select a category</option>
+                    {expenseCategories.map(category => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Payment Method<span className="text-red-500">*</span></label>
+                  <select
+                    className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                    value={paymentMethod}
+                    onChange={e => setPaymentMethod(e.target.value)}
+                    disabled={loading}
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="check">Check</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Status<span className="text-red-500">*</span></label>
+                <select
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={expenseStatus}
+                  onChange={e => setExpenseStatus(e.target.value)}
+                  disabled={loading}
+                >
+                  <option value="paid">Paid</option>
+                  <option value="pending">Pending</option>
+                  <option value="overdue">Overdue</option>
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Description</label>
+                <textarea
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={expenseDescription}
+                  onChange={e => setExpenseDescription(e.target.value)}
+                  disabled={loading}
+                  placeholder="Enter expense description"
+                  rows={3}
+                />
+              </div>
+              {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
+              <div className="flex justify-end gap-2 mt-6">
+                <button type="button" className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100" onClick={onClose} disabled={loading}>
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" disabled={loading}>
+                  {loading && <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />} Save
+                </button>
+              </div>
+            </>
+          ) : type === "expense-categories" ? (
+            <>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Name<span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={name}
+                  onChange={handleNameChange}
+                  disabled={loading}
+                  placeholder="e.g. Office Supplies, Rent, Utilities"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Description</label>
+                <textarea
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  disabled={loading}
+                  placeholder="Enter category description"
+                  rows={3}
+                />
+              </div>
+              {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
+              <div className="flex justify-end gap-2 mt-6">
+                <button type="button" className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100" onClick={onClose} disabled={loading}>
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" disabled={loading}>
+                  {loading && <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />} Save
+                </button>
+              </div>
+            </>
           ) : (
             <>
               <div className="mb-4">
@@ -1049,13 +1244,13 @@ export function AddEditModal({ type, mode = "light", item, categories, onClose, 
             </div>
           )}
           {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
-          {type !== "variant_attributes" && type !== "units" && type !== "stores" && type !== "warehouses" && type !== "customers" && type !== "discounts" && type !== "plans" && type !== "products" && (
+          {type !== "variant_attributes" && type !== "units" && type !== "stores" && type !== "warehouses" && type !== "customers" && type !== "discounts" && type !== "plans" && type !== "products" && type !== "expenses" && type !== "expense-categories" && (
             <div className="mb-4">
               <label className="block mb-1 font-medium">Image</label>
               <CategoryImageUpload value={imageUrl} onChange={setImageUrl} />
             </div>
           )}
-          {type !== "products" && (
+          {type !== "products" && type !== "expenses" && type !== "expense-categories" && (
             <div className="flex justify-end gap-2 mt-6">
               <button type="button" className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100" onClick={onClose} disabled={loading}>
                 Cancel
