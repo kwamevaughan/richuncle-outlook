@@ -107,10 +107,10 @@ export default function TopCustomersCard() {
     <div className="">
       <div className="flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2">
-          <span className="bg-orange-50 p-2 rounded-full">
+          <span className="bg-blue-50 p-2 rounded-full">
             <Icon
-              icon="mdi:account-group"
-              className="text-orange-500 text-lg"
+              icon="mynaui:users"
+              className="text-blue-500 text-lg"
             />
           </span>
           <span className="font-bold text-lg">Top Customers</span>
