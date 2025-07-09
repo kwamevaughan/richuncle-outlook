@@ -16,6 +16,7 @@ import SalesStaticsCard from "@/components/SalesStaticsCard";
 import RecentTransactionsCard from "@/components/RecentTransactionsCard";
 import TopCustomersCard from "@/components/TopCustomersCard";
 import TopCategoriesCard from "@/components/TopCategoriesCard";
+import OrderStatisticsHeatmap from "@/components/OrderStatisticsHeatmap";
 
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -218,7 +219,9 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
           <TopCategoriesCard />
         </div>
 
-        <div className="flex-1 bg-white rounded-lg shadow-md p-4"></div>
+        <div className="flex-1 bg-white rounded-lg shadow-md p-4">
+          <OrderStatisticsHeatmap />
+        </div>
       </div>
     </MainLayout>
   );
