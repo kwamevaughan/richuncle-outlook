@@ -437,7 +437,20 @@ const PosOrderList = ({
     
     return sum + itemTax;
   }, 0);
-  
+
+  // Only add exclusive tax to the total
+  const exclusiveTax = selectedProducts.reduce((sum, id) => {
+    const product = products.find(p => p.id === id);
+    const qty = quantities[id] || 1;
+    if (!product || !product.tax_percentage || product.tax_percentage <= 0) return sum;
+    const taxPercentage = Number(product.tax_percentage);
+    let itemTax = 0;
+    if (product.tax_type === 'exclusive') {
+      itemTax = (product.price * taxPercentage / 100) * qty;
+    }
+    return sum + itemTax;
+  }, 0);
+
   let discount = 0;
   let discountLabel = "No discount";
   let discountType = "";
@@ -454,7 +467,7 @@ const PosOrderList = ({
     }
   }
   const roundoff = roundoffEnabled ? 0 : 0;
-  const total = subtotal + tax - discount + roundoff;
+  const total = subtotal + exclusiveTax - discount + roundoff;
 
   const { users: allUsers } = useUsers();
 

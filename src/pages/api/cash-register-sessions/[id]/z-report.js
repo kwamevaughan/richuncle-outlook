@@ -96,12 +96,14 @@ export default async function handler(req, res) {
         totalExpense += Number(exp.amount || 0);
       }
 
-      // Cash in hand: opening_cash + all cash_in - all cash_out
+      // Cash in hand: opening_cash + all cash_in - all cash_out + cash sales
       let cashInHand = Number(session.opening_cash || 0);
       for (const m of movements) {
         if (m.type === 'cash_in') cashInHand += Number(m.amount || 0);
         if (m.type === 'cash_out') cashInHand -= Number(m.amount || 0);
       }
+      // Add cash sales
+      cashInHand += paymentBreakdown.cash;
 
       // Total cash: cashInHand + totalPayment (if cash payments are not already included)
       let totalCash = cashInHand + paymentBreakdown.cash;
