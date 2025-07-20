@@ -198,6 +198,16 @@ const PosOrderList = ({
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1500));
 
+      // Fetch open session for register_id and session_id
+      const sessionRes = await fetch('/api/cash-register-sessions?status=open');
+      const sessionJson = await sessionRes.json();
+      const openSession = sessionJson.success && sessionJson.data && sessionJson.data.length > 0 ? sessionJson.data[0] : null;
+      if (!openSession) {
+        toast.error("No open cash register session found. Please open a register first.");
+        if (processingToast) toast.dismiss(processingToast);
+        return;
+      }
+
       // Process payment based on type
       if (paymentData.paymentType === "split") {
         paymentResult = {
@@ -270,6 +280,8 @@ const PosOrderList = ({
         online_email: isOnlinePurchase ? onlineEmail : undefined,
         online_order_ref: isOnlinePurchase ? onlineOrderRef : undefined,
         status: "Completed",
+        register_id: openSession.register_id,
+        session_id: openSession.id,
       };
 
       // Insert order into 'orders' table
@@ -298,6 +310,8 @@ const PosOrderList = ({
           online_email: orderData.online_email,
           online_order_ref: orderData.online_order_ref,
           status: orderData.status,
+          register_id: orderData.register_id,
+          session_id: orderData.session_id,
         }),
       });
       const orderResJson = await response.json();
