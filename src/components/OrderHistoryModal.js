@@ -69,23 +69,25 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id.toString().includes(searchTerm);
+  const filteredOrders = orders
+    .filter((order) => {
+      const matchesSearch =
+        order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.id.toString().includes(searchTerm);
 
-    if (dateFilter === "today") {
-      const today = new Date().toDateString();
-      return (
-        matchesSearch && new Date(order.timestamp).toDateString() === today
-      );
-    }
-    if (dateFilter === "week") {
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      return matchesSearch && new Date(order.timestamp) >= weekAgo;
-    }
-    return matchesSearch;
-  });
+      if (dateFilter === "today") {
+        const today = new Date().toDateString();
+        return (
+          matchesSearch && new Date(order.timestamp).toDateString() === today
+        );
+      }
+      if (dateFilter === "week") {
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        return matchesSearch && new Date(order.timestamp) >= weekAgo;
+      }
+      return matchesSearch;
+    })
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
@@ -227,7 +229,7 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
-                          GHS {order.total.toLocaleString()}
+                          GHS {Number(order.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

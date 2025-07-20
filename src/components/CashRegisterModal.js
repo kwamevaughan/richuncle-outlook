@@ -44,36 +44,49 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
     })();
   }, [isOpen]);
 
-  // Fetch current open session and movements for selected register
+  // Fetch current open session for selected register
   useEffect(() => {
     if (!isOpen || !selectedRegister) return;
     setLoading(true);
     (async () => {
       try {
-        const [sessionsResponse, movementsResponse] = await Promise.all([
-          fetch(`/api/cash-register-sessions?register_id=${selectedRegister}&status=open`),
-          fetch(`/api/cash-movements?session_id=${selectedRegister}`)
-        ]);
-        
+        const sessionsResponse = await fetch(`/api/cash-register-sessions?register_id=${selectedRegister}&status=open`);
         const sessionsData = await sessionsResponse.json();
-        const movementsData = await movementsResponse.json();
-        
         if (sessionsData.success) {
           const currentSession = sessionsData.data && sessionsData.data[0];
           setSession(currentSession || null);
-          
-          if (currentSession && movementsData.success) {
-            setMovements(movementsData.data || []);
-          } else {
-            setMovements([]);
-          }
+        } else {
+          setSession(null);
         }
       } catch (err) {
         console.error("Failed to fetch session data:", err);
+        setSession(null);
       }
       setLoading(false);
     })();
-  }, [isOpen, actionLoading, selectedRegister]);
+  }, [isOpen, selectedRegister]);
+
+  // Fetch movements for the current session
+  useEffect(() => {
+    if (!session) {
+      setMovements([]);
+      return;
+    }
+    (async () => {
+      try {
+        const movementsResponse = await fetch(`/api/cash-movements?session_id=${session.id}`);
+        const movementsData = await movementsResponse.json();
+        if (movementsData.success) {
+          setMovements(movementsData.data || []);
+        } else {
+          setMovements([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch movements:", err);
+        setMovements([]);
+      }
+    })();
+  }, [session, actionLoading]);
 
   // Fetch user names for movements
   useEffect(() => {
@@ -103,8 +116,21 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
   // Permissions check
   const canOperate = user && allowedRoles.includes(user.role);
 
+  // Timer for live session duration
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!session) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [session]);
+
   // Live session info
-  const sessionDuration = session ? Math.floor((Date.now() - new Date(session.opened_at).getTime()) / 60000) : 0;
+  let sessionDuration = 0, sessionDurationSeconds = 0;
+  if (session) {
+    const ms = now - new Date(session.opened_at).getTime();
+    sessionDuration = Math.floor(ms / 60000); // minutes
+    sessionDurationSeconds = Math.floor((ms % 60000) / 1000); // seconds
+  }
 
   // Open register
   const handleOpenRegister = async () => {
@@ -420,11 +446,15 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
             <AddRegisterForm
               onRegisterAdded={async () => {
                 try {
-                  const response = await fetch('/api/registers');
+                  const response = await fetch("/api/registers");
                   const result = await response.json();
                   if (result.success) {
                     setRegisters(result.data || []);
-                    if (result.data && result.data.length > 0 && !selectedRegister) {
+                    if (
+                      result.data &&
+                      result.data.length > 0 &&
+                      !selectedRegister
+                    ) {
                       setSelectedRegister(result.data[0].id);
                     }
                   }
@@ -522,7 +552,9 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                       className="bg-white rounded-lg p-4 shadow-sm"
                     >
                       <div className="text-sm text-gray-600">{item.label}</div>
-                      <div className={`font-bold text-lg text-${item.color}-600`}>
+                      <div
+                        className={`font-bold text-lg text-${item.color}-600`}
+                      >
                         GHS {Number(item.value).toLocaleString()}
                       </div>
                     </div>
@@ -540,7 +572,10 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
                     onClick={() => exportZReportCSV(zReport)}
                   >
-                    <Icon icon="material-symbols:download" className="w-5 h-5" />{" "}
+                    <Icon
+                      icon="material-symbols:download"
+                      className="w-5 h-5"
+                    />{" "}
                     Export CSV
                   </button>
                 </div>
@@ -558,10 +593,12 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <h3 className="text-xl font-bold text-gray-800">Register Open</h3>
+                    <h3 className="text-xl font-bold text-gray-800">
+                      Register Open
+                    </h3>
                   </div>
                   <div className="text-sm text-gray-600">
-                    Session Duration: {Math.floor(sessionDuration / 60)}h {sessionDuration % 60}m
+                    Session Duration: {Math.floor(sessionDuration / 60)}h {sessionDuration % 60}m {sessionDurationSeconds}s
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -574,19 +611,38 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Current Cash</div>
                     <div className="font-bold text-lg text-green-600">
-                      GHS {Number(session.opening_cash + movements.reduce((sum, m) => sum + (m.type === 'cash_in' ? m.amount : -m.amount), 0)).toLocaleString()}
+                      GHS{" "}
+                      {Number(
+                        session.opening_cash +
+                          movements.reduce(
+                            (sum, m) =>
+                              sum +
+                              (m.type === "cash_in" ? m.amount : -m.amount),
+                            0
+                          )
+                      ).toLocaleString()}
                     </div>
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Cash In</div>
                     <div className="font-bold text-lg text-emerald-600">
-                      GHS {Number(movements.filter(m => m.type === 'cash_in').reduce((sum, m) => sum + m.amount, 0)).toLocaleString()}
+                      GHS{" "}
+                      {Number(
+                        movements
+                          .filter((m) => m.type === "cash_in")
+                          .reduce((sum, m) => sum + m.amount, 0)
+                      ).toLocaleString()}
                     </div>
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Cash Out</div>
                     <div className="font-bold text-lg text-red-600">
-                      GHS {Number(movements.filter(m => m.type === 'cash_out').reduce((sum, m) => sum + m.amount, 0)).toLocaleString()}
+                      GHS{" "}
+                      {Number(
+                        movements
+                          .filter((m) => m.type === "cash_out")
+                          .reduce((sum, m) => sum + m.amount, 0)
+                      ).toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -595,7 +651,10 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
               {/* Cash In Form */}
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Icon icon="material-symbols:add-circle-outline" className="w-5 h-5 text-green-600" />
+                  <Icon
+                    icon="material-symbols:add-circle-outline"
+                    className="w-5 h-5 text-green-600"
+                  />
                   Cash In
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -626,7 +685,10 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
               {/* Cash Out Form */}
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Icon icon="material-symbols:remove-circle-outline" className="w-5 h-5 text-red-600" />
+                  <Icon
+                    icon="material-symbols:remove-circle-outline"
+                    className="w-5 h-5 text-red-600"
+                  />
                   Cash Out
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -657,12 +719,17 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
               {/* Movements History */}
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Icon icon="material-symbols:history" className="w-5 h-5 text-blue-600" />
-                  Movement History
+                  <Icon
+                    icon="material-symbols:history"
+                    className="w-5 h-5 text-blue-600"
+                  />
+                  Transaction Log
                 </h4>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {movements.length === 0 ? (
-                    <div className="text-gray-500 text-center py-8">No movements yet</div>
+                    <div className="text-gray-500 text-center py-8">
+                      No transactions yet
+                    </div>
                   ) : (
                     movements.map((movement) => (
                       <div
@@ -679,10 +746,13 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                           ></div>
                           <div>
                             <div className="font-medium">
-                              {movement.type === "cash_in" ? "Cash In" : "Cash Out"}
+                              {movement.type === "cash_in"
+                                ? "Cash In"
+                                : "Cash Out"}
                             </div>
                             <div className="text-sm text-gray-600">
-                              {movement.reason} • {userMap[movement.user_id] || movement.user_id}
+                              {movement.reason} •{" "}
+                              {userMap[movement.user_id] || movement.user_id}
                             </div>
                           </div>
                         </div>
@@ -710,7 +780,10 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
               {/* Close Register */}
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Icon icon="material-symbols:close" className="w-5 h-5 text-red-600" />
+                  <Icon
+                    icon="material-symbols:close"
+                    className="w-5 h-5 text-red-600"
+                  />
                   Close Register
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -734,26 +807,52 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
           ) : (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Icon icon="material-symbols:point-of-sale" className="w-8 h-8 text-gray-400" />
+                <Icon
+                  icon="material-symbols:point-of-sale"
+                  className="w-8 h-8 text-gray-400"
+                />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Register Closed</h3>
-              <p className="text-gray-600 mb-6">Open the register to start a new session</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Register Closed
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Open the register to start a new session
+              </p>
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Icon icon="material-symbols:open-in-new" className="w-5 h-5 text-green-600" />
-                  Open Register
+                  <Icon
+                    icon="material-symbols:open-in-new"
+                    className="w-5 h-5 text-green-600"
+                  />
+                  Cash in Hand
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="number"
-                    value={openAmount || ""}
-                    onChange={(e) => setOpenAmount(Number(e.target.value))}
+                    value={
+                      openAmount === undefined || openAmount === null
+                        ? ""
+                        : openAmount
+                    }
+                    onChange={(e) =>
+                      setOpenAmount(
+                        e.target.value === ""
+                          ? undefined
+                          : Number(e.target.value)
+                      )
+                    }
                     placeholder="Opening Cash Amount"
                     className="border rounded px-3 py-2"
                   />
                   <button
                     onClick={handleOpenRegister}
-                    disabled={actionLoading || !canOperate || !selectedRegister || !openAmount}
+                    disabled={
+                      actionLoading ||
+                      !canOperate ||
+                      !selectedRegister ||
+                      openAmount === undefined ||
+                      openAmount === null
+                    }
                     className="bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
                   >
                     {actionLoading ? "Opening..." : "Open Register"}
@@ -767,10 +866,16 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
 
       {/* Confirmation Modals (now outside SimpleModal) */}
       {showCloseConfirm && (
-        <SimpleModal isOpen={true} onClose={() => setShowCloseConfirm(false)} title="Close Register?" width="max-w-md">
+        <SimpleModal
+          isOpen={true}
+          onClose={() => setShowCloseConfirm(false)}
+          title="Close Register?"
+          width="max-w-md"
+        >
           <div className="p-2">
             <p className="text-gray-600 mb-6">
-              Are you sure you want to close the register? This will end the current session.
+              Are you sure you want to close the register? This will end the
+              current session.
             </p>
             <div className="flex gap-3">
               <button
@@ -791,10 +896,16 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
       )}
 
       {showLargeOutConfirm && (
-        <SimpleModal isOpen={true} onClose={() => setShowLargeOutConfirm(false)} title="Large Cash Out" width="max-w-md">
+        <SimpleModal
+          isOpen={true}
+          onClose={() => setShowLargeOutConfirm(false)}
+          title="Large Cash Out"
+          width="max-w-md"
+        >
           <div className="p-2">
             <p className="text-gray-600 mb-6">
-              You are about to remove GHS {cashOutAmount} from the register. This is a large amount. Are you sure?
+              You are about to remove GHS {cashOutAmount} from the register.
+              This is a large amount. Are you sure?
             </p>
             <div className="flex gap-3">
               <button
