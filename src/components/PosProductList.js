@@ -4,8 +4,9 @@ import Image from "next/image";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import { playBellBeep } from "@/utils/posSounds";
+import SimpleModal from "./SimpleModal";
 
-const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts }) => {
+const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts, hasOpenSession = true, sessionCheckLoading = false }) => {
   const { categories, loading: catLoading, error: catError } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, _setProducts] = useState([]);
@@ -13,6 +14,12 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   const [prodError, setProdError] = useState(null);
   const [search, setSearch] = useState("");
   const [reloadFlag, setReloadFlag] = useState(0);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [barcodeProduct, setBarcodeProduct] = useState(null);
+  const [barcodeError, setBarcodeError] = useState("");
+  const [barcodeQty, setBarcodeQty] = useState(1);
+    const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+
 
   // Fetch products when selectedCategory changes or reloadFlag changes
   useEffect(() => {
@@ -99,6 +106,14 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   };
 
   const toggleProductSelect = (productId) => {
+    if (sessionCheckLoading) {
+      toast.error('Checking register status, please wait...');
+      return;
+    }
+    if (user?.role === 'cashier' && !hasOpenSession) {
+      toast.error('You must open a cash register before making sales.');
+      return;
+    }
     const product = products.find(p => p.id === productId);
     const currentQty = quantities[productId] || 1;
     
@@ -199,19 +214,31 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               <span>{user.name}</span>
             </h1>
             <div className="flex items-center gap-2">
+              <div>
+                <button
+                  className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+                  onClick={() => setShowBarcodeModal(true)}
+                >
+                  {" "}
+                  <Icon icon="mdi:fullscreen" className="w-5 h-5" />{" "}
+                </button>
+              </div>
               <div className="relative flex-1 max-w-xs">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <Icon icon="material-symbols:search-rounded" className="w-5 h-5" />
+                  <Icon
+                    icon="material-symbols:search-rounded"
+                    className="w-5 h-5"
+                  />
                 </span>
                 <input
                   type="text"
                   value={search}
-                  onChange={e => setSearch(e.target.value)}
-                                  onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                  }
-                }}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                    }
+                  }}
                   placeholder="Search products..."
                   className="border rounded pl-10 pr-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
@@ -221,13 +248,18 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  toast.loading("Refreshing products...", { id: "reload-products" });
-                  setReloadFlag(f => f + 1);
+                  toast.loading("Refreshing products...", {
+                    id: "reload-products",
+                  });
+                  setReloadFlag((f) => f + 1);
                 }}
                 className="ml-2 p-2 rounded border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
                 title="Reload products"
               >
-                <Icon icon="material-symbols:refresh" className="w-5 h-5 text-blue-600" />
+                <Icon
+                  icon="material-symbols:refresh"
+                  className="w-5 h-5 text-blue-600"
+                />
               </button>
             </div>
           </div>
@@ -244,20 +276,48 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               <div
                 key={product.id}
                 className={`group relative border-2 rounded-lg p-3 flex flex-col items-center bg-gray-50 hover:shadow-lg transition cursor-pointer
-                  ${selectedProducts.includes(product.id) ? 'border-green-500 shadow-green-100' : 'border-gray-200'}
+                  ${
+                    selectedProducts.includes(product.id)
+                      ? "border-green-500 shadow-green-100"
+                      : "border-gray-200"
+                  }
                   group-hover:border-green-500 group-hover:shadow-green-100
                 `}
-                style={{ boxShadow: selectedProducts.includes(product.id) ? '0 0 0 0 #22c55e' : undefined }}
-                onMouseEnter={e => e.currentTarget.classList.add('border-green-500', 'shadow-green-100')}
-                onMouseLeave={e => !selectedProducts.includes(product.id) && e.currentTarget.classList.remove('border-green-500', 'shadow-green-100')}
+                style={{
+                  boxShadow: selectedProducts.includes(product.id)
+                    ? "0 0 0 0 #22c55e"
+                    : undefined,
+                }}
+                onMouseEnter={(e) =>
+                  e.currentTarget.classList.add(
+                    "border-green-500",
+                    "shadow-green-100"
+                  )
+                }
+                onMouseLeave={(e) =>
+                  !selectedProducts.includes(product.id) &&
+                  e.currentTarget.classList.remove(
+                    "border-green-500",
+                    "shadow-green-100"
+                  )
+                }
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  if (user?.role === 'cashier' && !hasOpenSession) {
+                    toast.error('You must open a cash register before making sales.');
+                    return;
+                  }
                   toggleProductSelect(product.id);
                 }}
               >
-                {(selectedProducts.includes(product.id) || true /* always show on hover */) && (
-                  <span className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-500 ${selectedProducts.includes(product.id) ? 'opacity-100' : ''}`}>
+                {(selectedProducts.includes(product.id) ||
+                  true) /* always show on hover */ && (
+                  <span
+                    className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-500 ${
+                      selectedProducts.includes(product.id) ? "opacity-100" : ""
+                    }`}
+                  >
                     <Icon icon="mdi:check" className="w-2 h-2 text-white" />
                   </span>
                 )}
@@ -280,17 +340,23 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     return cat ? cat.name : "";
                   })()}
                 </div>
-                <div className="font-semibold mb-1 self-start truncate max-w-[120px] overflow-hidden">{product.name}</div>
+                <div className="font-semibold mb-1 self-start truncate max-w-[120px] overflow-hidden">
+                  {product.name}
+                </div>
 
                 {/* Stock Status */}
                 <div className="self-start mb-1">
                   {(() => {
                     const stockStatus = getStockStatus(product.quantity);
                     return (
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${stockStatus.bg} ${stockStatus.color}`}>
-                        {stockStatus.status === 'out' ? 'Out of Stock' : 
-                         stockStatus.status === 'low' ? `Low Stock (${product.quantity})` : 
-                         `In Stock (${product.quantity})`}
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full font-medium ${stockStatus.bg} ${stockStatus.color}`}
+                      >
+                        {stockStatus.status === "out"
+                          ? "Out of Stock"
+                          : stockStatus.status === "low"
+                          ? `Low Stock (${product.quantity})`
+                          : `In Stock (${product.quantity})`}
                       </span>
                     );
                   })()}
@@ -300,17 +366,28 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
                 <div className="flex flex-col gap-1 self-start mt-1 w-full">
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-sm font-bold text-blue-700">GHS {product.price}</span>
-                    <span className="text-xs text-gray-500">Cost: GHS {product.cost_price || 0}</span>
+                    <span className="text-sm font-bold text-blue-700">
+                      GHS {product.price}
+                    </span>
+                    {user?.role !== 'cashier' && (
+                      <span className="text-xs text-gray-500">
+                        Cost: GHS {product.cost_price || 0}
+                      </span>
+                    )}
                   </div>
-                  {product.cost_price && product.cost_price > 0 && (
+                  {product.cost_price && product.cost_price > 0 && user?.role !== 'cashier' && (
                     <div className="text-xs text-green-600 font-medium">
-                      Profit: GHS {((product.price - product.cost_price) * (quantities[product.id] || 1)).toFixed(2)}
+                      Profit: GHS{" "}
+                      {(
+                        (product.price - product.cost_price) *
+                        (quantities[product.id] || 1)
+                      ).toFixed(2)}
                     </div>
                   )}
                   {product.tax_percentage && product.tax_percentage > 0 && (
                     <div className="text-xs text-orange-600 font-medium">
-                      Tax: {product.tax_percentage}% ({product.tax_type === 'inclusive' ? 'Included' : 'Added'})
+                      Tax: {product.tax_percentage}% (
+                      {product.tax_type === "inclusive" ? "Included" : "Added"})
                     </div>
                   )}
                 </div>
@@ -319,6 +396,170 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
           </div>
         </div>
       </div>
+      {showBarcodeModal && (
+        <SimpleModal
+          isOpen={true}
+          onClose={() => {
+            setShowBarcodeModal(false);
+            setBarcodeInput("");
+            setBarcodeProduct(null);
+            setBarcodeError("");
+            setBarcodeQty(1);
+          }}
+          title="Add Product by Barcode"
+          mode="light"
+          width="max-w-md"
+        >
+          <div className="space-y-4">
+            <label className="block font-semibold">Enter Barcode</label>
+            <input
+              className="w-full border rounded px-3 py-2"
+              value={barcodeInput}
+              onChange={(e) => {
+                const value = e.target.value;
+                setBarcodeInput(value);
+                setBarcodeError("");
+                if (!value.trim()) {
+                  setBarcodeProduct(null);
+                  setBarcodeError("");
+                  return;
+                }
+                const found = products.find((p) => p.barcode === value.trim());
+                if (!found) {
+                  setBarcodeProduct(null);
+                  setBarcodeError("No product found with this barcode.");
+                } else {
+                  setBarcodeProduct(found);
+                  setBarcodeQty(quantities[found.id] || 1);
+                  setBarcodeError("");
+
+                  // Auto-add product to order list
+                  const qty = quantities[found.id] || 1;
+                  if (qty > found.quantity) {
+                    toast.error(
+                      `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`
+                    );
+                    return;
+                  }
+
+                  if (!selectedProducts.includes(found.id)) {
+                    setSelectedProducts([...selectedProducts, found.id]);
+                    setQuantities((q) => ({ ...q, [found.id]: qty }));
+                  } else {
+                    setQuantities((currentQuantities) => {
+                      const newQty = (currentQuantities[found.id] || 1) + qty;
+                      if (newQty > found.quantity) {
+                        toast.error(
+                          `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`
+                        );
+                        return currentQuantities; // Return unchanged quantities
+                      }
+                      return { ...currentQuantities, [found.id]: newQty };
+                    });
+                    return; // Exit early to prevent the success toast and modal close
+                  }
+
+                  // Play beep sound and show success message
+                  playBellBeep();
+                  toast.success(`Added ${found.name} to order list!`);
+                  setShowBarcodeModal(false);
+                  setBarcodeInput("");
+                  setBarcodeProduct(null);
+                  setBarcodeError("");
+                  setBarcodeQty(1);
+                }
+              }}
+              placeholder="Scan or enter barcode"
+              autoFocus
+            />
+            {barcodeError && (
+              <div className="text-red-500 text-sm">{barcodeError}</div>
+            )}
+          </div>
+          {barcodeProduct && (
+            <div className="mt-6 p-4 border rounded bg-gray-50">
+              <div className="font-bold mb-2">{barcodeProduct.name}</div>
+              <div className="mb-2">
+                Price: GHS {barcodeProduct.price?.toLocaleString()}
+              </div>
+              <div className="mb-2">Stock: {barcodeProduct.quantity}</div>
+              <div className="mb-2 flex items-center gap-2">
+                <span>Quantity:</span>
+                <button
+                  type="button"
+                  className="px-2 py-1 bg-gray-200 rounded"
+                  onClick={() => setBarcodeQty((q) => Math.max(1, q - 1))}
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  max={barcodeProduct.quantity}
+                  value={barcodeQty}
+                  onChange={(e) => setBarcodeQty(Number(e.target.value))}
+                  className="w-16 border rounded px-2 py-1"
+                />
+                <button
+                  type="button"
+                  className="px-2 py-1 bg-gray-200 rounded"
+                  onClick={() =>
+                    setBarcodeQty((q) =>
+                      Math.min(barcodeProduct.quantity, q + 1)
+                    )
+                  }
+                >
+                  +
+                </button>
+              </div>
+              <button
+                className="w-full bg-green-600 text-white rounded py-2 font-semibold mt-2"
+                onClick={() => {
+                  if (barcodeQty > barcodeProduct.quantity) {
+                    toast.error(
+                      `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
+                    );
+                    return;
+                  }
+
+                  if (!selectedProducts.includes(barcodeProduct.id)) {
+                    setSelectedProducts([
+                      ...selectedProducts,
+                      barcodeProduct.id,
+                    ]);
+                    setQuantities((q) => ({
+                      ...q,
+                      [barcodeProduct.id]: barcodeQty,
+                    }));
+                  } else {
+                    const newQty = (q[barcodeProduct.id] || 1) + barcodeQty;
+                    if (newQty > barcodeProduct.quantity) {
+                      toast.error(
+                        `Cannot add ${barcodeQty} more units. Total would exceed available stock of ${barcodeProduct.quantity} units.`
+                      );
+                      return;
+                    }
+                    setQuantities((q) => ({
+                      ...q,
+                      [barcodeProduct.id]: newQty,
+                    }));
+                  }
+                  // Play beep sound and show success message
+                  playBellBeep();
+                  setShowBarcodeModal(false);
+                  setBarcodeInput("");
+                  setBarcodeProduct(null);
+                  setBarcodeError("");
+                  setBarcodeQty(1);
+                  toast.success("Product added to order list!");
+                }}
+              >
+                Add to Order List
+              </button>
+            </div>
+          )}
+        </SimpleModal>
+      )}
     </div>
   );
 };

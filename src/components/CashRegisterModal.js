@@ -154,7 +154,10 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
       if (result.success) {
         setSession(result.data);
         setOpenAmount(0);
-        if (onSessionChanged) onSessionChanged();
+        if (onSessionChanged) await onSessionChanged();
+        // Call again after 500ms to ensure backend state is synced
+        if (onSessionChanged) setTimeout(() => onSessionChanged(), 500);
+        if (onClose) onClose();
       } else {
         throw new Error(result.error || "Failed to open register");
       }
@@ -269,7 +272,8 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
         setSession(null);
         setCloseAmount(0);
         setShowCloseConfirm(false);
-        if (onSessionChanged) onSessionChanged();
+        if (onSessionChanged) await onSessionChanged();
+        if (onSessionChanged) setTimeout(() => onSessionChanged(), 500);
         // Generate Z-Report
         const zReportResponse = await fetch(`/api/cash-register-sessions/${session.id}/z-report`);
         const zReportResult = await zReportResponse.json();
@@ -519,8 +523,23 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Operator</div>
                     <div className="font-semibold text-lg">
-                      {userMap?.[zReport?.session?.user_id] || zReport?.session?.user_id || "N/A"}
+                      {userMap?.[zReport?.session?.user_id]
+                        ? userMap[zReport.session.user_id]
+                        : zReport?.session?.user_id}
                     </div>
+                    {/* If operator name is not in userMap, fetch it */}
+                    {zReport?.session?.user_id && !userMap?.[zReport.session.user_id] && (
+                      (() => {
+                        fetch(`/api/users?id=${zReport.session.user_id}`)
+                          .then(res => res.json())
+                          .then(result => {
+                            if (result.success && result.data && result.data.length > 0) {
+                              setUserMap(prev => ({ ...prev, [zReport.session.user_id]: result.data[0].full_name || zReport.session.user_id }));
+                            }
+                          });
+                        return null;
+                      })()
+                    )}
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Over/Short</div>

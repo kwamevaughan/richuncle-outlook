@@ -189,16 +189,18 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center w-full gap-4">
-              <Link
-                href="/dashboard"
-                className="flex items-center justify-center gap-2 bg-blue-950 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
-              >
-                <Icon
-                  icon="mage:dashboard-3"
-                  className={`h-4 w-4 text-white`}
-                />
-                Back to Dashboard
-              </Link>
+              {user?.role !== 'cashier' && (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center justify-center gap-2 bg-blue-950 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                >
+                  <Icon
+                    icon="mage:dashboard-3"
+                    className={`h-4 w-4 text-white`}
+                  />
+                  Back to Dashboard
+                </Link>
+              )}
 
               <SessionDuration mode={mode} user={user} sessionRefreshKey={sessionRefreshKey} />
             </div>
@@ -255,17 +257,19 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 <Icon icon="mdi:cart-sale" className="h-7 w-7 text-gray-500" />
               </TooltipIconButton>
 
-              <TooltipIconButton
-                label="Today's Profit"
-                mode={mode}
-                className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
-                onClick={() => setShowProfitModal(true)}
-              >
-                <Icon
-                  icon="hugeicons:chart-increase"
-                  className="h-7 w-7 text-gray-500"
-                />
-              </TooltipIconButton>
+              {user?.role !== 'cashier' && (
+                <TooltipIconButton
+                  label="Today's Profit"
+                  mode={mode}
+                  className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                  onClick={() => setShowProfitModal(true)}
+                >
+                  <Icon
+                    icon="hugeicons:chart-increase"
+                    className="h-7 w-7 text-gray-500"
+                  />
+                </TooltipIconButton>
+              )}
 
               <LanguageSwitch mode={mode} />
 

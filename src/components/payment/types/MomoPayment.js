@@ -8,7 +8,7 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Mobile Money Provider <span className="text-red-500">*</span>
+            Mobile Money Provider
           </label>
           <select
             value={paymentData.momoProvider}
@@ -19,7 +19,6 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
               }))
             }
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
           >
             <option value="">Select Provider</option>
             <option value="mtn">MTN Mobile Money</option>
@@ -29,7 +28,7 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Customer Phone Number <span className="text-red-500">*</span>
+            Customer Phone Number
           </label>
           <input
             type="tel"
@@ -42,7 +41,6 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
             }
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="e.g., 0241234567"
-            required
           />
         </div>
       </div>
@@ -82,7 +80,7 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Transaction Reference <span className="text-red-500">*</span>
+            Transaction Reference
           </label>
           <input
             type="text"
@@ -95,7 +93,6 @@ const MomoPayment = ({ paymentData, setPaymentData, total }) => {
             }
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Enter transaction reference"
-            required
           />
         </div>
         <div>

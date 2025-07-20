@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 import supabaseAdmin from "../../../lib/supabaseAdmin";
+const cookie = require('cookie');
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -60,6 +61,14 @@ export default async function handler(req, res) {
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = userData;
+
+    // Set user cookie with role for middleware
+    res.setHeader('Set-Cookie', cookie.serialize('user', encodeURIComponent(JSON.stringify({ role: userData.role })), {
+      path: '/',
+      httpOnly: false, // set to true if you don't need JS access
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+    }));
 
     return res.status(200).json({
       user: userWithoutPassword,

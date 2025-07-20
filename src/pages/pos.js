@@ -13,6 +13,7 @@ import OrderHistoryModal from "@/components/OrderHistoryModal";
 import { ModalProvider, useModal } from "@/components/ModalContext";
 import SimpleModal from "@/components/SimpleModal";
 import ReactDOM from "react-dom";
+import CashRegisterModal from "@/components/CashRegisterModal";
 
 export default function POS({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -29,6 +30,24 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [lastOrderData, setLastOrderData] = useState(null);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
   const [showNoOrderModal, setShowNoOrderModal] = useState(false);
+  const [showCashRegister, setShowCashRegister] = useState(false);
+
+  // Check for open cash register session for cashiers
+  const [hasOpenSession, setHasOpenSession] = useState(true);
+  const [sessionCheckLoading, setSessionCheckLoading] = useState(false);
+  const checkSession = async () => {
+    setSessionCheckLoading(true);
+    if (user?.role === 'cashier') {
+      const res = await fetch('/api/cash-register-sessions?status=open');
+      const data = await res.json();
+      setHasOpenSession(data.success && data.data && data.data.length > 0);
+      if (!(data.success && data.data && data.data.length > 0)) {
+        import('react-hot-toast').then(({ toast }) => toast.error('You must open a cash register before making sales.'));
+      }
+    }
+    setSessionCheckLoading(false);
+  };
+  useEffect(() => { checkSession(); }, [user]);
 
   useEffect(() => {
     async function fetchDiscounts() {
@@ -163,6 +182,12 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         showSidebar={false}
         {...props}
       >
+        <CashRegisterModal
+          isOpen={showCashRegister}
+          onClose={() => setShowCashRegister(false)}
+          user={user}
+          onSessionChanged={checkSession}
+        />
         <div className="flex gap-8 flex-1 min-h-0 overflow-hidden">
           <PosProductList
             user={user}
@@ -173,6 +198,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             setQuantities={setQuantities}
             setProducts={setProducts}
             reloadProducts={reloadProducts}
+            hasOpenSession={hasOpenSession}
+            sessionCheckLoading={sessionCheckLoading}
           />
           <PosOrderList
             className="flex-1 min-h-0 overflow-auto"
@@ -190,6 +217,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             setCustomers={setCustomers}
             onOrderComplete={handleOrderComplete}
             user={user}
+            hasOpenSession={hasOpenSession}
+            sessionCheckLoading={sessionCheckLoading}
           />
         </div>
         <OrderHistoryModal

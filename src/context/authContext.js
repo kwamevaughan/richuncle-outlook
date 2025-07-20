@@ -126,7 +126,11 @@ export const AuthProvider = ({ children }) => {
         "AuthContext: User authenticated, navigating to /dashboard:",
         user
       );
-      await router.push("/dashboard");
+      if (user.role === 'cashier') {
+        await router.push('/pos');
+      } else {
+        await router.push('/dashboard');
+      }
       toast.dismiss("route-loading");
     } catch (error) {
       console.error("AuthContext: Login error:", error);
@@ -309,7 +313,11 @@ export const AuthProvider = ({ children }) => {
           console.log(
             "AuthContext: Social login successful, navigating to /dashboard"
           );
-          await router.push("/dashboard");
+          if (existingUser.role === 'cashier') {
+            await router.push('/pos');
+          } else {
+            await router.push('/dashboard');
+          }
           toast.dismiss("route-loading");
         } else {
           console.log("AuthContext: No session user, redirecting to login");

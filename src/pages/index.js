@@ -22,11 +22,8 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
     const currentYear = new Date().getFullYear();
 
 
-  useEffect(() => {
-    if (router.isReady) {
-      console.log("LoginPage: Current route:", router.pathname);
-    }
-  }, [router.isReady, router.pathname]);
+  // Remove per-page cashier redirect logic
+  // (No need for useEffect that redirects cashiers to /pos)
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-login pt-0">
