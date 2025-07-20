@@ -213,6 +213,7 @@ const PosOrderList = ({
         paymentResult = {
           success: true,
           method: "split",
+          paymentType: "split",
           totalPaid: paymentData.total - paymentData.remainingAmount,
           payments: paymentData.splitPayments
         };
@@ -220,6 +221,7 @@ const PosOrderList = ({
         paymentResult = {
           success: true,
           method: paymentData.paymentType,
+          paymentType: paymentData.paymentType,
           amount: parseFloat(paymentData.payingAmount),
           change: paymentData.change,
           reference: paymentData.referenceNumber || null
