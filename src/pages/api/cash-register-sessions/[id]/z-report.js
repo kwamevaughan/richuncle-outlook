@@ -17,14 +17,18 @@ export default async function handler(req, res) {
         .single();
       if (sessionError || !session) throw sessionError || new Error("Session not found");
 
+      // Use opened_at and closed_at, fallback to now if closed_at is null
+      const openedAt = session.opened_at;
+      const closedAt = session.closed_at || new Date().toISOString();
+
       // Fetch all orders for this register during the session
-      const { data: orders, error: ordersError } = await supabaseAdmin
+      let ordersQuery = supabaseAdmin
         .from("orders")
         .select("*, payment_data")
-        .eq("register_id", session.register_id)
-        .gte("timestamp", session.opened_at)
-        .lte("timestamp", session.closed_at)
-        .order("timestamp", { ascending: true });
+        .eq("register_id", session.register_id);
+      if (openedAt) ordersQuery = ordersQuery.gte("timestamp", openedAt);
+      if (closedAt) ordersQuery = ordersQuery.lte("timestamp", closedAt);
+      const { data: orders, error: ordersError } = await ordersQuery.order("timestamp", { ascending: true });
       if (ordersError) throw ordersError;
 
       // Fetch all order items for these orders
@@ -48,13 +52,13 @@ export default async function handler(req, res) {
 
       // Fetch all expenses for this session (if you have an expenses table with session_id or register_id)
       let expenses = [];
-      if (session.opened_at && session.closed_at) {
+      if (openedAt && closedAt) {
         const { data: exp, error: expError } = await supabaseAdmin
           .from("expenses")
           .select("*")
           .eq("register_id", session.register_id)
-          .gte("expense_date", session.opened_at)
-          .lte("expense_date", session.closed_at);
+          .gte("expense_date", openedAt)
+          .lte("expense_date", closedAt);
         if (!expError) expenses = exp;
       }
 

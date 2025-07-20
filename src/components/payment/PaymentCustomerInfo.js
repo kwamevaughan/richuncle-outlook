@@ -16,9 +16,8 @@ const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentDat
             .filter(user => user.is_active)
             .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
           setUsers(activeUsers);
-          
           // Set current user as default payment receiver if not already set
-          if (currentUser && !paymentData.paymentReceiver) {
+          if (currentUser && paymentData.paymentReceiver !== currentUser.id) {
             setPaymentData(prev => ({
               ...prev,
               paymentReceiver: currentUser.id
@@ -75,22 +74,12 @@ const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentDat
             Loading users...
           </div>
         ) : (
-          <select
-            value={paymentData.paymentReceiver || ""}
-            onChange={(e) => setPaymentData(prev => ({
-              ...prev,
-              paymentReceiver: e.target.value
-            }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
-          >
-            <option value="">Select Payment Receiver</option>
-            {users.map(user => (
-              <option key={user.id} value={user.id}>
-                {user.full_name || user.email} {user.role && `(${user.role})`}
-              </option>
-            ))}
-          </select>
+          <input
+            type="text"
+            value={currentUser?.full_name || currentUser?.email || "No user"}
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100 text-gray-700 cursor-not-allowed"
+            readOnly
+          />
         )}
       </div>
     </div>

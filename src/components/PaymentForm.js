@@ -905,6 +905,7 @@ const PaymentForm = ({
                 onCustomerChange={onCustomerChange}
                 paymentData={paymentData}
                 setPaymentData={setPaymentData}
+                currentUser={user}
               />
 
               {/* Notes Section */}

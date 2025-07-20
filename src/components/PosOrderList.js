@@ -747,7 +747,7 @@ const PosOrderList = ({
             }`}
           >
             <Icon icon="mdi:cart-outline" className="w-5 h-5" />
-            {paymentData ? "Process Order" : "Place Order"}
+            {paymentData ? "Finalize Order" : "Place Order"}
           </button>
       </div>
 
@@ -916,7 +916,7 @@ const PosOrderList = ({
         customer={selectedCustomerId === "__online__" ? { id: "__online__", name: "Online Purchase" } : customers.find(c => c.id === selectedCustomerId)}
         customers={customers}
         onCustomerChange={handleCustomerChange}
-        user={user}
+        user={allUsers.find(u => u.id === user?.id) || user}
         allUsers={allUsers}
         isOnlinePurchase={isOnlinePurchase}
       />

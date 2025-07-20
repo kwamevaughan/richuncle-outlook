@@ -274,6 +274,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
         const zReportResponse = await fetch(`/api/cash-register-sessions/${session.id}/z-report`);
         const zReportResult = await zReportResponse.json();
         if (zReportResult.success) {
+          console.log('Z-Report API result:', zReportResult);
           setZReport(zReportResult.data);
         }
       } else {
@@ -504,79 +505,152 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Session Period</div>
                     <div className="font-semibold">
-                      {new Date(zReport.opened_at).toLocaleString()}
+                      {zReport?.session?.opened_at
+                        ? new Date(zReport.session.opened_at).toLocaleString()
+                        : "N/A"}
                     </div>
                     <div className="text-sm text-gray-600">to</div>
                     <div className="font-semibold">
-                      {new Date(zReport.closed_at).toLocaleString()}
+                      {zReport?.session?.closed_at
+                        ? new Date(zReport.session.closed_at).toLocaleString()
+                        : "N/A"}
                     </div>
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Operator</div>
-                    <div className="font-semibold text-lg">{zReport.user}</div>
+                    <div className="font-semibold text-lg">
+                      {userMap?.[zReport?.session?.user_id] || zReport?.session?.user_id || "N/A"}
+                    </div>
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Over/Short</div>
                     <div
                       className={`font-bold text-lg ${
-                        zReport.over_short >= 0
+                        (zReport?.session?.over_short || 0) >= 0
                           ? "text-green-600"
                           : "text-red-600"
                       }`}
                     >
-                      GHS {Number(zReport.over_short).toLocaleString()}
+                      {zReport?.session?.over_short !== null && zReport?.session?.over_short !== undefined
+                        ? `GHS ${Number(zReport.session.over_short).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "N/A"}
                     </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  {[
-                    {
-                      label: "Opening Cash",
-                      value: zReport.opening_cash,
-                      color: "blue",
-                    },
-                    {
-                      label: "Closing Cash",
-                      value: zReport.closing_cash,
-                      color: "indigo",
-                    },
-                    { label: "Sales", value: zReport.sales, color: "green" },
-                    {
-                      label: "Expected",
-                      value: zReport.expected,
-                      color: "purple",
-                    },
-                  ].map((item, index) => (
-                    <div
-                      key={index}
-                      className="bg-white rounded-lg p-4 shadow-sm"
-                    >
-                      <div className="text-sm text-gray-600">{item.label}</div>
-                      <div
-                        className={`font-bold text-lg text-${item.color}-600`}
-                      >
-                        GHS {Number(item.value).toLocaleString()}
-                      </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-sm text-gray-600">Opening Cash</div>
+                    <div className="font-bold text-lg text-blue-600">
+                      {zReport?.session?.opening_cash !== null && zReport?.session?.opening_cash !== undefined
+                        ? `GHS ${Number(zReport.session.opening_cash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "N/A"}
                     </div>
-                  ))}
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-sm text-gray-600">Closing Cash</div>
+                    <div className="font-bold text-lg text-indigo-600">
+                      {zReport?.session?.closing_cash !== null && zReport?.session?.closing_cash !== undefined
+                        ? `GHS ${Number(zReport.session.closing_cash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-sm text-gray-600">Total Sales</div>
+                    <div className="font-bold text-lg text-green-600">
+                      {zReport?.totalSales !== null && zReport?.totalSales !== undefined
+                        ? `GHS ${Number(zReport.totalSales).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-sm text-gray-600">Total Payment</div>
+                    <div className="font-bold text-lg text-purple-600">
+                      {zReport?.totalPayment !== null && zReport?.totalPayment !== undefined
+                        ? `GHS ${Number(zReport.totalPayment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-sm text-gray-600">Total Expense</div>
+                    <div className="font-bold text-lg text-red-600">
+                      {zReport?.totalExpense !== null && zReport?.totalExpense !== undefined
+                        ? `GHS ${Number(zReport.totalExpense).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-sm text-gray-600">Cash in Hand</div>
+                    <div className="font-bold text-lg text-blue-700">
+                      {zReport?.cashInHand !== null && zReport?.cashInHand !== undefined
+                        ? `GHS ${Number(zReport.cashInHand).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-sm text-gray-600">Total Cash</div>
+                    <div className="font-bold text-lg text-green-700">
+                      {zReport?.totalCash !== null && zReport?.totalCash !== undefined
+                        ? `GHS ${Number(zReport.totalCash).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : "N/A"}
+                    </div>
+                  </div>
+                </div>
+                {/* Payment Breakdown */}
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-2">Payment Breakdown</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                    {zReport?.paymentBreakdown && Object.keys(zReport.paymentBreakdown).length > 0 ? (
+                      Object.entries(zReport.paymentBreakdown).map(([type, amount]) => (
+                        <div key={type} className="bg-gray-50 rounded p-2 text-center">
+                          <div className="text-xs text-gray-500 capitalize">{type.replace('_', ' ')} Payment</div>
+                          <div className="font-bold text-gray-800">GHS {Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-span-full text-gray-400 text-center">No payment breakdown</div>
+                    )}
+                  </div>
+                </div>
+                {/* Products Sold Table */}
+                <div className="mb-6">
+                  <h4 className="font-semibold mb-2">Products Sold</h4>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm border">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 border">Product</th>
+                          <th className="px-4 py-2 border">Quantity</th>
+                          <th className="px-4 py-2 border">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {zReport?.productsSold && zReport.productsSold.length > 0 ? (
+                          zReport.productsSold.map((prod, idx) => (
+                            <tr key={idx}>
+                              <td className="px-4 py-2 border">{prod.name}</td>
+                              <td className="px-4 py-2 border text-center">{prod.quantity}</td>
+                              <td className="px-4 py-2 border text-right">GHS {Number(prod.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr><td colSpan={3} className="text-center py-4 text-gray-400">No products sold</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
                 <div className="flex gap-4">
                   <button
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
                     onClick={handlePrintZReport}
                   >
-                    <Icon icon="material-symbols:print" className="w-5 h-5" />{" "}
-                    Print Z-Report
+                    <Icon icon="material-symbols:print" className="w-5 h-5" /> Print Z-Report
                   </button>
                   <button
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
-                    onClick={() => exportZReportCSV(zReport)}
+                    onClick={() => zReport?.data && exportZReportCSV(zReport.data)}
                   >
-                    <Icon
-                      icon="material-symbols:download"
-                      className="w-5 h-5"
-                    />{" "}
-                    Export CSV
+                    <Icon icon="material-symbols:download" className="w-5 h-5" /> Export CSV
                   </button>
                 </div>
               </div>
