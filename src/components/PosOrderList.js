@@ -59,6 +59,7 @@ const PosOrderList = ({
   onOrderComplete,
   user,
   hasOpenSession = true,
+  sessionCheckLoading = false,
   ...props
 }) => {
 
@@ -270,31 +271,16 @@ const PosOrderList = ({
           const product = products.find(p => p.id === id);
           const qty = quantities[id] || 1;
           const itemSubtotal = product.price * qty;
-          // Calculate item tax
-          let itemTax = 0;
-          if (product && product.tax_percentage && product.tax_percentage > 0) {
-            const taxPercentage = Number(product.tax_percentage);
-            if (product.tax_type === 'exclusive') {
-              itemTax = (product.price * taxPercentage / 100) * qty;
-            } else if (product.tax_type === 'inclusive') {
-              const priceWithoutTax = product.price / (1 + taxPercentage / 100);
-              itemTax = (product.price - priceWithoutTax) * qty;
-            }
-          }
           return {
             productId: id,
             name: product.name,
             quantity: qty,
             price: product.price,
             costPrice: product.cost_price || 0,
-            taxType: product.tax_type || 'exclusive',
-            taxPercentage: product.tax_percentage || 0,
-            itemTax: itemTax,
             total: itemSubtotal
           };
         }),
         subtotal,
-        tax,
         discount,
         total,
         payment: paymentResult,
@@ -323,7 +309,6 @@ const PosOrderList = ({
           customer_id: orderData.customerId,
           customer_name: orderData.customerName,
           subtotal: orderData.subtotal,
-          tax: orderData.tax,
           discount: orderData.discount,
           total: orderData.total,
           payment_method: orderData.payment.method,
@@ -353,9 +338,6 @@ const PosOrderList = ({
         quantity: item.quantity,
         price: item.price,
         cost_price: item.costPrice,
-        tax_type: item.taxType,
-        tax_percentage: item.taxPercentage,
-        item_tax: item.itemTax,
         total: item.total
       }));
       const itemsResponse = await fetch('/api/order-items', {
@@ -443,39 +425,7 @@ const PosOrderList = ({
   
   const totalProfit = subtotal - totalCost;
   
-  // Calculate tax based on product tax configuration
-  const tax = selectedProducts.reduce((sum, id) => {
-    const product = products.find(p => p.id === id);
-    const qty = quantities[id] || 1;
-    if (!product || !product.tax_percentage || product.tax_percentage <= 0) return sum;
-    
-    const taxPercentage = Number(product.tax_percentage);
-    let itemTax = 0;
-    
-    if (product.tax_type === 'exclusive') {
-      // Tax is added on top of the price
-      itemTax = (product.price * taxPercentage / 100) * qty;
-    } else if (product.tax_type === 'inclusive') {
-      // Tax is included in the price, so we need to extract it
-      const priceWithoutTax = product.price / (1 + taxPercentage / 100);
-      itemTax = (product.price - priceWithoutTax) * qty;
-    }
-    
-    return sum + itemTax;
-  }, 0);
 
-  // Only add exclusive tax to the total
-  const exclusiveTax = selectedProducts.reduce((sum, id) => {
-    const product = products.find(p => p.id === id);
-    const qty = quantities[id] || 1;
-    if (!product || !product.tax_percentage || product.tax_percentage <= 0) return sum;
-    const taxPercentage = Number(product.tax_percentage);
-    let itemTax = 0;
-    if (product.tax_type === 'exclusive') {
-      itemTax = (product.price * taxPercentage / 100) * qty;
-    }
-    return sum + itemTax;
-  }, 0);
 
   let discount = 0;
   let discountLabel = "No discount";
@@ -493,7 +443,7 @@ const PosOrderList = ({
     }
   }
   const roundoff = roundoffEnabled ? 0 : 0;
-  const total = subtotal + exclusiveTax - discount + roundoff;
+  const total = subtotal - discount + roundoff;
 
   const { users: allUsers } = useUsers();
 
@@ -659,19 +609,7 @@ const PosOrderList = ({
           <div className="flex flex-col gap-1 text-sm">
             
             
-            <div className="flex justify-between items-center">
-              <span>
-                Tax{" "}
-                
-              </span>
-              <span>GHS {tax.toLocaleString()}</span>
-            </div>
-            
-            {tax > 0 && (
-              <div className="text-xs text-gray-500 ml-4">
-                (Calculated based on product tax rates)
-              </div>
-            )}
+
             
             <div className="flex justify-between items-center">
               <span className="text-red-500">
@@ -968,7 +906,6 @@ const PosOrderList = ({
                        price: item.price
                      })),
                      subtotal: successOrderData.subtotal,
-                     tax: successOrderData.tax,
                      discount: successOrderData.discount,
                      total: successOrderData.total,
                      selectedCustomerId: successOrderData.customerId,

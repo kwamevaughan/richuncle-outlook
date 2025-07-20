@@ -36,7 +36,7 @@ const quickRanges = [
   { label: "Custom Range", getRange: null },
 ];
 
-export default function DateRangePicker({ value, onChange, className = "" }) {
+export default function DateRangePicker({ value, onChange, className = "", hideDropdown = false }) {
   // Default to Today
   const [selected, setSelected] = useState("Today");
   const [range, setRange] = useState(() => {
@@ -60,11 +60,39 @@ export default function DateRangePicker({ value, onChange, className = "" }) {
   };
 
   const handleRangeChange = (ranges) => {
-    const sel = ranges.selection;
+    // Support both array and object shapes
+    let sel = null;
+    if (Array.isArray(ranges)) {
+      // Sometimes react-date-range passes an array
+      sel = ranges[0];
+    } else if (ranges && typeof ranges === 'object' && ranges.selection) {
+      sel = ranges.selection;
+    } else if (ranges && typeof ranges === 'object') {
+      // Fallback: try first value
+      sel = Object.values(ranges)[0];
+    }
+    if (!sel) return;
     setRange(sel);
     if (onChange) onChange({ startDate: sel.startDate, endDate: sel.endDate, label: "Custom Range" });
   };
 
+  if (hideDropdown) {
+    return (
+      <div className={className}>
+        <DateRange
+          ranges={[value || range]}
+          onChange={handleRangeChange}
+          moveRangeOnFirstSelection={false}
+          showDateDisplay={true}
+          rangeColors={["#2563eb"]}
+          showMonthAndYearPickers={true}
+          showPreview={false}
+          editableDateInputs={true}
+          maxDate={new Date()}
+        />
+      </div>
+    );
+  }
   return (
     <div className={className}>
       <select

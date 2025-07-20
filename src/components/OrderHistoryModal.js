@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import PrintReceipt from "./PrintReceipt";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
+import DateRangePicker from "./DateRangePicker";
+// Removed DateRangePicker import
 
 const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
   const [orders, setOrders] = useState([]);
@@ -9,6 +11,7 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
   const [printing, setPrinting] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
+  // No need for showDateRange or dateRange
 
   useEffect(() => {
     if (!isOpen) return;
@@ -69,25 +72,70 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
     }
   };
 
+  // Use quickRanges for dropdown, add Custom Range
+  const quickRanges = [
+    { label: "All Time", getRange: null },
+    { label: "Today", getRange: () => {
+      const today = new Date();
+      return { startDate: today, endDate: today };
+    }},
+    { label: "Yesterday", getRange: () => {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      return { startDate: y, endDate: y };
+    }},
+    { label: "Last 7 Days", getRange: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - 6);
+      return { startDate: start, endDate: end };
+    }},
+    { label: "Last 30 Days", getRange: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(end.getDate() - 29);
+      return { startDate: start, endDate: end };
+    }},
+    { label: "This Month", getRange: () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { startDate: start, endDate: end };
+    }},
+    { label: "Last Month", getRange: () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { startDate: start, endDate: end };
+    }},
+    { label: "Custom Range", getRange: null },
+  ];
+
+  const [customRange, setCustomRange] = useState(null);
+  const [showCustomRange, setShowCustomRange] = useState(false);
+  const selectedRange = quickRanges.find(q => q.label === dateFilter);
   const filteredOrders = orders
     .filter((order) => {
       const matchesSearch =
         order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.id.toString().includes(searchTerm);
 
-      if (dateFilter === "today") {
-        const today = new Date().toDateString();
-        return (
-          matchesSearch && new Date(order.timestamp).toDateString() === today
-        );
+      if (dateFilter === 'Custom Range' && customRange && customRange.startDate && customRange.endDate) {
+        const orderDate = new Date(order.created_at);
+        const end = new Date(customRange.endDate);
+        end.setHours(23, 59, 59, 999);
+        return matchesSearch && orderDate >= customRange.startDate && orderDate <= end;
       }
-      if (dateFilter === "week") {
-        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        return matchesSearch && new Date(order.timestamp) >= weekAgo;
+      if (selectedRange && selectedRange.getRange) {
+        const { startDate, endDate } = selectedRange.getRange();
+        const orderDate = new Date(order.created_at);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return matchesSearch && orderDate >= startDate && orderDate <= end;
       }
       return matchesSearch;
     })
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
@@ -130,23 +178,54 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <select
               value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
+              onChange={(e) => {
+                setDateFilter(e.target.value);
+                if (e.target.value === 'Custom Range') setShowCustomRange(true);
+                else setShowCustomRange(false);
+              }}
               className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
             >
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
+              {quickRanges.map(q => (
+                <option key={q.label} value={q.label}>{q.label}</option>
+              ))}
             </select>
-
+            {dateFilter === 'Custom Range' && (
+              <button
+                className="px-2 py-1 ml-1 border border-blue-500 rounded text-xs text-blue-700 hover:bg-blue-50"
+                onClick={() => setShowCustomRange((v) => !v)}
+              >
+                {showCustomRange ? 'Hide Calendar' : 'Pick Dates'}
+              </button>
+            )}
+            {dateFilter === 'Custom Range' && customRange && (
+              <button
+                className="px-2 py-1 ml-1 border border-gray-300 rounded text-xs text-gray-600 hover:bg-gray-100"
+                onClick={() => { setCustomRange(null); setDateFilter('All Time'); }}
+              >
+                Clear
+              </button>
+            )}
             <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
               <Icon icon="mdi:receipt" className="w-4 h-4" />
               <span>{filteredOrders.length} orders</span>
             </div>
           </div>
         </div>
+        {dateFilter === 'Custom Range' && showCustomRange && (
+          <div className="mt-2">
+            <DateRangePicker
+              value={customRange || { startDate: new Date(), endDate: new Date() }}
+              onChange={(range) => {
+                setCustomRange(range);
+                setShowCustomRange(false);
+              }}
+              hideDropdown={true}
+            />
+          </div>
+        )}
 
         {/* Content */}
         {loading ? (
@@ -224,7 +303,7 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {formatDate(order.timestamp)}
+                          {formatDate(order.created_at)}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
