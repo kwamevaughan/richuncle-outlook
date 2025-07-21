@@ -34,7 +34,8 @@ export default function UserModals({
   handleResetPassword,
   
   // Data
-  availableRoles
+  availableRoles,
+  stores
 }) {
   return (
     <>
@@ -98,6 +99,26 @@ export default function UserModals({
               ))}
             </select>
           </div>
+          {formData.role === 'cashier' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Store *
+              </label>
+              <select
+                value={formData.store_id || ''}
+                onChange={e => setFormData({ ...formData, store_id: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              >
+                <option value="">Select a store</option>
+                {stores.map(store => (
+                  <option key={store.id} value={store.id}>{store.name}</option>
+                ))}
+              </select>
+              {formErrors.store_id && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.store_id}</p>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -261,6 +282,26 @@ export default function UserModals({
               ))}
             </select>
           </div>
+          {formData.role === 'cashier' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Store *
+              </label>
+              <select
+                value={formData.store_id || ''}
+                onChange={e => setFormData({ ...formData, store_id: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              >
+                <option value="">Select a store</option>
+                {stores.map(store => (
+                  <option key={store.id} value={store.id}>{store.name}</option>
+                ))}
+              </select>
+              {formErrors.store_id && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.store_id}</p>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

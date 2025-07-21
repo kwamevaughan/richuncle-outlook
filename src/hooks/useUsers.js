@@ -25,7 +25,8 @@ export default function useUsers() {
     email: "",
     role: "user",
     is_active: true,
-    avatar_url: ""
+    avatar_url: "",
+    store_id: ""
   });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -120,7 +121,8 @@ export default function useUsers() {
       email: "",
       role: "cashier",
       is_active: true,
-      avatar_url: ""
+      avatar_url: "",
+      store_id: ""
     });
     setPassword("");
     setConfirmPassword("");
@@ -142,7 +144,8 @@ export default function useUsers() {
       email: user.email || "",
       role: user.role || "cashier",
       is_active: user.is_active ?? true,
-      avatar_url: user.avatar_url || ""
+      avatar_url: user.avatar_url || "",
+      store_id: user.store_id || ""
     });
     setPassword("");
     setConfirmPassword("");
@@ -191,6 +194,10 @@ export default function useUsers() {
     
     if (password && password !== confirmPassword) {
       errors.confirmPassword = "Passwords do not match";
+    }
+
+    if (formData.role === 'cashier' && !formData.store_id) {
+      errors.store_id = "Store is required for cashiers";
     }
     
     setFormErrors(errors);

@@ -1,0 +1,72 @@
+/* Dark mode styles for react-date-range */
+.dark-mode-datepicker .rdrCalendarWrapper{
+    background: #1F2937; /* Matches bg-gray-800 */
+    color: #E5E7EB; /* Matches text-gray-200 */
+}
+
+.dark-mode-datepicker .rdrDay {
+    background: #1F2937;
+    color: #E5E7EB;
+}
+
+.dark-mode-datepicker .rdrDayNumber span {
+    color: #E5E7EB;
+}
+
+.dark-mode-datepicker .rdrDayHovered,
+.dark-mode-datepicker .rdrDayHovered:hover {
+    background: #374151; /* Matches bg-gray-700 */
+}
+
+.dark-mode-datepicker .rdrDayToday .rdrDayNumber span {
+    color: #F05D23; /* Matches your accent color */
+    font-weight: bold;
+}
+
+.dark-mode-datepicker .rdrDayInRange,
+.dark-mode-datepicker .rdrDayStartOfRange,
+.dark-mode-datepicker .rdrDayEndOfRange {
+    background: #374151; /* Matches bg-gray-700 */
+    color: #E5E7EB;
+}
+
+.dark-mode-datepicker .rdrDefinedRangesWrapper {
+    background: #1F2937;
+    border-right: 1px solid #4B5563; /* Matches border-gray-600 */
+}
+
+.dark-mode-datepicker .rdrStaticRange {
+    background: #1F2937;
+    color: #E5E7EB;
+    border-bottom: 1px solid #4B5563;
+}
+
+.dark-mode-datepicker .rdrStaticRange:hover,
+.dark-mode-datepicker .rdrStaticRange.rdrStaticRangeSelected {
+    background: #374151;
+    color: #F05D23; /* Accent color for selected range */
+}
+
+.dark-mode-datepicker .rdrMonthAndYearWrapper {
+    background: #1F2937;
+    color: #E5E7EB;
+}
+
+.dark-mode-datepicker .rdrNextPrevButton {
+    background: #374151;
+    color: #E5E7EB;
+}
+
+.dark-mode-datepicker .rdrNextPrevButton:hover {
+    background: #4B5563; /* Matches hover:bg-gray-600 */
+}
+
+.dark-mode-datepicker .rdrMonthAndYearPickers select {
+    background: #374151;
+    color: #E5E7EB;
+    border: 1px solid #4B5563;
+}
+
+.dark-mode-datepicker .rdrMonthAndYearPickers select:hover {
+    background: #4B5563;
+}

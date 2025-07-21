@@ -8,11 +8,24 @@ import UserStats from "@/components/UserStats";
 import UserFilters from "@/components/UserFilters";
 import UserModals from "@/components/UserModals";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import ExportModal from "@/components/export/ExportModal";
 
 export default function UsersPage({ mode = "light", toggleMode, ...props }) {
   const { user: currentUser, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
   const usersHook = useUsers();
+  const [stores, setStores] = useState([]);
+  const [showExportModal, setShowExportModal] = useState(false);
+
+  useEffect(() => {
+    async function fetchStores() {
+      const res = await fetch("/api/stores");
+      const data = await res.json();
+      if (data.success) setStores(data.data);
+    }
+    fetchStores();
+  }, []);
   
   const {
     loading,
@@ -80,7 +93,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
                 className="w-10 h-10 rounded-full object-cover border"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+              <div className="w-10 h-10 rounded-full bg-blue-800 flex items-center justify-center text-white font-semibold">
                 {row.full_name ? row.full_name.charAt(0).toUpperCase() : "U"}
               </div>
             )}
@@ -116,6 +129,16 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
             {roleInfo.label}
           </span>
         );
+      }
+    },
+    {
+      accessor: 'store_id',
+      header: 'Store',
+      sortable: false,
+      render: (row) => {
+        if (!row || !row.store_id) return <span>-</span>;
+        const store = stores.find(s => s.id === row.store_id);
+        return <span>{store ? store.name : 'Unknown'}</span>;
       }
     },
     {
@@ -169,26 +192,27 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
   // Custom actions for the table
   const tableActions = [
     {
-      label: 'Edit',
-      icon: 'mdi:pencil',
-      onClick: (row) => openEditModal(row)
+      label: "Edit",
+      icon: "mdi:pencil",
+      onClick: (row) => openEditModal(row),
     },
     {
-      label: 'Reset Password',
-      icon: 'mdi:key-reset',
-      onClick: (row) => openResetPasswordModal(row)
+      label: "Reset Password",
+      icon: "teenyicons:password-outline",
+      onClick: (row) => openResetPasswordModal(row),
     },
     {
-      label: (row) => row && row.is_active ? 'Deactivate' : 'Activate',
-      icon: (row) => row && row.is_active ? 'mdi:account-off' : 'mdi:account-check',
-      onClick: (row) => toggleUserStatus(row)
+      label: (row) => (row && row.is_active ? "Deactivate" : "Activate"),
+      icon: (row) =>
+        row && row.is_active ? "mdi:account-off" : "mdi:account-check",
+      onClick: (row) => toggleUserStatus(row),
     },
     {
-      label: 'Delete',
-      icon: 'mdi:delete',
+      label: "Delete",
+      icon: "mdi:delete",
       onClick: (row) => openDeleteModal(row),
-      className: 'text-red-600 hover:text-red-800'
-    }
+      className: "text-red-600 hover:text-red-800",
+    },
   ];
 
   if (userLoading && LoadingComponent) return LoadingComponent;
@@ -217,7 +241,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">
                     <Icon
                       icon="mdi:account-multiple"
                       className="w-6 h-6 text-white"
@@ -238,19 +262,27 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
                   Refresh
                 </button>
                 {isAdmin && (
-                  <button
-                    onClick={openCreateModal}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                  >
-                    <Icon icon="mdi:plus" className="w-4 h-4" />
-                    Add User
-                  </button>
+                  <>
+                    <button
+                      onClick={openCreateModal}
+                      className="px-4 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                      <Icon icon="mdi:plus" className="w-4 h-4" />
+                      Add User
+                    </button>
+                    <button
+                      onClick={() => setShowExportModal(true)}
+                      className="px-4 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                      <Icon icon="mdi:export" className="w-4 h-4" />
+                      Export Data
+                    </button>
+                  </>
                 )}
               </div>
             </div>
 
-            {/* Statistics Cards */}
-            <UserStats stats={stats} />
+            
           </div>
 
           {/* Filters */}
@@ -300,6 +332,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
               emptyMessage="No users found"
               selectable={false}
               searchable={false}
+              onExport={isAdmin ? () => setShowExportModal(true) : undefined}
             />
           )}
         </div>
@@ -333,6 +366,15 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
         handleDeleteUser={handleDeleteUser}
         handleResetPassword={handleResetPassword}
         availableRoles={availableRoles}
+        stores={stores}
+      />
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        users={filteredUsers}
+        mode={mode}
+        type="users"
+        stores={stores}
       />
     </MainLayout>
   );

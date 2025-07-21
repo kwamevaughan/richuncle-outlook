@@ -35,6 +35,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   // Check for open cash register session for cashiers
   const [hasOpenSession, setHasOpenSession] = useState(true);
   const [sessionCheckLoading, setSessionCheckLoading] = useState(false);
+  const [autoShowRegister, setAutoShowRegister] = useState(false);
   const checkSession = async () => {
     setSessionCheckLoading(true);
     if (user?.role === 'cashier') {
@@ -43,6 +44,9 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       setHasOpenSession(data.success && data.data && data.data.length > 0);
       if (!(data.success && data.data && data.data.length > 0)) {
         import('react-hot-toast').then(({ toast }) => toast.error('You must open a cash register before making sales.'));
+        setAutoShowRegister(true);
+      } else {
+        setAutoShowRegister(false);
       }
     }
     setSessionCheckLoading(false);
@@ -183,8 +187,11 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         {...props}
       >
         <CashRegisterModal
-          isOpen={showCashRegister}
-          onClose={() => setShowCashRegister(false)}
+          isOpen={showCashRegister || autoShowRegister}
+          onClose={() => {
+            setShowCashRegister(false);
+            setAutoShowRegister(false);
+          }}
           user={user}
           onSessionChanged={checkSession}
         />

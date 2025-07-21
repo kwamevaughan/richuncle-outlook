@@ -16,7 +16,8 @@ export default async function handler(req, res) {
           is_active,
           created_at,
           updated_at,
-          last_login
+          last_login,
+          store_id
         `)
         .order("created_at", { ascending: false });
 

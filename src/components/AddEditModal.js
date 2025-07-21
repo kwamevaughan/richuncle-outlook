@@ -368,11 +368,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
         setError("Price is required");
         return;
       }
-      if (!costPrice.trim()) {
+      if (!costPrice || costPrice.toString().trim() === "") {
         setError("Cost Price is required");
         return;
       }
-      if (!taxPercentage.trim()) {
+      if (!taxPercentage || taxPercentage.toString().trim() === "") {
         setError("Tax Percentage is required");
         return;
       }
@@ -477,9 +477,9 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           name: productName.trim(),
           quantity: quantity.trim(),
           price: price.trim(),
-          cost_price: costPrice.trim(),
+          cost_price: costPrice.toString(),
           tax_type: taxType,
-          tax_percentage: taxPercentage.trim(),
+          tax_percentage: taxPercentage.toString(),
           sku: sku.trim(),
           store_id: storeId || null,
           warehouse_id: warehouseId || null,

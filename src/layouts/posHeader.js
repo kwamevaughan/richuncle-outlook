@@ -8,108 +8,7 @@ import CashRegisterModal from "@/components/CashRegisterModal";
 import SalesProfitModal from "@/components/SalesProfitModal";
 import NotificationButton from "@/components/NotificationButton";
 import { useModal } from "@/components/ModalContext";
-
-// Session Duration Component with Register Selector
-const SessionDuration = ({ mode, user, sessionRefreshKey }) => {
-  const [registers, setRegisters] = useState([]);
-  const [selectedRegister, setSelectedRegister] = useState(null);
-  const [session, setSession] = useState(null);
-  const [duration, setDuration] = useState(0);
-
-  // Fetch registers on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/registers');
-        const data = await res.json();
-        if (data.success && data.data && data.data.length > 0) {
-          setRegisters(data.data);
-          // Try to load last used register from localStorage
-          const last = localStorage.getItem('pos_selected_register');
-          const found = data.data.find(r => r.id === last);
-          setSelectedRegister(found ? found.id : data.data[0].id);
-        }
-      } catch (err) {
-        setRegisters([]);
-      }
-    })();
-  }, []);
-
-  // Persist selected register
-  useEffect(() => {
-    if (selectedRegister) {
-      localStorage.setItem('pos_selected_register', selectedRegister);
-    }
-  }, [selectedRegister]);
-
-  // Fetch open session for selected register
-  useEffect(() => {
-    if (!selectedRegister) return;
-    (async () => {
-      try {
-        const res = await fetch(`/api/cash-register-sessions?status=open&register_id=${selectedRegister}`);
-        const data = await res.json();
-        if (data.success && data.data && data.data.length > 0) {
-          setSession(data.data[0]);
-        } else {
-          setSession(null);
-        }
-      } catch (err) {
-        setSession(null);
-      }
-    })();
-  }, [selectedRegister, sessionRefreshKey]);
-
-  // Update duration every second
-  useEffect(() => {
-    if (!session) return;
-    const interval = setInterval(() => {
-      setDuration(Math.floor((Date.now() - new Date(session.opened_at).getTime()) / 1000));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [session]);
-
-  const formatDuration = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${h}h ${m}m ${s}s`;
-  };
-
-  return (
-    <div className="relative flex items-center gap-3">
-      <select
-        className={`border rounded px-2 py-1 text-sm ${mode === 'dark' ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`}
-        value={selectedRegister || ''}
-        onChange={e => setSelectedRegister(e.target.value)}
-        style={{ minWidth: 120 }}
-      >
-        {registers.map(r => (
-          <option key={r.id} value={r.id}>{r.name || `Register ${r.id}`}</option>
-        ))}
-      </select>
-      <button
-        className={
-          `flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg ` +
-          (mode === "dark"
-            ? "bg-gray-800/80 text-white hover:bg-gray-700/80"
-            : "bg-white/80 text-gray-700 hover:bg-white/95") +
-          " backdrop-blur-sm border border-white/20"
-        }
-        disabled
-      >
-        <span className="font-semibold">Session Duration :</span>
-        <Icon
-          icon="mdi:clock-outline"
-          className={`h-4 w-4 ${mode === "dark" ? "text-green-400" : "text-green-600"}`}
-        />
-        <span className="text-sm font-semibold">
-          {session ? formatDuration(duration) : "No session open"}
-        </span>
-      </button>
-    </div>
-  );
-};
+import SessionDuration from "@/components/SessionDuration";
 
 const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrderData, onOpenOrderHistory }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -123,17 +22,41 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showProfitModal, setShowProfitModal] = useState(false);
   const [sessionRefreshKey, setSessionRefreshKey] = useState(0);
-  const handleSessionChanged = () => setSessionRefreshKey(k => k + 1);
+  const handleSessionChanged = () => setSessionRefreshKey((k) => k + 1);
+  const [userStoreName, setUserStoreName] = useState("");
+  const [stores, setStores] = useState([]);
 
   // Debug logging
   useEffect(() => {
-    console.log('PosHeader mounted');
-    return () => console.log('PosHeader unmounted');
+    console.log("PosHeader mounted");
+    return () => console.log("PosHeader unmounted");
   }, []);
 
   useEffect(() => {
-    console.log('showCashRegister changed:', showCashRegister);
+    console.log("showCashRegister changed:", showCashRegister);
   }, [showCashRegister]);
+
+  useEffect(() => {
+    if (user && user.store_id && stores.length > 0) {
+      const store = stores.find((s) => String(s.id) === String(user.store_id));
+      setUserStoreName(store ? store.name : "");
+    }
+  }, [user, stores]);
+
+  useEffect(() => {
+    // Fetch all stores
+    (async () => {
+      try {
+        const res = await fetch("/api/stores");
+        const data = await res.json();
+        if (data.success && data.data) {
+          setStores(data.data);
+        }
+      } catch (err) {
+        setStores([]);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -188,8 +111,8 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
           `}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center w-full gap-4">
-              {user?.role !== 'cashier' && (
+            <div className="flex items-center w-full ">
+              {user?.role !== "cashier" && (
                 <Link
                   href="/dashboard"
                   className="flex items-center justify-center gap-2 bg-blue-950 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
@@ -202,7 +125,44 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 </Link>
               )}
 
-              <SessionDuration mode={mode} user={user} sessionRefreshKey={sessionRefreshKey} />
+              <SessionDuration
+                mode={mode}
+                user={user}
+                sessionRefreshKey={sessionRefreshKey}
+              />
+            </div>
+
+            <div className="flex items-center w-full gap-4">
+              <div
+                className={
+                  `flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg ` +
+                  (mode === "dark"
+                    ? "bg-gray-800/80 text-white hover:bg-gray-700/80"
+                    : "bg-white/80 text-gray-700 hover:bg-white/95") +
+                  " backdrop-blur-sm border border-white/20"
+                }
+                disabled
+              >
+                <span className="flex gap-1 font-semibold">
+                  Store :<span className="text-gray-500">{userStoreName}</span>
+                </span>
+              </div>
+
+              <div
+                className={
+                  `flex items-center  gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg ` +
+                  (mode === "dark"
+                    ? "bg-gray-800/80 text-white hover:bg-gray-700/80"
+                    : "bg-white/80 text-gray-700 hover:bg-white/95") +
+                  " backdrop-blur-sm border border-white/20"
+                }
+                disabled
+              >
+                <div className="flex gap-1 font-semibold">
+                  <span className="text-gray-500">Cashier :</span>{" "}
+                  <span className="text-gray-500">{user.name}</span>
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-center items-center w-full gap-4">
@@ -211,7 +171,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 mode={mode}
                 className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
                 onClick={() => {
-                  console.log('Cash Register button clicked');
+                  console.log("Cash Register button clicked");
                   setShowCashRegister(true);
                 }}
               >
@@ -257,7 +217,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 <Icon icon="mdi:cart-sale" className="h-7 w-7 text-gray-500" />
               </TooltipIconButton>
 
-              {user?.role !== 'cashier' && (
+              {user?.role !== "cashier" && (
                 <TooltipIconButton
                   label="Today's Profit"
                   mode={mode}
@@ -407,7 +367,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
       <CashRegisterModal
         isOpen={showCashRegister}
         onClose={() => {
-          console.log('Cash Register modal closing');
+          console.log("Cash Register modal closing");
           setShowCashRegister(false);
         }}
         user={user}

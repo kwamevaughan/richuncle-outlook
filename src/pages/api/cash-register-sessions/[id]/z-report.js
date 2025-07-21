@@ -15,7 +15,22 @@ export default async function handler(req, res) {
         .select("*")
         .eq("id", id)
         .single();
-      if (sessionError || !session) throw sessionError || new Error("Session not found");
+      if (sessionError || !session) {
+        return res.status(404).json({ success: false, error: "Session not found" });
+      }
+
+      // Fetch user info for the session
+      let userName = null;
+      if (session.user_id) {
+        const { data: user, error: userError } = await supabaseAdmin
+          .from("users")
+          .select("full_name, email")
+          .eq("id", session.user_id)
+          .single();
+        if (user && user.full_name) userName = user.full_name;
+        else if (user && user.email) userName = user.email;
+      }
+      session.user = userName;
 
       // Use opened_at and closed_at, fallback to now if closed_at is null
       const openedAt = session.opened_at;
@@ -96,14 +111,12 @@ export default async function handler(req, res) {
         totalExpense += Number(exp.amount || 0);
       }
 
-      // Cash in hand: opening_cash + all cash_in - all cash_out + cash sales
+      // Cash in hand: opening_cash + all cash_in - all cash_out
       let cashInHand = Number(session.opening_cash || 0);
       for (const m of movements) {
         if (m.type === 'cash_in') cashInHand += Number(m.amount || 0);
         if (m.type === 'cash_out') cashInHand -= Number(m.amount || 0);
       }
-      // Add cash sales
-      cashInHand += paymentBreakdown.cash;
 
       // Total cash: cashInHand + totalPayment (if cash payments are not already included)
       let totalCash = cashInHand + paymentBreakdown.cash;
@@ -128,7 +141,7 @@ export default async function handler(req, res) {
       });
     } catch (error) {
       console.error("Z-report API error:", error);
-      return res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ error: error.message || "Internal server error" });
     }
   }
 

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
     "@iconify/react": "^5.2.1",
     "@supabase/ssr": "^0.6.1",
@@ -38,6 +39,8 @@
     "jose": "^6.0.10",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "leaflet": "^1.9.4",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
@@ -47,6 +50,7 @@
     "react": "^18.3.1",
     "react-apexcharts": "^1.7.0",
     "react-barcode": "^1.6.1",
+    "react-csv": "^2.2.2",
     "react-date-range": "^2.0.1",
     "react-dom": "^18.3.1",
     "react-dropzone": "^14.3.5",

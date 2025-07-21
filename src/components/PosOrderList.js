@@ -57,17 +57,18 @@ const PosOrderList = ({
   customers = [],
   setCustomers,
   onOrderComplete,
-  user,
-  hasOpenSession = true,
-  sessionCheckLoading = false,
-  ...props
+  user
 }) => {
 
   const [selectedPayment, setSelectedPayment] = useState("");
   const [orderId, setOrderId] = useState("");
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [barcodeProduct, setBarcodeProduct] = useState(null);
+  const [barcodeError, setBarcodeError] = useState("");
+  const [barcodeQty, setBarcodeQty] = useState(1);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentType, setSelectedPaymentType] = useState("");
   const [paymentData, setPaymentData] = useState(null);
@@ -78,10 +79,6 @@ const PosOrderList = ({
   const [isOnlinePurchase, setIsOnlinePurchase] = useState(false);
   const [onlineEmail, setOnlineEmail] = useState("");
   const [onlineOrderRef, setOnlineOrderRef] = useState("");
-  const [showAddDiscountModal, setShowAddDiscountModal] = useState(false);
-  const [addDiscountLoading, setAddDiscountLoading] = useState(false);
-  const [addDiscountError, setAddDiscountError] = useState("");
-  const [newDiscount, setNewDiscount] = useState({ name: "", type: "percent", value: "" });
   
   // Detect if user is on Chrome
   const isChrome = typeof window !== 'undefined' && /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
@@ -94,14 +91,6 @@ const PosOrderList = ({
   }, []);
 
   const handleQty = (id, delta) => {
-    if (sessionCheckLoading) {
-      toast.error('Checking register status, please wait...');
-      return;
-    }
-    if (user?.role === 'cashier' && !hasOpenSession) {
-      toast.error('You must open a cash register before making sales.');
-      return;
-    }
     if (!products.length) return;
     const product = products.find(p => p.id === id);
     const qty = Math.max(1, (quantities[id] || 1) + delta);
@@ -116,14 +105,6 @@ const PosOrderList = ({
   };
 
   const handleRemove = (id) => {
-    if (sessionCheckLoading) {
-      toast.error('Checking register status, please wait...');
-      return;
-    }
-    if (user?.role === 'cashier' && !hasOpenSession) {
-      toast.error('You must open a cash register before making sales.');
-      return;
-    }
     setSelectedProducts(prev => prev.filter(pid => pid !== id));
     setQuantities(prev => {
       const q = { ...prev };
@@ -133,14 +114,6 @@ const PosOrderList = ({
   };
 
   const handleClearAll = () => {
-    if (sessionCheckLoading) {
-      toast.error('Checking register status, please wait...');
-      return;
-    }
-    if (user?.role === 'cashier' && !hasOpenSession) {
-      toast.error('You must open a cash register before making sales.');
-      return;
-    }
     setSelectedProducts([]);
     setQuantities({});
   };
@@ -225,22 +198,11 @@ const PosOrderList = ({
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Fetch open session for register_id and session_id
-      const sessionRes = await fetch('/api/cash-register-sessions?status=open');
-      const sessionJson = await sessionRes.json();
-      const openSession = sessionJson.success && sessionJson.data && sessionJson.data.length > 0 ? sessionJson.data[0] : null;
-      if (!openSession) {
-        toast.error("No open cash register session found. Please open a register first.");
-        if (processingToast) toast.dismiss(processingToast);
-        return;
-      }
-
       // Process payment based on type
       if (paymentData.paymentType === "split") {
         paymentResult = {
           success: true,
           method: "split",
-          paymentType: "split",
           totalPaid: paymentData.total - paymentData.remainingAmount,
           payments: paymentData.splitPayments
         };
@@ -248,7 +210,6 @@ const PosOrderList = ({
         paymentResult = {
           success: true,
           method: paymentData.paymentType,
-          paymentType: paymentData.paymentType,
           amount: parseFloat(paymentData.payingAmount),
           change: paymentData.change,
           reference: paymentData.referenceNumber || null
@@ -271,16 +232,31 @@ const PosOrderList = ({
           const product = products.find(p => p.id === id);
           const qty = quantities[id] || 1;
           const itemSubtotal = product.price * qty;
+          // Calculate item tax
+          let itemTax = 0;
+          if (product && product.tax_percentage && product.tax_percentage > 0) {
+            const taxPercentage = Number(product.tax_percentage);
+            if (product.tax_type === 'exclusive') {
+              itemTax = (product.price * taxPercentage / 100) * qty;
+            } else if (product.tax_type === 'inclusive') {
+              const priceWithoutTax = product.price / (1 + taxPercentage / 100);
+              itemTax = (product.price - priceWithoutTax) * qty;
+            }
+          }
           return {
             productId: id,
             name: product.name,
             quantity: qty,
             price: product.price,
             costPrice: product.cost_price || 0,
+            taxType: product.tax_type || 'exclusive',
+            taxPercentage: product.tax_percentage || 0,
+            itemTax: itemTax,
             total: itemSubtotal
           };
         }),
         subtotal,
+        tax,
         discount,
         total,
         payment: paymentResult,
@@ -294,8 +270,6 @@ const PosOrderList = ({
         online_email: isOnlinePurchase ? onlineEmail : undefined,
         online_order_ref: isOnlinePurchase ? onlineOrderRef : undefined,
         status: "Completed",
-        register_id: openSession.register_id,
-        session_id: openSession.id,
       };
 
       // Insert order into 'orders' table
@@ -309,6 +283,7 @@ const PosOrderList = ({
           customer_id: orderData.customerId,
           customer_name: orderData.customerName,
           subtotal: orderData.subtotal,
+          tax: orderData.tax,
           discount: orderData.discount,
           total: orderData.total,
           payment_method: orderData.payment.method,
@@ -323,8 +298,6 @@ const PosOrderList = ({
           online_email: orderData.online_email,
           online_order_ref: orderData.online_order_ref,
           status: orderData.status,
-          register_id: orderData.register_id,
-          session_id: orderData.session_id,
         }),
       });
       const orderResJson = await response.json();
@@ -338,6 +311,9 @@ const PosOrderList = ({
         quantity: item.quantity,
         price: item.price,
         cost_price: item.costPrice,
+        tax_type: item.taxType,
+        tax_percentage: item.taxPercentage,
+        item_tax: item.itemTax,
         total: item.total
       }));
       const itemsResponse = await fetch('/api/order-items', {
@@ -425,8 +401,27 @@ const PosOrderList = ({
   
   const totalProfit = subtotal - totalCost;
   
-
-
+  // Calculate tax based on product tax configuration
+  const tax = selectedProducts.reduce((sum, id) => {
+    const product = products.find(p => p.id === id);
+    const qty = quantities[id] || 1;
+    if (!product || !product.tax_percentage || product.tax_percentage <= 0) return sum;
+    
+    const taxPercentage = Number(product.tax_percentage);
+    let itemTax = 0;
+    
+    if (product.tax_type === 'exclusive') {
+      // Tax is added on top of the price
+      itemTax = (product.price * taxPercentage / 100) * qty;
+    } else if (product.tax_type === 'inclusive') {
+      // Tax is included in the price, so we need to extract it
+      const priceWithoutTax = product.price / (1 + taxPercentage / 100);
+      itemTax = (product.price - priceWithoutTax) * qty;
+    }
+    
+    return sum + itemTax;
+  }, 0);
+  
   let discount = 0;
   let discountLabel = "No discount";
   let discountType = "";
@@ -443,7 +438,7 @@ const PosOrderList = ({
     }
   }
   const roundoff = roundoffEnabled ? 0 : 0;
-  const total = subtotal - discount + roundoff;
+  const total = subtotal + tax - discount + roundoff;
 
   const { users: allUsers } = useUsers();
 
@@ -493,7 +488,9 @@ const PosOrderList = ({
             >
               <Icon icon="mdi:account-plus" className="w-5 h-5" />
             </button>
-            
+            <button className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700" onClick={() => setShowBarcodeModal(true)}>
+              <Icon icon="mdi:fullscreen" className="w-5 h-5" />
+            </button>
           </div>
         </div>
         {/* Order Details */}
@@ -573,7 +570,7 @@ const PosOrderList = ({
                   />
                 </span>
                 <div>
-                  <div className="font-bold text-purple-700 flex items-center gap-2">
+                  <div className="font-bold text-purple-700">
                     <select
                       className="bg-transparent font-bold text-purple-700 outline-none"
                       value={selectedDiscountId}
@@ -586,14 +583,6 @@ const PosOrderList = ({
                         </option>
                       ))}
                     </select>
-                    <button
-                      type="button"
-                      className="ml-2 p-1 rounded-full bg-purple-200 hover:bg-purple-300 text-purple-700"
-                      onClick={() => setShowAddDiscountModal(true)}
-                      title="Add Discount"
-                    >
-                      <Icon icon="mdi:plus" className="w-5 h-5" />
-                    </button>
                   </div>
                   <div className="text-xs text-gray-700">
                     {discountLabel}
@@ -609,7 +598,19 @@ const PosOrderList = ({
           <div className="flex flex-col gap-1 text-sm">
             
             
-
+            <div className="flex justify-between items-center">
+              <span>
+                Tax{" "}
+                
+              </span>
+              <span>GHS {tax.toLocaleString()}</span>
+            </div>
+            
+            {tax > 0 && (
+              <div className="text-xs text-gray-500 ml-4">
+                (Calculated based on product tax rates)
+              </div>
+            )}
             
             <div className="flex justify-between items-center">
               <span className="text-red-500">
@@ -621,7 +622,7 @@ const PosOrderList = ({
               </span>
             </div>
             
-            {totalProfit > 0 && user?.role !== 'cashier' && (
+            {totalProfit > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-green-600 font-medium">
                   Estimated Profit
@@ -737,10 +738,10 @@ const PosOrderList = ({
             Print Order
           </button>
           <button 
-            onClick={hasOpenSession ? processCompleteTransaction : () => toast.error('You must open a cash register before making sales.')}
-            disabled={!paymentData || selectedProducts.length === 0 || !hasOpenSession}
+            onClick={processCompleteTransaction}
+            disabled={!paymentData || selectedProducts.length === 0}
             className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 font-semibold transition ${
-              paymentData && selectedProducts.length > 0 && hasOpenSession
+              paymentData && selectedProducts.length > 0
                 ? "bg-blue-900 text-white hover:bg-blue-800"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }`}
@@ -780,7 +781,126 @@ const PosOrderList = ({
         />
       )}
 
-      
+      {showBarcodeModal && (
+        <SimpleModal
+          isOpen={true}
+          onClose={() => {
+            setShowBarcodeModal(false);
+            setBarcodeInput("");
+            setBarcodeProduct(null);
+            setBarcodeError("");
+            setBarcodeQty(1);
+          }}
+          title="Add Product by Barcode"
+          mode="light"
+          width="max-w-md"
+        >
+          <div className="space-y-4">
+            <label className="block font-semibold">Enter Barcode</label>
+            <input
+              className="w-full border rounded px-3 py-2"
+              value={barcodeInput}
+              onChange={e => {
+                const value = e.target.value;
+                setBarcodeInput(value);
+                setBarcodeError("");
+                if (!value.trim()) {
+                  setBarcodeProduct(null);
+                  setBarcodeError("");
+                  return;
+                }
+                const found = products.find(p => p.barcode === value.trim());
+                if (!found) {
+                  setBarcodeProduct(null);
+                  setBarcodeError("No product found with this barcode.");
+                } else {
+                  setBarcodeProduct(found);
+                  setBarcodeQty(quantities[found.id] || 1);
+                  setBarcodeError("");
+                  
+                  // Auto-add product to order list
+                  const qty = quantities[found.id] || 1;
+                  if (qty > found.quantity) {
+                    toast.error(`Cannot add ${qty} units. Only ${found.quantity} units available in stock.`);
+                    return;
+                  }
+                  
+                  if (!selectedProducts.includes(found.id)) {
+                    setSelectedProducts([...selectedProducts, found.id]);
+                    setQuantities(q => ({ ...q, [found.id]: qty }));
+                  } else {
+                    setQuantities(currentQuantities => {
+                      const newQty = (currentQuantities[found.id] || 1) + qty;
+                      if (newQty > found.quantity) {
+                        toast.error(`Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`);
+                        return currentQuantities; // Return unchanged quantities
+                      }
+                      return { ...currentQuantities, [found.id]: newQty };
+                    });
+                    return; // Exit early to prevent the success toast and modal close
+                  }
+                  
+                  // Play beep sound and show success message
+                  playBellBeep();
+                  toast.success(`Added ${found.name} to order list!`);
+                  setShowBarcodeModal(false);
+                  setBarcodeInput("");
+                  setBarcodeProduct(null);
+                  setBarcodeError("");
+                  setBarcodeQty(1);
+                }
+              }}
+              placeholder="Scan or enter barcode"
+              autoFocus
+            />
+            {barcodeError && <div className="text-red-500 text-sm">{barcodeError}</div>}
+          </div>
+          {barcodeProduct && (
+            <div className="mt-6 p-4 border rounded bg-gray-50">
+              <div className="font-bold mb-2">{barcodeProduct.name}</div>
+              <div className="mb-2">Price: GHS {barcodeProduct.price?.toLocaleString()}</div>
+              <div className="mb-2">Stock: {barcodeProduct.quantity}</div>
+              <div className="mb-2 flex items-center gap-2">
+                <span>Quantity:</span>
+                <button type="button" className="px-2 py-1 bg-gray-200 rounded" onClick={() => setBarcodeQty(q => Math.max(1, q - 1))}>-</button>
+                <input type="number" min="1" max={barcodeProduct.quantity} value={barcodeQty} onChange={e => setBarcodeQty(Number(e.target.value))} className="w-16 border rounded px-2 py-1" />
+                <button type="button" className="px-2 py-1 bg-gray-200 rounded" onClick={() => setBarcodeQty(q => Math.min(barcodeProduct.quantity, q + 1))}>+</button>
+              </div>
+              <button
+                className="w-full bg-green-600 text-white rounded py-2 font-semibold mt-2"
+                onClick={() => {
+                  if (barcodeQty > barcodeProduct.quantity) {
+                    toast.error(`Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`);
+                    return;
+                  }
+                  
+                  if (!selectedProducts.includes(barcodeProduct.id)) {
+                    setSelectedProducts([...selectedProducts, barcodeProduct.id]);
+                    setQuantities(q => ({ ...q, [barcodeProduct.id]: barcodeQty }));
+                  } else {
+                    const newQty = (q[barcodeProduct.id] || 1) + barcodeQty;
+                    if (newQty > barcodeProduct.quantity) {
+                      toast.error(`Cannot add ${barcodeQty} more units. Total would exceed available stock of ${barcodeProduct.quantity} units.`);
+                      return;
+                    }
+                    setQuantities(q => ({ ...q, [barcodeProduct.id]: newQty }));
+                  }
+                  // Play beep sound and show success message
+                  playBellBeep();
+                  setShowBarcodeModal(false);
+                  setBarcodeInput("");
+                  setBarcodeProduct(null);
+                  setBarcodeError("");
+                  setBarcodeQty(1);
+                  toast.success("Product added to order list!");
+                }}
+              >
+                Add to Order List
+              </button>
+            </div>
+          )}
+        </SimpleModal>
+      )}
 
       {/* Payment Form Modal */}
       <PaymentForm
@@ -906,6 +1026,7 @@ const PosOrderList = ({
                        price: item.price
                      })),
                      subtotal: successOrderData.subtotal,
+                     tax: successOrderData.tax,
                      discount: successOrderData.discount,
                      total: successOrderData.total,
                      selectedCustomerId: successOrderData.customerId,
@@ -963,104 +1084,6 @@ const PosOrderList = ({
            </div>
          </SimpleModal>
        )}
-
-      {/* Add Discount Modal */}
-      {showAddDiscountModal && (
-        <SimpleModal
-          isOpen={true}
-          onClose={() => {
-            setShowAddDiscountModal(false);
-            setAddDiscountError("");
-            setNewDiscount({ name: "", type: "percent", value: "" });
-          }}
-          title="Add Discount"
-          mode="light"
-          width="max-w-md"
-        >
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setAddDiscountLoading(true);
-              setAddDiscountError("");
-              try {
-                const res = await fetch("/api/discounts", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    name: newDiscount.name,
-                    type: newDiscount.type,
-                    value: newDiscount.value,
-                  }),
-                });
-                const result = await res.json();
-                if (!result.success) throw new Error(result.error || "Failed to add discount");
-                setDiscounts(prev => [result.data, ...prev]);
-                setSelectedDiscountId(result.data.id);
-                setShowAddDiscountModal(false);
-                setNewDiscount({ name: "", type: "percent", value: "" });
-                setAddDiscountError("");
-              } catch (err) {
-                setAddDiscountError(err.message || "Failed to add discount");
-              } finally {
-                setAddDiscountLoading(false);
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block font-semibold mb-1">Discount Name</label>
-              <input
-                className="w-full border rounded px-3 py-2"
-                value={newDiscount.name}
-                onChange={e => setNewDiscount(d => ({ ...d, name: e.target.value }))}
-                required
-                placeholder="e.g. Summer Sale"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Type</label>
-              <select
-                className="w-full border rounded px-3 py-2"
-                value={newDiscount.type}
-                onChange={e => setNewDiscount(d => ({ ...d, type: e.target.value }))}
-              >
-                <option value="percent">Percent (%)</option>
-                <option value="amount">Amount (GHS)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Value</label>
-              <input
-                className="w-full border rounded px-3 py-2"
-                type="number"
-                min="0"
-                value={newDiscount.value}
-                onChange={e => setNewDiscount(d => ({ ...d, value: e.target.value }))}
-                required
-                placeholder={newDiscount.type === "percent" ? "e.g. 10 for 10%" : "e.g. 20 for GHS 20"}
-              />
-            </div>
-            {addDiscountError && <div className="text-red-500 text-sm">{addDiscountError}</div>}
-            <div className="flex gap-3 mt-4">
-              <button
-                type="button"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700"
-                onClick={() => setShowAddDiscountModal(false)}
-                disabled={addDiscountLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-2 bg-purple-700 text-white rounded font-semibold disabled:opacity-50"
-                disabled={addDiscountLoading || !newDiscount.name || !newDiscount.value}
-              >
-                {addDiscountLoading ? "Adding..." : "Add Discount"}
-              </button>
-            </div>
-          </form>
-        </SimpleModal>
-      )}
     </div>
   );
 };

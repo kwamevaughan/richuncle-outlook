@@ -137,6 +137,7 @@ export function GenericTable({
   customRowRender,
   importType,
   enableDateFilter = false,
+  onExport,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
@@ -321,7 +322,7 @@ export function GenericTable({
               <div className="flex flex-1 flex-wrap gap-3 items-center">
                 {/* Search */}
                 {searchable && (
-                  <div className="relative">
+                  <div className="relative flex items-center gap-2">
                     
                     <Icon
                       icon="mdi:magnify"
@@ -334,6 +335,15 @@ export function GenericTable({
                       onChange={(e) => table.setSearchTerm(e.target.value)}
                       className="pl-10 pr-4 py-2 w-56 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                     />
+                    {onAddNew && (
+                      <button
+                        onClick={onAddNew}
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ml-2"
+                      >
+                        <Icon icon="mdi:plus" className="w-4 h-4" />
+                        {addNewLabel}
+                      </button>
+                    )}
                   </div>
                 )}
                 {/* Status Filter */}
@@ -418,22 +428,7 @@ export function GenericTable({
                   </div>
                 )}
               </div>
-              {/* Export, Import, and Add New on the right */}
-              <div className="flex items-center gap-3 ml-auto">
-                <CategoryCSVExport data={safeData} filename={`${title?.replace(/\s+/g, "_") || "data"}.csv`} />
-                {onImport && (
-                  <CategoryCSVImport onImport={onImport} type={importType} />
-                )}
-                {onAddNew && (
-                  <button
-                    onClick={onAddNew}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    <Icon icon="mdi:plus" className="w-4 h-4" />
-                    {addNewLabel}
-                  </button>
-                )}
-              </div>
+              
             </div>
           </div>
         </div>

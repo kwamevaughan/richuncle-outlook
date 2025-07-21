@@ -116,6 +116,7 @@ export const AuthProvider = ({ children }) => {
         is_active: userData.is_active,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
+        store_id: userData.store_id,
       };
 
       setUser(user);
@@ -307,6 +308,7 @@ export const AuthProvider = ({ children }) => {
             is_active: existingUser.is_active,
             created_at: existingUser.created_at,
             updated_at: existingUser.updated_at,
+            store_id: existingUser.store_id,
           });
 
           toast.success("Social login successful! Redirecting...");
