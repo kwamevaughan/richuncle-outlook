@@ -321,7 +321,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     <Icon icon="mdi:check" className="w-2 h-2 text-white" />
                   </span>
                 )}
-                {product.image_url && (
+                {product.image_url ? (
                   <div className="w-full flex items-center justify-center mb-2 bg-gray-100 rounded p-2 ">
                     <Image
                       src={product.image_url}
@@ -330,6 +330,10 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       height={112}
                       className="object-cover rounded w-28 h-28 transition-transform duration-500 group-hover:scale-110"
                     />
+                  </div>
+                ) : (
+                  <div className="w-full flex items-center justify-center mb-2 bg-gray-100 rounded p-2 ">
+                    <Icon icon="mdi:image-off-outline" className="rounded border w-28 h-28 text-gray-400 bg-gray-100 object-cover" />
                   </div>
                 )}
                 <div className="text-xs text-gray-500 mb-1 self-start">

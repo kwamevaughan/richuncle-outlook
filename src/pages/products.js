@@ -179,8 +179,10 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                   { header: "SKU", accessor: "sku", sortable: true },
                   { header: "Product Name", accessor: "name", sortable: true, render: (row) => (
                     <span className="flex items-center gap-2">
-                      {row.image_url && (
+                      {row.image_url ? (
                         <Image src={row.image_url} alt={row.name} width={32} height={32} className="rounded object-cover border w-8 h-8" />
+                      ) : (
+                        <Icon icon="mdi:image-off-outline" className="rounded border w-8 h-8 text-gray-400 bg-gray-100 object-cover" />
                       )}
                       <span>{row.name}</span>
                     </span>

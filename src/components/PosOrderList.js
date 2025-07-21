@@ -579,19 +579,19 @@ const PosOrderList = ({
           </div>
           {/* Discount Selector */}
           <div className="mt-4 mb-2">
-            <label className="block text-xs font-semibold text-purple-700 mb-1 ml-1">Select Discount</label>
-            <div className="flex items-center bg-purple-100 border border-purple-300 rounded-xl px-4 py-3 gap-3 relative">
+            <label className="block text-xs font-semibold text-blue-800 mb-1 ml-1">Select Discount</label>
+            <div className="flex items-center bg-blue-100 border border-blue-300 rounded-xl px-4 py-3 gap-3 relative">
               <div className="flex items-center gap-2">
                 <span className="bg-white rounded-full p-2">
                   <Icon
                     icon="mdi:brightness-percent"
-                    className="w-6 h-6 text-purple-600"
+                    className="w-6 h-6 text-blue-800"
                   />
                 </span>
                 <div>
-                  <div className="font-bold text-purple-700">
+                  <div className="font-bold text-blue-800">
                     <select
-                      className="bg-transparent font-bold text-purple-700 outline-none"
+                      className="bg-transparent font-bold text-blue-800 outline-none"
                       value={selectedDiscountId}
                       onChange={e => setSelectedDiscountId(e.target.value)}
                     >
