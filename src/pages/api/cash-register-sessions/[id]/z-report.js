@@ -79,7 +79,7 @@ export default async function handler(req, res) {
 
       // Aggregate sales, payments, returns, etc.
       let totalSales = 0, totalReturn = 0, totalPayment = 0;
-      let paymentBreakdown = { cash: 0, card: 0, cheque: 0, gift_card: 0, deposit: 0 };
+      let paymentBreakdown = { cash: 0, card: 0, gift_card: 0, deposit: 0 };
       let productsSold = {};
       for (const order of orders) {
         totalSales += Number(order.total || 0);
@@ -89,7 +89,6 @@ export default async function handler(req, res) {
             const pd = typeof order.payment_data === 'string' ? JSON.parse(order.payment_data) : order.payment_data;
             if (pd.paymentType === 'cash') paymentBreakdown.cash += Number(order.total || 0);
             if (pd.paymentType === 'card') paymentBreakdown.card += Number(order.total || 0);
-            if (pd.paymentType === 'cheque') paymentBreakdown.cheque += Number(order.total || 0);
             if (pd.paymentType === 'gift_card') paymentBreakdown.gift_card += Number(order.total || 0);
             if (pd.paymentType === 'deposit') paymentBreakdown.deposit += Number(order.total || 0);
             totalPayment += Number(order.total || 0);

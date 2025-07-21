@@ -115,10 +115,6 @@ const ReceiptPreviewModal = ({
               <span>Subtotal:</span>
               <span>GHS ${receiptData.subtotal.toLocaleString()}</span>
             </div>
-            <div class="summary-row">
-              <span>Tax:</span>
-              <span>GHS ${receiptData.tax.toLocaleString()}</span>
-            </div>
             ${
               receiptData.discount > 0
                 ? `
@@ -290,10 +286,6 @@ const ReceiptPreviewModal = ({
             <div className="flex justify-between">
               <span>Subtotal:</span>
               <span>GHS {receiptData.subtotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Tax:</span>
-              <span>GHS {receiptData.tax.toLocaleString()}</span>
             </div>
             {receiptData.discount > 0 && (
               <div className="flex justify-between text-red-600">

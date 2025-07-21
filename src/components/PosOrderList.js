@@ -39,7 +39,6 @@ const dummyOrder = {
 const paymentMethods = [
   { key: "cash", label: "Cash", icon: "mdi:cash" },
   { key: "momo", label: "Momo", icon: "mdi:wallet-outline" },
-  { key: "cheque", label: "Cheque", icon: "mdi:checkbook" },
   { key: "split", label: "Split Bill", icon: "mdi:call-split" },
 ];
 
@@ -438,7 +437,7 @@ const PosOrderList = ({
     }
   }
   const roundoff = roundoffEnabled ? 0 : 0;
-  const total = subtotal + tax - discount + roundoff;
+  const total = subtotal - discount + roundoff;
 
   const { users: allUsers } = useUsers();
 
@@ -600,20 +599,6 @@ const PosOrderList = ({
             
             <div className="flex justify-between items-center">
               <span>
-                Tax{" "}
-                
-              </span>
-              <span>GHS {tax.toLocaleString()}</span>
-            </div>
-            
-            {tax > 0 && (
-              <div className="text-xs text-gray-500 ml-4">
-                (Calculated based on product tax rates)
-              </div>
-            )}
-            
-            <div className="flex justify-between items-center">
-              <span className="text-red-500">
                 Discount
                 
               </span>

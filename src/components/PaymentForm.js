@@ -7,7 +7,6 @@ import PaymentAmounts from "./payment/PaymentAmounts";
 import PaymentNotes from "./payment/PaymentNotes";
 import PaymentCustomerInfo from "./payment/PaymentCustomerInfo";
 import MomoPayment from "./payment/types/MomoPayment";
-import ChequePayment from "./payment/types/ChequePayment";
 import { getPaymentTypeLabel, getPaymentTypeIcon, validatePaymentData } from "./payment/utils/paymentHelpers";
 
 const PaymentForm = ({ 
@@ -39,14 +38,6 @@ const PaymentForm = ({
     momoProvider: "",
     customerPhone: "",
     transactionId: "",
-    chequeNumber: "",
-    bankName: "",
-    accountHolderName: "",
-    accountNumber: "",
-    chequeDate: "",
-    chequeAmount: "",
-    chequeStatus: "pending",
-    expectedClearanceDate: "",
     // Split payment fields
     splitPayments: [],
     remainingAmount: total
@@ -77,7 +68,6 @@ const PaymentForm = ({
         momoProvider: "",
         customerPhone: "",
         referenceNumber: "",
-        chequeNumber: "",
         bankName: "",
         chequeDate: ""
       }));
@@ -181,9 +171,6 @@ const PaymentForm = ({
           </div>
         );
 
-      case "cheque":
-        return <ChequePayment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />;
-
       case "bank_transfer":
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -272,7 +259,6 @@ const PaymentForm = ({
                     <option value="">Select Method</option>
                     <option value="cash">Cash</option>
                     <option value="momo">Mobile Money</option>
-                    <option value="cheque">Cheque</option>
                   </select>
                 </div>
                 
@@ -313,7 +299,6 @@ const PaymentForm = ({
                            momoProvider: "",
                            customerPhone: "",
                            referenceNumber: "",
-                           chequeNumber: "",
                            bankName: "",
                            chequeDate: ""
                          }));
@@ -360,7 +345,6 @@ const PaymentForm = ({
                                  momoProvider: paymentData.momoProvider,
                                  customerPhone: paymentData.customerPhone,
                                  referenceNumber: paymentData.referenceNumber,
-                                 chequeNumber: paymentData.chequeNumber,
                                  bankName: paymentData.bankName,
                                  chequeDate: paymentData.chequeDate
                                }
@@ -378,7 +362,6 @@ const PaymentForm = ({
                            momoProvider: "",
                            customerPhone: "",
                            referenceNumber: "",
-                           chequeNumber: "",
                            bankName: "",
                            chequeDate: ""
                          }));
@@ -394,7 +377,6 @@ const PaymentForm = ({
                            momoProvider: paymentData.momoProvider,
                            customerPhone: paymentData.customerPhone,
                            referenceNumber: paymentData.referenceNumber,
-                           chequeNumber: paymentData.chequeNumber,
                            bankName: paymentData.bankName,
                            chequeDate: paymentData.chequeDate
                          };
@@ -410,7 +392,6 @@ const PaymentForm = ({
                            momoProvider: "",
                            customerPhone: "",
                            referenceNumber: "",
-                           chequeNumber: "",
                            bankName: "",
                            chequeDate: ""
                          }));
@@ -482,84 +463,6 @@ const PaymentForm = ({
                           }))}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="Enter transaction reference"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {paymentData.newSplitMethod === "cheque" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Cheque Number <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={paymentData.chequeNumber}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            chequeNumber: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter cheque number"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Bank Name <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={paymentData.bankName}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            bankName: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select Bank</option>
-                          <option value="gcb">GCB Bank</option>
-                          <option value="ecobank">Ecobank Ghana</option>
-                          <option value="zenith">Zenith Bank Ghana</option>
-                          <option value="access">Access Bank Ghana</option>
-                          <option value="cal">CAL Bank</option>
-                          <option value="fidelity">Fidelity Bank Ghana</option>
-                          <option value="stanbic">Stanbic Bank Ghana</option>
-                          <option value="barclays">Barclays Bank Ghana</option>
-                          <option value="sgssb">SG-SSB</option>
-                          <option value="republic">Republic Bank Ghana</option>
-                          <option value="prudential">Prudential Bank</option>
-                          <option value="uniBank">UniBank Ghana</option>
-                          <option value="agric">Agricultural Development Bank</option>
-                          <option value="national">National Investment Bank</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Cheque Date <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="date"
-                          value={paymentData.chequeDate}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            chequeDate: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Account Holder Name
-                        </label>
-                        <input
-                          type="text"
-                          value={paymentData.accountHolderName}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            accountHolderName: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter account holder name"
                         />
                       </div>
                     </div>
@@ -698,7 +601,6 @@ const PaymentForm = ({
                                momoProvider: payment.momoProvider || "",
                                customerPhone: payment.customerPhone || "",
                                referenceNumber: payment.referenceNumber || "",
-                               chequeNumber: payment.chequeNumber || "",
                                bankName: payment.bankName || "",
                                chequeDate: payment.chequeDate || ""
                              }));

@@ -135,16 +135,6 @@ const PrintReceipt = ({
               <span>GHS ${subtotal.toLocaleString()}</span>
             </div>
             ${
-              tax > 0
-                ? `
-              <div class="summary-row">
-                <span>Tax:</span>
-                <span>GHS ${tax.toLocaleString()}</span>
-              </div>
-            `
-                : ""
-            }
-            ${
               discount > 0
                 ? `
               <div class="summary-row">
