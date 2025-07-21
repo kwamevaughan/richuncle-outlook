@@ -9,6 +9,7 @@ import ReceiptPreviewModal from "./ReceiptPreviewModal";
 import { playBellBeep } from "../utils/posSounds";
 import { getPaymentTypeLabel } from "./payment/utils/paymentHelpers";
 import useUsers from "../hooks/useUsers";
+import Select from 'react-select';
 
 const dummyOrder = {
   id: "ORD123",
@@ -441,6 +442,11 @@ const PosOrderList = ({
 
   const { users: allUsers } = useUsers();
 
+  // Find the selected customer object if selectedCustomerId starts with 'db_'
+  const selectedDbCustomer = selectedCustomerId.startsWith('db_')
+    ? customers.find(c => c.id === selectedCustomerId.replace('db_', ''))
+    : null;
+
   return (
     <div className="w-full md:w-full lg:w-5/12 xl:w-4/12 p-4 gap-6 flex flex-col bg-gray-200 rounded-lg h-screen overflow-auto">
       <div className="bg-white rounded-lg p-6">
@@ -458,15 +464,21 @@ const PosOrderList = ({
         <div className="mb-4">
           <label className="block font-semibold mb-1">
             Customer Information
+            {selectedDbCustomer && (
+              <span className="ml-2 text-blue-700 font-normal">- {selectedDbCustomer.name}</span>
+            )}
           </label>
           <div className="flex gap-2 mb-2">
             <select
               className="border rounded px-3 py-2 w-full"
-              value={selectedCustomerId}
+              value={selectedCustomerId.startsWith('db_') ? 'customer_db' : selectedCustomerId}
               onChange={e => {
                 if (e.target.value === "__online__") {
                   setIsOnlinePurchase(true);
                   setSelectedCustomerId("__online__");
+                } else if (e.target.value === "customer_db") {
+                  setIsOnlinePurchase(false);
+                  setSelectedCustomerId("customer_db");
                 } else {
                   setIsOnlinePurchase(false);
                   setSelectedCustomerId(e.target.value);
@@ -475,20 +487,28 @@ const PosOrderList = ({
             >
               <option value="">Walk In Customer</option>
               <option value="__online__">Online Purchase</option>
-              {customers.map(customer => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name} - {customer.phone}
-                </option>
-              ))}
+              <option value="customer_db">Customer Database</option>
             </select>
+            {/* Show react-select if Customer Database is selected */}
+            {selectedCustomerId === "customer_db" && (
+              <div className="flex-1 min-w-[200px]">
+                <Select
+                  options={customers.map(c => ({ value: c.id, label: `${c.name} - ${c.phone}` }))}
+                  onChange={option => {
+                    setSelectedCustomerId(option ? `db_${option.value}` : "customer_db");
+                  }}
+                  isClearable
+                  placeholder="Search customer..."
+                  classNamePrefix="react-select"
+                  autoFocus
+                />
+              </div>
+            )}
             <button 
               className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
               onClick={handleAddCustomer}
             >
               <Icon icon="mdi:account-plus" className="w-5 h-5" />
-            </button>
-            <button className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700" onClick={() => setShowBarcodeModal(true)}>
-              <Icon icon="mdi:fullscreen" className="w-5 h-5" />
             </button>
           </div>
         </div>
