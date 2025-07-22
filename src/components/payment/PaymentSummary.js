@@ -45,9 +45,12 @@ const PaymentSummary = ({
           )}
           {paymentData && paymentData.paymentReceiver && users && (
             <div>
-              <span className="text-gray-600">Payment Receiver:</span>
+              <span className="text-gray-600">Cashier:</span>
               <span className="font-semibold ml-2">
-                {paymentReceiverUser?.full_name || paymentReceiverUser?.name || paymentReceiverUser?.email || paymentData.paymentReceiver}
+                {(() => {
+                  const receiver = users.find(u => u.id === paymentData.paymentReceiver);
+                  return receiver?.full_name || receiver?.name || receiver?.email || paymentData.paymentReceiver;
+                })()}
               </span>
             </div>
           )}

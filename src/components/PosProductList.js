@@ -216,7 +216,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
             <div className="flex items-center gap-2">
               <div>
                 <button
-                  className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+                  className="bg-blue-800 text-white p-2 rounded hover:bg-blue-700"
                   onClick={() => setShowBarcodeModal(true)}
                 >
                   {" "}
@@ -258,7 +258,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               >
                 <Icon
                   icon="material-symbols:refresh"
-                  className="w-5 h-5 text-blue-600"
+                  className="w-5 h-5 text-blue-800"
                 />
               </button>
             </div>
@@ -436,36 +436,28 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   setBarcodeProduct(found);
                   setBarcodeQty(quantities[found.id] || 1);
                   setBarcodeError("");
-
-                  // Auto-add product to order list
-                  const qty = quantities[found.id] || 1;
-                  if (qty > found.quantity) {
-                    toast.error(
-                      `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`
-                    );
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && barcodeProduct) {
+                  // Add product immediately on Enter
+                  if (barcodeQty > barcodeProduct.quantity) {
+                    toast.error(`Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`);
                     return;
                   }
-
-                  if (!selectedProducts.includes(found.id)) {
-                    setSelectedProducts([...selectedProducts, found.id]);
-                    setQuantities((q) => ({ ...q, [found.id]: qty }));
+                  if (!selectedProducts.includes(barcodeProduct.id)) {
+                    setSelectedProducts([...selectedProducts, barcodeProduct.id]);
+                    setQuantities((q) => ({ ...q, [barcodeProduct.id]: barcodeQty }));
                   } else {
-                    setQuantities((currentQuantities) => {
-                      const newQty = (currentQuantities[found.id] || 1) + qty;
-                      if (newQty > found.quantity) {
-                        toast.error(
-                          `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`
-                        );
-                        return currentQuantities; // Return unchanged quantities
-                      }
-                      return { ...currentQuantities, [found.id]: newQty };
-                    });
-                    return; // Exit early to prevent the success toast and modal close
+                    const newQty = (quantities[barcodeProduct.id] || 1) + barcodeQty;
+                    if (newQty > barcodeProduct.quantity) {
+                      toast.error(`Cannot add ${barcodeQty} more units. Total would exceed available stock of ${barcodeProduct.quantity} units.`);
+                      return;
+                    }
+                    setQuantities((q) => ({ ...q, [barcodeProduct.id]: newQty }));
                   }
-
-                  // Play beep sound and show success message
                   playBellBeep();
-                  toast.success(`Added ${found.name} to order list!`);
+                  toast.success(`Added ${barcodeProduct.name} to order list!`);
                   setShowBarcodeModal(false);
                   setBarcodeInput("");
                   setBarcodeProduct(null);

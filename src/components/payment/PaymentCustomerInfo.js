@@ -67,7 +67,7 @@ const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentDat
       
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Payment Receiver <span className="text-red-500">*</span>
+          Cashier <span className="text-red-500">*</span>
         </label>
         {loadingUsers ? (
           <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-500">

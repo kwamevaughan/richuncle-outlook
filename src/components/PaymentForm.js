@@ -21,7 +21,8 @@ const PaymentForm = ({
   onCustomerChange = null,
   user = null,
   allUsers = [],
-  isOnlinePurchase = false
+  isOnlinePurchase = false,
+  processCompleteTransaction
 }) => {
   const [paymentData, setPaymentData] = useState({
     receivedAmount: "",
@@ -29,9 +30,7 @@ const PaymentForm = ({
     change: 0,
     paymentType: paymentType,
     paymentReceiver: "",
-    paymentNote: "",
     saleNote: "",
-    staffNote: "",
     // Additional fields for different payment types
     referenceNumber: "",
     cardType: "",
@@ -73,6 +72,17 @@ const PaymentForm = ({
       }));
     }
   }, [isOpen, total, paymentType]);
+
+  // In the PaymentForm component, update the useEffect for autofilling receivedAmount:
+  useEffect(() => {
+    if (paymentType === 'momo' || paymentType === 'cash') {
+      setPaymentData(prev => ({
+        ...prev,
+        receivedAmount: prev.payingAmount || total.toFixed(2)
+      }));
+    }
+    // Do not disable the field, just auto-fill
+  }, [paymentType, total]);
 
   const handleReceivedAmountChange = (value) => {
     const received = parseFloat(value) || 0;
@@ -120,6 +130,11 @@ const PaymentForm = ({
     // Call parent callback with payment data
     if (onPaymentComplete) {
       onPaymentComplete(paymentInfo);
+    }
+    
+    // Finalize order immediately with paymentInfo
+    if (processCompleteTransaction) {
+      processCompleteTransaction(paymentInfo);
     }
     
     // Close modal
@@ -419,7 +434,7 @@ const PaymentForm = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mobile Money Provider <span className="text-red-500">*</span>
+                          Mobile Money Provider
                         </label>
                         <select
                           value={paymentData.momoProvider}
@@ -661,11 +676,27 @@ const PaymentForm = ({
                   <button
                     type="button"
                     onClick={() => {
-                      setPaymentData(prev => ({
-                        ...prev,
-                        newSplitMethod: "cash",
-                        newSplitAmount: prev.remainingAmount.toString()
-                      }));
+                      const amount = paymentData.remainingAmount;
+                      if (amount > 0) {
+                        const newPayment = {
+                          id: Date.now(),
+                          method: "cash",
+                          amount: amount,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        const updatedPayments = [...paymentData.splitPayments, newPayment];
+                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                        setPaymentData(prev => ({
+                          ...prev,
+                          splitPayments: updatedPayments,
+                          remainingAmount: total - updatedPaid,
+                          newSplitMethod: "",
+                          newSplitAmount: "",
+                          newSplitRemaining: 0,
+                        }));
+                        toast.success(`Cash payment of GHS ${amount.toLocaleString()} added`);
+                      }
                     }}
                     className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
                   >
@@ -674,11 +705,27 @@ const PaymentForm = ({
                   <button
                     type="button"
                     onClick={() => {
-                      setPaymentData(prev => ({
-                        ...prev,
-                        newSplitMethod: "momo",
-                        newSplitAmount: prev.remainingAmount.toString()
-                      }));
+                      const amount = paymentData.remainingAmount;
+                      if (amount > 0) {
+                        const newPayment = {
+                          id: Date.now(),
+                          method: "momo",
+                          amount: amount,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        const updatedPayments = [...paymentData.splitPayments, newPayment];
+                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                        setPaymentData(prev => ({
+                          ...prev,
+                          splitPayments: updatedPayments,
+                          remainingAmount: total - updatedPaid,
+                          newSplitMethod: "",
+                          newSplitAmount: "",
+                          newSplitRemaining: 0,
+                        }));
+                        toast.success(`Mobile Money payment of GHS ${amount.toLocaleString()} added`);
+                      }
                     }}
                     className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
                   >
@@ -688,11 +735,26 @@ const PaymentForm = ({
                     type="button"
                     onClick={() => {
                       const half = Math.ceil(paymentData.remainingAmount / 2);
-                      setPaymentData(prev => ({
-                        ...prev,
-                        newSplitMethod: "cash",
-                        newSplitAmount: half.toString()
-                      }));
+                      if (half > 0) {
+                        const newPayment = {
+                          id: Date.now(),
+                          method: "cash",
+                          amount: half,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        const updatedPayments = [...paymentData.splitPayments, newPayment];
+                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                        setPaymentData(prev => ({
+                          ...prev,
+                          splitPayments: updatedPayments,
+                          remainingAmount: total - updatedPaid,
+                          newSplitMethod: "",
+                          newSplitAmount: "",
+                          newSplitRemaining: 0,
+                        }));
+                        toast.success(`Half payment of GHS ${half.toLocaleString()} added`);
+                      }
                     }}
                     className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
                   >
@@ -702,11 +764,26 @@ const PaymentForm = ({
                     type="button"
                     onClick={() => {
                       const half = Math.ceil(paymentData.remainingAmount / 2);
-                      setPaymentData(prev => ({
-                        ...prev,
-                        newSplitMethod: "momo",
-                        newSplitAmount: half.toString()
-                      }));
+                      if (half > 0) {
+                        const newPayment = {
+                          id: Date.now(),
+                          method: "momo",
+                          amount: half,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        const updatedPayments = [...paymentData.splitPayments, newPayment];
+                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                        setPaymentData(prev => ({
+                          ...prev,
+                          splitPayments: updatedPayments,
+                          remainingAmount: total - updatedPaid,
+                          newSplitMethod: "",
+                          newSplitAmount: "",
+                          newSplitRemaining: 0,
+                        }));
+                        toast.success(`Half payment of GHS ${half.toLocaleString()} added`);
+                      }
                     }}
                     className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
                   >
@@ -827,7 +904,7 @@ const PaymentForm = ({
                   className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
                 >
                   <Icon icon="mdi:check-circle" className="w-5 h-5" />
-                  Confirm Payment Details
+                  Finalize Payment
                 </button>
               </div>
             </form>

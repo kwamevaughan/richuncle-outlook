@@ -34,18 +34,14 @@ export const validatePaymentData = (paymentData, paymentType, total, toast) => {
   
   // Validate MoMo-specific fields
   if (paymentType === "momo") {
-    if (!paymentData.momoProvider) {
-      toast.error("Please select a mobile money provider");
-      return false;
-    }
-    if (!paymentData.customerPhone) {
-      toast.error("Please enter customer phone number");
-      return false;
-    }
-    if (!paymentData.referenceNumber) {
-      toast.error("Please enter transaction reference number");
-      return false;
-    }
+    // if (!paymentData.momoProvider) {
+    //   toast.error("Please select a mobile money provider");
+    //   return false;
+    // }
+    // if (!paymentData.customerPhone) {
+    //   toast.error("Please enter customer phone number");
+    //   return false;
+    // }
   }
 
   // Validate Split Payment-specific fields
@@ -65,18 +61,14 @@ export const validatePaymentData = (paymentData, paymentType, total, toast) => {
       const payment = paymentData.splitPayments[i];
       
       if (payment.method === "momo") {
-        if (!payment.momoProvider) {
-          toast.error(`Please select mobile money provider for payment ${i + 1}`);
-          return false;
-        }
-        if (!payment.customerPhone) {
-          toast.error(`Please enter customer phone for payment ${i + 1}`);
-          return false;
-        }
-        if (!payment.referenceNumber) {
-          toast.error(`Please enter transaction reference for payment ${i + 1}`);
-          return false;
-        }
+        // if (!payment.momoProvider) {
+        //   toast.error(`Please select mobile money provider for payment ${i + 1}`);
+        //   return false;
+        // }
+        // if (!payment.customerPhone) {
+        //   toast.error(`Please enter customer phone for payment ${i + 1}`);
+        //   return false;
+        // }
       }
       
     }
