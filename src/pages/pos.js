@@ -42,7 +42,6 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [modernReceiptData, setModernReceiptData] = useState(null);
   const [selectedRegister, setSelectedRegister] = useState(null);
 
-
   // Check for open cash register session for cashiers
   const [hasOpenSession, setHasOpenSession] = useState(true);
   const [sessionCheckLoading, setSessionCheckLoading] = useState(false);
@@ -200,9 +199,11 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         printLastReceipt={handlePrintLastReceipt}
         lastOrderData={lastOrderData}
         onOpenOrderHistory={() => setShowOrderHistory(true)}
+        showCashRegister={showCashRegister}
+        setShowCashRegister={setShowCashRegister}
       />
     );
-  }, [handlePrintLastReceipt, lastOrderData, setShowOrderHistory]);
+  }, [handlePrintLastReceipt, lastOrderData, setShowOrderHistory, showCashRegister, setShowCashRegister]);
 
   // Memoize the onOrderComplete callback
   // When an order is finalized (in handleOrderComplete), generate a new orderId for the next order:
@@ -318,6 +319,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         order_type: 'pos',
         status: 'Completed',
         register_id: selectedRegister,
+        session_id: currentSessionId,
         // Add other columns as needed
       };
       // Insert order into 'orders' table
@@ -455,6 +457,40 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     ? products.filter(p => selectedProducts.includes(p.id))
     : [];
 
+  // At the top of POS component, add:
+  const [registers, setRegisters] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+
+  useEffect(() => {
+    // Fetch registers on mount
+    (async () => {
+      try {
+        const response = await fetch("/api/registers");
+        const result = await response.json();
+        console.log('[POS] Registers fetched:', result.data);
+        if (result.success) {
+          setRegisters(result.data || []);
+        }
+      } catch (err) {
+        console.error('[POS] Failed to fetch registers:', err);
+      }
+    })();
+  }, []);
+
+  // After fetching registers (wherever you load them in pos.js):
+  useEffect(() => {
+    if (registers && registers.length > 0 && !selectedRegister) {
+      setSelectedRegister(registers[0].id);
+    }
+  }, [registers]);
+
+  // Add this effect in pos.js:
+  useEffect(() => {
+    if ((showCashRegister || autoShowRegister) && !selectedRegister && registers && registers.length > 0) {
+      setSelectedRegister(registers[0].id);
+    }
+  }, [showCashRegister, autoShowRegister, selectedRegister, registers]);
+
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
     if (typeof window !== "undefined") {
@@ -485,6 +521,9 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           onSessionChanged={checkSession}
           selectedRegister={selectedRegister}
           setSelectedRegister={setSelectedRegister}
+          setCurrentSessionId={setCurrentSessionId}
+          registers={registers}
+          setRegisters={setRegisters}
         />
         <div className="flex gap-8 flex-1 min-h-0 overflow-hidden">
           <PosProductList
@@ -918,6 +957,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                     order_type: holdLayawayType,
                     status: holdLayawayType === 'layaway' ? 'Layaway' : 'Hold',
                     register_id: selectedRegister,
+                    session_id: currentSessionId,
                   };
                   try {
                     const { toast } = await import('react-hot-toast');

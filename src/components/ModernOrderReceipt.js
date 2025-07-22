@@ -139,7 +139,7 @@ const ModernOrderReceipt = ({
                       <Icon icon="mdi:account" className="w-4 h-4 text-indigo-600" />
                     </div>
                     <span className="text-sm font-medium text-gray-700">
-                      Served by
+                      Cashier
                     </span>
                   </div>
                   <span className="text-sm text-gray-900">

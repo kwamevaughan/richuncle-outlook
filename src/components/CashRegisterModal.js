@@ -13,9 +13,7 @@ import RegisterSelector from "./RegisterSelector";
 
 const allowedRoles = ["cashier", "manager", "admin"];
 
-const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
-  const [registers, setRegisters] = useState([]);
-  const [selectedRegister, setSelectedRegister] = useState(null);
+const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRegister, setSelectedRegister, setCurrentSessionId, registers = [], setRegisters }) => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [movements, setMovements] = useState([]);
@@ -34,46 +32,34 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
   const [closeNote, setCloseNote] = useState("");
   const { showGlobalConfirm } = useModal();
 
-  // Fetch available registers
-  useEffect(() => {
-    if (!isOpen) return;
-    (async () => {
-      try {
-        const response = await fetch("/api/registers");
-        const result = await response.json();
-        if (result.success) {
-          setRegisters(result.data || []);
-          if (result.data && result.data.length > 0 && !selectedRegister) {
-            setSelectedRegister(result.data[0].id);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch registers:", err);
-      }
-    })();
-  }, [isOpen]);
-
   // Fetch current open session for selected register
   useEffect(() => {
+    console.log('[CashRegisterModal] selectedRegister changed:', selectedRegister);
     if (!isOpen || !selectedRegister) return;
     setLoading(true);
+    console.log('[CashRegisterModal] Fetching session for register:', selectedRegister);
     (async () => {
       try {
         const sessionsResponse = await fetch(
           `/api/cash-register-sessions?register_id=${selectedRegister}&status=open`
         );
         const sessionsData = await sessionsResponse.json();
+        console.log('[CashRegisterModal] Session fetch result:', sessionsData);
         if (sessionsData.success) {
           const currentSession = sessionsData.data && sessionsData.data[0];
           setSession(currentSession || null);
+          if (setCurrentSessionId) setCurrentSessionId(currentSession ? currentSession.id : null);
         } else {
           setSession(null);
+          if (setCurrentSessionId) setCurrentSessionId(null);
         }
       } catch (err) {
         console.error("Failed to fetch session data:", err);
         setSession(null);
+        if (setCurrentSessionId) setCurrentSessionId(null);
       }
       setLoading(false);
+      console.log('[CashRegisterModal] Loading set to false');
     })();
   }, [isOpen, selectedRegister]);
 
@@ -267,6 +253,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
         // Call again after 500ms to ensure backend state is synced
         if (onSessionChanged) setTimeout(() => onSessionChanged(), 500);
         if (onClose) onClose();
+        if (setCurrentSessionId) setCurrentSessionId(result.data ? result.data.id : null);
       } else {
         throw new Error(result.error || "Failed to open register");
       }
@@ -466,8 +453,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
       ["Z-Report"],
       [
         "Register",
-        registers.find((r) => r.id === selectedRegister)?.name ||
-          selectedRegister,
+        registers.find((r) => r.id === selectedRegister)?.name || selectedRegister,
       ],
       ["Date", new Date().toLocaleString()],
       [""],

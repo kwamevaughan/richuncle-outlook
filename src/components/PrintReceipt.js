@@ -182,16 +182,17 @@ const PrintReceipt = ({
                 }
               `
               }
-              ${
-                paymentData.paymentReceiver
-                  ? `<div>Receiver: ${
-                      paymentData.paymentReceiverName ||
-                      paymentData.payment_receiver_name ||
-                      paymentData.paymentReceiver ||
-                      paymentData.payment_receiver
-                    }</div>`
-                  : ""
-              }
+              <div><strong>Payment received by:</strong> ${
+                paymentData.paymentReceiverName ||
+                paymentData.payment_receiver_name ||
+                paymentData.paymentReceiver ||
+                paymentData.payment_receiver ||
+                paymentReceiverName ||
+                payment_receiver_name ||
+                paymentReceiver ||
+                payment_receiver ||
+                'Unknown'
+              }</div>
             </div>
           `
               : `

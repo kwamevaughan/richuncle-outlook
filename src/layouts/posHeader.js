@@ -7,10 +7,10 @@ import Link from "next/link";
 import CashRegisterModal from "@/components/CashRegisterModal";
 import SalesProfitModal from "@/components/SalesProfitModal";
 import NotificationButton from "@/components/NotificationButton";
-import { useModal } from "@/components/ModalContext";
+// import { useModal } from "@/components/ModalContext";
 import SessionDuration from "@/components/SessionDuration";
 
-const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrderData, onOpenOrderHistory }) => {
+const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrderData, onOpenOrderHistory, showCashRegister, setShowCashRegister }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const headerRef = useRef(null);
@@ -18,7 +18,6 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
   const storeDropdownRef = useRef(null);
   const [addNewDropdownOpen, setAddNewDropdownOpen] = useState(false);
   const addNewDropdownRef = useRef(null);
-  const { showCashRegister, setShowCashRegister } = useModal();
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showProfitModal, setShowProfitModal] = useState(false);
   const [sessionRefreshKey, setSessionRefreshKey] = useState(0);
@@ -172,7 +171,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
                 onClick={() => {
                   console.log("Cash Register button clicked");
-                  setShowCashRegister(true);
+                  if (setShowCashRegister) setShowCashRegister(true);
                 }}
               >
                 <Icon
@@ -341,7 +340,6 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                             <span className="">Settings</span>
                           </li>
                         </ul>
-
                         <button
                           onClick={onLogout}
                           className={`flex items-center w-full gap-2 border-t h-10 font-thin text-sm text-red-500 hover:text-red-600 transition-colors rounded-lg p-2
@@ -363,16 +361,6 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
           </div>
         </div>
       </header>
-      <div className="h-[72px]" aria-hidden="true"></div>
-      <CashRegisterModal
-        isOpen={showCashRegister}
-        onClose={() => {
-          console.log("Cash Register modal closing");
-          setShowCashRegister(false);
-        }}
-        user={user}
-        onSessionChanged={handleSessionChanged}
-      />
       <SalesProfitModal
         isOpen={showSalesModal}
         onClose={() => setShowSalesModal(false)}
