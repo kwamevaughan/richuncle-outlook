@@ -388,7 +388,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       ).toFixed(2)}
                     </div>
                   )}
-                  {product.tax_percentage && product.tax_percentage > 0 && (
+                  {product.tax_percentage && product.tax_percentage > 0 && user?.role !== 'cashier' && (
                     <div className="text-xs text-orange-600 font-medium">
                       Tax: {product.tax_percentage}% (
                       {product.tax_type === "inclusive" ? "Included" : "Added"})

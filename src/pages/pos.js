@@ -316,6 +316,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         payment_receiver_name: paymentReceiverName,
         order_type: 'pos',
         status: 'Completed',
+        register_id: selectedRegister,
         // Add other columns as needed
       };
       // Insert order into 'orders' table
@@ -673,6 +674,9 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           }}
           onRetrieveSales={() => setShowRetrieveSales(true)}
           onRetrieveLayaways={() => setShowRetrieveLayaways(true)}
+          hasOpenSession={hasOpenSession}
+          sessionCheckLoading={sessionCheckLoading}
+          user={user}
         />
         {(() => {
           if (showPaymentModal) {
@@ -884,6 +888,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                     payment_receiver_name: user?.full_name || user?.email || 'Unknown',
                     order_type: holdLayawayType,
                     status: holdLayawayType === 'layaway' ? 'Layaway' : 'Hold',
+                    register_id: selectedRegister,
                   };
                   try {
                     const { toast } = await import('react-hot-toast');

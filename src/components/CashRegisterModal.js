@@ -2,6 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
 import { useModal } from "./ModalContext";
+import TooltipIconButton from "./TooltipIconButton";
+import SalesSummary from "./SalesSummary";
+import MovementLog from "./MovementLog";
+import CashInForm from "./CashInForm";
+import CashOutForm from "./CashOutForm";
+import CashCountSection from "./CashCountSection";
+import AddRegisterForm from "./AddRegisterForm";
+import RegisterSelector from "./RegisterSelector";
 
 const allowedRoles = ["cashier", "manager", "admin"];
 
@@ -23,6 +31,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
   const [showLargeOutConfirm, setShowLargeOutConfirm] = useState(false);
   const [zReport, setZReport] = useState(null);
   const [userMap, setUserMap] = useState({});
+  const [closeNote, setCloseNote] = useState("");
   const { showGlobalConfirm } = useModal();
 
   // Fetch available registers
@@ -118,6 +127,98 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
       }
     })();
   }, [movements]);
+
+  // Fetch sales/orders for the current session
+  const [salesSummary, setSalesSummary] = useState(null);
+  useEffect(() => {
+    if (!session) {
+      setSalesSummary(null);
+      return;
+    }
+    (async () => {
+      try {
+        // Fetch sales/orders for this session
+        const res = await fetch(`/api/orders?register_id=${selectedRegister}&session_id=${session.id}`);
+        const result = await res.json();
+        if (result.success) {
+          const orders = result.data || [];
+          // Aggregate by payment method
+          const paymentBreakdown = {};
+          let totalSales = 0, totalRefund = 0, totalExpense = 0, totalPayment = 0;
+          let productsSold = [];
+          // Collect all order IDs
+          const orderIds = orders.map(order => order.id);
+          let allOrderItems = [];
+          if (orderIds.length > 0) {
+            // Fetch all order items for these orders (in parallel)
+            const itemsResults = await Promise.all(orderIds.map(orderId => fetch(`/api/order-items?order_id=${orderId}`).then(r => r.json())));
+            allOrderItems = itemsResults.flatMap(r => (r.success && Array.isArray(r.data)) ? r.data : []);
+          }
+          // Aggregate products from allOrderItems
+          allOrderItems.forEach(item => {
+            const existing = productsSold.find(p => p.id === item.product_id);
+            if (existing) {
+              existing.quantity += item.quantity;
+              existing.total += item.total;
+            } else {
+              productsSold.push({
+                id: item.product_id,
+                name: item.name,
+                quantity: item.quantity,
+                total: item.total
+              });
+            }
+          });
+          // Streamlined payment breakdown: sum all cash, momo, card, other (including split)
+          const paymentTypes = ['cash', 'momo', 'card'];
+          orders.forEach(order => {
+            let totalOrderAmount = Number(order.total) || 0;
+            let paymentData = order.payment_data;
+            // Parse if string
+            if (typeof paymentData === 'string') {
+              try { paymentData = JSON.parse(paymentData); } catch {}
+            }
+            if (paymentData && Array.isArray(paymentData.payments)) {
+              // Split payment: sum each part
+              paymentData.payments.forEach(p => {
+                const type = (p.method || p.paymentType || 'other').toLowerCase();
+                const amt = Number(p.amount) || 0;
+                if (!paymentBreakdown[type]) paymentBreakdown[type] = 0;
+                paymentBreakdown[type] += amt;
+              });
+            } else if (paymentData && (paymentData.paymentType || paymentData.method)) {
+              // Single payment
+              const type = (paymentData.paymentType || paymentData.method || 'other').toLowerCase();
+              if (!paymentBreakdown[type]) paymentBreakdown[type] = 0;
+              paymentBreakdown[type] += totalOrderAmount;
+            } else if (order.payment_method) {
+              // Fallback to order.payment_method
+              const type = order.payment_method.toLowerCase();
+              if (!paymentBreakdown[type]) paymentBreakdown[type] = 0;
+              paymentBreakdown[type] += totalOrderAmount;
+            } else {
+              // Unknown/legacy
+              if (!paymentBreakdown['other']) paymentBreakdown['other'] = 0;
+              paymentBreakdown['other'] += totalOrderAmount;
+            }
+            totalSales += totalOrderAmount;
+          });
+          setSalesSummary({
+            paymentBreakdown,
+            totalSales,
+            totalRefund,
+            totalExpense,
+            totalPayment,
+            productsSold
+          });
+        } else {
+          setSalesSummary(null);
+        }
+      } catch (err) {
+        setSalesSummary(null);
+      }
+    })();
+  }, [session, selectedRegister, actionLoading]);
 
   // Permissions check
   const canOperate = user && allowedRoles.includes(user.role);
@@ -274,6 +375,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
           body: JSON.stringify({
             status: "closed",
             closing_cash: closeAmount,
+            close_note: closeNote,
           }),
         }
       );
@@ -281,6 +383,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
       if (result.success) {
         setSession(null);
         setCloseAmount(0);
+        setCloseNote("");
         setShowCloseConfirm(false);
         if (onSessionChanged) await onSessionChanged();
         if (onSessionChanged) setTimeout(() => onSessionChanged(), 500);
@@ -384,90 +487,13 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
     window.URL.revokeObjectURL(url);
   }
 
-  function AddRegisterForm({ onRegisterAdded }) {
-    const [name, setName] = useState("");
-    const [storeId, setStoreId] = useState("");
-    const [stores, setStores] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-      (async () => {
-        try {
-          const response = await fetch("/api/stores");
-          const result = await response.json();
-          if (result.success) {
-            setStores(result.data || []);
-          }
-        } catch (err) {
-          console.error("Failed to fetch stores:", err);
-        }
-      })();
-    }, []);
-
-    const handleAdd = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch("/api/registers", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name, store_id: storeId }),
-        });
-        const result = await response.json();
-        if (result.success) {
-          setName("");
-          setStoreId("");
-          if (onRegisterAdded) onRegisterAdded();
-          alert("Register added!");
-        } else {
-          throw new Error(result.error || "Failed to add register");
-        }
-      } catch (err) {
-        alert("Error: " + err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <div className="mb-4 flex gap-2 items-end">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Register Name"
-          className="border rounded px-3 py-2"
-        />
-        <select
-          value={storeId}
-          onChange={(e) => setStoreId(e.target.value)}
-          className="border rounded px-3 py-2"
-        >
-          <option value="">Select Store</option>
-          {stores.map((store) => (
-            <option key={store.id} value={store.id}>
-              {store.name}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={handleAdd}
-          disabled={loading || !name || !storeId}
-          className="bg-blue-700 text-white rounded px-4 py-2 font-semibold"
-        >
-          {loading ? "Adding..." : "Add Register"}
-        </button>
-      </div>
-    );
-  }
-
   return (
     <>
       <SimpleModal
         isOpen={isOpen}
         onClose={onClose}
         title="Cash Register"
-        width="max-w-2xl"
+        width="max-w-4xl"
       >
         <div className="space-y-6">
           {user && user.role === "admin" && (
@@ -492,21 +518,12 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
               }}
             />
           )}
-          <div className="mb-2">
-            <label className="block text-sm font-semibold mb-1">Register</label>
-            <select
-              className="border rounded px-3 py-2 w-full"
-              value={selectedRegister || ""}
-              onChange={(e) => setSelectedRegister(e.target.value)}
-              disabled={registers.length === 0}
-            >
-              {registers.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name || `Register ${r.id}`}
-                </option>
-              ))}
-            </select>
-          </div>
+          <RegisterSelector
+            registers={registers}
+            selectedRegister={selectedRegister}
+            setSelectedRegister={setSelectedRegister}
+            disabled={registers.length === 0}
+          />
           {error && <div className="text-red-600">{error}</div>}
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -702,7 +719,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                 {/* Payment Breakdown */}
                 <div className="mb-6">
                   <h4 className="font-semibold mb-2">Payment Breakdown</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2">
                     {zReport?.paymentBreakdown &&
                     Object.keys(zReport.paymentBreakdown).length > 0 ? (
                       Object.entries(zReport.paymentBreakdown).map(
@@ -805,7 +822,8 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
               </button>
             </div>
           ) : session ? (
-            <>
+            <>              
+
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200 mb-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -819,7 +837,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                     {sessionDuration % 60}m {sessionDurationSeconds}s
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Opening Cash</div>
                     <div className="font-bold text-lg text-blue-600">
@@ -935,92 +953,22 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
               </div>
 
               {/* Movements History */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Icon
-                    icon="material-symbols:history"
-                    className="w-5 h-5 text-blue-600"
-                  />
-                  Transaction Log
-                </h4>
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {movements.length === 0 ? (
-                    <div className="text-gray-500 text-center py-8">
-                      No transactions yet
-                    </div>
-                  ) : (
-                    movements.map((movement) => (
-                      <div
-                        key={movement.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-3 h-3 rounded-full ${
-                              movement.type === "cash_in"
-                                ? "bg-green-500"
-                                : "bg-red-500"
-                            }`}
-                          ></div>
-                          <div>
-                            <div className="font-medium">
-                              {movement.type === "cash_in"
-                                ? "Cash In"
-                                : "Cash Out"}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {movement.reason} •{" "}
-                              {userMap[movement.user_id] || movement.user_id}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div
-                            className={`font-bold ${
-                              movement.type === "cash_in"
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {movement.type === "cash_in" ? "+" : "-"}GHS{" "}
-                            {Number(movement.amount).toLocaleString()}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(movement.created_at).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
+              <MovementLog movements={movements} userMap={userMap} />
 
-              {/* Close Register */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Icon
-                    icon="material-symbols:close"
-                    className="w-5 h-5 text-red-600"
-                  />
-                  Close Register
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input
-                    type="number"
-                    value={closeAmount === undefined || closeAmount === null ? "" : closeAmount}
-                    onChange={(e) => setCloseAmount(Number(e.target.value))}
-                    placeholder="Closing Cash Amount"
-                    className="border rounded px-3 py-2"
-                  />
-                  <button
-                    onClick={handleCloseRegister}
-                    disabled={actionLoading || closeAmount === undefined || closeAmount === null}
-                    className="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
-                  >
-                    {actionLoading ? "Closing..." : "Close Register"}
-                  </button>
-                </div>
-              </div>
+              {/* Sales Summary */}
+              <SalesSummary session={session} salesSummary={salesSummary} movements={movements} />
+
+              <CashCountSection
+                session={session}
+                salesSummary={salesSummary}
+                movements={movements}
+                closeAmount={closeAmount}
+                setCloseAmount={setCloseAmount}
+                closeNote={closeNote}
+                setCloseNote={setCloseNote}
+                handleCloseRegister={handleCloseRegister}
+                actionLoading={actionLoading}
+              />
             </>
           ) : (
             <div className="text-center py-12">

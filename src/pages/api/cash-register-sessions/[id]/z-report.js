@@ -77,65 +77,93 @@ export default async function handler(req, res) {
         if (!expError) expenses = exp;
       }
 
-      // Aggregate sales, payments, returns, etc.
-      let totalSales = 0, totalReturn = 0, totalPayment = 0;
-      let paymentBreakdown = { cash: 0, card: 0, gift_card: 0, deposit: 0 };
-      let productsSold = {};
-      for (const order of orders) {
-        totalSales += Number(order.total || 0);
-        // Payment breakdown (assumes payment_data is an object with type/amount)
-        if (order.payment_data) {
-          try {
-            const pd = typeof order.payment_data === 'string' ? JSON.parse(order.payment_data) : order.payment_data;
-            if (pd.paymentType === 'cash') paymentBreakdown.cash += Number(order.total || 0);
-            if (pd.paymentType === 'card') paymentBreakdown.card += Number(order.total || 0);
-            if (pd.paymentType === 'gift_card') paymentBreakdown.gift_card += Number(order.total || 0);
-            if (pd.paymentType === 'deposit') paymentBreakdown.deposit += Number(order.total || 0);
-            totalPayment += Number(order.total || 0);
-          } catch {}
-        }
-      }
+      // --- AGGREGATE SALES SUMMARY TO MATCH UI ---
+      let totalSales = 0, totalRefund = 0, totalExpense = 0;
+      let paymentBreakdown = {};
+      let productsSold = [];
       // Aggregate products sold
+      const productMap = {};
       for (const item of orderItems) {
-        if (!productsSold[item.product_id]) {
-          productsSold[item.product_id] = { name: item.name, quantity: 0, total: 0 };
+        if (!productMap[item.product_id]) {
+          productMap[item.product_id] = { name: item.name, quantity: 0, total: 0 };
         }
-        productsSold[item.product_id].quantity += Number(item.quantity || 0);
-        productsSold[item.product_id].total += Number(item.total || 0);
+        productMap[item.product_id].quantity += Number(item.quantity || 0);
+        productMap[item.product_id].total += Number(item.total || 0);
       }
-      // Aggregate returns (if you have a sales_return table, add logic here)
+      productsSold = Object.values(productMap);
+      // Streamlined payment breakdown: sum all cash, momo, card, other (including split)
+      for (const order of orders) {
+        let totalOrderAmount = Number(order.total) || 0;
+        let paymentData = order.payment_data;
+        // Parse if string
+        if (typeof paymentData === 'string') {
+          try { paymentData = JSON.parse(paymentData); } catch {}
+        }
+        if (paymentData && Array.isArray(paymentData.payments)) {
+          // Split payment: sum each part
+          paymentData.payments.forEach(p => {
+            const type = (p.method || p.paymentType || 'other').toLowerCase();
+            const amt = Number(p.amount) || 0;
+            if (!paymentBreakdown[type]) paymentBreakdown[type] = 0;
+            paymentBreakdown[type] += amt;
+          });
+        } else if (paymentData && (paymentData.paymentType || paymentData.method)) {
+          // Single payment
+          const type = (paymentData.paymentType || paymentData.method || 'other').toLowerCase();
+          if (!paymentBreakdown[type]) paymentBreakdown[type] = 0;
+          paymentBreakdown[type] += totalOrderAmount;
+        } else if (order.payment_method) {
+          // Fallback to order.payment_method
+          const type = order.payment_method.toLowerCase();
+          if (!paymentBreakdown[type]) paymentBreakdown[type] = 0;
+          paymentBreakdown[type] += totalOrderAmount;
+        } else {
+          // Unknown/legacy
+          if (!paymentBreakdown['other']) paymentBreakdown['other'] = 0;
+          paymentBreakdown['other'] += totalOrderAmount;
+        }
+        totalSales += totalOrderAmount;
+      }
+      // Group payment breakdown to cash, momo, card, other
+      const groupedBreakdown = {};
+      if (paymentBreakdown.cash) groupedBreakdown.cash = paymentBreakdown.cash;
+      if (paymentBreakdown.momo) groupedBreakdown.momo = paymentBreakdown.momo;
+      if (paymentBreakdown.card) groupedBreakdown.card = paymentBreakdown.card;
+      // Any other types
+      const otherTotal = Object.entries(paymentBreakdown)
+        .filter(([k]) => !['cash', 'momo', 'card'].includes(k))
+        .reduce((sum, [, v]) => sum + Number(v), 0);
+      if (otherTotal > 0) groupedBreakdown.other = otherTotal;
       // Aggregate expenses
-      let totalExpense = 0;
       for (const exp of expenses) {
         totalExpense += Number(exp.amount || 0);
       }
-
       // Cash in hand: opening_cash + all cash_in - all cash_out
       let cashInHand = Number(session.opening_cash || 0);
       for (const m of movements) {
         if (m.type === 'cash_in') cashInHand += Number(m.amount || 0);
         if (m.type === 'cash_out') cashInHand -= Number(m.amount || 0);
       }
-
-      // Total cash: cashInHand + totalPayment (if cash payments are not already included)
-      let totalCash = cashInHand + paymentBreakdown.cash;
-
+      // --- ROUND ALL MONETARY VALUES TO WHOLE NUMBERS ---
+      totalSales = Math.round(totalSales);
+      totalRefund = Math.round(totalRefund);
+      totalExpense = Math.round(totalExpense);
+      cashInHand = Math.round(cashInHand);
+      Object.keys(groupedBreakdown).forEach(k => groupedBreakdown[k] = Math.round(groupedBreakdown[k]));
+      productsSold = productsSold.map(p => ({ ...p, total: Math.round(p.total) }));
+      // --- RESPONSE ---
       return res.status(200).json({
         success: true,
         data: {
           session,
-          orders,
-          orderItems,
           movements,
           expenses,
           totalSales,
-          totalPayment,
-          paymentBreakdown,
-          totalReturn,
+          totalRefund,
           totalExpense,
+          paymentBreakdown: groupedBreakdown,
           cashInHand,
-          totalCash,
-          productsSold: Object.values(productsSold),
+          productsSold,
         }
       });
     } catch (error) {

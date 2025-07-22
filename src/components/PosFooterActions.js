@@ -1,11 +1,49 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { paymentMethods } from "@/constants/paymentMethods";
+import toast from "react-hot-toast";
 
-const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayment, onPrintOrder, onResetOrder, onHoldSale, onLayaway, onRetrieveSales, onRetrieveLayaways }) => {
+const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayment, onPrintOrder, onResetOrder, onHoldSale, onLayaway, onRetrieveSales, onRetrieveLayaways, hasOpenSession = true, sessionCheckLoading = false, user }) => {
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showHoldOptions, setShowHoldOptions] = useState(false);
   const [showRetrieveOptions, setShowRetrieveOptions] = useState(false);
+
+  // Refs for popovers
+  const retrieveRef = useRef(null);
+  const holdRef = useRef(null);
+
+  // Click outside for Retrieve
+  useEffect(() => {
+    if (!showRetrieveOptions) return;
+    function handleClick(e) {
+      if (retrieveRef.current && !retrieveRef.current.contains(e.target)) {
+        setShowRetrieveOptions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showRetrieveOptions]);
+
+  // Click outside for Hold
+  useEffect(() => {
+    if (!showHoldOptions) return;
+    function handleClick(e) {
+      if (holdRef.current && !holdRef.current.contains(e.target)) {
+        setShowHoldOptions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showHoldOptions]);
+
+  // Restriction: Cashier must have open session
+  const isCashier = user?.role === 'cashier';
+  const isBlocked = isCashier && !hasOpenSession;
+  const isLoading = sessionCheckLoading;
+  const blockAction = () => {
+    if (isLoading) return;
+    toast.error('You must open a cash register before making sales.');
+  };
 
   return (
     <div className="fixed bottom-0 left-0 w-full z-50 bg-white/80 py-3 flex justify-center shadow-xl border border-gray-200 border-t-2 border-white/20 backdrop-blur-sm">
@@ -13,14 +51,18 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
         <div className="flex gap-3">
           <div className="relative">
             <button
-              className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition"
-              onClick={() => setShowRetrieveOptions(true)}
+              className={`flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => {
+                if (isBlocked || isLoading) { blockAction(); return; }
+                setShowRetrieveOptions(true);
+              }}
+              title={isBlocked ? 'Open a register to retrieve sales/layaways' : ''}
             >
               <Icon icon="mdi:archive-arrow-down" className="w-5 h-5" />
               Retrieve
             </button>
             {showRetrieveOptions && (
-              <div className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[160px]">
+              <div ref={retrieveRef} className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[160px]">
                 <button
                   className="flex items-center gap-2 px-4 py-2 hover:bg-blue-50 rounded transition font-semibold text-sm text-gray-700"
                   onClick={() => {
@@ -54,14 +96,18 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
 
           <div className="relative">
             <button
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition"
-              onClick={() => setShowHoldOptions(true)}
+              className={`flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => {
+                if (isBlocked || isLoading) { blockAction(); return; }
+                setShowHoldOptions(true);
+              }}
+              title={isBlocked ? 'Open a register to hold sales/layaways' : ''}
             >
               <Icon icon="mdi:pause" className="w-5 h-5" />
               Hold
             </button>
             {showHoldOptions && (
-              <div className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[160px]">
+              <div ref={holdRef} className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[160px]">
                 <button
                   className="flex items-center gap-2 px-4 py-2 hover:bg-blue-50 rounded transition font-semibold text-sm text-gray-700"
                   onClick={() => {
@@ -94,8 +140,12 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
           </div>
 
           <button
-            className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition"
-            onClick={onPrintOrder}
+            className={`flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => {
+              if (isBlocked || isLoading) { blockAction(); return; }
+              onPrintOrder();
+            }}
+            title={isBlocked ? 'Open a register to print order' : ''}
             disabled={!hasProducts}
           >
             <Icon
@@ -107,8 +157,12 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
 
           <div className="relative">
             <button
-              className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-5 py-2 rounded-lg shadow transition"
-              onClick={() => hasProducts && setShowPaymentOptions(true)}
+              className={`flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => {
+                if (isBlocked || isLoading) { blockAction(); return; }
+                if (hasProducts) setShowPaymentOptions(true);
+              }}
+              title={isBlocked ? 'Open a register to select payment method' : ''}
               disabled={!hasProducts}
             >
               <Icon icon="mdi:cash-multiple" className="w-5 h-5" />
@@ -144,8 +198,12 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
           </div>
 
           <button
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition"
-            onClick={onResetOrder}
+            className={`flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={() => {
+              if (isBlocked || isLoading) { blockAction(); return; }
+              onResetOrder();
+            }}
+            title={isBlocked ? 'Open a register to clear order' : ''}
           >
             <Icon icon="mdi:refresh" className="w-5 h-5" />
             Clear Order
