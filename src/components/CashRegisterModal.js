@@ -261,6 +261,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
       const result = await response.json();
       if (result.success) {
         setSession(result.data);
+        setSalesSummary(null); // Reset sales summary for new session
         setOpenAmount(0);
         if (onSessionChanged) await onSessionChanged();
         // Call again after 500ms to ensure backend state is synced
@@ -655,51 +656,9 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged }) => {
                         : "N/A"}
                     </div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-gray-600">Total Payment</div>
-                    <div className="font-bold text-lg text-purple-600">
-                      {zReport?.totalPayment !== null &&
-                      zReport?.totalPayment !== undefined
-                        ? `GHS ${Number(zReport.totalPayment).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}`
-                        : "N/A"}
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-gray-600">Total Expense</div>
-                    <div className="font-bold text-lg text-red-600">
-                      {zReport?.totalExpense !== null &&
-                      zReport?.totalExpense !== undefined
-                        ? `GHS ${Number(zReport.totalExpense).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}`
-                        : "N/A"}
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-gray-600">Cash in Hand</div>
-                    <div className="font-bold text-lg text-blue-700">
-                      {zReport?.cashInHand !== null &&
-                      zReport?.cashInHand !== undefined
-                        ? `GHS ${Number(zReport.cashInHand).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}`
-                        : "N/A"}
-                    </div>
-                  </div>
+                  
+                  
+                  
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Total Cash</div>
                     <div className="font-bold text-lg text-green-700">

@@ -466,6 +466,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           onClose={() => {
             setShowCashRegister(false);
             setAutoShowRegister(false);
+            checkSession(); // Refresh session state after modal closes
           }}
           user={user}
           onSessionChanged={checkSession}

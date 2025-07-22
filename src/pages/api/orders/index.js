@@ -3,7 +3,8 @@ import supabaseAdmin from "@/lib/supabaseAdmin";
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
-      const { data, error } = await supabaseAdmin
+      const { register_id, session_id } = req.query;
+      let query = supabaseAdmin
         .from("orders")
         .select(`
           *,
@@ -14,6 +15,9 @@ export default async function handler(req, res) {
           )
         `)
         .order("created_at", { ascending: false });
+      if (register_id) query = query.eq("register_id", register_id);
+      if (session_id) query = query.eq("session_id", session_id);
+      const { data, error } = await query;
 
       if (error) {
         throw error;
