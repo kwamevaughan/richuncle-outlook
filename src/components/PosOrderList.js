@@ -11,6 +11,7 @@ import { getPaymentTypeLabel } from "./payment/utils/paymentHelpers";
 import useUsers from "../hooks/useUsers";
 import Select from 'react-select';
 import { paymentMethods } from "@/constants/paymentMethods";
+import TooltipIconButton from "./TooltipIconButton";
 
 const dummyOrder = {
   id: "ORD123",
@@ -88,6 +89,11 @@ const PosOrderList = ({
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeQty, setBarcodeQty] = useState(1);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [showAddDiscountModal, setShowAddDiscountModal] = useState(false);
+  const [newDiscountName, setNewDiscountName] = useState("");
+  const [newDiscountValue, setNewDiscountValue] = useState("");
+  const [newDiscountType, setNewDiscountType] = useState("percent");
+  const [addDiscountLoading, setAddDiscountLoading] = useState(false);
   
   // Detect if user is on Chrome
   const isChrome = typeof window !== 'undefined' && /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
@@ -245,13 +251,13 @@ const PosOrderList = ({
               }
               onChange={(e) => {
                 if (e.target.value === "__online__") {
-                  setIsOnlinePurchase(true);
+                  if (typeof setIsOnlinePurchase === 'function') setIsOnlinePurchase(true);
                   setSelectedCustomerId("__online__");
                 } else if (e.target.value === "customer_db") {
-                  setIsOnlinePurchase(false);
+                  if (typeof setIsOnlinePurchase === 'function') setIsOnlinePurchase(false);
                   setSelectedCustomerId("customer_db");
                 } else {
-                  setIsOnlinePurchase(false);
+                  if (typeof setIsOnlinePurchase === 'function') setIsOnlinePurchase(false);
                   setSelectedCustomerId(e.target.value);
                 }
               }}
@@ -280,12 +286,14 @@ const PosOrderList = ({
                 />
               </div>
             )}
-            <button
-              className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+            <TooltipIconButton
+              label="Add Customer"
+              mode="light"
+              className="rounded-full text-green-500 p-2 hover:text-green-600"
               onClick={handleAddCustomer}
             >
               <Icon icon="mdi:account-plus" className="w-5 h-5" />
-            </button>
+            </TooltipIconButton>
           </div>
         </div>
         {/* Order Details */}
@@ -376,7 +384,7 @@ const PosOrderList = ({
                   />
                 </span>
                 <div>
-                  <div className="font-bold text-blue-800">
+                  <div className="font-bold text-blue-800 flex items-center gap-2">
                     <select
                       className="bg-transparent font-bold text-blue-800 outline-none"
                       value={selectedDiscountId}
@@ -393,11 +401,115 @@ const PosOrderList = ({
                         </option>
                       ))}
                     </select>
+                    <button
+                      type="button"
+                      className="ml-2 p-1 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center"
+                      title="Add Discount"
+                      onClick={() => setShowAddDiscountModal(true)}
+                    >
+                      <Icon icon="mdi:plus" className="w-4 h-4" />
+                    </button>
                   </div>
                   <div className="text-xs text-gray-700">{discountLabel}</div>
                 </div>
               </div>
             </div>
+            {/* Add Discount Modal */}
+            {showAddDiscountModal && (
+              <SimpleModal
+                isOpen={showAddDiscountModal}
+                onClose={() => setShowAddDiscountModal(false)}
+                title="Add Discount"
+                width="max-w-md"
+              >
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setAddDiscountLoading(true);
+                    try {
+                      const response = await fetch("/api/discounts", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name: newDiscountName,
+                          value: newDiscountValue,
+                          type: newDiscountType,
+                          is_active: true,
+                        }),
+                      });
+                      const result = await response.json();
+                      if (result.success && result.data && result.data[0]) {
+                        setShowAddDiscountModal(false);
+                        setNewDiscountName("");
+                        setNewDiscountValue("");
+                        setNewDiscountType("percent");
+                        // Add to discounts list
+                        if (typeof setDiscounts === "function") setDiscounts((prev) => [result.data[0], ...prev]);
+                        if (typeof setSelectedDiscountId === "function") setSelectedDiscountId(result.data[0].id);
+                        toast.success("Discount added!");
+                      } else {
+                        toast.error(result.error || "Failed to add discount");
+                      }
+                    } catch (err) {
+                      toast.error(err.message || "Failed to add discount");
+                    }
+                    setAddDiscountLoading(false);
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block font-semibold mb-1">Name</label>
+                    <input
+                      className="w-full border rounded px-3 py-2"
+                      value={newDiscountName}
+                      onChange={e => setNewDiscountName(e.target.value)}
+                      required
+                      placeholder="Discount name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold mb-1">Value</label>
+                    <input
+                      className="w-full border rounded px-3 py-2"
+                      type="number"
+                      min="0"
+                      value={newDiscountValue}
+                      onChange={e => setNewDiscountValue(e.target.value)}
+                      required
+                      placeholder="Discount value"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold mb-1">Type</label>
+                    <select
+                      className="w-full border rounded px-3 py-2"
+                      value={newDiscountType}
+                      onChange={e => setNewDiscountType(e.target.value)}
+                    >
+                      <option value="percent">Percent (%)</option>
+                      <option value="amount">Amount (GHS)</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button
+                      type="button"
+                      className="px-4 py-2 rounded bg-gray-200 text-gray-700"
+                      onClick={() => setShowAddDiscountModal(false)}
+                      disabled={addDiscountLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded bg-blue-700 text-white font-semibold"
+                      disabled={addDiscountLoading}
+                    >
+                      {addDiscountLoading ? "Adding..." : "Add Discount"}
+                    </button>
+                  </div>
+                </form>
+              </SimpleModal>
+            )}
           </div>
         </div>
         {/* Payment Summary */}
