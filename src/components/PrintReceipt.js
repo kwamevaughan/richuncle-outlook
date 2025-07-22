@@ -11,12 +11,19 @@ const PrintReceipt = ({
   total, 
   selectedCustomerId, 
   customers, 
-  paymentData 
+  paymentData,
+  order
 }) => {
   const printOrder = () => {
     if (selectedProducts.length === 0) {
       return false;
     }
+
+    // Extract possible cashier fields from paymentData
+    const paymentDataReceiver = paymentData?.paymentReceiverName || paymentData?.payment_receiver_name || paymentData?.paymentReceiver || paymentData?.payment_receiver;
+    // Extract possible cashier fields from order prop
+    const orderReceiver = order?.payment_receiver_name || order?.payment_receiver || order?.paymentReceiverName || order?.paymentReceiver;
+    const cashierName = paymentDataReceiver || orderReceiver || 'Unknown';
 
     // Create print content
     const printContent = `
@@ -182,17 +189,7 @@ const PrintReceipt = ({
                 }
               `
               }
-              <div><strong>Payment received by:</strong> ${
-                paymentData.paymentReceiverName ||
-                paymentData.payment_receiver_name ||
-                paymentData.paymentReceiver ||
-                paymentData.payment_receiver ||
-                paymentReceiverName ||
-                payment_receiver_name ||
-                paymentReceiver ||
-                payment_receiver ||
-                'Unknown'
-              }</div>
+              <div><strong>Payment received by:</strong> ${cashierName}</div>
             </div>
           `
               : `

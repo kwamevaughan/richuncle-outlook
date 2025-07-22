@@ -195,17 +195,19 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 />
               </TooltipIconButton>
 
-              <TooltipIconButton
-                label="View Orders"
-                mode={mode}
-                className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
-                onClick={onOpenOrderHistory}
-              >
-                <Icon
-                  icon="material-symbols-light:order-approve-outline"
-                  className="h-7 w-7 text-gray-500"
-                />
-              </TooltipIconButton>
+              {user?.role !== 'cashier' && (
+                <TooltipIconButton
+                  label="View Orders"
+                  mode={mode}
+                  className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                  onClick={onOpenOrderHistory}
+                >
+                  <Icon
+                    icon="material-symbols-light:order-approve-outline"
+                    className="h-7 w-7 text-gray-500"
+                  />
+                </TooltipIconButton>
+              )}
 
               <TooltipIconButton
                 label="Today's Sales"
@@ -232,7 +234,9 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
 
               <LanguageSwitch mode={mode} />
 
-              <NotificationButton mode={mode} user={user} />
+              {user?.role !== 'cashier' && (
+                <NotificationButton mode={mode} user={user} />
+              )}
 
               <TooltipIconButton
                 label={

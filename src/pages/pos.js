@@ -191,6 +191,14 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     setOrderId(`RUO${timestamp}${random.toString().padStart(2, '0')}`);
   }, []);
 
+  // On POS page load, restore lastOrderData from localStorage if available
+  useEffect(() => {
+    const saved = localStorage.getItem('lastOrderData');
+    if (saved) {
+      setLastOrderData(JSON.parse(saved));
+    }
+  }, []);
+
   // Memoize the header component to prevent unnecessary re-renders
   const headerComponent = useMemo(() => {
     return (headerProps) => (
@@ -210,6 +218,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const handleOrderComplete = useCallback((orderData) => {
     setReloadProducts(r => r + 1);
     setLastOrderData(orderData);
+    localStorage.setItem('lastOrderData', JSON.stringify(orderData));
     // Generate new orderId for next order
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 100);
@@ -421,6 +430,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       selectedCustomerId: '', // You may want to get the current customer
       customers,
       paymentData: payment,
+      order: lastOrderData,
     });
     printReceipt.printOrder();
   };
@@ -510,6 +520,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         showSidebar={false}
         {...props}
       >
+        <div className='h-[72px]' aria-hidden='true'></div>
         <CashRegisterModal
           isOpen={showCashRegister || autoShowRegister}
           onClose={() => {
@@ -806,13 +817,6 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                 paymentType: paymentData.paymentType || paymentData.method,
                 payingAmount: paymentData.payingAmount || paymentData.amount,
               };
-              console.log('--- ModernOrderReceipt Print Debug ---');
-              console.log('modernReceiptData:', modernReceiptData);
-              console.log('items:', items);
-              console.log('selectedProducts:', selectedProducts);
-              console.log('quantities:', quantities);
-              console.log('subtotal:', subtotal);
-              console.log('paymentData:', mappedPaymentData);
               const printReceipt = PrintReceipt({
                 orderId: modernReceiptData.id,
                 selectedProducts,
@@ -825,6 +829,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                 selectedCustomerId: modernReceiptData.customer_id,
                 customers,
                 paymentData: mappedPaymentData,
+                order: modernReceiptData,
               });
               printReceipt.printOrder();
             }

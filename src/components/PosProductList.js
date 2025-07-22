@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import { playBellBeep } from "@/utils/posSounds";
 import SimpleModal from "./SimpleModal";
+import TooltipIconButton from "@/components/TooltipIconButton";
 
 const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts, hasOpenSession = true, sessionCheckLoading = false }) => {
   const { categories, loading: catLoading, error: catError } = useCategories();
@@ -214,16 +215,18 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               <span>{user.name}</span>
             </h1>
             <div className="flex items-center gap-2">
-              <div>
-                <button
-                  className="bg-blue-800 text-white p-2 rounded hover:bg-blue-700"
-                  onClick={() => setShowBarcodeModal(true)}
-                >
-                  {" "}
-                  <Icon icon="mdi:fullscreen" className="w-5 h-5" />{" "}
-                </button>
-              </div>
-              <div className="relative flex-1 max-w-xs">
+              <TooltipIconButton
+                label="Open Barcode Scanner"
+                mode="light"
+                className="ml-2 p-2 rounded-2xl border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                onClick={() => setShowBarcodeModal(true)}
+              >
+                <Icon icon="mdi:fullscreen" className="w-5 h-5" />
+              </TooltipIconButton>
+              <div
+                className="relative flex-1"
+                style={{ width: "100%", maxWidth: "900px", minWidth: "400px" }}
+              >
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon
                     icon="material-symbols:search-rounded"
@@ -240,11 +243,13 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     }
                   }}
                   placeholder="Search products..."
-                  className="border rounded pl-10 pr-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="border rounded-2xl pl-10 pr-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
               </div>
-              <button
-                type="button"
+              <TooltipIconButton
+                label="Refresh Product List"
+                mode="light"
+                className="ml-2 p-2 rounded-2xl border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -253,14 +258,12 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   });
                   setReloadFlag((f) => f + 1);
                 }}
-                className="ml-2 p-2 rounded border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
-                title="Reload products"
               >
                 <Icon
                   icon="material-symbols:refresh"
                   className="w-5 h-5 text-blue-800"
                 />
-              </button>
+              </TooltipIconButton>
             </div>
           </div>
 
@@ -304,8 +307,10 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  if (user?.role === 'cashier' && !hasOpenSession) {
-                    toast.error('You must open a cash register before making sales.');
+                  if (user?.role === "cashier" && !hasOpenSession) {
+                    toast.error(
+                      "You must open a cash register before making sales."
+                    );
                     return;
                   }
                   toggleProductSelect(product.id);
@@ -333,7 +338,10 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   </div>
                 ) : (
                   <div className="w-full flex items-center justify-center mb-2 bg-gray-100 rounded p-2 ">
-                    <Icon icon="mdi:image-off-outline" className="rounded border w-28 h-28 text-gray-400 bg-gray-100 object-cover" />
+                    <Icon
+                      icon="mdi:image-off-outline"
+                      className="rounded border w-28 h-28 text-gray-400 bg-gray-100 object-cover"
+                    />
                   </div>
                 )}
                 <div className="text-xs text-gray-500 mb-1 self-start">
@@ -373,27 +381,34 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     <span className="text-sm font-bold text-blue-700">
                       GHS {product.price}
                     </span>
-                    {user?.role !== 'cashier' && (
+                    {user?.role !== "cashier" && (
                       <span className="text-xs text-gray-500">
                         Cost: GHS {product.cost_price || 0}
                       </span>
                     )}
                   </div>
-                  {product.cost_price && product.cost_price > 0 && user?.role !== 'cashier' && (
-                    <div className="text-xs text-green-600 font-medium">
-                      Profit: GHS{" "}
-                      {(
-                        (product.price - product.cost_price) *
-                        (quantities[product.id] || 1)
-                      ).toFixed(2)}
-                    </div>
-                  )}
-                  {product.tax_percentage && product.tax_percentage > 0 && user?.role !== 'cashier' && (
-                    <div className="text-xs text-orange-600 font-medium">
-                      Tax: {product.tax_percentage}% (
-                      {product.tax_type === "inclusive" ? "Included" : "Added"})
-                    </div>
-                  )}
+                  {product.cost_price &&
+                    product.cost_price > 0 &&
+                    user?.role !== "cashier" && (
+                      <div className="text-xs text-green-600 font-medium">
+                        Profit: GHS{" "}
+                        {(
+                          (product.price - product.cost_price) *
+                          (quantities[product.id] || 1)
+                        ).toFixed(2)}
+                      </div>
+                    )}
+                  {product.tax_percentage &&
+                    product.tax_percentage > 0 &&
+                    user?.role !== "cashier" && (
+                      <div className="text-xs text-orange-600 font-medium">
+                        Tax: {product.tax_percentage}% (
+                        {product.tax_type === "inclusive"
+                          ? "Included"
+                          : "Added"}
+                        )
+                      </div>
+                    )}
                 </div>
               </div>
             ))}
@@ -442,19 +457,33 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 if (e.key === "Enter" && barcodeProduct) {
                   // Add product immediately on Enter
                   if (barcodeQty > barcodeProduct.quantity) {
-                    toast.error(`Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`);
+                    toast.error(
+                      `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
+                    );
                     return;
                   }
                   if (!selectedProducts.includes(barcodeProduct.id)) {
-                    setSelectedProducts([...selectedProducts, barcodeProduct.id]);
-                    setQuantities((q) => ({ ...q, [barcodeProduct.id]: barcodeQty }));
+                    setSelectedProducts([
+                      ...selectedProducts,
+                      barcodeProduct.id,
+                    ]);
+                    setQuantities((q) => ({
+                      ...q,
+                      [barcodeProduct.id]: barcodeQty,
+                    }));
                   } else {
-                    const newQty = (quantities[barcodeProduct.id] || 1) + barcodeQty;
+                    const newQty =
+                      (quantities[barcodeProduct.id] || 1) + barcodeQty;
                     if (newQty > barcodeProduct.quantity) {
-                      toast.error(`Cannot add ${barcodeQty} more units. Total would exceed available stock of ${barcodeProduct.quantity} units.`);
+                      toast.error(
+                        `Cannot add ${barcodeQty} more units. Total would exceed available stock of ${barcodeProduct.quantity} units.`
+                      );
                       return;
                     }
-                    setQuantities((q) => ({ ...q, [barcodeProduct.id]: newQty }));
+                    setQuantities((q) => ({
+                      ...q,
+                      [barcodeProduct.id]: newQty,
+                    }));
                   }
                   playBellBeep();
                   toast.success(`Added ${barcodeProduct.name} to order list!`);
@@ -528,7 +557,8 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       [barcodeProduct.id]: barcodeQty,
                     }));
                   } else {
-                    const newQty = (q[barcodeProduct.id] || 1) + barcodeQty;
+                    const newQty =
+                      (quantities[barcodeProduct.id] || 1) + barcodeQty;
                     if (newQty > barcodeProduct.quantity) {
                       toast.error(
                         `Cannot add ${barcodeQty} more units. Total would exceed available stock of ${barcodeProduct.quantity} units.`
@@ -560,4 +590,4 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   );
 };
 
-export default PosProductList; 
+export default PosProductList;
