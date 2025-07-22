@@ -3,7 +3,7 @@ import PrintReceipt from "./PrintReceipt";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
 
-const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
+const OrderHistoryModal = ({ isOpen, onClose, customers, statusFilter, onResume = () => {} }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [printing, setPrinting] = useState(null);
@@ -71,6 +71,11 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
 
   const filteredOrders = orders
     .filter((order) => {
+      if (statusFilter && Array.isArray(statusFilter)) {
+        if (!statusFilter.includes(order.status)) return false;
+      } else if (statusFilter && order.status !== statusFilter) {
+        return false;
+      }
       const matchesSearch =
         order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         order.id.toString().includes(searchTerm);
@@ -229,7 +234,11 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
-                          GHS {Number(order.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          GHS{" "}
+                          {Number(order.total).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -238,10 +247,35 @@ const OrderHistoryModal = ({ isOpen, onClose, customers }) => {
                             order
                           )}`}
                         >
-                          Completed
+                          {order.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex gap-2 justify-end">
+                        {(order.status === "Hold" ||
+                          order.status === "Layaway") && (
+                          <button
+                            onClick={() => onResume && onResume(order)}
+                            className={`inline-flex items-center gap-2 px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white ${
+                              order.status === "Hold"
+                                ? "bg-green-600 hover:bg-green-700"
+                                : "bg-indigo-600 hover:bg-indigo-700"
+                            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all`}
+                          >
+                            <Icon
+                              icon={
+                                order.status === "Hold"
+                                  ? "mdi:play-circle"
+                                  : "mdi:check-circle"
+                              }
+                              className="w-4 h-4"
+                            />
+                            <span>
+                              {order.status === "Hold"
+                                ? "Resume"
+                                : "Settle Layaway"}
+                            </span>
+                          </button>
+                        )}
                         <button
                           onClick={() => handlePrint(order)}
                           disabled={printing === order.id}

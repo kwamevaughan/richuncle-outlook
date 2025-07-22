@@ -8,6 +8,8 @@ import PaymentNotes from "./payment/PaymentNotes";
 import PaymentCustomerInfo from "./payment/PaymentCustomerInfo";
 import MomoPayment from "./payment/types/MomoPayment";
 import { getPaymentTypeLabel, getPaymentTypeIcon, validatePaymentData } from "./payment/utils/paymentHelpers";
+import LayawaySummary from "./payment/LayawaySummary";
+import OrderItems from "./OrderItems";
 
 const PaymentForm = ({ 
   isOpen, 
@@ -22,35 +24,64 @@ const PaymentForm = ({
   user = null,
   allUsers = [],
   isOnlinePurchase = false,
-  processCompleteTransaction
+  processCompleteTransaction,
+  paymentData: propPaymentData, // Added propPaymentData to the destructuring
+  layawayTotal, // Added layawayTotal prop
+  products = [], // Added products prop
+  quantities = {} // Added quantities prop
 }) => {
-  const [paymentData, setPaymentData] = useState({
-    receivedAmount: "",
-    payingAmount: "",
-    change: 0,
-    paymentType: paymentType,
-    paymentReceiver: "",
-    saleNote: "",
-    // Additional fields for different payment types
-    referenceNumber: "",
-    cardType: "",
-    momoProvider: "",
-    customerPhone: "",
-    transactionId: "",
-    // Split payment fields
-    splitPayments: [],
-    remainingAmount: total
+  const [paymentData, setPaymentData] = useState(() => {
+    // If props.paymentData has payments, use it as base
+    if (propPaymentData && (Array.isArray(propPaymentData.payments) && propPaymentData.payments.length > 0)) {
+      return {
+        ...propPaymentData,
+        paymentType: paymentType,
+        payingAmount: total.toFixed(2),
+        receivedAmount: "",
+        change: 0,
+        remainingAmount: total
+      };
+    }
+    // Otherwise, use default
+    return {
+      receivedAmount: "",
+      payingAmount: total.toFixed(2),
+      change: 0,
+      paymentType: paymentType,
+      paymentReceiver: "",
+      saleNote: "",
+      referenceNumber: "",
+      cardType: "",
+      momoProvider: "",
+      customerPhone: "",
+      transactionId: "",
+      splitPayments: [],
+      remainingAmount: total
+    };
   });
 
-  // Reset form when payment type changes
+  // Reset form when payment type changes, but preserve layaway payments
   useEffect(() => {
-    setPaymentData(prev => ({
-      ...prev,
-      paymentType: paymentType,
-      payingAmount: total.toFixed(2),
-      receivedAmount: "",
-      change: 0
-    }));
+    setPaymentData(prev => {
+      // If this is a layaway with payments, preserve them
+      if (prev.payments && Array.isArray(prev.payments) && prev.payments.length > 0) {
+        return {
+          ...prev,
+          paymentType: paymentType,
+          payingAmount: total.toFixed(2),
+          receivedAmount: "",
+          change: 0
+        };
+      }
+      // Otherwise, reset as normal
+      return {
+        ...prev,
+        paymentType: paymentType,
+        payingAmount: total.toFixed(2),
+        receivedAmount: "",
+        change: 0
+      };
+    });
   }, [paymentType, total]);
 
   // Add this useEffect to reset split payment state when modal opens or order/total changes
@@ -73,16 +104,86 @@ const PaymentForm = ({
     }
   }, [isOpen, total, paymentType]);
 
-  // In the PaymentForm component, update the useEffect for autofilling receivedAmount:
+  // Determine if this is a layaway finalization (move above useEffect)
+  const layawayPayments = Array.isArray(paymentData.payments)
+    ? paymentData.payments.filter(p => p && typeof p.amount !== 'undefined')
+    : paymentData.amount
+      ? [{
+          amount: paymentData.amount,
+          method: paymentData.method,
+          reference: paymentData.reference,
+          date: paymentData.date || paymentData.timestamp || new Date().toISOString(),
+          user: paymentData.user || null
+        }]
+      : [];
+  const isLayaway = layawayPayments.length > 0;
+  const layawayPaid = layawayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const layawayTotalValue = typeof layawayTotal !== 'undefined' ? Number(layawayTotal) : (isLayaway ? layawayPaid + total : total);
+  const layawayOutstanding = isLayaway ? layawayTotalValue - layawayPaid : 0;
+
+  // Autofill receivedAmount for layaway (with outstanding balance) and for regular cash/momo
   useEffect(() => {
-    if (paymentType === 'momo' || paymentType === 'cash') {
+    if (isLayaway && paymentType !== 'split') {
+      setPaymentData(prev => ({
+        ...prev,
+        receivedAmount: layawayOutstanding.toFixed(2)
+      }));
+    } else if (paymentType === 'momo' || paymentType === 'cash') {
       setPaymentData(prev => ({
         ...prev,
         receivedAmount: prev.payingAmount || total.toFixed(2)
       }));
     }
     // Do not disable the field, just auto-fill
-  }, [paymentType, total]);
+  }, [isLayaway, layawayOutstanding, paymentType, total]);
+
+  // Sync paymentData state with prop when modal is opened for a new layaway
+  useEffect(() => {
+    if (isOpen && propPaymentData && Array.isArray(propPaymentData.payments) && propPaymentData.payments.length > 0) {
+      setPaymentData(prev => ({
+        ...propPaymentData,
+        paymentType: paymentType,
+        payingAmount: total.toFixed(2),
+        receivedAmount: "",
+        change: 0,
+        remainingAmount: total
+      }));
+    }
+  }, [isOpen, propPaymentData, paymentType, total]);
+
+  // Debug: log paymentData and layawayPayments
+  useEffect(() => {
+    console.log('PaymentForm paymentData:', paymentData);
+  }, [paymentData]);
+
+  // Normalize paymentData: always ensure payments is an array
+  useEffect(() => {
+    setPaymentData(prev => {
+      if (prev && !Array.isArray(prev.payments)) {
+        if (prev.amount) {
+          return {
+            ...prev,
+            payments: [
+              {
+                amount: prev.amount,
+                method: prev.method,
+                reference: prev.reference,
+                date: prev.date || prev.timestamp || new Date().toISOString(),
+                user: prev.user || null
+              }
+            ]
+          };
+        } else if (prev.payments && typeof prev.payments === 'object') {
+          // If payments is a single object, wrap it in an array
+          return {
+            ...prev,
+            payments: [prev.payments]
+          };
+        }
+      }
+      return prev;
+    });
+  }, [isOpen, propPaymentData, paymentData.amount]);
 
   const handleReceivedAmountChange = (value) => {
     const received = parseFloat(value) || 0;
@@ -800,6 +901,8 @@ const PaymentForm = ({
     }
   };
 
+
+
   if (!isOpen) return null;
 
   return (
@@ -819,7 +922,7 @@ const PaymentForm = ({
 
       {/* Modal Content */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl rounded-3xl transform transition-all duration-500 max-h-[85vh] overflow-hidden shadow-2xl shadow-black/20 bg-white/20 text-gray-900 border border-white/20 backdrop-blur-xl">
+        <div className="relative w-full max-w-5xl rounded-3xl transform transition-all duration-500 h-full overflow-hidden shadow-2xl shadow-black/20 bg-white/20 text-gray-900 border border-white/20 backdrop-blur-xl">
           {/* Header */}
           <div className="relative px-8 py-3 overflow-hidden bg-[#172840]">
             <div className="absolute inset-0 opacity-30">
@@ -848,11 +951,57 @@ const PaymentForm = ({
             </div>
           </div>
 
+          {/* Product List (if provided and not layaway) */}
+          {!isLayaway && <OrderItems products={products} quantities={quantities} />}
+
           {/* Content */}
-          <div className="p-8 overflow-y-auto max-h-[calc(85vh-120px)] bg-white/60">
+          <div className="p-8 overflow-y-auto max-h-[calc(85vh-120px)] bg-white/60" style={{ minHeight: '200px' }}>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Payment Summary */}
-              <PaymentSummary orderId={orderId} customer={customer} total={total} paymentType={paymentType} paymentData={paymentData} users={allUsers} />
+              {/* Layaway Summary or Payment Summary */}
+              {isLayaway ? (
+                <LayawaySummary 
+                  isLayaway={isLayaway}
+                  layawayTotalValue={layawayTotalValue}
+                  layawayPaid={layawayPaid}
+                  layawayOutstanding={layawayOutstanding}
+                  layawayPayments={layawayPayments}
+                  products={products}
+                  quantities={quantities}
+                  orderId={orderId}
+                  customer={customer}
+                  total={total}
+                  paymentType={paymentType}
+                  paymentData={paymentData}
+                  users={allUsers}
+                />
+              ) : (
+                <PaymentSummary orderId={orderId} customer={customer} total={total} paymentType={paymentType} paymentData={paymentData} users={allUsers} />
+              )}
+
+              {/* Payment Type Selection for Layaway Finalization */}
+              {isLayaway && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Method
+                  </label>
+                  <select
+                    value={paymentType}
+                    onChange={e => {
+                      // Allow split or other payment types
+                      if (e.target.value === 'split') {
+                        setPaymentData(prev => ({ ...prev, paymentType: 'split' }));
+                      }
+                      // You can add more logic for other types if needed
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="momo">Mobile Money</option>
+                    <option value="card">Card</option>
+                    <option value="split">Split Bill</option>
+                  </select>
+                </div>
+              )}
 
               {/* Payment Amounts - Hidden for Split Payments */}
               {paymentType !== "split" && (
@@ -863,16 +1012,18 @@ const PaymentForm = ({
                 />
               )}
 
-              {/* Payment Type - Read Only */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Type
-                </label>
-                <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-700 font-medium flex items-center gap-2">
-                  <Icon icon={getPaymentTypeIcon(paymentType)} className="w-5 h-5 text-green-600" />
-                  {getPaymentTypeLabel(paymentType)} Payment
+              {/* Payment Type - Read Only (hide if layaway and type selector is shown) */}
+              {!isLayaway && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payment Type
+                  </label>
+                  <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-700 font-medium flex items-center gap-2">
+                    <Icon icon={getPaymentTypeIcon(paymentType)} className="w-5 h-5 text-green-600" />
+                    {getPaymentTypeLabel(paymentType)} Payment
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Payment Type Specific Fields */}
               {renderPaymentTypeFields()}
@@ -890,8 +1041,9 @@ const PaymentForm = ({
               {/* Notes Section */}
               <PaymentNotes paymentData={paymentData} setPaymentData={setPaymentData} />
 
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-4 pt-4 border-t">
+
+              {/* Action Buttons - sticky at bottom for better accessibility */}
+              <div className="flex justify-end gap-4 pt-4 border-t  bottom-0 bg-white/80 z-10" style={{background: 'rgba(255,255,255,0.95)'}}>
                 <button
                   type="button"
                   onClick={onClose}
@@ -904,7 +1056,7 @@ const PaymentForm = ({
                   className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
                 >
                   <Icon icon="mdi:check-circle" className="w-5 h-5" />
-                  Finalize Payment
+                  {isLayaway ? 'Complete Layaway' : 'Finalize Payment'}
                 </button>
               </div>
             </form>

@@ -14,10 +14,7 @@ const PaymentSummary = ({
   };
 
   // Debug logs
-  console.log('PaymentSummary users:', users);
-  console.log('PaymentSummary paymentReceiver:', paymentData?.paymentReceiver);
   const paymentReceiverUser = users.find(u => u.id === paymentData?.paymentReceiver);
-  console.log('PaymentSummary paymentReceiverUser:', paymentReceiverUser);
 
   return (
     <div className="bg-blue-50 rounded-lg p-4 mb-6">

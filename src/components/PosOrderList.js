@@ -10,6 +10,7 @@ import { playBellBeep } from "../utils/posSounds";
 import { getPaymentTypeLabel } from "./payment/utils/paymentHelpers";
 import useUsers from "../hooks/useUsers";
 import Select from 'react-select';
+import { paymentMethods } from "@/constants/paymentMethods";
 
 const dummyOrder = {
   id: "ORD123",
@@ -36,12 +37,6 @@ const dummyOrder = {
     total: 0,
   },
 };
-
-const paymentMethods = [
-  { key: "cash", label: "Cash", icon: "mdi:cash" },
-  { key: "momo", label: "Momo", icon: "mdi:wallet-outline" },
-  { key: "split", label: "Split Bill", icon: "mdi:call-split" },
-];
 
 const PosOrderList = ({ 
   selectedProducts = [], 
@@ -92,6 +87,7 @@ const PosOrderList = ({
   const [barcodeProduct, setBarcodeProduct] = useState(null);
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeQty, setBarcodeQty] = useState(1);
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   
   // Detect if user is on Chrome
   const isChrome = typeof window !== 'undefined' && /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
@@ -441,18 +437,49 @@ const PosOrderList = ({
       {/* Payment Section */}
 
       <div className="flex gap-4">
-        <button
-          onClick={handlePrintOrder}
-          disabled={selectedProducts.length === 0}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 font-semibold transition ${
-            selectedProducts.length > 0
-              ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
-        >
-          <Icon icon="mdi:printer-outline" className="w-5 h-5" />
-          Print Order
-        </button>
+        <div className="relative flex-1">
+          <button
+            onClick={() => {
+              if (selectedProducts.length > 0) {
+                setShowPaymentOptions(true);
+              }
+            }}
+            disabled={selectedProducts.length === 0}
+            className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-semibold transition ${
+              selectedProducts.length > 0
+                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
+          >
+            <Icon icon="mdi:printer-outline" className="w-5 h-5" />
+            Select Payment Method
+          </button>
+          {showPaymentOptions && (
+            <div className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex gap-4 z-50">
+              {paymentMethods.map((pm) => (
+                <button
+                  key={pm.key}
+                  className="flex flex-col items-center gap-1 px-4 py-2 hover:bg-blue-50 rounded transition"
+                  onClick={() => {
+                    setShowPaymentOptions(false);
+                    setSelectedPaymentType(pm.key);
+                    setShowPaymentModal(true);
+                  }}
+                >
+                  <Icon icon={pm.icon} className="w-7 h-7 mb-1" />
+                  <span className="font-semibold text-sm">{pm.label}</span>
+                </button>
+              ))}
+              <button
+                className="flex flex-col items-center gap-1 px-4 py-2 hover:bg-gray-100 rounded transition"
+                onClick={() => setShowPaymentOptions(false)}
+              >
+                <Icon icon="mdi:close" className="w-6 h-6 mb-1 text-gray-500" />
+                <span className="text-xs text-gray-500">Cancel</span>
+              </button>
+            </div>
+          )}
+        </div>
         <button
           onClick={() => {
             // Get receipt data and show preview modal
@@ -499,7 +526,7 @@ const PosOrderList = ({
           }`}
         >
           <Icon icon="mdi:pause" className="w-5 h-5" />
-          {paymentData ? "Finalize Order" : "Place Order"}
+          {paymentData ? "Finalize Order" : "Hold Order"}
         </button>
       </div>
 
@@ -719,6 +746,8 @@ const PosOrderList = ({
         user={allUsers.find((u) => u.id === user?.id) || user}
         allUsers={allUsers}
         isOnlinePurchase={isOnlinePurchase}
+        products={products.filter(p => selectedProducts.includes(p.id))}
+        quantities={quantities}
       />
 
       {/* Receipt Preview Modal */}
