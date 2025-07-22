@@ -40,7 +40,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [showCashRegister, setShowCashRegister] = useState(false);
   const [showModernReceipt, setShowModernReceipt] = useState(false);
   const [modernReceiptData, setModernReceiptData] = useState(null);
-
+  const [selectedRegister, setSelectedRegister] = useState(null);
 
 
   // Check for open cash register session for cashiers
@@ -164,6 +164,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [selectedPaymentType, setSelectedPaymentType] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
+  const [lastPaymentData, setLastPaymentData] = useState(null);
 
   // Handler to open payment modal with selected type
   const handlePaymentSelection = (paymentMethod) => {
@@ -378,6 +379,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       setSelectedDiscountId("");
       setPaymentData(null);
       setSelectedPayment("");
+      setLastPaymentData(paymentResult);
       // Generate new order ID
       const timestamp = Date.now().toString().slice(-6);
       const random = Math.floor(Math.random() * 100);
@@ -394,18 +396,29 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   // In pos.js, add handlePrintOrder:
   const handlePrintOrder = () => {
     if (selectedProducts.length === 0) return;
+    // Block printing if no payment info
+    const payment = lastPaymentData || paymentData;
+    if (!payment || !payment.paymentType || isNaN(payment.payingAmount) || payment.payingAmount === undefined) {
+      import('react-hot-toast').then(({ toast }) => toast.error('Complete payment before printing the receipt.'));
+      return;
+    }
+    const subtotal = selectedProducts.reduce((sum, id) => {
+      const product = products.find(p => p.id === id);
+      const qty = quantities[id] || 1;
+      return product ? sum + (product.price * qty) : sum;
+    }, 0);
     const printReceipt = PrintReceipt({
       orderId,
       selectedProducts,
       quantities,
       products,
-      subtotal: 0, // You may want to calculate this
-      tax: 0, // You may want to calculate this
-      discount: 0, // You may want to calculate this
+      subtotal,
+      tax: 0,
+      discount: 0,
       total: totalPayable,
       selectedCustomerId: '', // You may want to get the current customer
       customers,
-      paymentData: paymentData || {},
+      paymentData: payment,
     });
     printReceipt.printOrder();
   };
@@ -470,6 +483,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           }}
           user={user}
           onSessionChanged={checkSession}
+          selectedRegister={selectedRegister}
+          setSelectedRegister={setSelectedRegister}
         />
         <div className="flex gap-8 flex-1 min-h-0 overflow-hidden">
           <PosProductList
@@ -604,7 +619,6 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         {(() => {
           if (showLayawayPaymentForm && layawayOrder) {
             console.log('PaymentForm layawayOrderProducts:', layawayOrder.layawayOrderProducts);
-            console.log('PaymentForm quantities:', quantities);
           }
           return null;
         })()}
@@ -744,22 +758,36 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
               items.forEach(item => {
                 quantities[item.productId] = item.quantity;
               });
+              // Calculate subtotal from items if not present
+              const subtotal = modernReceiptData.subtotal !== undefined ? modernReceiptData.subtotal : items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              const paymentData = modernReceiptData.payment_data || {};
+              // Map method/amount to paymentType/payingAmount for PrintReceipt compatibility
+              const mappedPaymentData = {
+                ...paymentData,
+                paymentType: paymentData.paymentType || paymentData.method,
+                payingAmount: paymentData.payingAmount || paymentData.amount,
+              };
+              console.log('--- ModernOrderReceipt Print Debug ---');
+              console.log('modernReceiptData:', modernReceiptData);
+              console.log('items:', items);
+              console.log('selectedProducts:', selectedProducts);
+              console.log('quantities:', quantities);
+              console.log('subtotal:', subtotal);
+              console.log('paymentData:', mappedPaymentData);
               const printReceipt = PrintReceipt({
                 orderId: modernReceiptData.id,
                 selectedProducts,
                 quantities,
                 products,
-                subtotal: modernReceiptData.subtotal,
-                tax: modernReceiptData.tax,
-                discount: modernReceiptData.discount,
+                subtotal,
+                tax: modernReceiptData.tax || 0,
+                discount: modernReceiptData.discount || 0,
                 total: modernReceiptData.total,
                 selectedCustomerId: modernReceiptData.customer_id,
                 customers,
-                paymentData: modernReceiptData.payment_data || {},
+                paymentData: mappedPaymentData,
               });
-              console.log('About to print receipt:', printReceipt, selectedProducts, quantities);
-              const result = printReceipt.printOrder();
-              console.log('Print result:', result);
+              printReceipt.printOrder();
             }
           }}
         />

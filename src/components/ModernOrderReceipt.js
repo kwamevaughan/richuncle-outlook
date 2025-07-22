@@ -73,7 +73,7 @@ const ModernOrderReceipt = ({
 
   return (
     <SimpleModal isOpen={isOpen} onClose={onClose} title="Order Complete" width="max-w-lg">
-      {/* Receipt Content */}
+        {/* Receipt Content */}
       <div className={`overflow-y-auto ${className}`}>
         <div className="">
             {/* Order Info Cards */}
@@ -283,24 +283,24 @@ const ModernOrderReceipt = ({
                 Please keep this receipt for your records
               </p>
             </div>
+          </div>
         </div>
-      </div>
-      {/* Footer Actions */}
-      <div className="p-4 bg-gray-50 border-t border-gray-200 flex space-x-3">
-        <button
-          onClick={handlePrint}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
-        >
+        {/* Footer Actions */}
+        <div className="p-4 bg-gray-50 border-t border-gray-200 flex space-x-3">
+          <button
+            onClick={handlePrint}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+          >
           <Icon icon="mdi:printer" className="w-4 h-4" />
-          <span>Print Receipt</span>
-        </button>
-        <button
-          onClick={onClose}
-          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-3 rounded-xl font-medium transition-colors duration-200"
-        >
-          Close
-        </button>
-      </div>
+            <span>Print Receipt</span>
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-3 rounded-xl font-medium transition-colors duration-200"
+          >
+            Close
+          </button>
+        </div>
     </SimpleModal>
   );
 };

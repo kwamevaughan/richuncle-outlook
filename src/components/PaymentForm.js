@@ -151,10 +151,7 @@ const PaymentForm = ({
     }
   }, [isOpen, propPaymentData, paymentType, total]);
 
-  // Debug: log paymentData and layawayPayments
-  useEffect(() => {
-    console.log('PaymentForm paymentData:', paymentData);
-  }, [paymentData]);
+  
 
   // Normalize paymentData: always ensure payments is an array
   useEffect(() => {
