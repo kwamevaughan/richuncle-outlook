@@ -10,6 +10,7 @@ import CashOutForm from "./CashOutForm";
 import CashCountSection from "./CashCountSection";
 import AddRegisterForm from "./AddRegisterForm";
 import RegisterSelector from "./RegisterSelector";
+import ExportModal from "./export/ExportModal";
 
 const allowedRoles = ["cashier", "manager", "admin"];
 
@@ -31,6 +32,8 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
   const [userMap, setUserMap] = useState({});
   const [closeNote, setCloseNote] = useState("");
   const { showGlobalConfirm } = useModal();
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportType, setExportType] = useState('products');
 
   // Fetch current open session for selected register
   useEffect(() => {
@@ -399,6 +402,12 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
+    const session = zReport?.data?.session || zReport?.session || {};
+    const paymentBreakdown = zReport?.data?.paymentBreakdown || zReport?.paymentBreakdown || {};
+    const productsSold = zReport?.data?.productsSold || zReport?.productsSold || [];
+    const operator = session.user || session.user_id || 'N/A';
+    const openedAt = session.opened_at ? new Date(session.opened_at).toLocaleString() : 'N/A';
+    const closedAt = session.closed_at ? new Date(session.closed_at).toLocaleString() : 'N/A';
     const printContent = `
       <html>
         <head>
@@ -409,35 +418,42 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
             .section { margin-bottom: 15px; }
             .row { display: flex; justify-content: space-between; margin-bottom: 5px; }
             .total { font-weight: bold; border-top: 1px solid #000; padding-top: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; font-size: 13px; }
+            th { background: #f0f0f0; }
           </style>
         </head>
         <body>
           <div class="header">
             <h1>Z-Report</h1>
-            <p>Register: ${
-              registers.find((r) => r.id === selectedRegister)?.name ||
-              selectedRegister
-            }</p>
-            <p>Date: ${new Date().toLocaleString()}</p>
+            <p>Register: ${registers.find((r) => r.id === selectedRegister)?.name || selectedRegister}</p>
           </div>
           <div class="section">
-            <h3>Session Summary</h3>
-            <div class="row">
-              <span>Opening Cash:</span>
-              <span>GHS ${zReport.opening_cash}</span>
-            </div>
-            <div class="row">
-              <span>Closing Cash:</span>
-              <span>GHS ${zReport.closing_cash}</span>
-            </div>
-            <div class="row">
-              <span>Sales:</span>
-              <span>GHS ${zReport.sales}</span>
-            </div>
-            <div class="row total">
-              <span>Over/Short:</span>
-              <span>GHS ${zReport.over_short}</span>
-            </div>
+            <h3>Session Period</h3>
+            <div class="row"><span>${openedAt}</span><span>to</span><span>${closedAt}</span></div>
+            <div class="row"><span>Operator</span><span>${operator}</span></div>
+            <div class="row total"><span>Over/Short</span><span>GHS ${session.over_short !== undefined ? Number(session.over_short).toFixed(2) : 'N/A'}</span></div>
+            <div class="row"><span>Opening Cash</span><span>GHS ${session.opening_cash !== undefined ? Number(session.opening_cash).toFixed(2) : 'N/A'}</span></div>
+            <div class="row"><span>Closing Cash</span><span>GHS ${session.closing_cash !== undefined ? Number(session.closing_cash).toFixed(2) : 'N/A'}</span></div>
+            <div class="row"><span>Total Sales</span><span>GHS ${zReport?.data?.totalSales !== undefined ? Number(zReport.data.totalSales).toFixed(2) : 'N/A'}</span></div>
+          </div>
+          <div class="section">
+            <h3>Payment Breakdown</h3>
+            <table>
+              <thead><tr><th>Type</th><th>Amount</th></tr></thead>
+              <tbody>
+                ${Object.entries(paymentBreakdown).map(([type, amount]) => `<tr><td>${type.replace('_', ' ')} Payment</td><td>GHS ${Number(amount).toFixed(2)}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="section">
+            <h3>Products Sold</h3>
+            <table>
+              <thead><tr><th>Product</th><th>Quantity</th><th>Total</th></tr></thead>
+              <tbody>
+                ${productsSold.length > 0 ? productsSold.map(prod => `<tr><td>${prod.name}</td><td>${prod.quantity}</td><td>GHS ${Number(prod.total).toFixed(2)}</td></tr>`).join('') : `<tr><td colspan="3" style="text-align:center;color:#888;">No products sold</td></tr>`}
+              </tbody>
+            </table>
           </div>
         </body>
       </html>
@@ -598,7 +614,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Opening Cash</div>
                     <div className="font-bold text-lg text-blue-600">
@@ -645,26 +661,12 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                   
                   
                   
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-gray-600">Total Cash</div>
-                    <div className="font-bold text-lg text-green-700">
-                      {zReport?.totalCash !== null &&
-                      zReport?.totalCash !== undefined
-                        ? `GHS ${Number(zReport.totalCash).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}`
-                        : "N/A"}
-                    </div>
-                  </div>
+                  
                 </div>
                 {/* Payment Breakdown */}
                 <div className="mb-6">
                   <h4 className="font-semibold mb-2">Payment Breakdown</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-2">
                     {zReport?.paymentBreakdown &&
                     Object.keys(zReport.paymentBreakdown).length > 0 ? (
                       Object.entries(zReport.paymentBreakdown).map(
@@ -747,17 +749,53 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                   </button>
                   <button
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
-                    onClick={() =>
-                      zReport?.data && exportZReportCSV(zReport.data)
-                    }
+                    onClick={() => setShowExportModal(true)}
                   >
-                    <Icon
-                      icon="material-symbols:download"
-                      className="w-5 h-5"
-                    />{" "}
-                    Export CSV
+                    <Icon icon="mdi:download" className="w-5 h-5" /> Export
                   </button>
                 </div>
+                {/* ExportModal for Z-Report */}
+                {showExportModal && (
+                  <ExportModal
+                    isOpen={showExportModal}
+                    onClose={() => setShowExportModal(false)}
+                    users={exportType === 'products'
+                      ? (zReport?.data?.productsSold || zReport?.productsSold || [])
+                      : Object.entries(zReport?.data?.paymentBreakdown || zReport?.paymentBreakdown || {}).map(([type, amount]) => ({ type, amount }))}
+                    mode="light"
+                    type="zreport"
+                    stores={[]}
+                    // Custom fields for Z-Report
+                    getDefaultFields={() => exportType === 'products'
+                      ? { name: true, quantity: true, total: true }
+                      : { type: true, amount: true }}
+                    getFieldsOrder={() => exportType === 'products'
+                      ? [
+                          { label: "Product", key: "name", icon: "mdi:package-variant" },
+                          { label: "Quantity", key: "quantity", icon: "mdi:counter" },
+                          { label: "Total", key: "total", icon: "mdi:currency-cedi" },
+                        ]
+                      : [
+                          { label: "Type", key: "type", icon: "mdi:credit-card-outline" },
+                          { label: "Amount", key: "amount", icon: "mdi:currency-cedi" },
+                        ]}
+                  >
+                    <div className="flex gap-4 mb-4">
+                      <button
+                        className={`px-4 py-2 rounded-lg font-semibold ${exportType === 'products' ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}
+                        onClick={() => setExportType('products')}
+                      >
+                        Products Sold
+                      </button>
+                      <button
+                        className={`px-4 py-2 rounded-lg font-semibold ${exportType === 'payments' ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}
+                        onClick={() => setExportType('payments')}
+                      >
+                        Payment Breakdown
+                      </button>
+                    </div>
+                  </ExportModal>
+                )}
               </div>
               <button
                 className="w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg px-6 py-3 font-semibold transition-all"

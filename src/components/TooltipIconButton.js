@@ -10,7 +10,7 @@ const TooltipIconButton = ({
   children,
 }) => {
   return (
-    <div className="relative group inline-block z-50">
+    <div className="relative group inline-block z-20">
       <div
         onClick={onClick}
         className={`p-2 rounded-full focus:outline-none cursor-pointer ${
