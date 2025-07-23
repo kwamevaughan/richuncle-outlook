@@ -82,6 +82,11 @@ export const sidebarNav = [
         icon: "akar-icons:laptop-device",
         label: "POS",
       },
+      {
+        href: "/registers",
+        icon: "mdi:cash-register",
+        label: "Registers",
+      },
     ],
   },
   {
