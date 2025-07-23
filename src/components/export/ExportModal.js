@@ -35,20 +35,10 @@ const formatDate = (dateString) => {
     }
 };
 
-export default function ExportModal({ isOpen, onClose, users, mode, type = "users", stores = [] }) {
-    // Only relevant user fields for export
-    const getDefaultFields = () => ({
-        full_name: true,
-        email: true,
-        role: true,
-        store_name: true,
-        is_active: true,
-        created_at: true,
-        updated_at: false,
-        last_login: true,
-    });
-
-    const getFieldsOrder = () => ([
+export default function ExportModal({ isOpen, onClose, users, mode, type = "users", stores = [], title, getFieldsOrder, getDefaultFields, onToggleType, zreportTab }) {
+    // Field logic: use parent-provided for zreport, default for users
+    const isZReport = type === 'zreport';
+    const fieldsOrder = isZReport && typeof getFieldsOrder === 'function' ? getFieldsOrder() : [
         { label: "Name", key: "full_name", icon: "mdi:account" },
         { label: "Email", key: "email", icon: "mdi:email" },
         { label: "Role", key: "role", icon: "mdi:account-badge" },
@@ -57,16 +47,24 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
         { label: "Created At", key: "created_at", icon: "mdi:calendar" },
         { label: "Updated At", key: "updated_at", icon: "mdi:update" },
         { label: "Last Login", key: "last_login", icon: "mdi:login" },
-    ]);
-
-    const [selectedFields, setSelectedFields] = useState(getDefaultFields());
+    ];
+    const defaultFields = isZReport && typeof getDefaultFields === 'function' ? getDefaultFields() : {
+        full_name: true,
+        email: true,
+        role: true,
+        store_name: true,
+        is_active: true,
+        created_at: true,
+        updated_at: false,
+        last_login: true,
+    };
+    const [selectedFields, setSelectedFields] = useState(defaultFields);
     const [exportFormat, setExportFormat] = useState("csv");
     const [previewRows, setPreviewRows] = useState(3);
-    const [fieldsOrder, setFieldsOrder] = useState(getFieldsOrder());
     const [showDatePicker, setShowDatePicker] = useState(false);
-
+    // For users, use filter logic; for zreport, just use users prop
     const { filterStatus, setFilterStatus, dateRange, setDateRange, filteredUsers } =
-        useExportFilters(users);
+        isZReport ? { filteredUsers: users } : useExportFilters(users);
 
     // Map store_id to store name
     const getStoreName = (store_id) => {
@@ -76,14 +74,19 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
     };
 
     // Format the relevant fields for export
-    const formattedUsers = filteredUsers.map(user => ({
-        ...user,
-        store_name: getStoreName(user.store_id),
-        is_active: user.is_active ? "Active" : "Inactive",
-        created_at: formatDate(user.created_at),
-        updated_at: user.updated_at ? formatDate(user.updated_at) : "-",
-        last_login: user.last_login ? formatDate(user.last_login) : "-",
-    }));
+    let formattedUsers;
+    if (isZReport) {
+        formattedUsers = Array.isArray(filteredUsers) ? filteredUsers : [];
+    } else {
+        formattedUsers = filteredUsers.map(user => ({
+            ...user,
+            store_name: getStoreName(user.store_id),
+            is_active: user.is_active ? "Active" : "Inactive",
+            created_at: formatDate(user.created_at),
+            updated_at: user.updated_at ? formatDate(user.updated_at) : "-",
+            last_login: user.last_login ? formatDate(user.last_login) : "-",
+        }));
+    }
 
 
     const statuses = ["all", "Active", "Inactive"];
@@ -189,6 +192,7 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
     };
 
     if (!isOpen) return null;
+    let modalTitle = title || (isZReport ? 'Export Z-Report Data' : type === 'user' ? 'Export User Data' : 'Export Data');
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[9999]">
@@ -200,8 +204,7 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                 <div className="bg-blue-800 rounded-t-xl p-4 flex items-center justify-between">
                     <div className="flex items-center">
                         <Icon icon="mdi:export" className="w-8 h-8 text-white mr-3" />
-                        <h2 className="text-2xl font-bold text-white">Export User Data
-                        </h2>
+                        <h2 className="text-2xl font-bold text-white">{modalTitle}</h2>
                     </div>
                     <button
                         onClick={onClose}
@@ -210,6 +213,27 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                         <Icon icon="mdi:close" width={24} height={24} />  
                     </button>
                 </div>
+                {/* Z-Report toggles */}
+                {isZReport && (
+                  <div className="flex gap-4 px-6 pt-4">
+                    <button
+                      className={`px-4 py-2 rounded-lg font-semibold ${zreportTab === 'products' ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}
+                      onClick={() => {
+                        if (typeof onToggleType === 'function') onToggleType('products');
+                      }}
+                    >
+                      Products Sold
+                    </button>
+                    <button
+                      className={`px-4 py-2 rounded-lg font-semibold ${zreportTab === 'payments' ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}
+                      onClick={() => {
+                        if (typeof onToggleType === 'function') onToggleType('payments');
+                      }}
+                    >
+                      Payment Breakdown
+                    </button>
+                  </div>
+                )}
                 <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-gray-200 relative">
                     <div className="p-6 space-y-6">
                         <div>
@@ -255,17 +279,20 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                                 />
                             </DragDropContext>
                         </div>
-                        <FilterSection
-                            filterStatus={filterStatus}
-                            setFilterStatus={setFilterStatus}
-                            dateRange={dateRange}
-                            setDateRange={setDateRange}
-                            showDatePicker={showDatePicker}
-                            setShowDatePicker={setShowDatePicker}
-                            mode={mode}
-                            statuses={statuses}
-                            fallbackStaticRanges={fallbackStaticRanges}
-                        />
+                        {/* Only show filters for user export, not zreport */}
+                        {!isZReport && (
+                            <FilterSection
+                                filterStatus={filterStatus}
+                                setFilterStatus={setFilterStatus}
+                                dateRange={dateRange}
+                                setDateRange={setDateRange}
+                                showDatePicker={showDatePicker}
+                                setShowDatePicker={setShowDatePicker}
+                                mode={mode}
+                                statuses={statuses}
+                                fallbackStaticRanges={fallbackStaticRanges}
+                            />
+                        )}
                         <div>
                             <label
                                 className={`block text-sm font-medium mb-2 ${
@@ -342,7 +369,7 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                             <CSVLink
                                 data={formattedUsers}
                                 headers={csvHeaders}
-                                filename="user_data_export.csv"
+                                filename={isZReport ? 'zreport_export.csv' : 'user_data_export.csv'}
                                 onClick={handleExportClick}
                                 className={`px-6 py-2 rounded-full flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg ${
                                     mode === "dark"

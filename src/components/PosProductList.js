@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { playBellBeep } from "@/utils/posSounds";
 import SimpleModal from "./SimpleModal";
 import TooltipIconButton from "@/components/TooltipIconButton";
+import Select, { components } from 'react-select';
 
 const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts, hasOpenSession = true, sessionCheckLoading = false }) => {
   const { categories, loading: catLoading, error: catError } = useCategories();
@@ -20,6 +21,33 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeQty, setBarcodeQty] = useState(1);
     const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  // Prepare options for react-select
+  const productOptions = products.map(product => ({
+    value: product.id,
+    label: product.name,
+    product,
+  }));
+
+  // Custom option rendering for react-select
+  const ProductOption = (props) => {
+    const { product } = props.data;
+    return (
+      <components.Option {...props}>
+        <div className="flex items-center gap-3">
+          {product.image_url ? (
+            <Image src={product.image_url} alt={product.name} width={32} height={32} className="rounded object-cover w-8 h-8" />
+          ) : (
+            <Icon icon="mdi:image-off-outline" className="w-8 h-8 text-gray-300" />
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm truncate">{product.name}</div>
+            <div className="text-xs text-gray-500">GHS {product.price}</div>
+          </div>
+          <div className="text-xs text-gray-400">Stock: {product.quantity}</div>
+        </div>
+      </components.Option>
+    );
+  };
 
 
   // Fetch products when selectedCategory changes or reloadFlag changes
@@ -233,18 +261,50 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     className="w-5 h-5"
                   />
                 </span>
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                    }
-                  }}
-                  placeholder="Search products..."
-                  className="border rounded-2xl pl-10 pr-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
+                <div className="w-full">
+                  <Select
+                    options={productOptions}
+                    components={{ Option: ProductOption }}
+                    placeholder="Search or select product..."
+                    isClearable
+                    isSearchable
+                    // menuIsOpen removed to allow default open/close behavior
+                    onFocus={() => {
+                      /* Optionally, you can set a local state to control open if needed */
+                    }}
+                    onChange={option => {
+                      if (option && option.product) {
+                        toggleProductSelect(option.product.id);
+                      }
+                    }}
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderRadius: '1rem',
+                        minHeight: '40px',
+                        paddingLeft: '2.5rem',
+                        fontSize: '0.95rem',
+                        boxShadow: 'none',
+                        borderColor: '#cbd5e1',
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        zIndex: 100,
+                        maxHeight: 320,
+                      }),
+                      option: (base, state) => ({
+                        ...base,
+                        backgroundColor: state.isFocused ? '#e0f2fe' : '#fff',
+                        color: '#222',
+                        cursor: 'pointer',
+                        padding: '8px 12px',
+                      }),
+                    }}
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                    <Icon icon="material-symbols:search-rounded" className="w-5 h-5" />
+                  </span>
+                </div>
               </div>
               <TooltipIconButton
                 label="Refresh Product List"

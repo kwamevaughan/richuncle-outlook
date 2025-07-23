@@ -29,6 +29,26 @@ export default async function handler(req, res) {
         .eq("session_id", id);
       if (movementsError) throw movementsError;
 
+      // Fetch all orders for this register during the session
+      let ordersQuery = supabaseAdmin
+        .from("orders")
+        .select("*", { count: "exact" })
+        .eq("register_id", session.register_id);
+      if (session.opened_at) ordersQuery = ordersQuery.gte("timestamp", session.opened_at);
+      if (closed_at) ordersQuery = ordersQuery.lte("timestamp", closed_at);
+      const { data: orders, error: ordersError } = await ordersQuery.order("timestamp", { ascending: true });
+      if (ordersError) throw ordersError;
+      // Calculate total sales and refunds
+      let totalSales = 0;
+      let totalRefund = 0;
+      for (const order of orders) {
+        if (order.status === 'Refunded' || order.status === 'refunded') {
+          totalRefund += Number(order.total) || 0;
+        } else {
+          totalSales += Number(order.total) || 0;
+        }
+      }
+
       // Fetch all expenses for this session
       let expenses = [];
       if (session.opened_at && closed_at) {
@@ -41,12 +61,14 @@ export default async function handler(req, res) {
         if (!expError) expenses = exp;
       }
 
-      // Calculate expected_cash: opening_cash + all cash_in - all cash_out
-      let expected_cash = Number(session.opening_cash || 0);
+      // Calculate expected_cash: opening_cash + totalSales + all cash_in - all cash_out - refunds - expenses
+      let expected_cash = Number(session.opening_cash || 0) + totalSales;
       for (const m of movements) {
         if (m.type === 'cash_in') expected_cash += Number(m.amount || 0);
         if (m.type === 'cash_out') expected_cash -= Number(m.amount || 0);
       }
+      // Subtract refunds
+      expected_cash -= totalRefund;
       // Subtract expenses
       for (const exp of expenses) {
         expected_cash -= Number(exp.amount || 0);

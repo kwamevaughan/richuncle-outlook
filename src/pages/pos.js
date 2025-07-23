@@ -384,6 +384,17 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       setShowSuccessModal(false);
       setSuccessOrderData(null);
       setReloadProducts(r => r + 1);
+      // Set lastOrderData for Print Last Receipt
+      const paymentInfoWithName = {
+        ...paymentInfo,
+        paymentReceiverName,
+      };
+      handleOrderComplete({
+        ...orderData,
+        items,
+        payment: paymentInfoWithName,
+        customerId: selectedCustomerId || '',
+      });
       // Reset order state
       setSelectedProducts([]);
       setQuantities({});
@@ -711,6 +722,23 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
               setShowLayawayPaymentForm(false);
               setLayawayOrder(null);
               setLayawayOutstanding(0);
+              // Set lastOrderData for Print Last Receipt
+              const finalizedOrderData = {
+                ...layawayOrder,
+                status: 'Completed',
+                payment_data: { payments: newPayments },
+                items: layawayOrder.layawayOrderProducts.map(p => ({
+                  productId: p.id,
+                  name: p.name,
+                  quantity: quantities[p.id] || 1,
+                  price: p.price
+                })),
+                total: layawayOrder.total,
+                customerId: layawayOrder.customer_id,
+                payment: { payments: newPayments },
+                // Add any other fields needed for PrintReceipt
+              };
+              handleOrderComplete(finalizedOrderData);
               // Optionally reset POS state
             }}
             customer={customers.find(c => c.id === layawayOrder.customer_id)}

@@ -754,48 +754,6 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                     <Icon icon="mdi:download" className="w-5 h-5" /> Export
                   </button>
                 </div>
-                {/* ExportModal for Z-Report */}
-                {showExportModal && (
-                  <ExportModal
-                    isOpen={showExportModal}
-                    onClose={() => setShowExportModal(false)}
-                    users={exportType === 'products'
-                      ? (zReport?.data?.productsSold || zReport?.productsSold || [])
-                      : Object.entries(zReport?.data?.paymentBreakdown || zReport?.paymentBreakdown || {}).map(([type, amount]) => ({ type, amount }))}
-                    mode="light"
-                    type="zreport"
-                    stores={[]}
-                    // Custom fields for Z-Report
-                    getDefaultFields={() => exportType === 'products'
-                      ? { name: true, quantity: true, total: true }
-                      : { type: true, amount: true }}
-                    getFieldsOrder={() => exportType === 'products'
-                      ? [
-                          { label: "Product", key: "name", icon: "mdi:package-variant" },
-                          { label: "Quantity", key: "quantity", icon: "mdi:counter" },
-                          { label: "Total", key: "total", icon: "mdi:currency-cedi" },
-                        ]
-                      : [
-                          { label: "Type", key: "type", icon: "mdi:credit-card-outline" },
-                          { label: "Amount", key: "amount", icon: "mdi:currency-cedi" },
-                        ]}
-                  >
-                    <div className="flex gap-4 mb-4">
-                      <button
-                        className={`px-4 py-2 rounded-lg font-semibold ${exportType === 'products' ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}
-                        onClick={() => setExportType('products')}
-                      >
-                        Products Sold
-                      </button>
-                      <button
-                        className={`px-4 py-2 rounded-lg font-semibold ${exportType === 'payments' ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}
-                        onClick={() => setExportType('payments')}
-                      >
-                        Payment Breakdown
-                      </button>
-                    </div>
-                  </ExportModal>
-                )}
               </div>
               <button
                 className="w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg px-6 py-3 font-semibold transition-all"
@@ -1012,6 +970,37 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
           )}
         </div>
       </SimpleModal>
+
+      {/* ExportModal rendered outside the SimpleModal for Z-Report */}
+      {showExportModal && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          users={exportType === 'products'
+            ? (zReport?.data?.productsSold || zReport?.productsSold || [])
+            : Object.entries(zReport?.data?.paymentBreakdown || zReport?.paymentBreakdown || {}).map(([type, amount]) => ({ type, amount }))}
+          mode="light"
+          type="zreport"
+          title="Export Z-Report Data"
+          stores={[]}
+          // Custom fields for Z-Report
+          getDefaultFields={() => exportType === 'products'
+            ? { name: true, quantity: true, total: true }
+            : { type: true, amount: true }}
+          getFieldsOrder={() => exportType === 'products'
+            ? [
+                { label: "Product", key: "name", icon: "mdi:package-variant" },
+                { label: "Quantity", key: "quantity", icon: "mdi:counter" },
+                { label: "Total", key: "total", icon: "mdi:currency-cedi" },
+              ]
+            : [
+                { label: "Type", key: "type", icon: "mdi:credit-card-outline" },
+                { label: "Amount", key: "amount", icon: "mdi:currency-cedi" },
+              ]}
+          onToggleType={setExportType}
+          zreportTab={exportType}
+        />
+      )}
 
       {/* Confirmation Modals (now outside SimpleModal) */}
       {showCloseConfirm && (
