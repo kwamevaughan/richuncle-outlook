@@ -25,13 +25,9 @@ function useTable(data, initialPageSize = 10) {
   // Filtering
   const filteredData = useMemo(() => {
     let result = data;
-    // Status filter
-    if (statusFilter !== "all") {
-      result = result.filter(row => {
-        if (statusFilter === "active") return row.is_active === true;
-        if (statusFilter === "inactive") return row.is_active === false;
-        return true;
-      });
+    // Status filter for sales returns
+    if (statusFilter && statusFilter !== "all") {
+      result = result.filter(row => row.status === statusFilter);
     }
     // Search filter
     if (searchTerm) {
@@ -254,10 +250,10 @@ export function GenericTable({
           {/* Custom actions */}
           {actions.map((action, i) => {
             if (!action || typeof action.onClick !== 'function') return null;
-            
+            // Only show if action.show is not defined or returns true
+            if (typeof action.show === 'function' && !action.show(row)) return null;
             const label = typeof action.label === 'function' ? action.label(row) : action.label;
             const icon = typeof action.icon === 'function' ? action.icon(row) : action.icon;
-            
             return (
               <button
                 key={label || i}
@@ -346,17 +342,18 @@ export function GenericTable({
                     )}
                   </div>
                 )}
-                {/* Status Filter */}
+                {/* Status Filter for sales returns */}
                 <div>
-                  {/* <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Status</label> */}
                   <select
                     value={table.statusFilter}
                     onChange={e => table.setStatusFilter(e.target.value)}
                     className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   >
                     <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Returned">Returned</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Refunded">Refunded</option>
                   </select>
                 </div>
                 {/* Sort By Filter */}

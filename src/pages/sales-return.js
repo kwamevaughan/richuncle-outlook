@@ -35,6 +35,7 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
   const [showViewModal, setShowViewModal] = useState(false);
   const [rowReferenceOrderProducts, setRowReferenceOrderProducts] = useState({});
   const [orders, setOrders] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("");
 
   // Expand/collapse handler
   const handleExpandRow = async (returnId, reference) => {
@@ -147,6 +148,10 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
     setShowViewModal(true);
   };
 
+  const filteredSalesReturns = statusFilter
+    ? salesReturns.filter(r => r.status === statusFilter)
+    : salesReturns;
+
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
     if (typeof window !== "undefined") {
@@ -180,109 +185,118 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
               </div>
             )}
             {error && <div className="text-red-600 mb-4">{error}</div>}
-            <div className="bg-white dark:bg-gray-900 rounded-xl">
-              <GenericTable
-                data={salesReturns}
-                columns={[
-                  {
-                    header: "",
-                    accessor: "expand",
-                    render: (row) => (
-                      <button
-                        onClick={() => handleExpandRow(row.id, row.reference)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                        title={
-                          expandedRows.includes(row.id) ? "Collapse" : "Expand"
+            {/* Status Filter Dropdown */}
+            {/* If GenericTable supports extraControls or toolbar, add the filter there. Otherwise, render after search. */}
+            <GenericTable
+              data={filteredSalesReturns}
+              columns={[
+                {
+                  header: "",
+                  accessor: "expand",
+                  render: (row) => (
+                    <button
+                      onClick={() => handleExpandRow(row.id, row.reference)}
+                      className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                      title={
+                        expandedRows.includes(row.id) ? "Collapse" : "Expand"
+                      }
+                    >
+                      <Icon
+                        icon={
+                          expandedRows.includes(row.id)
+                            ? "mdi:chevron-up"
+                            : "mdi:chevron-down"
                         }
-                      >
-                        <Icon
-                          icon={
-                            expandedRows.includes(row.id)
-                              ? "mdi:chevron-up"
-                              : "mdi:chevron-down"
+                        className="w-5 h-5"
+                      />
+                    </button>
+                  ),
+                },
+                {
+                  header: "Return Number",
+                  accessor: "return_number",
+                  sortable: true,
+                },
+                {
+                  header: "Customer",
+                  accessor: "customer_name",
+                  sortable: true,
+                  render: row => row.customer_name || "Walk In Customer"
+                },
+                { header: "Date", accessor: "date", sortable: true },
+                { header: "Status", accessor: "status", sortable: true },
+                {
+                  header: "Total",
+                  accessor: "total",
+                  sortable: true,
+                  render: (row) => `GHS ${row.total}`,
+                },
+                // Remove Actions column here
+              ]}
+              actions={[
+                {
+                  label: 'Approve',
+                  icon: 'mdi:check',
+                  className: 'bg-green-600 text-white',
+                  onClick: row => handleApprove(row),
+                  show: row => row.status === 'Pending'
+                },
+                {
+                  label: 'Cancel',
+                  icon: 'mdi:close',
+                  className: 'bg-red-600 text-white',
+                  onClick: row => handleCancel(row),
+                  show: row => row.status === 'Pending'
+                },
+                {
+                  label: 'View',
+                  icon: 'mdi:eye',
+                  className: 'bg-blue-600 text-white',
+                  onClick: row => handleView(row)
+                }
+              ]}
+              // Remove onEdit, onAddNew, addNewLabel, title, emptyMessage, customRowRender for add/edit
+              customRowRender={(row, index, defaultRow) => (
+                <>
+                  {defaultRow}
+                  {expandedRows.includes(row.id) && (
+                    <tr className="bg-gray-50 dark:bg-gray-800">
+                      <td colSpan={8} className="p-4">
+                        {/* <div className="font-semibold mb-2">Line Items</div> */}
+                        <SalesReturnItemsEditor
+                          lineItems={rowLineItems[row.id] || []}
+                          setLineItems={(items) =>
+                            setRowLineItems((prev) => ({
+                              ...prev,
+                              [row.id]: items,
+                            }))
                           }
-                          className="w-5 h-5"
+                          products={products}
+                          referenceOrderProducts={rowReferenceOrderProducts[row.id] || []}
+                          reference={row.reference}
                         />
-                      </button>
-                    ),
-                  },
-                  {
-                    header: "Return Number",
-                    accessor: "return_number",
-                    sortable: true,
-                  },
-                  {
-                    header: "Customer",
-                    accessor: "customer_name",
-                    sortable: true,
-                    render: row => row.customer_name || "Walk In Customer"
-                  },
-                  { header: "Date", accessor: "date", sortable: true },
-                  { header: "Status", accessor: "status", sortable: true },
-                  {
-                    header: "Total",
-                    accessor: "total",
-                    sortable: true,
-                    render: (row) => `GHS ${row.total}`,
-                  },
-                  {
-                    header: 'Actions',
-                    accessor: 'actions',
-                    render: (row) => (
-                      <div className="flex gap-2">
-                        {row.status === 'Pending' && (
-                          <>
-                            <button
-                              className="px-2 py-1 bg-green-600 text-white rounded text-xs"
-                              onClick={() => handleApprove(row)}
-                            >
-                              Approve
-                            </button>
-                            <button
-                              className="px-2 py-1 bg-red-600 text-white rounded text-xs"
-                              onClick={() => handleCancel(row)}
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        )}
-                        <button
-                          className="px-2 py-1 bg-blue-600 text-white rounded text-xs"
-                          onClick={() => handleView(row)}
-                        >
-                          View
-                        </button>
-                      </div>
-                    ),
-                  },
-                ]}
-                // Remove onEdit, onAddNew, addNewLabel, title, emptyMessage, customRowRender for add/edit
-                customRowRender={(row, index, defaultRow) => (
-                  <>
-                    {defaultRow}
-                    {expandedRows.includes(row.id) && (
-                      <tr className="bg-gray-50 dark:bg-gray-800">
-                        <td colSpan={8} className="p-4">
-                          {/* <div className="font-semibold mb-2">Line Items</div> */}
-                          <SalesReturnItemsEditor
-                            lineItems={rowLineItems[row.id] || []}
-                            setLineItems={(items) =>
-                              setRowLineItems((prev) => ({
-                                ...prev,
-                                [row.id]: items,
-                              }))
-                            }
-                            products={products}
-                            referenceOrderProducts={rowReferenceOrderProducts[row.id] || []}
-                            reference={row.reference}
-                          />
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                )}
-              />
-            </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              )}
+              extraControls={
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium">Status:</label>
+                  <select
+                    className="border rounded px-2 py-1 text-sm"
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value)}
+                  >
+                    <option value="">All</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Returned">Returned</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Refunded">Refunded</option>
+                  </select>
+                </div>
+              }
+            />
             {showViewModal && viewItem && (
               <SalesReturnModals
                 show={showViewModal}
