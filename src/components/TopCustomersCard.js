@@ -9,7 +9,7 @@ function formatCurrency(amount) {
 const WALKIN_ID = "__walkin__";
 const ONLINE_ID = "__online__";
 
-export default function TopCustomersCard() {
+export default function TopCustomersCard({ selectedStore }) {
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +68,7 @@ export default function TopCustomersCard() {
 
   // Aggregate orders
   orders.forEach((o) => {
+    if (selectedStore && String(o.store_id) !== String(selectedStore)) return;
     let key = o.customer_id;
     if (!key || key === "" || key === null) {
       key = WALKIN_ID;

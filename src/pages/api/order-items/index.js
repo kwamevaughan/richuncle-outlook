@@ -6,7 +6,7 @@ export default async function handler(req, res) {
       const { order_id } = req.query;
       let query = supabaseAdmin
         .from("order_items")
-        .select("*, orders(timestamp)")
+        .select("*, orders(id, store_id, timestamp)")
         .order("created_at", { ascending: false });
       if (order_id) {
         query = query.eq("order_id", order_id);

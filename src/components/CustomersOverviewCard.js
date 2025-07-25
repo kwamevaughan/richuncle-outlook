@@ -11,7 +11,7 @@ import TooltipIconButton from "./TooltipIconButton";
 
 const COLORS = ["#34d399", "#f59e42"];
 
-export default function CustomersOverviewCard() {
+export default function CustomersOverviewCard({ selectedStore }) {
   const [range, setRange] = useState("Today");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -78,9 +78,9 @@ export default function CustomersOverviewCard() {
         // Get current and previous date ranges
         const { start, end } = getDateRange(range);
         const { start: prevStart, end: prevEnd } = getPrevDateRange(range);
-        // Filter orders by range
-        const ordersInRange = orders.filter(o => o.timestamp && new Date(o.timestamp) >= start && new Date(o.timestamp) <= end && o.customer_id);
-        const prevOrdersInRange = orders.filter(o => o.timestamp && new Date(o.timestamp) >= prevStart && new Date(o.timestamp) <= prevEnd && o.customer_id);
+        // Filter orders by range and store
+        const ordersInRange = orders.filter(o => o.timestamp && new Date(o.timestamp) >= start && new Date(o.timestamp) <= end && o.customer_id && (!selectedStore || String(o.store_id) === String(selectedStore)));
+        const prevOrdersInRange = orders.filter(o => o.timestamp && new Date(o.timestamp) >= prevStart && new Date(o.timestamp) <= prevEnd && o.customer_id && (!selectedStore || String(o.store_id) === String(selectedStore)));
         // Group orders by customer
         const ordersByCustomer = {};
         orders.forEach(o => {
@@ -128,7 +128,7 @@ export default function CustomersOverviewCard() {
       }
     }
     fetchData();
-  }, [range]);
+  }, [range, selectedStore]);
 
   // Calculate percentage change
   function getChange(current, prev) {

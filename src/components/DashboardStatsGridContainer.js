@@ -16,7 +16,7 @@ function calcChange(current, previous) {
   return ((current - previous) / previous) * 100;
 }
 
-export default function DashboardStatsGridContainer({ dateRange }) {
+export default function DashboardStatsGridContainer({ dateRange, selectedStore }) {
   const [stats, setStats] = useState([
     { label: "Total Sales", value: "...", icon: "mdi:file-document-outline", color: "sales", change: "+0%", changeType: "up" },
     { label: "Total Sales Return", value: "...", icon: "mdi:swap-horizontal", color: "salesReturn", change: "0%", changeType: "down" },
@@ -53,28 +53,28 @@ export default function DashboardStatsGridContainer({ dateRange }) {
       const compStart = subDays(compEnd, rangeDays - 1);
       compStart.setHours(0, 0, 0, 0);
 
-      // Orders: filter by timestamp
-      const filteredOrders = (orders.data || []).filter(o => o.timestamp && isWithinRange(o.timestamp, start, end));
+      // Orders: filter by timestamp and store
+      const filteredOrders = (orders.data || []).filter(o => o.timestamp && isWithinRange(o.timestamp, start, end) && (!selectedStore || String(o.store_id) === String(selectedStore)));
       const totalSales = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-      const compOrders = (orders.data || []).filter(o => o.timestamp && isWithinRange(o.timestamp, compStart, compEnd));
+      const compOrders = (orders.data || []).filter(o => o.timestamp && isWithinRange(o.timestamp, compStart, compEnd) && (!selectedStore || String(o.store_id) === String(selectedStore)));
       const compTotalSales = compOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-      // Sales Returns: filter by date
-      const filteredSalesReturns = (salesReturns.data || []).filter(r => r.date && isWithinRange(r.date, start, end));
+      // Sales Returns: filter by date and store
+      const filteredSalesReturns = (salesReturns.data || []).filter(r => r.date && isWithinRange(r.date, start, end) && (!selectedStore || String(r.store_id) === String(selectedStore)));
       const totalSalesReturn = filteredSalesReturns.reduce((sum, r) => sum + Number(r.total || 0), 0);
-      const compSalesReturns = (salesReturns.data || []).filter(r => r.date && isWithinRange(r.date, compStart, compEnd));
+      const compSalesReturns = (salesReturns.data || []).filter(r => r.date && isWithinRange(r.date, compStart, compEnd) && (!selectedStore || String(r.store_id) === String(selectedStore)));
       const compTotalSalesReturn = compSalesReturns.reduce((sum, r) => sum + Number(r.total || 0), 0);
 
-      // Purchases: filter by date
-      const filteredPurchases = (purchases.data || []).filter(p => p.date && isWithinRange(p.date, start, end));
+      // Purchases: filter by date and store
+      const filteredPurchases = (purchases.data || []).filter(p => p.date && isWithinRange(p.date, start, end) && (!selectedStore || String(p.store_id) === String(selectedStore)));
       const totalPurchase = filteredPurchases.reduce((sum, p) => sum + Number(p.total || 0), 0);
-      const compPurchases = (purchases.data || []).filter(p => p.date && isWithinRange(p.date, compStart, compEnd));
+      const compPurchases = (purchases.data || []).filter(p => p.date && isWithinRange(p.date, compStart, compEnd) && (!selectedStore || String(p.store_id) === String(selectedStore)));
       const compTotalPurchase = compPurchases.reduce((sum, p) => sum + Number(p.total || 0), 0);
 
-      // Purchase Returns: filter by date
-      const filteredPurchaseReturns = (purchaseReturns.data || []).filter(r => r.date && isWithinRange(r.date, start, end));
+      // Purchase Returns: filter by date and store
+      const filteredPurchaseReturns = (purchaseReturns.data || []).filter(r => r.date && isWithinRange(r.date, start, end) && (!selectedStore || String(r.store_id) === String(selectedStore)));
       const totalPurchaseReturn = filteredPurchaseReturns.reduce((sum, r) => sum + Number(r.total || 0), 0);
-      const compPurchaseReturns = (purchaseReturns.data || []).filter(r => r.date && isWithinRange(r.date, compStart, compEnd));
+      const compPurchaseReturns = (purchaseReturns.data || []).filter(r => r.date && isWithinRange(r.date, compStart, compEnd) && (!selectedStore || String(r.store_id) === String(selectedStore)));
       const compTotalPurchaseReturn = compPurchaseReturns.reduce((sum, r) => sum + Number(r.total || 0), 0);
 
       // Calculate percentage changes
@@ -123,7 +123,7 @@ export default function DashboardStatsGridContainer({ dateRange }) {
       ]);
     }
     fetchStats();
-  }, [dateRange]);
+  }, [dateRange, selectedStore]);
 
   return <DashboardStatsGrid stats={stats} />;
 } 

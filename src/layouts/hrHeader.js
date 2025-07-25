@@ -200,6 +200,7 @@ const HrHeader = ({
                         setSelectedStore("");
                         localStorage.setItem('selected_store_id', "");
                         setStoreDropdownOpen(false);
+                        console.log('hrHeader: All Stores selected');
                       }}
                     >
                       All Stores
@@ -217,6 +218,7 @@ const HrHeader = ({
                           onClick={() => {
                             setSelectedStore(store.id);
                             setStoreDropdownOpen(false);
+                            console.log('hrHeader: Store selected:', store.name, store.id);
                           }}
                         >
                           {store.name}

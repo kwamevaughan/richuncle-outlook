@@ -20,7 +20,7 @@ function formatDate(dateStr) {
   });
 }
 
-export default function RecentTransactionsCard() {
+export default function RecentTransactionsCard({ selectedStore }) {
   const [tab, setTab] = useState("Purchase");
   const [loading, setLoading] = useState(true);
   const [purchases, setPurchases] = useState([]);
@@ -36,7 +36,7 @@ export default function RecentTransactionsCard() {
         .then((res) => res.json())
         .then((json) => {
           if (!json.success) throw new Error(json.error || "Failed to fetch");
-          setPurchases(json.data || []);
+          setPurchases((json.data || []).filter(p => !selectedStore || String(p.store_id) === String(selectedStore)));
         })
         .catch((err) => setError(err.message || "Failed to load"))
         .finally(() => setLoading(false));

@@ -17,6 +17,7 @@ import RecentTransactionsCard from "@/components/RecentTransactionsCard";
 import TopCustomersCard from "@/components/TopCustomersCard";
 import TopCategoriesCard from "@/components/TopCategoriesCard";
 import OrderStatisticsHeatmap from "@/components/OrderStatisticsHeatmap";
+import toast from 'react-hot-toast';
 
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -26,7 +27,8 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   // Date range state
   const [dateRange, setDateRange] = useState(() => {
     const today = new Date();
-    return { startDate: today, endDate: today, label: "Today" };
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return { startDate: startOfDay, endDate: startOfDay, label: "Today" };
   });
 
   const [orderCount, setOrderCount] = useState(null);
@@ -36,6 +38,54 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const [stockError, setStockError] = useState(null);
   const [stockLoading, setStockLoading] = useState(true);
   const [showLowStock, setShowLowStock] = useState(true);
+  const [selectedStore, setSelectedStore] = useState("");
+  const [stores, setStores] = useState([]);
+
+  // Fetch stores on mount
+  useEffect(() => {
+    fetch('/api/stores')
+      .then(res => res.json())
+      .then(({ data }) => setStores(data || []));
+  }, []);
+
+  // Listen for store selection changes
+  useEffect(() => {
+    const updateStore = () => {
+      const storeId = localStorage.getItem('selected_store_id') || "";
+      setSelectedStore(storeId);
+      if (storeId) {
+        const store = stores.find(s => s.id === storeId);
+        if (store) {
+          toast.success(`Now viewing dashboard for: ${store.name}`);
+        }
+      } else {
+        toast.success('Now viewing dashboard for: All Stores');
+      }
+    };
+    updateStore();
+    window.addEventListener('storage', updateStore);
+    const interval = setInterval(() => {
+      const storeId = localStorage.getItem('selected_store_id') || "";
+      setSelectedStore(prev => {
+        if (prev !== storeId) {
+          if (storeId) {
+            const store = stores.find(s => s.id === storeId);
+            if (store) {
+              toast.success(`Now viewing dashboard for: ${store.name}`);
+            }
+          } else {
+            toast.success('Now viewing dashboard for: All Stores');
+          }
+          return storeId;
+        }
+        return prev;
+      });
+    }, 300);
+    return () => {
+      window.removeEventListener('storage', updateStore);
+      clearInterval(interval);
+    };
+  }, [stores]);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -46,14 +96,20 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
         const result = await res.json();
         if (!result.success)
           throw new Error(result.error || "Failed to fetch orders");
-        const { startDate, endDate } = dateRange;
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        // Normalize end date to end of day
-        end.setHours(23, 59, 59, 999);
+        let { startDate, endDate } = dateRange;
+        // Normalize startDate to start of day, endDate to end of day
+        startDate = new Date(startDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(endDate);
+        endDate.setHours(23, 59, 59, 999);
+        const start = startDate;
+        const end = endDate;
         const filteredOrders = (result.data || []).filter((order) => {
           if (!order.timestamp) return false;
-          const ts = new Date(order.timestamp);
+          let ts = new Date(order.timestamp.replace(' ', 'T'));
+          if (isNaN(ts)) ts = new Date(Date.parse(order.timestamp.replace(' ', 'T')));
+          // Filter by selected store
+          if (selectedStore && String(order.store_id) !== String(selectedStore)) return false;
           return ts >= start && ts <= end;
         });
         setOrderCount(filteredOrders.length);
@@ -109,7 +165,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold mb-2">Welcome, {user.name}</h1>
-            <p className="text-sm text-gray-500">
+            <p className="flex items-center text-sm text-gray-500">
               {ordersLoading ? (
                 <span>Loading orders...</span>
               ) : orderError ? (
@@ -117,11 +173,18 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
               ) : (
                 <>
                   You have{" "}
-                  <span className="font-bold text-blue-800">
+                  <span className="font-bold text-blue-800 mx-1">
                     {orderCount}
                     {orderCount > 0 ? "+" : ""}
                   </span>{" "}
-                  Orders, Today.
+                  Orders, {dateRange.label}.{" "}
+                  <span className="text-xs text-gray-400 ml-1">
+                    {selectedStore
+                      ? `Filtered for: ${
+                          stores.find((s) => s.id === selectedStore)?.name
+                        }`
+                      : "All Stores"}
+                  </span>
                 </>
               )}
             </p>
@@ -174,53 +237,56 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
         )}
       </div>
 
-      <DashboardStatsGridContainer dateRange={dateRange} />
+      <DashboardStatsGridContainer
+        dateRange={dateRange}
+        selectedStore={selectedStore}
+      />
 
       <div className="flex gap-4 mt-4 mb-4">
         <div className="w-2/3 bg-white rounded-lg shadow-md">
-          <ProfitLossChart />
+          <ProfitLossChart selectedStore={selectedStore} />
         </div>
         <div className="w-1/3 flex flex-col gap-4 bg-white rounded-lg shadow-md h-full">
           <div className="border-b-2 border-gray-100 pb-4">
             <OverallInfoCard />
           </div>
-          <CustomersOverviewCard />
+          <CustomersOverviewCard selectedStore={selectedStore} />
         </div>
       </div>
       <div className="flex gap-4 mt-4">
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
-          <TopSellingProductsCard />
+          <TopSellingProductsCard selectedStore={selectedStore} />
         </div>
 
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
-          <LowStockProductsCard />
+          <LowStockProductsCard selectedStore={selectedStore} />
         </div>
 
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
-          <RecentSalesCard />
+          <RecentSalesCard selectedStore={selectedStore} />
         </div>
       </div>
 
       <div className="flex gap-4 mt-4">
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
-          <SalesStaticsCard />
+          <SalesStaticsCard selectedStore={selectedStore} />
         </div>
 
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
-          <RecentTransactionsCard />
+          <RecentTransactionsCard selectedStore={selectedStore} />
         </div>
       </div>
       <div className="flex gap-4 mt-4">
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
-          <TopCustomersCard />
+          <TopCustomersCard selectedStore={selectedStore} />
         </div>
 
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
-          <TopCategoriesCard />
+          <TopCategoriesCard selectedStore={selectedStore} />
         </div>
 
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
-          <OrderStatisticsHeatmap />
+          <OrderStatisticsHeatmap selectedStore={selectedStore} />
         </div>
       </div>
     </MainLayout>

@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 
-export default function LowStockProductsCard() {
+export default function LowStockProductsCard({ selectedStore }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,7 +18,7 @@ export default function LowStockProductsCard() {
         const json = await res.json();
         if (!json.success) throw new Error(json.error || "Failed to fetch products");
         // Low stock: quantity <= 20 (adjust as needed)
-        const lowStock = (json.data || []).filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 20);
+        const lowStock = (json.data || []).filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 20 && (!selectedStore || String(p.store_id) === String(selectedStore)));
         setProducts(lowStock);
       } catch (err) {
         setError(err.message || "Failed to load products");

@@ -14,7 +14,7 @@ function getYear(date) {
   return new Date(date).getFullYear();
 }
 
-export default function SalesStaticsCard() {
+export default function SalesStaticsCard({ selectedStore }) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [data, setData] = useState([]);
@@ -41,9 +41,12 @@ export default function SalesStaticsCard() {
         const purchases = purchasesJson.data || [];
         // Aggregate revenue by month for selected year
         const monthlyRevenue = Array(12).fill(0);
+        let orderItemCount = 0;
         orderItems.forEach(item => {
           const ts = item.orders?.timestamp;
           if (!ts) return;
+          if (selectedStore && String(item.orders?.store_id) !== String(selectedStore)) return;
+          orderItemCount++;
           const d = new Date(ts);
           if (d.getFullYear() === year) {
             const idx = d.getMonth();
@@ -52,14 +55,18 @@ export default function SalesStaticsCard() {
         });
         // Aggregate expense by month for selected year
         const monthlyExpense = Array(12).fill(0);
+        let purchaseCount = 0;
         purchases.forEach(p => {
           if (!p.date) return;
+          if (selectedStore && String(p.store_id) !== String(selectedStore)) return;
+          purchaseCount++;
           const d = new Date(p.date);
           if (d.getFullYear() === year) {
             const idx = d.getMonth();
             monthlyExpense[idx] += Number(p.total) || 0;
           }
         });
+        console.log('SalesStaticsCard: selectedStore =', selectedStore, 'order items count =', orderItemCount, 'purchases count =', purchaseCount);
         // Prepare chart data
         const chartData = monthLabels.map((month, i) => ({
           month,
@@ -118,7 +125,7 @@ export default function SalesStaticsCard() {
               className="text-red-500 text-lg"
             />
           </span>
-          <span className="font-bold text-xl">Sales Statics</span>
+          <span className="font-bold text-xl">Sales Statistics</span>
         </div>
         <div className="relative">
           <button

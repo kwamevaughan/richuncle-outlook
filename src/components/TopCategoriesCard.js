@@ -22,7 +22,7 @@ function AnimatedActiveShape({ props, animatedOuterRadius }) {
   );
 }
 
-export default function TopCategoriesCard() {
+export default function TopCategoriesCard({ selectedStore }) {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [orderItems, setOrderItems] = useState([]);
@@ -70,8 +70,10 @@ export default function TopCategoriesCard() {
   }, [activeIndex]);
 
   // Aggregate sales by category
+  const filteredOrderItems = orderItems.filter(item => !selectedStore || String(item.orders?.store_id) === String(selectedStore));
+  console.log('TopCategoriesCard: selectedStore =', selectedStore, 'filtered order items count =', filteredOrderItems.length);
   const salesByCategory = {};
-  orderItems.forEach((item) => {
+  filteredOrderItems.forEach((item) => {
     const product = products.find((p) => p.id === item.product_id);
     if (!product || !product.category_id) return;
     const catId = product.category_id;
@@ -84,10 +86,10 @@ export default function TopCategoriesCard() {
     }
     salesByCategory[catId].sales += Number(item.quantity) || 0;
   });
-  // Convert to array and sort
   const topCategories = Object.values(salesByCategory)
     .sort((a, b) => b.sales - a.sales)
     .slice(0, 3);
+  console.log('TopCategoriesCard: topCategories =', topCategories);
 
   // Prepare chart data
   const chartData = topCategories.map((cat) => ({

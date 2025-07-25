@@ -29,7 +29,7 @@ function getStartOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-export default function OrderStatisticsHeatmap() {
+export default function OrderStatisticsHeatmap({ selectedStore }) {
   const [period, setPeriod] = useState("Today");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [data, setData] = useState(Array(9).fill(0).map(() => Array(7).fill(0)));
@@ -56,9 +56,10 @@ export default function OrderStatisticsHeatmap() {
         start = getStartOfMonth(now);
         end = now;
       }
-      // Filter orders by period
+      // Filter orders by period and store
       const filteredOrders = orders.filter(o => {
         if (!o.timestamp) return false;
+        if (selectedStore && String(o.store_id) !== String(selectedStore)) return false;
         const d = new Date(o.timestamp);
         return d >= start && d <= end;
       });
@@ -80,7 +81,7 @@ export default function OrderStatisticsHeatmap() {
       setMax(Math.max(1, ...grid.flat()));
     }
     fetchData();
-  }, [period]);
+  }, [period, selectedStore]);
 
   // Tooltip positioning
   function handleMouseEnter(e, row, col) {

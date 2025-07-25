@@ -50,7 +50,7 @@ function formatDate(dateStr) {
   });
 }
 
-export default function RecentSalesCard() {
+export default function RecentSalesCard({ selectedStore }) {
   const [range, setRange] = useState("Weekly");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -69,9 +69,11 @@ export default function RecentSalesCard() {
         const { start, end } = getDateRange(range);
         const filtered = (json.data || []).filter((order) => {
           if (!order.timestamp) return false;
+          if (selectedStore && String(order.store_id) !== String(selectedStore)) return false;
           const ts = new Date(order.timestamp);
           return ts >= start && ts <= end;
         });
+        console.log('RecentSalesCard: selectedStore =', selectedStore, 'filtered sales count =', filtered.length);
         // Sort by date descending
         filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         setSales(filtered.slice(0, 4));

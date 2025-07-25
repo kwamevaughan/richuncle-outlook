@@ -57,7 +57,7 @@ function getPrevDateRange(label) {
   return { start, end };
 }
 
-export default function TopSellingProductsCard() {
+export default function TopSellingProductsCard({ selectedStore }) {
   const [range, setRange] = useState("Today");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -87,18 +87,20 @@ export default function TopSellingProductsCard() {
         const { start, end } = getDateRange(range);
         const { start: prevStart, end: prevEnd } = getPrevDateRange(range);
         
-        // Filter order items by current range
+        // Filter order items by current range and store
         const filteredItems = orderItems.filter(
           (item) => {
             const ts = item.orders?.timestamp ? new Date(item.orders.timestamp) : null;
+            if (selectedStore && String(item.orders?.store_id) !== String(selectedStore)) return false;
             return ts && ts >= start && ts <= end && item.product_id;
           }
         );
         
-        // Filter order items by previous range
+        // Filter order items by previous range and store
         const prevFilteredItems = orderItems.filter(
           (item) => {
             const ts = item.orders?.timestamp ? new Date(item.orders.timestamp) : null;
+            if (selectedStore && String(item.orders?.store_id) !== String(selectedStore)) return false;
             return ts && ts >= prevStart && ts <= prevEnd && item.product_id;
           }
         );
@@ -165,7 +167,7 @@ export default function TopSellingProductsCard() {
       }
     }
     fetchData();
-  }, [range]);
+  }, [range, selectedStore]);
 
   return (
     <div>

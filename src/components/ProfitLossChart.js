@@ -102,7 +102,7 @@ function groupByWeek(items, weeks) {
   return result.map(({ start, end, ...rest }) => rest);
 }
 
-export default function ProfitLossChart({ onRangeChange }) {
+export default function ProfitLossChart({ onRangeChange, selectedStore }) {
   const [selectedRange, setSelectedRange] = useState("1D");
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState([]);
@@ -115,7 +115,11 @@ export default function ProfitLossChart({ onRangeChange }) {
       try {
         const res = await fetch("/api/order-items");
         const json = await res.json();
-        const items = json.data || [];
+        let items = json.data || [];
+        // Filter by selectedStore
+        if (selectedStore) {
+          items = items.filter(item => item.orders && String(item.orders.store_id) === String(selectedStore));
+        }
         let grouped = [];
         if (selectedRange === "1D") {
           grouped = groupByHour(items);
