@@ -86,6 +86,16 @@ export const sidebarNav = [
         icon: "mdi:cash-register",
         label: "Registers",
       },
+      {
+        href: "",
+        icon: "",
+        label: "Retrieve Layaways",
+      },
+      {
+        href: "",
+        icon: "",
+        label: "Retrive Orders",
+      },
     ],
   },
   {

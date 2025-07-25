@@ -249,9 +249,13 @@ export function GenericTable({
         <div className="flex items-center gap-2">
           {/* Custom actions */}
           {actions.map((action, i) => {
-            if (!action || typeof action.onClick !== 'function') return null;
+            if (!action) return null;
             // Only show if action.show is not defined or returns true
             if (typeof action.show === 'function' && !action.show(row)) return null;
+            if (typeof action.render === 'function') {
+              return <React.Fragment key={action.label || i}>{action.render(row)}</React.Fragment>;
+            }
+            if (typeof action.onClick !== 'function') return null;
             const label = typeof action.label === 'function' ? action.label(row) : action.label;
             const icon = typeof action.icon === 'function' ? action.icon(row) : action.icon;
             return (

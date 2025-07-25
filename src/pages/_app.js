@@ -91,6 +91,30 @@ function MyApp({ Component, pageProps }) {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    function handleLayaways() {
+      if (router.pathname !== "/pos") {
+        router.push({ pathname: "/pos", query: { open: "layaways" } });
+      } else {
+        window.dispatchEvent(new CustomEvent("open-retrieve-layaways-modal"));
+      }
+    }
+    function handleOrders() {
+      if (router.pathname !== "/pos") {
+        router.push({ pathname: "/pos", query: { open: "orders" } });
+      } else {
+        window.dispatchEvent(new CustomEvent("open-retrieve-orders-modal"));
+      }
+    }
+    window.addEventListener("open-retrieve-layaways-modal", handleLayaways);
+    window.addEventListener("open-retrieve-orders-modal", handleOrders);
+    return () => {
+      window.removeEventListener("open-retrieve-layaways-modal", handleLayaways);
+      window.removeEventListener("open-retrieve-orders-modal", handleOrders);
+    };
+  }, [router]);
+
+  useEffect(() => {
     const routeChangeStart = (url) => {
       const pageSlug = url.split("/").pop() || "overview";
       const navItems = sidebarNav.flatMap((entry) =>

@@ -11,6 +11,7 @@ import { GenericTable } from "@/components/GenericTable";
 import useLogout from "../hooks/useLogout";
 import ZReportView from "@/components/ZReportView";
 import printZReport from "@/components/printZReport";
+import { format, parseISO, isWithinInterval } from 'date-fns';
 
 const PAGE_SIZE = 10;
 
@@ -40,6 +41,13 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
   const [zReportError, setZReportError] = useState("");
   const [zReportData, setZReportData] = useState(null);
   const [showZReportPreview, setShowZReportPreview] = useState(false);
+
+  // Session History modal filters and pagination
+  const [sessionPage, setSessionPage] = useState(1);
+  const SESSION_PAGE_SIZE = 10;
+  const [sessionStatusFilter, setSessionStatusFilter] = useState('');
+  const [sessionCashierFilter, setSessionCashierFilter] = useState('');
+  const [sessionDateRange, setSessionDateRange] = useState([null, null]);
 
   // Only allow admin/manager
   useEffect(() => {
@@ -210,7 +218,7 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
       {...props}
     >
       <div className="flex flex-col flex-1">
-        <div className="flex-1 p-4 md:p-6 lg:p-8">
+        <div className="py-2">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <Icon
@@ -220,77 +228,105 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
               Registers
             </h1>
             <p className="text-sm text-gray-500 mb-6">
-              View and manage all registers here. Use the POS to create a new register.
+              View and manage all registers here. Use the POS to create a new
+              register.
             </p>
             <div className="flex justify-end mb-4">
               <button
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 onClick={() => router.push("/pos/")}
               >
-                <Icon icon="mdi:plus" className="inline-block mr-2" /> New Register
+                <Icon icon="mdi:plus" className="inline-block mr-2" /> New
+                Register
               </button>
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3 flex-wrap w-full">
-              <input
-                type="text"
-                placeholder="Search register..."
-                className="border rounded px-3 py-1.5 text-sm"
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1); }}
-              />
-              <select
-                className="border rounded px-2 py-1.5 text-sm"
-                value={statusFilter}
-                onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-              >
-                <option value="">All Status</option>
-                <option value="open">Open</option>
-                <option value="closed">Closed</option>
-              </select>
-              <select
-                className="border rounded px-2 py-1.5 text-sm"
-                value={storeFilter}
-                onChange={e => { setStoreFilter(e.target.value); setPage(1); }}
-              >
-                <option value="">All Stores</option>
-                {stores.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-              <TooltipIconButton
-                icon="mdi:refresh"
-                label="Refresh"
-                onClick={fetchAll}
-                mode={mode}
-                className={`ml-2 ${refreshing || loading ? "animate-spin" : ""}`}
-              />
-              <TooltipIconButton
-                icon="mdi:download"
-                label="Export to CSV/PDF"
-                onClick={() => setShowExportModal(true)}
-                mode={mode}
-                className="ml-2"
-              />
             </div>
           </div>
         </div>
         {/* Summary Bar */}
-        <div className="flex flex-wrap gap-4 mb-4">
-          <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded shadow-sm">
-            <Icon icon="mdi:cash-register" className="w-5 h-5 text-blue-700" />
-            <span className="font-semibold text-blue-900">Total: {total}</span>
+        <div className="flex flex-wrap gap-4 mb-4 justify-between items-center align-middle">
+          <div className="flex gap-2">
+            <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded shadow-sm">
+              <Icon
+                icon="mdi:cash-register"
+                className="w-5 h-5 text-blue-700"
+              />
+              <span className="font-semibold text-blue-900">
+                Total: {total}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded shadow-sm">
+              <Icon
+                icon="mdi:check-circle"
+                className="w-5 h-5 text-green-700"
+              />
+              <span className="font-semibold text-green-900">Open: {open}</span>
+            </div>
+            <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded shadow-sm">
+              <Icon icon="mdi:close-circle" className="w-5 h-5 text-gray-600" />
+              <span className="font-semibold text-gray-900">
+                Closed: {closed}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded shadow-sm">
-            <Icon icon="mdi:check-circle" className="w-5 h-5 text-green-700" />
-            <span className="font-semibold text-green-900">Open: {open}</span>
-          </div>
-          <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded shadow-sm">
-            <Icon icon="mdi:close-circle" className="w-5 h-5 text-gray-600" />
-            <span className="font-semibold text-gray-900">
-              Closed: {closed}
-            </span>
+
+          <div className="flex gap-2">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3 flex-wrap w-full">
+                <input
+                  type="text"
+                  placeholder="Search register..."
+                  className="border rounded px-3 py-1.5 text-sm"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                />
+                <select
+                  className="border rounded px-2 py-1.5 text-sm"
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All Status</option>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <select
+                  className="border rounded px-2 py-1.5 text-sm"
+                  value={storeFilter}
+                  onChange={(e) => {
+                    setStoreFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All Stores</option>
+                  {stores.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <TooltipIconButton
+                  icon="mdi:refresh"
+                  label="Refresh"
+                  onClick={fetchAll}
+                  mode={mode}
+                  className={` ${
+                    refreshing || loading ? "animate-spin" : ""
+                  }`}
+                />
+                <TooltipIconButton
+                  icon="mdi:download"
+                  label="Export to CSV/PDF"
+                  onClick={() => setShowExportModal(true)}
+                  mode={mode}
+                  className=""
+                />
+              </div>
+            </div>
           </div>
         </div>
         {error && <div className="text-red-600 mb-4">{error}</div>}
@@ -384,40 +420,50 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
               ]}
               actions={[
                 {
-                  label: "View Sessions",
+                  label: "View Session History",
                   icon: "mdi:history",
                   onClick: (row) => {
                     setSelectedRegister(row);
                     setShowSessionModal(true);
                   },
-                  className:
-                    "text-blue-700 hover:underline text-xs font-semibold",
+                  render: (row) => (
+                    <TooltipIconButton
+                      icon="mdi:history"
+                      label="View Session History"
+                      onClick={() => {
+                        setSelectedRegister(row);
+                        setShowSessionModal(true);
+                      }}
+                      mode={mode}
+                      className="bg-green-50 text-green-600 text-xs"
+                    />
+                  ),
                 },
                 {
                   label: "Force Close Session",
                   icon: (row) => {
                     const openSession = openSessionsMap[row.id];
-                    return forceCloseLoading === (openSession && openSession.id)
-                      ? "mdi:loading"
-                      : "mdi:close-circle";
+                    return forceCloseLoading === (openSession && openSession.id) ? "mdi:loading" : "mdi:close-circle";
                   },
                   onClick: (row) => {
                     const openSession = openSessionsMap[row.id];
                     if (openSession) handleForceClose(openSession);
                   },
-                  show: (row) =>
-                    !!openSessionsMap[row.id] && user.role === "admin",
-                  className: (row) =>
-                    `text-red-600 hover:underline text-xs font-semibold ${
-                      forceCloseLoading ===
-                      (openSessionsMap[row.id] && openSessionsMap[row.id].id)
-                        ? "animate-spin"
-                        : ""
-                    }`,
-                  disabled: (row) => {
+                  show: (row) => !!openSessionsMap[row.id] && user.role === "admin",
+                  render: (row) => {
                     const openSession = openSessionsMap[row.id];
+                    const isLoading = forceCloseLoading === (openSession && openSession.id);
                     return (
-                      forceCloseLoading === (openSession && openSession.id)
+                      <TooltipIconButton
+                        icon={isLoading ? "mdi:loading" : "mdi:close-circle"}
+                        label="Force Close Session"
+                        onClick={() => {
+                          if (openSession) handleForceClose(openSession);
+                        }}
+                        mode={mode}
+                        className={`bg-red-50 text-red-600 text-xs ${isLoading ? "animate-spin" : ""}`}
+                        disabled={isLoading}
+                      />
                     );
                   },
                 },
@@ -444,78 +490,233 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
           }`}
           width="max-w-2xl"
         >
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left">Status</th>
-                  <th className="px-4 py-2 text-left">Opened By</th>
-                  <th className="px-4 py-2 text-left">Opened At</th>
-                  <th className="px-4 py-2 text-left">Closed At</th>
-                  <th className="px-4 py-2 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(sessionsByRegister[selectedRegister.id] || []).map((sess) => (
-                  <tr
-                    key={sess.id}
-                    className="border-b hover:bg-gray-50 transition-all"
-                  >
-                    <td className="px-4 py-2">
-                      {sess.status === "open" ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold">
-                          <Icon icon="mdi:check-circle" className="w-4 h-4" />{" "}
-                          Open
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-200 text-gray-600 text-xs font-semibold">
-                          <Icon icon="mdi:close-circle" className="w-4 h-4" />{" "}
-                          Closed
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">
-                      {userMap[sess.user_id] || sess.user_id}
-                    </td>
-                    <td className="px-4 py-2">
-                      {sess.opened_at
-                        ? new Date(sess.opened_at).toLocaleString()
-                        : "-"}
-                    </td>
-                    <td className="px-4 py-2">
-                      {sess.closed_at
-                        ? new Date(sess.closed_at).toLocaleString()
-                        : "-"}
-                    </td>
-                    <td className="px-4 py-2">
-                      <button
-                        className="text-blue-700 hover:underline text-xs font-semibold"
-                        title="View Z-Report"
-                        onClick={async () => {
-                          setShowZReportModal(true);
-                          setZReportLoading(true);
-                          setZReportError("");
-                          setZReportData(null);
-                          try {
-                            const res = await fetch(`/api/cash-register-sessions/${sess.id}/z-report`);
-                            const json = await res.json();
-                            if (json.success) setZReportData(json.data);
-                            else setZReportError(json.error || "Failed to fetch Z-Report");
-                          } catch (err) {
-                            setZReportError("Failed to fetch Z-Report");
-                          } finally {
-                            setZReportLoading(false);
-                          }
-                        }}
-                      >
-                        Z-Report
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2 mb-4 items-center">
+            <select
+              className="border rounded px-2 py-1.5 text-sm"
+              value={sessionStatusFilter}
+              onChange={(e) => {
+                setSessionStatusFilter(e.target.value);
+                setSessionPage(1);
+              }}
+            >
+              <option value="">All Status</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+            </select>
+            <select
+              className="border rounded px-2 py-1.5 text-sm"
+              value={sessionCashierFilter}
+              onChange={(e) => {
+                setSessionCashierFilter(e.target.value);
+                setSessionPage(1);
+              }}
+            >
+              <option value="">All Cashiers</option>
+              {Object.entries(userMap).map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="date"
+              className="border rounded px-2 py-1.5 text-sm"
+              value={sessionDateRange[0] || ""}
+              onChange={(e) => {
+                setSessionDateRange([e.target.value, sessionDateRange[1]]);
+                setSessionPage(1);
+              }}
+              placeholder="Start date"
+              title="Start date"
+            />
+            <span>-</span>
+            <input
+              type="date"
+              className="border rounded px-2 py-1.5 text-sm"
+              value={sessionDateRange[1] || ""}
+              onChange={(e) => {
+                setSessionDateRange([sessionDateRange[0], e.target.value]);
+                setSessionPage(1);
+              }}
+              placeholder="End date"
+              title="End date"
+            />
           </div>
+          {/* Filtered and paginated sessions */}
+          {(() => {
+            let sessionsList = sessionsByRegister[selectedRegister.id] || [];
+            if (sessionStatusFilter) {
+              sessionsList = sessionsList.filter(
+                (sess) => sess.status === sessionStatusFilter
+              );
+            }
+            if (sessionCashierFilter) {
+              sessionsList = sessionsList.filter(
+                (sess) => sess.user_id === sessionCashierFilter
+              );
+            }
+            if (sessionDateRange[0]) {
+              sessionsList = sessionsList.filter((sess) => {
+                const opened = sess.opened_at ? parseISO(sess.opened_at) : null;
+                return opened && opened >= parseISO(sessionDateRange[0]);
+              });
+            }
+            if (sessionDateRange[1]) {
+              sessionsList = sessionsList.filter((sess) => {
+                const closed = sess.closed_at ? parseISO(sess.closed_at) : null;
+                return closed && closed <= parseISO(sessionDateRange[1]);
+              });
+            }
+            const totalSessionPages =
+              Math.ceil(sessionsList.length / SESSION_PAGE_SIZE) || 1;
+            const pagedSessions = sessionsList.slice(
+              (sessionPage - 1) * SESSION_PAGE_SIZE,
+              sessionPage * SESSION_PAGE_SIZE
+            );
+            return (
+              <>
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Status</th>
+                      <th className="px-4 py-2 text-left">Cashier</th>
+                      <th className="px-4 py-2 text-left">Opened At</th>
+                      <th className="px-4 py-2 text-left">Closed At</th>
+                      <th className="px-4 py-2 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedSessions.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="text-center py-8 text-gray-400"
+                        >
+                          No sessions found
+                        </td>
+                      </tr>
+                    ) : (
+                      pagedSessions.map((sess) => (
+                        <tr
+                          key={sess.id}
+                          className="border-b hover:bg-gray-50 transition-all"
+                        >
+                          <td className="px-4 py-2">
+                            {sess.status === "open" ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold">
+                                <Icon
+                                  icon="mdi:check-circle"
+                                  className="w-4 h-4"
+                                />{" "}
+                                Open
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-200 text-gray-600 text-xs font-semibold">
+                                <Icon
+                                  icon="mdi:close-circle"
+                                  className="w-4 h-4"
+                                />{" "}
+                                Closed
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2">
+                            {userMap[sess.user_id] || sess.user_id}
+                          </td>
+                          <td className="px-4 py-2">
+                            {sess.opened_at
+                              ? format(
+                                  parseISO(sess.opened_at),
+                                  "yyyy-MM-dd HH:mm"
+                                )
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-2">
+                            {sess.closed_at
+                              ? format(
+                                  parseISO(sess.closed_at),
+                                  "yyyy-MM-dd HH:mm"
+                                )
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-2">
+                            <button
+                              className="text-blue-700 hover:underline text-xs font-semibold"
+                              title="View Z-Report"
+                              onClick={async () => {
+                                setShowZReportModal(true);
+                                setZReportLoading(true);
+                                setZReportError("");
+                                setZReportData(null);
+                                try {
+                                  const res = await fetch(
+                                    `/api/cash-register-sessions/${sess.id}/z-report`
+                                  );
+                                  const json = await res.json();
+                                  if (json.success) setZReportData(json.data);
+                                  else
+                                    setZReportError(
+                                      json.error || "Failed to fetch Z-Report"
+                                    );
+                                } catch (err) {
+                                  setZReportError("Failed to fetch Z-Report");
+                                } finally {
+                                  setZReportLoading(false);
+                                }
+                              }}
+                            >
+                              Z-Report
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+                {/* Pagination */}
+                <div className="flex justify-between items-center py-4 px-2">
+                  <span className="text-xs text-gray-500">
+                    Showing{" "}
+                    {sessionsList.length === 0
+                      ? 0
+                      : SESSION_PAGE_SIZE * (sessionPage - 1) + 1}
+                    -
+                    {Math.min(
+                      SESSION_PAGE_SIZE * sessionPage,
+                      sessionsList.length
+                    )}{" "}
+                    of {sessionsList.length}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold"
+                      onClick={() => setSessionPage((p) => Math.max(1, p - 1))}
+                      disabled={sessionPage === 1}
+                      title="Previous Page"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-xs font-semibold">
+                      Page {sessionPage} of {totalSessionPages}
+                    </span>
+                    <button
+                      className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold"
+                      onClick={() =>
+                        setSessionPage((p) =>
+                          Math.min(totalSessionPages, p + 1)
+                        )
+                      }
+                      disabled={sessionPage === totalSessionPages}
+                      title="Next Page"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </SimpleModal>
       )}
       {/* Force Close Confirmation Modal */}
@@ -586,13 +787,15 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
                   onClick={() => printZReport(zReportData)}
                 >
-                  <Icon icon="material-symbols:print" className="w-5 h-5" /> Print
+                  <Icon icon="material-symbols:print" className="w-5 h-5" />{" "}
+                  Print
                 </button>
                 <button
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
                   onClick={() => setShowZReportPreview(true)}
                 >
-                  <Icon icon="mdi:eye-outline" className="w-5 h-5" /> Print Preview
+                  <Icon icon="mdi:eye-outline" className="w-5 h-5" /> Print
+                  Preview
                 </button>
               </div>
             </>
@@ -612,8 +815,12 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
             {/* Render the print HTML as innerHTML for preview */}
             <div
               className="border border-gray-200 rounded overflow-auto"
-              style={{ background: '#fff' }}
-              dangerouslySetInnerHTML={{ __html: printZReport.__previewHtml ? printZReport.__previewHtml(zReportData) : printZReport(zReportData, true) }}
+              style={{ background: "#fff" }}
+              dangerouslySetInnerHTML={{
+                __html: printZReport.__previewHtml
+                  ? printZReport.__previewHtml(zReportData)
+                  : printZReport(zReportData, true),
+              }}
             />
             <div className="flex gap-4 mt-6">
               <button

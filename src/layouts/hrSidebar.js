@@ -258,12 +258,24 @@ const HrSidebar = ({
                           const hasSubItems = subItems && subItems.length > 0;
                           const isExpanded = expandedItems[href];
 
+                          // Intercept Retrieve Layaways/Orders
+                          const isRetrieveLayaways = !href && label === 'Retrieve Layaways';
+                          const isRetrieveOrders = !href && label === 'Retrive Orders';
+
                           return (
-                            <li key={href} className="px-2 pl-2">
+                            <li key={href + label} className="px-2 pl-2">
                               <div
                                 ref={setActiveItemRef}
                                 data-href={href}
                                 onClick={() => {
+                                  if (isRetrieveLayaways) {
+                                    window.dispatchEvent(new CustomEvent('open-retrieve-layaways-modal'));
+                                    return;
+                                  }
+                                  if (isRetrieveOrders) {
+                                    window.dispatchEvent(new CustomEvent('open-retrieve-orders-modal'));
+                                    return;
+                                  }
                                   if (hasSubItems) {
                                     toggleItem(href);
                                   } else {
@@ -318,7 +330,7 @@ const HrSidebar = ({
                                   }`}
                                 >
                                   <ul
-                                    className={`ml-2 pl-6 border-l-2 border-gray-300 flex flex-col`}
+                                    className={`ml-2 pl-4 border-l-2 border-gray-300 flex flex-col`}
                                   >
                                     {subItems.map(
                                       ({
@@ -345,24 +357,6 @@ const HrSidebar = ({
                                                 : ""
                                             }`}
                                           >
-                                            <Icon
-                                              icon="mdi:circle-small"
-                                              className={`h-4 w-4 mr-1 ${
-                                                mode === "dark"
-                                                  ? "text-white"
-                                                  : "text-gray-400"
-                                              }`}
-                                            />
-                                            <Icon
-                                              icon={subIcon}
-                                              className={`h-4 w-4 transition-all${
-                                                isOpen || isMobile ? " mr-3" : ""
-                                              } ${
-                                                mode === "dark"
-                                                  ? "text-white"
-                                                  : "text-gray-400"
-                                              }`}
-                                            />
                                             <span
                                               className={`text-sm transition-all duration-300 ${
                                                 !isOpen && !isMobile
@@ -415,7 +409,7 @@ const HrSidebar = ({
               </div>
               {isOpen || isMobile ? (
                 <div className="flex items-center gap-2 transition-all duration-300">
-                  <span className="text-xs font-medium text-black">
+                  <span className="text-sm font-medium text-black">
                     {user && user.name ? user.name : "Guest"}
                   </span>
                   <div className="w-3 h-3 bg-green-400 rounded-full border border-green-400 flex items-center justify-center aspect-square"></div>

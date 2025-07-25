@@ -23,8 +23,10 @@ import ReceiptPreviewModal from "@/components/ReceiptPreviewModal";
 import Select from 'react-select';
 import SalesReturnModals from "@/components/SalesReturnModals";
 import SalesReturnItemsEditor from "@/components/SalesReturnItemsEditor";
+import { useRouter } from "next/router";
 
 export default function POS({ mode = "light", toggleMode, ...props }) {
+  const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
   const [selectedTab, setSelectedTab] = useState("overview");
@@ -557,6 +559,28 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       setSalesReturnReferenceOrderProducts([]);
     }
   }, [salesReturnReference]);
+
+  useEffect(() => {
+    function handleLayaways() { setShowRetrieveLayaways(true); }
+    function handleOrders() { setShowRetrieveSales(true); }
+    window.addEventListener('open-retrieve-layaways-modal', handleLayaways);
+    window.addEventListener('open-retrieve-orders-modal', handleOrders);
+    return () => {
+      window.removeEventListener('open-retrieve-layaways-modal', handleLayaways);
+      window.removeEventListener('open-retrieve-orders-modal', handleOrders);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (router.query.open === "layaways") {
+      setShowRetrieveLayaways(true);
+      router.replace({ pathname: router.pathname, query: { ...router.query, open: undefined } }, undefined, { shallow: true });
+    } else if (router.query.open === "orders") {
+      setShowRetrieveSales(true);
+      router.replace({ pathname: router.pathname, query: { ...router.query, open: undefined } }, undefined, { shallow: true });
+    }
+  }, [router.isReady, router.query.open]);
 
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {

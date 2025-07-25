@@ -1,5 +1,7 @@
 // components/TooltipIconButton.jsx
 import { Icon } from "@iconify/react";
+import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 const TooltipIconButton = ({
   icon,
@@ -9,11 +11,35 @@ const TooltipIconButton = ({
   className = "",
   children,
 }) => {
+  const btnRef = useRef();
+  const [show, setShow] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (show && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + rect.width / 2 + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [show]);
+
+  // Hide tooltip on scroll (optional, for better UX)
+  useEffect(() => {
+    if (!show) return;
+    const hide = () => setShow(false);
+    window.addEventListener("scroll", hide, true);
+    return () => window.removeEventListener("scroll", hide, true);
+  }, [show]);
+
   return (
-    <div className="relative group inline-block z-20">
+    <>
       <div
+        ref={btnRef}
         onClick={onClick}
-        className={`p-2 rounded-full focus:outline-none cursor-pointer ${
+        className={`relative group inline-block z-20 p-2 rounded-full focus:outline-none cursor-pointer ${
           mode === "dark" ? "hover:bg-gray-700" : "hover:bg-sky-50"
         } ${className}`}
         role="button"
@@ -23,23 +49,43 @@ const TooltipIconButton = ({
             onClick?.(e);
           }
         }}
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        aria-label={label}
       >
         {children || <Icon icon={icon} className="h-5 w-5" />}
       </div>
-      <div
-        className={`
-          absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max
-          bg-white text-xs py-2 px-3 rounded-full shadow-lg
-          opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0
-          transition-all duration-200 ease-in-out
-          ${mode === "dark" ? "text-gray-200" : "text-gray-900"}
-          before:content-[''] before:absolute before:-top-1.5 before:left-1/2
-          before:-translate-x-1/2 before:border-4 before:border-transparent before:border-b-white
-        `}
-      >
-        {label}
-      </div>
-    </div>
+      {show && typeof window !== "undefined" && createPortal(
+        <div
+          style={{
+            position: "absolute",
+            top: coords.top + 8, // 8px gap
+            left: coords.left,
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            className={`
+              bg-white text-xs py-2 px-3 rounded-full shadow-lg
+              text-center w-max
+              ${mode === "dark" ? "text-gray-200 bg-gray-900" : "text-gray-900 bg-white"}
+            `}
+            style={{
+              opacity: 1,
+              transition: "opacity 0.2s",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {label}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 };
 
