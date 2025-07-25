@@ -28,19 +28,31 @@ const HrSidebar = ({
       filteredNav.length > 0 &&
       Object.keys(expandedCategories).length === 0
     ) {
-      const allExpanded = {};
-      filteredNav.forEach(({ category }) => {
-        allExpanded[category] = true;
-      });
-      setExpandedCategories(allExpanded);
+      // Find the active category (the one containing the active route)
+      let activeCategory = null;
+      if (router) {
+        for (const entry of filteredNav) {
+          if (!entry.items) continue; // skip standalone items
+          if (entry.items.some(({ href }) => href.split('?')[0] === router.pathname)) {
+            activeCategory = entry.category;
+            break;
+          }
+        }
+      }
+      const expanded = {};
+      if (activeCategory) {
+        expanded[activeCategory] = true;
+      }
+      setExpandedCategories(expanded);
     }
   }, [filteredNav]);
 
   const toggleCategory = (category) => {
-    setExpandedCategories((prev) => ({
-      ...prev,
-      [category]: !prev[category],
-    }));
+    setExpandedCategories((prev) => {
+      const isExpanding = !prev[category];
+      // Collapse all, then expand only the clicked one if expanding
+      return isExpanding ? { [category]: true } : {};
+    });
   };
 
   const toggleItem = (href) => {
@@ -106,6 +118,17 @@ const HrSidebar = ({
     }
   };
 
+  // Add this handler to expand sidebar on hover/click of category
+  const handleCategoryInteraction = (category) => {
+    if (!isOpen && !isMobile) {
+      toggleSidebar();
+      // Optionally, you can also expand the clicked category after expanding
+      setTimeout(() => toggleCategory(category), 200);
+    } else {
+      toggleCategory(category);
+    }
+  };
+
   if (windowWidth === null) return null;
 
   const isMobile = windowWidth < 640;
@@ -118,8 +141,7 @@ const HrSidebar = ({
           ${isMobile ? "block" : "block"}
           ${mode === "dark" ? "" : "bg-white"}
           group shadow-lg shadow-black/20 custom-scrollbar
-          border ${mode === "dark" ? "border-gray-500" : "border-gray-200"}
-          ${!isOpen && !isMobile ? "sidebar-collapsed" : ""}`}
+        `}
         style={{
           width: isMobile ? "100vw" : isOpen ? "240px" : "64px",
           height: isMobile ? "100vh" : "calc(100vh - 24px)",
@@ -147,219 +169,234 @@ const HrSidebar = ({
               !isOpen && !isMobile ? "items-center" : ""
             }`}
           >
-            {filteredNav.map(({ category, items }, index) => (
-              <div
-                key={category}
-                className={`w-full mb-1 ${
-                  !isOpen && !isMobile ? "flex flex-col items-center" : ""
-                }`}
-              >
-                {index !== 0 && (
-                  <hr
-                    className={`border-t my-2 ${
-                      mode === "dark" ? "border-gray-500" : "border-gray-300"
-                    }`}
-                  />
-                )}
-
+            {/* Render standalone nav items (e.g., Home) */}
+            {filteredNav
+              .filter(entry => !entry.items)
+              .map((item) => (
                 <div
-                  className={`flex items-center justify-between text-xs tracking-wide font-bold text-gray-600 px-2 pt-4 pb-1 cursor-pointer ${
-                    !isOpen && !isMobile ? "justify-center" : ""
-                  }`}
-                  onClick={() => toggleCategory(category)}
+                  key={item.href}
+                  className={`flex items-center gap-2 px-2 mt-4 pt-4 pb-4 mb-2 rounded-lg font-bold text-blue-900 text-sm tracking-wide cursor-pointer transition-all duration-300 hover:bg-orange-50 ${
+                    mode === "dark" ? "bg-white/10 text-gray-200 hover:bg-white/20" : "bg-white"
+                  } ${!isOpen && !isMobile ? "justify-center" : ""}`}
+                  onClick={() => handleNavigation(item.href, item.label)}
                 >
+                  {item.icon && (
+                    <Icon
+                      icon={item.icon}
+                      className={`${item.href === '/dashboard' ? 'h-7 w-7' : 'h-5 w-5'} text-blue-900 transition-all duration-300 ${!isOpen && !isMobile ? "mx-auto" : "mr-2"}`}
+                    />
+                  )}
                   <span
-                    className={`${
-                      !isOpen && !isMobile
-                        ? "opacity-0 w-0 overflow-hidden"
-                        : ""
-                    } transition-all duration-300 capitalize`}
+                    className={`transition-all duration-300${!isOpen && !isMobile ? " hidden" : ""}`}
                   >
-                    {category}
+                    {item.label}
                   </span>
-                  <Icon
-                    icon={
-                      expandedCategories[category]
-                        ? "mdi:chevron-down"
-                        : "mdi:chevron-right"
-                    }
-                    className={`w-4 h-4 transition-transform duration-200 ${
-                      mode === "dark" ? "text-white" : "text-gray-400"
-                    }`}
-                  />
                 </div>
-
+              ))}
+            {/* Render categories */}
+            {filteredNav
+              .filter(entry => entry.items)
+              .map(({ category, items, icon }, index) => (
                 <div
-                  className={`overflow-hidden transition-all duration-300 ${
-                    expandedCategories[category]
-                      ? "max-h-96 opacity-100"
-                      : "max-h-0 opacity-0"
+                  key={category}
+                  className={`w-full mb-1 relative ${
+                    !isOpen && !isMobile ? "flex flex-col items-center" : ""
                   }`}
                 >
-                  <ul
-                    className={`${
-                      !isOpen && !isMobile ? "flex flex-col items-center" : ""
+                  {index !== 0 && <div className="my-2" />}
+                  <div
+                    className={`flex items-center justify-between text-sm tracking-wide font-medium text-gray-600 px-2 py-3 cursor-pointer transition-all duration-300 rounded-lg hover:bg-orange-50 hover:shadow-sm ${
+                      !isOpen && !isMobile ? "justify-center" : ""
                     }`}
+                    onClick={() => handleCategoryInteraction(category)}
+                    onMouseEnter={() => { if (!isOpen && !isMobile) toggleSidebar(); }}
                   >
-                    {Array.isArray(items) && items.length > 0 ? (
-                      items.map(({ href, icon, label, subItems }) => {
-                        const isActiveItem = isActive(href);
-                        const hasSubItems = subItems && subItems.length > 0;
-                        const isExpanded = expandedItems[href];
+                    <span className={`flex items-center gap-2 transition-all duration-300 capitalize`}>
+                      {icon && (
+                        <Icon
+                          icon={icon}
+                          className={`h-5 w-5 text-blue-900 transition-all duration-300 ${
+                            !isOpen && !isMobile ? "mx-auto" : "mr-2"
+                          }`}
+                        />
+                      )}
+                      <span
+                        className={`transition-all duration-300${!isOpen && !isMobile ? " hidden" : ""}`}
+                      >
+                        {category}
+                      </span>
+                    </span>
+                    <Icon
+                      icon={
+                        expandedCategories[category]
+                          ? "mdi:chevron-down"
+                          : "mdi:chevron-right"
+                      }
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        mode === "dark" ? "text-white" : "text-gray-400"
+                      }`}
+                    />
+                  </div>
+                  {/* Vertical line for category items */}
+                  {expandedCategories[category] && (
+                    <div className="absolute left-4 top-12 h-[calc(100%-3.5rem)] w-px bg-gray-300 z-0 transition-all duration-500" />
+                  )}
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ${
+                      expandedCategories[category]
+                        ? "max-h-96 opacity-100"
+                        : "max-h-0 opacity-0"
+                    }`}
+                     style={{ transitionProperty: 'max-height, opacity', transitionDuration: '500ms' }}
+                  >
+                    <ul
+                      className={`pl-8 pt-2 flex flex-col relative z-10`}
+                    >
+                      {Array.isArray(items) && items.length > 0 ? (
+                        items.map(({ href, icon, label, subItems }) => {
+                          const isActiveItem = isActive(href);
+                          const hasSubItems = subItems && subItems.length > 0;
+                          const isExpanded = expandedItems[href];
 
-                        return (
-                          <li key={href}>
-                            <div
-                              ref={setActiveItemRef}
-                              data-href={href}
-                              onClick={() => {
-                                if (hasSubItems) {
-                                  toggleItem(href);
-                                } else {
-                                  handleNavigation(href, label);
-                                }
-                              }}
-                              className={`relative py-2 px-2 flex items-center justify-between font-medium text-sm w-full text-gray-700 cursor-pointer rounded-lg hover:shadow-md transition-all duration-200 group mb-1 ${isActiveItem} ${
-                                !isOpen && !isMobile ? "justify-center" : ""
-                              } ${
-                                mode === "dark"
-                                  ? "bg-white/10 text-gray-200 hover:bg-white/20"
-                                  : ""
-                              }`}
-                            >
+                          return (
+                            <li key={href} className="px-2 pl-2">
                               <div
-                                className={`flex items-center ${
-                                  !isOpen && !isMobile
-                                    ? "justify-center w-full"
+                                ref={setActiveItemRef}
+                                data-href={href}
+                                onClick={() => {
+                                  if (hasSubItems) {
+                                    toggleItem(href);
+                                  } else {
+                                    handleNavigation(href, label);
+                                  }
+                                }}
+                                className={`relative py-2 px-2 flex items-center justify-between font-medium text-sm w-full text-gray-700 cursor-pointer rounded-lg hover:shadow-md transition-all duration-200 group mb-1 ${isActiveItem} ${
+                                  !isOpen && !isMobile ? "justify-center" : ""
+                                } ${
+                                  mode === "dark"
+                                    ? "bg-white/10 text-gray-200 hover:bg-white/20"
                                     : ""
                                 }`}
                               >
-                                <Icon
-                                  icon={icon}
-                                  className={`h-5 w-5 transition-all${
-                                    isOpen || isMobile ? " mr-3" : ""
-                                  } ${
-                                    mode === "dark"
-                                      ? "text-white"
-                                      : "text-gray-500"
+                                <div
+                                  className={`flex items-center ${
+                                    !isOpen && !isMobile
+                                      ? "justify-center w-full"
+                                      : ""
                                   }`}
-                                />
-                                <span
-                                  className={`text-sm transition-all duration-300 ${
-                                    !isOpen && !isMobile
-                                      ? "opacity-0 w-0 overflow-hidden"
-                                      : ""
-                                  } ${mode === "dark" ? "text-gray-100" : ""}`}
                                 >
-                                  {typeof label === "function"
-                                    ? label(user?.job_type)
-                                    : label}
-                                </span>
+                                  <span
+                                    className={`text-sm transition-all duration-300 ${
+                                      !isOpen && !isMobile
+                                        ? "opacity-0 w-0 overflow-hidden"
+                                        : ""
+                                    } ${mode === "dark" ? "text-gray-100" : ""}`}
+                                  >
+                                    {typeof label === "function"
+                                      ? label(user?.job_type)
+                                      : label}
+                                  </span>
+                                </div>
+                                {hasSubItems && (
+                                  <Icon
+                                    icon={
+                                      isExpanded
+                                        ? "mdi:chevron-down"
+                                        : "mdi:chevron-right"
+                                    }
+                                    className="w-4 h-4 transition-transform duration-200 text-gray-400"
+                                  />
+                                )}
                               </div>
+
                               {hasSubItems && (
-                                <Icon
-                                  icon={
+                                <div
+                                  className={`overflow-hidden transition-all duration-300 ${
                                     isExpanded
-                                      ? "mdi:chevron-down"
-                                      : "mdi:chevron-right"
-                                  }
-                                  className="w-4 h-4 transition-transform duration-200 text-gray-400"
-                                />
-                              )}
-                            </div>
-
-                            {hasSubItems && (
-                              <div
-                                className={`overflow-hidden transition-all duration-300 ${
-                                  isExpanded
-                                    ? "max-h-96 opacity-100"
-                                    : "max-h-0 opacity-0"
-                                }`}
-                              >
-                                <ul
-                                  className={`${
-                                    !isOpen && !isMobile
-                                      ? "flex flex-col items-center"
-                                      : ""
-                                  } ml-4`}
+                                      ? "max-h-96 opacity-100"
+                                      : "max-h-0 opacity-0"
+                                  }`}
                                 >
-                                  {subItems.map(
-                                    ({
-                                      href: subHref,
-                                      icon: subIcon,
-                                      label: subLabel,
-                                    }) => {
-                                      const isSubActive =
-                                        isSubItemActive(subHref);
+                                  <ul
+                                    className={`ml-2 pl-6 border-l-2 border-gray-300 flex flex-col`}
+                                  >
+                                    {subItems.map(
+                                      ({
+                                        href: subHref,
+                                        icon: subIcon,
+                                        label: subLabel,
+                                      }) => {
+                                        const isSubActive =
+                                          isSubItemActive(subHref);
 
-                                      return (
-                                        <li
-                                          key={subHref}
-                                          onClick={() =>
-                                            handleNavigation(subHref, subLabel)
-                                          }
-                                          className={`relative py-2 px-2 flex items-center font-normal text-sm w-full cursor-pointer rounded-lg hover:shadow-sm transition-all duration-200 group mb-1 ${isSubActive} ${
-                                            !isOpen && !isMobile
-                                              ? "justify-center"
-                                              : ""
-                                          } ${
-                                            mode === "dark"
-                                              ? "bg-white/10 text-gray-200 hover:bg-white/20"
-                                              : ""
-                                          }`}
-                                        >
-                                          <Icon
-                                            icon="mdi:circle-small"
-                                            className={`h-4 w-4 mr-1 ${
-                                              mode === "dark"
-                                                ? "text-white"
-                                                : "text-gray-400"
-                                            }`}
-                                          />
-                                          <Icon
-                                            icon={subIcon}
-                                            className={`h-4 w-4 transition-all${
-                                              isOpen || isMobile ? " mr-3" : ""
-                                            } ${
-                                              mode === "dark"
-                                                ? "text-white"
-                                                : "text-gray-400"
-                                            }`}
-                                          />
-                                          <span
-                                            className={`text-sm transition-all duration-300 ${
+                                        return (
+                                          <li
+                                            key={subHref}
+                                            onClick={() =>
+                                              handleNavigation(subHref, subLabel)
+                                            }
+                                            className={`relative py-2 px-2 pl-2 flex items-center font-normal text-sm w-full cursor-pointer rounded-lg hover:shadow-sm transition-all duration-200 group mb-1 ${isSubActive} ${
                                               !isOpen && !isMobile
-                                                ? "opacity-0 w-0 overflow-hidden"
+                                                ? "justify-center"
                                                 : ""
                                             } ${
                                               mode === "dark"
-                                                ? "text-gray-100"
+                                                ? "bg-white/10 text-gray-200 hover:bg-white/20"
                                                 : ""
                                             }`}
                                           >
-                                            {typeof subLabel === "function"
-                                              ? subLabel(user?.job_type)
-                                              : subLabel}
-                                          </span>
-                                        </li>
-                                      );
-                                    }
-                                  )}
-                                </ul>
-                              </div>
-                            )}
-                          </li>
-                        );
-                      })
-                    ) : (
-                      <li className="py-3 px-2 text-gray-500 text-sm">
-                        No items available
-                      </li>
-                    )}
-                  </ul>
+                                            <Icon
+                                              icon="mdi:circle-small"
+                                              className={`h-4 w-4 mr-1 ${
+                                                mode === "dark"
+                                                  ? "text-white"
+                                                  : "text-gray-400"
+                                              }`}
+                                            />
+                                            <Icon
+                                              icon={subIcon}
+                                              className={`h-4 w-4 transition-all${
+                                                isOpen || isMobile ? " mr-3" : ""
+                                              } ${
+                                                mode === "dark"
+                                                  ? "text-white"
+                                                  : "text-gray-400"
+                                              }`}
+                                            />
+                                            <span
+                                              className={`text-sm transition-all duration-300 ${
+                                                !isOpen && !isMobile
+                                                  ? "opacity-0 w-0 overflow-hidden"
+                                                  : ""
+                                              } ${
+                                                mode === "dark"
+                                                  ? "text-gray-100"
+                                                  : ""
+                                              }`}
+                                            >
+                                              {typeof subLabel === "function"
+                                                ? subLabel(user?.job_type)
+                                                : subLabel}
+                                            </span>
+                                          </li>
+                                        );
+                                      }
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })
+                      ) : (
+                        <li className="py-3 px-2 text-gray-500 text-sm">
+                          No items available
+                        </li>
+                      )}
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
 
           <div

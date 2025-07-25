@@ -93,9 +93,11 @@ function MyApp({ Component, pageProps }) {
   useEffect(() => {
     const routeChangeStart = (url) => {
       const pageSlug = url.split("/").pop() || "overview";
-      const navItems = sidebarNav.flatMap((category) => category.items);
+      const navItems = sidebarNav.flatMap((entry) =>
+        entry.items ? entry.items : [entry]
+      );
       const page = navItems.find(
-        (item) => item.href === url || item.href.endsWith(`/${pageSlug}`)
+        (item) => item && item.href && (item.href === url || item.href.endsWith(`/${pageSlug}`))
       );
       const pageName = page
         ? page.label
@@ -119,7 +121,9 @@ function MyApp({ Component, pageProps }) {
     };
 
     // Prefetch sidebar routes
-    const navItems = sidebarNav.flatMap((category) => category.items);
+    const navItems = sidebarNav.flatMap((entry) =>
+      entry.items ? entry.items : [entry]
+    );
     navItems.forEach((item) => {
       router.prefetch(item.href);
     });
@@ -141,12 +145,14 @@ function MyApp({ Component, pageProps }) {
     const crumbs = [{ href: "/", label: "Home" }];
 
     let currentPath = "";
-    const navItems = sidebarNav.flatMap((category) => category.items);
+    const navItems = sidebarNav.flatMap((entry) =>
+      entry.items ? entry.items : [entry]
+    );
 
     segments.forEach((segment) => {
       currentPath += `/${segment}`;
       const navItem = navItems.find(
-        (item) => item.href === currentPath || item.href.endsWith(`/${segment}`)
+        (item) => item && item.href && (item.href === currentPath || item.href.endsWith(`/${segment}`))
       );
       const label = navItem
         ? navItem.label

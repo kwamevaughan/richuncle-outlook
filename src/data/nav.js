@@ -1,16 +1,13 @@
 export const sidebarNav = [
   {
-    category: "Dashboard",
-    items: [
-      {
-        href: "/dashboard",
-        icon: "mdi:home-outline",
-        label: "Home",
-      },
-    ],
+    href: "/dashboard",
+    icon: "mdi:home-outline",
+    label: "Home",
+    isStandalone: true,
   },
   {
     category: "Inventory",
+    icon: "mdi:package-variant-closed",
     items: [
       {
         href: "/products",
@@ -46,6 +43,7 @@ export const sidebarNav = [
   },
   {
     category: "Stock",
+    icon: "mdi:warehouse",
     items: [
       {
         href: "/manage-stock",
@@ -66,6 +64,7 @@ export const sidebarNav = [
   },
   {
     category: "Sales",
+    icon: "mdi:cart-outline",
     items: [
       {
         href: "/sales",
@@ -91,6 +90,7 @@ export const sidebarNav = [
   },
   {
     category: "Promo",
+    icon: "mdi:tag-outline",
     items: [
       {
         href: "/coupons",
@@ -123,6 +123,7 @@ export const sidebarNav = [
   },
   {
     category: "Purchases",
+    icon: "mdi:cart-arrow-down",
     items: [
       {
         href: "/purchases",
@@ -143,6 +144,7 @@ export const sidebarNav = [
   },
   {
     category: "Finance & Accounts",
+    icon: "mdi:currency-usd",
     items: [
       {
         href: "/expenses",
@@ -182,6 +184,7 @@ export const sidebarNav = [
   },
   {
     category: "Peoples",
+    icon: "mdi:account-group-outline",
     items: [
       {
         href: "/customers",
@@ -337,6 +340,7 @@ export const sidebarNav = [
   // },
   {
     category: "User Management",
+    icon: "mdi:account-cog-outline",
     items: [
       {
         href: "/users",
