@@ -164,8 +164,10 @@ const HrHeader = ({
                       mode === "dark" ? "text-gray-200" : ""
                     }`}
                   />
-                  {stores.length > 0 && selectedStore
-                    ? stores.find(s => s.id === selectedStore)?.name || "Select Store"
+                  {stores.length > 0
+                    ? selectedStore
+                      ? stores.find(s => s.id === selectedStore)?.name || "Select Store"
+                      : "All Stores"
                     : "Select Store"}
                   <Icon
                     icon={
@@ -190,6 +192,19 @@ const HrHeader = ({
                     }`}
                 >
                   <ul className="divide-y divide-gray-100">
+                    {/* All Stores option */}
+                    <li
+                      key="all"
+                      className={`px-4 py-2 cursor-pointer ${!selectedStore ? 'font-bold bg-gray-200 dark:bg-gray-800' : ''}`}
+                      onClick={() => {
+                        setSelectedStore("");
+                        localStorage.setItem('selected_store_id', "");
+                        setStoreDropdownOpen(false);
+                      }}
+                    >
+                      All Stores
+                    </li>
+                    {/* Actual stores */}
                     {stores.length > 0 ? (
                       stores.map(store => (
                         <li

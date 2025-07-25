@@ -36,6 +36,8 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
   const [rowReferenceOrderProducts, setRowReferenceOrderProducts] = useState({});
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
+  const [selectedStore, setSelectedStore] = useState("");
+  const [stores, setStores] = useState([]);
 
   // Expand/collapse handler
   const handleExpandRow = async (returnId, reference) => {
@@ -119,6 +121,51 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
       .then(({ data }) => setOrders(data || []));
   }, []);
 
+  // Fetch stores on mount
+  useEffect(() => {
+    fetch('/api/stores')
+      .then(res => res.json())
+      .then(({ data }) => setStores(data || []));
+  }, []);
+
+  // Listen for store selection changes
+  useEffect(() => {
+    const updateStore = () => {
+      const storeId = localStorage.getItem('selected_store_id') || "";
+      setSelectedStore(storeId);
+      if (storeId) {
+        const store = stores.find(s => s.id === storeId);
+        if (store) {
+          toast.success(`Now viewing sales returns for: ${store.name}`);
+        }
+      }
+    };
+    updateStore();
+    window.addEventListener('storage', updateStore);
+    // Also update on every render if localStorage changes
+    const interval = setInterval(() => {
+      const storeId = localStorage.getItem('selected_store_id') || "";
+      setSelectedStore(prev => {
+        if (prev !== storeId) {
+          if (storeId) {
+            const store = stores.find(s => s.id === storeId);
+            if (store) {
+              toast.success(`Now viewing sales returns for: ${store.name}`);
+            }
+          } else {
+            toast.success('Now viewing sales returns for: All Stores');
+          }
+          return storeId;
+        }
+        return prev;
+      });
+    }, 300); // check every 300ms
+    return () => {
+      window.removeEventListener('storage', updateStore);
+      clearInterval(interval);
+    };
+  }, [stores]);
+
   const handleApprove = async (row) => {
     try {
       await updateSalesReturn(row.id, { status: 'Returned' });
@@ -148,9 +195,14 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
     setShowViewModal(true);
   };
 
-  const filteredSalesReturns = statusFilter
-    ? salesReturns.filter(r => r.status === statusFilter)
-    : salesReturns;
+  // Filter sales returns by selected store and status
+  const filteredSalesReturns = salesReturns
+    .filter(r => !selectedStore || String(r.store_id) === String(selectedStore))
+    .filter(r => !statusFilter || r.status === statusFilter);
+
+  stores.forEach(store => {
+    const count = salesReturns.filter(r => String(r.store_id) === String(store.id)).length;
+  });
 
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
@@ -176,7 +228,7 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
               Sales Returns
             </h1>
             <p className="text-sm text-gray-500 mb-6">
-              Manage your sales returns here.
+              Manage your sales returns here. The data below is filtered for: <span className="font-bold">{selectedStore ? stores.find(s => s.id === selectedStore)?.name : "All Stores"}</span>
             </p>
             {loading && (
               <div className="flex items-center gap-2 text-blue-600 mb-4">

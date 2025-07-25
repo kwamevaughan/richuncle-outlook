@@ -11,6 +11,7 @@ export default async function handler(req, res) {
           return_number,
           customer_id,
           warehouse_id,
+          store_id,
           date,
           status,
           total,
