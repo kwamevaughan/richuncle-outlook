@@ -58,6 +58,26 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
     fetchProducts();
   }, []);
 
+  // Open product modal if viewProductId is in the query
+  useEffect(() => {
+    if (!router.isReady) return;
+    const { viewProductId } = router.query;
+    if (viewProductId) {
+      // Try to find the product in the loaded products
+      let product = products.find(p => p.id === viewProductId);
+      if (!product) {
+        // If not found, fetch it
+        fetch(`/api/products/${viewProductId}`)
+          .then(res => res.json())
+          .then(({ data }) => {
+            if (data) setViewItem(data);
+          });
+      } else {
+        setViewItem(product);
+      }
+    }
+  }, [router.isReady, router.query.viewProductId, products]);
+
   // Modal open/close helpers
   const openAddModal = () => {
     setEditItem(null);
@@ -150,6 +170,16 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
     }
     return null;
   }
+
+  // When closing the modal, remove viewProductId from the URL
+  const closeViewModal = () => {
+    setViewItem(null);
+    const { viewProductId, ...rest } = router.query;
+    router.replace({
+      pathname: router.pathname,
+      query: rest,
+    }, undefined, { shallow: true });
+  };
 
   return (
     <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
@@ -304,7 +334,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
               <ViewProductModal
                 product={viewItem}
                 isOpen={!!viewItem}
-                onClose={() => setViewItem(null)}
+                onClose={closeViewModal}
                 mode={mode}
               />
             )}

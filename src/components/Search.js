@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 
 // Section config for icons and hrefs
 const SECTION_CONFIG = {
@@ -50,6 +51,7 @@ const Search = ({ mode = "light", onSearchModalToggle, user }) => {
   const animationTimeoutRef = useRef(null);
   const debounceTimeoutRef = useRef(null);
   const DEBOUNCE_DELAY = 300;
+  const router = useRouter();
 
   // Memoized values
   const totalResults = useMemo(
@@ -216,7 +218,7 @@ const Search = ({ mode = "light", onSearchModalToggle, user }) => {
     <div className="relative z-10">
       <input
         type="text"
-        placeholder="Search..."
+        placeholder="Search across all sections..."
         value={searchQuery}
         onChange={handleSearch}
         className={styles.input}
@@ -302,12 +304,16 @@ const Search = ({ mode = "light", onSearchModalToggle, user }) => {
                         </div>
                         <div className="space-y-2">
                           {items.map((item) => (
-                            <Link
-                              key={item.id}
-                              href={`${SECTION_CONFIG[section.toLowerCase()]?.href}/${item.id}`}
-                              onClick={closePopup}
-                            >
-                              <div className={styles.resultItem}>
+                            section.toLowerCase() === 'products' ? (
+                              <div
+                                key={item.id}
+                                className={styles.resultItem}
+                                onClick={() => {
+                                  router.push(`/products?viewProductId=${item.id}`);
+                                  closePopup();
+                                }}
+                                style={{ cursor: 'pointer' }}
+                              >
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="flex-1 min-w-0">
                                     <h4 className={styles.resultTitle}>{item.title}</h4>
@@ -322,7 +328,29 @@ const Search = ({ mode = "light", onSearchModalToggle, user }) => {
                                   <Icon icon="lucide:arrow-up-right" className={styles.resultArrow} />
                                 </div>
                               </div>
-                            </Link>
+                            ) : (
+                              <Link
+                                key={item.id}
+                                href={`${SECTION_CONFIG[section.toLowerCase()]?.href}/${item.id}`}
+                                onClick={closePopup}
+                              >
+                                <div className={styles.resultItem}>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className={styles.resultTitle}>{item.title}</h4>
+                                      <p className={styles.resultTimestamp}>
+                                        Updated {new Date(item.timestamp).toLocaleDateString("en-US", {
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                        })}
+                                      </p>
+                                    </div>
+                                    <Icon icon="lucide:arrow-up-right" className={styles.resultArrow} />
+                                  </div>
+                                </div>
+                              </Link>
+                            )
                           ))}
                         </div>
                       </div>
