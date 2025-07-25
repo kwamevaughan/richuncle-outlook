@@ -11,6 +11,7 @@ import NotificationButton from "@/components/NotificationButton";
 import SessionDuration from "@/components/SessionDuration";
 import SimpleModal from "@/components/SimpleModal";
 import SalesReturnModals from "@/components/SalesReturnModals";
+import { useRouter } from "next/router";
 
 const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrderData, onOpenOrderHistory, showCashRegister, setShowCashRegister, showSalesReturnModal, setShowSalesReturnModal }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -29,7 +30,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
   // Demo state for SalesReturnModals
   const [salesReturnModalData, setSalesReturnModalData] = useState({});
   const [salesReturnReference, setSalesReturnReference] = useState("");
-
+  const router = useRouter();
   // Debug logging
   useEffect(() => {
     console.log("PosHeader mounted");
@@ -114,19 +115,22 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
             backdrop-blur-sm shadow-lg rounded-2xl
           `}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center w-full ">
               {user?.role !== "cashier" && (
-                <Link
-                  href="/dashboard"
-                  className="flex items-center justify-center gap-2 bg-blue-950 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                <TooltipIconButton
+                  label="Back to Dashboard"
+                  mode={mode}
+                  className="px-1 py-1 mr-2 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                  onClick={() => {
+                    router.push("/dashboard");
+                  }}
                 >
                   <Icon
-                    icon="mage:dashboard-3"
-                    className={`h-4 w-4 text-white`}
+                    icon="mdi:home-outline"
+                    className="h-7 w-7 text-gray-500"
                   />
-                  Back to Dashboard
-                </Link>
+                </TooltipIconButton>
               )}
 
               <SessionDuration

@@ -7,6 +7,6 @@ export const useUser = () => {
   return {
     user,
     loading,
-    LoadingComponent: <LoadingSpinner />,
+    LoadingComponent: LoadingSpinner,
   };
 };
