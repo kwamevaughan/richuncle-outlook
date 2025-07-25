@@ -132,7 +132,8 @@ export default function TopCustomersCard({ selectedStore }) {
           </div>
         ) : (
           topCustomers.map((c, idx) => (
-            <div key={c.id} className="flex items-center gap-4 py-4">
+            <div key={c.id} className="flex items-center gap-4 px-2 py-4 border-b last:border-b-0 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-sm rounded-lg bg-white hover:bg-gray-50"
+            >
               {c.image_url && !c.isSpecial ? (
                 <Image
                   src={c.image_url}

@@ -222,17 +222,24 @@ export default function TopSellingProductsCard({ selectedStore }) {
           topProducts.map((product, idx) => (
             <div
               key={product.id}
-              className={`flex items-center gap-4 py-4 ${
-                idx === 0 ? "pt-0" : ""
-              }`}
+              className={`flex items-center gap-4 px-2 py-4 border-b last:border-b-0 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-sm rounded-lg bg-white hover:bg-gray-50 ${idx === 0 ? "pt-0" : ""}`}
             >
-              <Image
-                src={product.image || "/placeholder.png"}
-                alt={product.name}
-                className="w-14 h-14 rounded-lg object-cover border"
-                width={56}
-                height={56}
-              />
+              {product.image ? (
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  className="w-14 h-14 rounded-lg object-cover border"
+                  width={56}
+                  height={56}
+                />
+              ) : (
+                <span className="w-14 h-14 flex items-center justify-center rounded-lg border bg-gray-50">
+                  <Icon
+                    icon="mdi:image-off-outline"
+                    className="text-2xl text-gray-400"
+                  />
+                </span>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-md text-gray-900 truncate">
                   {product.name}

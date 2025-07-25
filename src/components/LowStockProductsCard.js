@@ -63,15 +63,21 @@ export default function LowStockProductsCard({ selectedStore }) {
           products.map((product) => (
             <div
               key={product.id}
-              className="flex items-center gap-4 py-3 border-b last:border-b-0"
+              className="flex items-center gap-4 px-2 py-3 border-b last:border-b-0 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-sm rounded-lg bg-white hover:bg-gray-50"
             >
-              <Image
-                src={product.image_url || "/placeholder.png"}
-                alt={product.name}
-                className="w-14 h-14 rounded-lg object-cover border"
-                width={56}
-                height={56}
-              />
+              {product.image_url ? (
+                <Image
+                  src={product.image_url}
+                  alt={product.name}
+                  className="w-14 h-14 rounded-lg object-cover border"
+                  width={56}
+                  height={56}
+                />
+              ) : (
+                <span className="w-14 h-14 flex items-center justify-center rounded-lg border bg-gray-50">
+                  <Icon icon="mdi:image-off-outline" className="text-2xl text-gray-400" />
+                </span>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-md text-gray-900 truncate">
                   {product.name}

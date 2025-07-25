@@ -150,7 +150,10 @@ export default function RecentSalesCard({ selectedStore }) {
             const status = order.status || "Processing";
             const date = formatDate(order.timestamp);
             return (
-              <div key={order.id} className="flex items-center gap-4 py-3 border-b last:border-b-0">
+              <div
+                key={order.id}
+                className="flex items-center gap-4 px-2 py-3 border-b last:border-b-0 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-sm rounded-lg bg-white hover:bg-gray-50"
+              >
                 {image && image !== "/placeholder.png" ? (
                   <Image
                     src={image}
