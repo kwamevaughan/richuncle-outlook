@@ -6,6 +6,7 @@ import { sidebarNav } from "@/data/nav";
 import { Nunito } from "next/font/google";
 import { AuthProvider } from "@/context/authContext";
 import useSidebar from "@/hooks/useSidebar";
+import "../styles/dark-mode-date-range.css";
 
 const nunito = Nunito({
   weight: ["300", "400", "500", "600", "700"],

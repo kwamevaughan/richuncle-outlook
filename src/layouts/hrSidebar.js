@@ -137,7 +137,7 @@ const HrSidebar = ({
                   mode === "dark" ? "text-white" : "text-white"
                 }`}
               >
-                {!isOpen && !isMobile ? "R" : "Rich Uncle Outlook"}
+                {!isOpen && !isMobile ? "R" : "RichUncle Outlook"}
               </p>
             </div>
           </div>

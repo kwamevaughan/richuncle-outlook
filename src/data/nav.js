@@ -4,8 +4,8 @@ export const sidebarNav = [
     items: [
       {
         href: "/dashboard",
-        icon: "mdi:view-dashboard-outline",
-        label: "Dashboard Overview",
+        icon: "mdi:home-outline",
+        label: "Home",
       },
     ],
   },

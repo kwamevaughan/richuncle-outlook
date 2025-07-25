@@ -2,7 +2,6 @@ import { Icon } from "@iconify/react";
 import { DateRangePicker } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-import "../../styles/dark-mode-date-range.css"; // Import custom CSS for dark mode
 
 export default function FilterSection({
                                           filterStatus,
