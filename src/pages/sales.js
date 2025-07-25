@@ -29,6 +29,16 @@ export default function SalesPage({ mode = "light", toggleMode, ...props }) {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!loading && sales.length > 0 && router.query.saleId) {
+      const sale = sales.find(s => String(s.id) === String(router.query.saleId));
+      if (sale) {
+        setSelectedSale(sale);
+        setShowDetails(true);
+      }
+    }
+  }, [loading, sales, router.query.saleId]);
+
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
     if (typeof window !== "undefined") {

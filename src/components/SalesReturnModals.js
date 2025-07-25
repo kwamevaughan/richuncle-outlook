@@ -2,6 +2,7 @@
   import SimpleModal from "./SimpleModal";
   import { Icon } from "@iconify/react";
   import Select, { components } from 'react-select';
+  import SaleDetailsModal from "./SaleDetailsModal";
 
   export default function SalesReturnModals({
     show,
@@ -15,6 +16,8 @@
     children,
     selectedReference,
     onReferenceChange,
+    user, // <-- add user prop
+    orders = [], // <-- add orders prop for lookup
   }) {
     const [form, setForm] = useState({
       customer_id: "",
@@ -28,7 +31,6 @@
     });
     const [customers, setCustomers] = useState([]);
     const [stores, setStores] = useState([]);
-    const [orders, setOrders] = useState([]);
     const [orderSearch, setOrderSearch] = useState("");
     const [modalError, setModalError] = useState(null);
     const [orderCustomerId, setOrderCustomerId] = useState("");
@@ -38,6 +40,7 @@
     const [_, forceUpdate] = useState(0);
     const prevShow = useRef(false);
     const [referenceOrderItems, setReferenceOrderItems] = useState([]);
+    const [showSaleDetailsModal, setShowSaleDetailsModal] = useState(false);
 
     // Fetch customers, stores, and recent sales/orders
     useEffect(() => {
@@ -65,18 +68,6 @@
           return res.json();
         })
         .then(({ data }) => setStores(data || []));
-      fetch("/api/orders")
-        .then(async (res) => {
-          const contentType = res.headers.get("content-type");
-          if (!res.ok || !contentType || !contentType.includes("application/json")) {
-            const text = await res.text();
-            console.error("/api/orders returned non-JSON:", text);
-            setModalError("Failed to fetch orders");
-            return { data: [] };
-          }
-          return res.json();
-        })
-        .then(({ data }) => setOrders(data || []));
     }, []);
 
     useEffect(() => {
@@ -281,6 +272,9 @@
 
     const isEdit = !!salesReturn;
 
+    // Find the referenced sale
+    const referencedSale = orders.find(o => String(o.id) === String(selectedReference));
+
 
     return (
       <SimpleModal
@@ -330,14 +324,32 @@
                 isDisabled={loading}
               />
               {selectedReference && (
-                <a
-                  href={`/sales/${selectedReference}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 text-xs underline mt-1 inline-block"
-                >
-                  View Original Sale
-                </a>
+                user?.role === 'cashier' ? (
+                  <>
+                    <button
+                      type="button"
+                      className="text-blue-600 text-xs underline mt-1 inline-block"
+                      onClick={() => setShowSaleDetailsModal(true)}
+                    >
+                      View Original Sale
+                    </button>
+                    <SaleDetailsModal
+                      sale={referencedSale}
+                      isOpen={showSaleDetailsModal}
+                      onClose={() => setShowSaleDetailsModal(false)}
+                      mode={mode}
+                    />
+                  </>
+                ) : (
+                  <a
+                    href={`/sales?saleId=${selectedReference}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 text-xs underline mt-1 inline-block"
+                  >
+                    View Original Sale
+                  </a>
+                )
               )}
             </div>
           </div>

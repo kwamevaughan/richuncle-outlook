@@ -503,6 +503,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   // At the top of POS component, add:
   const [registers, setRegisters] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [orders, setOrders] = useState([]);
 
   useEffect(() => {
     // Fetch registers on mount
@@ -518,6 +519,12 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         console.error('[POS] Failed to fetch registers:', err);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/orders')
+      .then(res => res.json())
+      .then(({ data }) => setOrders(data || []));
   }, []);
 
   // After fetching registers (wherever you load them in pos.js):
@@ -1136,6 +1143,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           mode={mode}
           selectedReference={salesReturnReference}
           onReferenceChange={setSalesReturnReference}
+          user={user}
+          orders={orders}
         >
           <SalesReturnItemsEditor
             lineItems={salesReturnLineItems}

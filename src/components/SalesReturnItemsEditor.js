@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import Select from 'react-select';
+import toast from 'react-hot-toast';
 
 const REASONS = [
   "Damaged",
@@ -65,6 +66,11 @@ export default function SalesReturnItemsEditor({
         }))
     : products;
 
+  // Compute which products are already in the editor
+  const addedProductIds = new Set(localItems.map(item => item.product_id));
+  // Only show products not already added
+  const selectableProducts = availableProducts.filter(p => !addedProductIds.has(p.product_id));
+
   const handleItemChange = (idx, field, value) => {
     let updated = localItems.map((item, i) =>
       i === idx ? { ...item, [field]: value } : item
@@ -81,11 +87,15 @@ export default function SalesReturnItemsEditor({
   };
 
   const handleAddItem = () => {
-    // Default to the first available product's UUID
-    const defaultProductId = availableProducts.length > 0 ? availableProducts[0].product_id : "";
+    if (selectableProducts.length === 0) {
+      toast.error('All products in this order have already been added.');
+      return;
+    }
+    // Default to the first available product's UUID not already added
+    const defaultProductId = selectableProducts[0].product_id;
     let defaultUnitPrice = 0;
     if (defaultProductId) {
-      const prod = availableProducts.find(p => p.product_id === defaultProductId);
+      const prod = selectableProducts.find(p => p.product_id === defaultProductId);
       defaultUnitPrice = prod && prod.unit_price !== undefined ? prod.unit_price : (prod && prod.price !== undefined ? prod.price : 0);
     }
     const newItem = { product_id: defaultProductId, quantity: 1, unit_price: defaultUnitPrice, total: defaultUnitPrice, reason: "" };
@@ -109,12 +119,17 @@ export default function SalesReturnItemsEditor({
             type="button"
             className="px-2 py-1 bg-green-600 text-white rounded text-xs flex items-center gap-1"
             onClick={handleAddItem}
-            disabled={props.disabled || props.disableAdd}
+            disabled={props.disabled || props.disableAdd || selectableProducts.length === 0}
           >
             <Icon icon="mdi:plus" className="w-4 h-4" /> Add Item
           </button>
         )}
       </div>
+      {selectableProducts.length === 0 && (
+        <div className="text-xs text-red-500 mt-1">
+          All products in this order have already been added.
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="min-w-full text-xs border">
           <thead>
@@ -136,7 +151,7 @@ export default function SalesReturnItemsEditor({
                     <Select
                       value={availableProducts.find(p => p.product_id === item.product_id)}
                       onChange={option => handleItemChange(idx, 'product_id', option ? option.product_id : "")}
-                      options={availableProducts}
+                      options={selectableProducts}
                       getOptionLabel={p => p.name}
                       getOptionValue={p => p.product_id}
                       isSearchable
