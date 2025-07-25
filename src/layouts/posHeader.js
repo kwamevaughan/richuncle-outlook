@@ -9,8 +9,10 @@ import SalesProfitModal from "@/components/SalesProfitModal";
 import NotificationButton from "@/components/NotificationButton";
 // import { useModal } from "@/components/ModalContext";
 import SessionDuration from "@/components/SessionDuration";
+import SimpleModal from "@/components/SimpleModal";
+import SalesReturnModals from "@/components/SalesReturnModals";
 
-const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrderData, onOpenOrderHistory, showCashRegister, setShowCashRegister }) => {
+const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrderData, onOpenOrderHistory, showCashRegister, setShowCashRegister, showSalesReturnModal, setShowSalesReturnModal }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const headerRef = useRef(null);
@@ -24,6 +26,9 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
   const handleSessionChanged = () => setSessionRefreshKey((k) => k + 1);
   const [userStoreName, setUserStoreName] = useState("");
   const [stores, setStores] = useState([]);
+  // Demo state for SalesReturnModals
+  const [salesReturnModalData, setSalesReturnModalData] = useState({});
+  const [salesReturnReference, setSalesReturnReference] = useState("");
 
   // Debug logging
   useEffect(() => {
@@ -195,7 +200,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 />
               </TooltipIconButton>
 
-              {user?.role !== 'cashier' && (
+              {user?.role !== "cashier" && (
                 <TooltipIconButton
                   label="View Orders"
                   mode={mode}
@@ -218,6 +223,15 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 <Icon icon="mdi:cart-sale" className="h-7 w-7 text-gray-500" />
               </TooltipIconButton>
 
+              <TooltipIconButton
+                label="Sales Return"
+                mode={mode}
+                className="px-1 py-1 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                onClick={() => setShowSalesReturnModal(true)}
+              >
+                <Icon icon="prime:undo" className="h-7 w-7 text-gray-500" />
+              </TooltipIconButton>
+
               {user?.role !== "cashier" && (
                 <TooltipIconButton
                   label="Today's Profit"
@@ -234,7 +248,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
 
               <LanguageSwitch mode={mode} />
 
-              {user?.role !== 'cashier' && (
+              {user?.role !== "cashier" && (
                 <NotificationButton mode={mode} user={user} />
               )}
 
@@ -377,6 +391,8 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
         mode={mode}
         type="profit"
       />
+
+      {/* SalesReturnModals is now rendered in the main POS page, not here. */}
     </>
   );
 };

@@ -121,26 +121,35 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
   // Fetch and autopopulate line items when reference changes
   useEffect(() => {
     if (selectedReference) {
-      // Fetch order line items from API
       fetch(`/api/order-items?order_id=${selectedReference}`)
         .then((res) => res.json())
         .then(({ data }) => {
-          if (Array.isArray(data)) {
-            // Map order line items to return line items
+          if (Array.isArray(data) && products.length > 0) {
             setLineItems(
-              data.map((item) => ({
-                product_id: item.product_id,
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                total: (Number(item.quantity) || 0) * (Number(item.unit_price) || 0),
-                reason: "",
-                reason_text: "",
-              }))
+              data
+                .map((item) => {
+                  // Find product by UUID or old_id
+                  const product = products.find(
+                    (p) =>
+                      String(p.id) === String(item.product_id) ||
+                      (p.old_id && String(p.old_id) === String(item.product_id))
+                  );
+                  if (!product) return null; // skip if not found
+                  return {
+                    product_id: product.id, // always UUID
+                    quantity: item.quantity,
+                    unit_price: item.unit_price,
+                    total: (Number(item.quantity) || 0) * (Number(item.unit_price) || 0),
+                    reason: "",
+                    reason_text: "",
+                  };
+                })
+                .filter(Boolean)
             );
           }
         });
     }
-  }, [selectedReference]);
+  }, [selectedReference, products]);
 
   useEffect(() => {
     // Fetch all products on mount

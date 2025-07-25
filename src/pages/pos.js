@@ -21,6 +21,8 @@ import PaymentForm from "@/components/PaymentForm";
 import useUsers from "../hooks/useUsers";
 import ReceiptPreviewModal from "@/components/ReceiptPreviewModal";
 import Select from 'react-select';
+import SalesReturnModals from "@/components/SalesReturnModals";
+import SalesReturnItemsEditor from "@/components/SalesReturnItemsEditor";
 
 export default function POS({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -199,6 +201,13 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     }
   }, []);
 
+  // Sales Return modal state (move above all useEffects that use it)
+  const [showSalesReturnModal, setShowSalesReturnModal] = useState(false);
+  const [salesReturnReference, setSalesReturnReference] = useState("");
+  const [salesReturnLineItems, setSalesReturnLineItems] = useState([]);
+  const [salesReturnProducts, setSalesReturnProducts] = useState([]);
+  const [salesReturnReferenceOrderProducts, setSalesReturnReferenceOrderProducts] = useState([]);
+
   // Memoize the header component to prevent unnecessary re-renders
   const headerComponent = useMemo(() => {
     return (headerProps) => (
@@ -209,9 +218,11 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         onOpenOrderHistory={() => setShowOrderHistory(true)}
         showCashRegister={showCashRegister}
         setShowCashRegister={setShowCashRegister}
+        showSalesReturnModal={showSalesReturnModal}
+        setShowSalesReturnModal={setShowSalesReturnModal}
       />
     );
-  }, [handlePrintLastReceipt, lastOrderData, setShowOrderHistory, showCashRegister, setShowCashRegister]);
+  }, [handlePrintLastReceipt, lastOrderData, setShowOrderHistory, showCashRegister, setShowCashRegister, showSalesReturnModal, setShowSalesReturnModal]);
 
   // Memoize the onOrderComplete callback
   // When an order is finalized (in handleOrderComplete), generate a new orderId for the next order:
@@ -283,8 +294,13 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         selectedCustomerId = paymentInfo.customer.id;
         selectedCustomerName = paymentInfo.customer.name || 'Walk In Customer';
       }
+      // Debug logs for product selection and order item building
+      console.log('selectedProducts:', selectedProducts);
+      console.log('products:', products);
+
       const items = selectedProducts.map(id => {
         const product = products.find(p => p.id === id);
+        console.log('Building order item for:', id, product);
         const qty = quantities[id] || 1;
         const itemSubtotal = product.price * qty;
         let itemTax = 0;
@@ -309,6 +325,10 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           total: itemSubtotal
         };
       });
+      console.log('Order items being built:', items);
+      // Find the selected register's store_id
+      const selectedRegisterObj = registers.find(r => r.id === selectedRegister);
+      const storeId = selectedRegisterObj ? selectedRegisterObj.store_id : undefined;
       orderData = {
         id: orderId,
         customer_id: selectedCustomerId || '',
@@ -329,6 +349,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         status: 'Completed',
         register_id: selectedRegister,
         session_id: currentSessionId,
+        store_id: storeId,
         // Add other columns as needed
       };
       // Insert order into 'orders' table
@@ -346,6 +367,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         name: item.name,
         quantity: item.quantity,
         price: item.price,
+        unit_price: item.price, // ensure unit_price is set
         cost_price: item.costPrice,
         tax_type: item.taxType,
         tax_percentage: item.taxPercentage,
@@ -511,6 +533,23 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       setSelectedRegister(registers[0].id);
     }
   }, [showCashRegister, autoShowRegister, selectedRegister, registers]);
+
+  // Fetch products from referenced order when reference changes
+  useEffect(() => {
+    if (salesReturnReference) {
+      fetch(`/api/order-items?order_id=${salesReturnReference}`)
+        .then((res) => res.json())
+        .then(({ data }) => {
+          if (Array.isArray(data)) {
+            setSalesReturnReferenceOrderProducts(data);
+          } else {
+            setSalesReturnReferenceOrderProducts([]);
+          }
+        });
+    } else {
+      setSalesReturnReferenceOrderProducts([]);
+    }
+  }, [salesReturnReference]);
 
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
@@ -967,6 +1006,9 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                       total: product.price * qty
                     };
                   });
+                  // Find the selected register's store_id
+                  const selectedRegisterObj = registers.find(r => r.id === selectedRegister);
+                  const storeId = selectedRegisterObj ? selectedRegisterObj.store_id : undefined;
                   const orderData = {
                     id: orderId,
                     customer_id: holdLayawayCustomer || '',
@@ -991,6 +1033,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                     status: holdLayawayType === 'layaway' ? 'Layaway' : 'Hold',
                     register_id: selectedRegister,
                     session_id: currentSessionId,
+                    store_id: storeId,
                   };
                   try {
                     const { toast } = await import('react-hot-toast');
@@ -1008,6 +1051,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                       name: item.name,
                       quantity: item.quantity,
                       price: item.price,
+                      unit_price: item.price, // ensure unit_price is set
                       cost_price: item.costPrice,
                       total: item.total
                     }));
@@ -1037,6 +1081,70 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             </div>
           </div>
         </SimpleModal>
+        {/* Sales Return Modal (renders SalesReturnModals directly) */}
+        <SalesReturnModals
+          show={showSalesReturnModal}
+          onClose={() => setShowSalesReturnModal(false)}
+          onSave={async (values, items) => {
+            try {
+              const { toast } = await import('react-hot-toast');
+              // Clean up values: convert "" to null for UUID fields
+              const cleanedValues = {
+                ...values,
+                customer_id: values.customer_id || null,
+                store_id: values.store_id || null,
+                reference: values.reference || null,
+              };
+              // 1. Save the sales return main record
+              const res = await fetch('/api/sales-returns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cleanedValues),
+              });
+              const result = await res.json();
+              if (!result.success || !result.data) throw new Error(result.error || 'Failed to save sales return');
+              const salesReturnId = result.data.id;
+
+              // 2. Save the line items
+              const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+              const lineItemsToSend = (items || []).filter(item => uuidRegex.test(item.product_id)).map(item => ({
+                ...item,
+                sales_return_id: salesReturnId,
+                total: (Number(item.quantity) || 0) * (Number(item.unit_price) || 0),
+              }));
+              console.log('Line items to send:', lineItemsToSend);
+
+              const lineItemsRes = await fetch('/api/sales-return-items', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(lineItemsToSend),
+              });
+              const lineItemsResult = await lineItemsRes.json();
+              if (!lineItemsResult.success) throw new Error(lineItemsResult.error || 'Failed to save sales return items');
+
+              toast.success('Sales return added successfully!');
+              setShowSalesReturnModal(false);
+              setSalesReturnLineItems([]);
+              setSalesReturnReference('');
+              // Optionally refresh sales returns list here
+            } catch (err) {
+              const { toast } = await import('react-hot-toast');
+              toast.error(err.message || 'Failed to save sales return');
+            }
+          }}
+          onDelete={() => setShowSalesReturnModal(false)}
+          mode={mode}
+          selectedReference={salesReturnReference}
+          onReferenceChange={setSalesReturnReference}
+        >
+          <SalesReturnItemsEditor
+            lineItems={salesReturnLineItems}
+            setLineItems={setSalesReturnLineItems}
+            products={salesReturnProducts}
+            referenceOrderProducts={salesReturnReferenceOrderProducts}
+            reference={salesReturnReference}
+          />
+        </SalesReturnModals>
       </MainLayout>
     </ModalProvider>
   );

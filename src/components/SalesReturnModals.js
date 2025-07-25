@@ -1,6 +1,7 @@
   import React, { useState, useEffect, useMemo, useRef } from "react";
   import SimpleModal from "./SimpleModal";
   import { Icon } from "@iconify/react";
+  import Select, { components } from 'react-select';
 
   export default function SalesReturnModals({
     show,
@@ -17,7 +18,7 @@
   }) {
     const [form, setForm] = useState({
       customer_id: "",
-      warehouse_id: "",
+      store_id: "",
       date: "",
       status: "Pending",
       return_number: "",
@@ -26,7 +27,7 @@
       notes: "",
     });
     const [customers, setCustomers] = useState([]);
-    const [warehouses, setWarehouses] = useState([]);
+    const [stores, setStores] = useState([]);
     const [orders, setOrders] = useState([]);
     const [orderSearch, setOrderSearch] = useState("");
     const [modalError, setModalError] = useState(null);
@@ -36,34 +37,92 @@
     const [customerId, setCustomerId] = useState("");
     const [_, forceUpdate] = useState(0);
     const prevShow = useRef(false);
+    const [referenceOrderItems, setReferenceOrderItems] = useState([]);
 
-    // Fetch customers, warehouses, and recent sales/orders
+    // Fetch customers, stores, and recent sales/orders
     useEffect(() => {
       fetch("/api/customers")
-        .then((res) => res.json())
+        .then(async (res) => {
+          const contentType = res.headers.get("content-type");
+          if (!res.ok || !contentType || !contentType.includes("application/json")) {
+            const text = await res.text();
+            console.error("/api/customers returned non-JSON:", text);
+            setModalError("Failed to fetch customers");
+            return { data: [] };
+          }
+          return res.json();
+        })
         .then(({ data }) => setCustomers(data || []));
-      fetch("/api/warehouses")
-        .then((res) => res.json())
-        .then(({ data }) => setWarehouses(data || []));
+      fetch("/api/stores")
+        .then(async (res) => {
+          const contentType = res.headers.get("content-type");
+          if (!res.ok || !contentType || !contentType.includes("application/json")) {
+            const text = await res.text();
+            console.error("/api/stores returned non-JSON:", text);
+            setModalError("Failed to fetch stores");
+            return { data: [] };
+          }
+          return res.json();
+        })
+        .then(({ data }) => setStores(data || []));
       fetch("/api/orders")
-        .then((res) => res.json())
+        .then(async (res) => {
+          const contentType = res.headers.get("content-type");
+          if (!res.ok || !contentType || !contentType.includes("application/json")) {
+            const text = await res.text();
+            console.error("/api/orders returned non-JSON:", text);
+            setModalError("Failed to fetch orders");
+            return { data: [] };
+          }
+          return res.json();
+        })
         .then(({ data }) => setOrders(data || []));
     }, []);
 
     useEffect(() => {
       if (selectedReference) {
-        fetch(`/api/orders/${selectedReference}`)
-          .then((res) => res.json())
+        fetch(`/api/orders?id=${selectedReference}`)
+          .then(async (res) => {
+            const contentType = res.headers.get("content-type");
+            if (!res.ok || !contentType || !contentType.includes("application/json")) {
+              const text = await res.text();
+              console.error(`/api/orders?id=${selectedReference} returned non-JSON:`, text);
+              setModalError("Failed to fetch order by reference");
+              return { data: null };
+            }
+            return res.json();
+          })
           .then(({ data }) => {
             if (data) {
               setCustomerId(data.customer_id || "");
               setOrderCustomerId(data.customer_id || "");
+              setForm(prev => ({
+                ...prev,
+                store_id: data.store_id || ""
+              }));
               if (!data.customer_id) {
                 setWalkInName(data.customer_name || "");
                 setWalkInPhone(data.customer_phone || "");
               }
             }
           });
+        // Fetch order items for the selected reference
+        fetch(`/api/order-items?order_id=${selectedReference}`)
+          .then(async (res) => {
+            const contentType = res.headers.get("content-type");
+            if (!res.ok || !contentType || !contentType.includes("application/json")) {
+              const text = await res.text();
+              console.error(`/api/order-items?order_id=${selectedReference} returned non-JSON:`, text);
+              setModalError("Failed to fetch order items");
+              return { data: [] };
+            }
+            return res.json();
+          })
+          .then(({ data }) => {
+            setReferenceOrderItems(Array.isArray(data) ? data : []);
+          });
+      } else {
+        setReferenceOrderItems([]);
       }
     }, [selectedReference]);
 
@@ -79,7 +138,7 @@
           }
           setCustomerId(salesReturn.customer_id || "");
           setForm({
-            warehouse_id: salesReturn.warehouse_id || "",
+            store_id: salesReturn.store_id || "",
             date: salesReturn.date || "",
             status: salesReturn.status || "Pending",
             return_number: salesReturn.return_number || "",
@@ -92,7 +151,7 @@
           }
           setCustomerId("");
           setForm({
-            warehouse_id: "",
+            store_id: "",
             date: "",
             status: "Pending",
             return_number: "",
@@ -108,8 +167,17 @@
     // When reference changes, fetch the order and set customer
     useEffect(() => {
       if (selectedReference) {
-        fetch(`/api/orders/${selectedReference}`)
-          .then((res) => res.json())
+        fetch(`/api/orders?id=${selectedReference}`)
+          .then(async (res) => {
+            const contentType = res.headers.get("content-type");
+            if (!res.ok || !contentType || !contentType.includes("application/json")) {
+              const text = await res.text();
+              console.error(`/api/orders?id=${selectedReference} returned non-JSON:`, text);
+              setModalError("Failed to fetch order by ID");
+              return { data: null };
+            }
+            return res.json();
+          })
           .then(({ data }) => {
             if (data) {
               setCustomerId(data.customer_id || "");
@@ -137,12 +205,10 @@
       setForm((prev) => ({ ...prev, [name]: value }));
     };
 
-    useEffect(() => {
-      console.log("useEffect: form.reference changed:", selectedReference);
-    }, [selectedReference]);
+    
 
     // Calculate total from line items
-    const lineItems = children?.props?.items || [];
+    const lineItems = children && children.props && children.props.lineItems ? children.props.lineItems : [];
     const calculatedTotal = lineItems.reduce(
       (sum, item) =>
         sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0),
@@ -164,17 +230,8 @@
     const handleSubmit = (e) => {
       e.preventDefault();
       // Validation
-      const requiredFields = ["warehouse_id", "date", "status"];
-      if (!customerId) {
-        if (!walkInName) {
-          setModalError("Walk In Customer Name is required");
-          return;
-        }
-        if (!walkInPhone) {
-          setModalError("Walk In Customer Phone is required");
-          return;
-        }
-      } else {
+      const requiredFields = ["store_id", "date", "status"];
+      if (customerId) {
         requiredFields.push("customer_id");
       }
       for (const field of requiredFields) {
@@ -217,17 +274,13 @@
         customer_id: customerId,
         total: calculatedTotal,
       };
-      if (!customerId) {
-        returnData.walk_in_name = walkInName;
-        returnData.walk_in_phone = walkInPhone;
-      }
-      if (onSave) onSave(returnData, lineItems);
+      console.log('SalesReturnModals: lineItems before save', lineItems);
+      // No need to set walk_in_name or walk_in_phone for returns
+      if (onSave) onSave(returnData, lineItems.map(({ sales_return_id, ...rest }) => rest));
     };
 
     const isEdit = !!salesReturn;
 
-    // Add log before reference dropdown
-    console.log("Reference dropdown value:", selectedReference);
 
     return (
       <SimpleModal
@@ -242,31 +295,40 @@
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium mb-1">Reference/Original Sale</label>
-              <input
-                type="text"
-                placeholder="Search sale/invoice..."
-                className="w-full border rounded px-3 py-2 mb-1"
-                value={orderSearch}
-                onChange={e => setOrderSearch(e.target.value)}
-                disabled={loading}
+              <Select
+                options={filteredOrders.map((o) => ({
+                  value: String(o.id),
+                  label: `${o.order_number || o.id} - ${o.customer_name || ''}`,
+                  order: o,
+                }))}
+                value={filteredOrders
+                  .filter((o) => String(o.id) === String(selectedReference))
+                  .map((o) => ({
+                    value: String(o.id),
+                    label: `${o.order_number || o.id} - ${o.customer_name || ''}`,
+                    order: o,
+                  }))[0] || null}
+                onChange={option => {
+                  if (option && option.order) {
+                    onReferenceChange(option.value);
+                    setForm(prev => ({
+                      ...prev,
+                      store_id: option.order.store_id || ""
+                    }));
+                  } else {
+                    onReferenceChange("");
+                    setForm(prev => ({
+                      ...prev,
+                      store_id: ""
+                    }));
+                  }
+                }}
+                isClearable
+                isSearchable
+                placeholder="Search or select sale/invoice..."
+                classNamePrefix="react-select"
+                isDisabled={loading}
               />
-              <select
-                name="reference"
-                value={selectedReference}
-                onChange={e => onReferenceChange(String(e.target.value))}
-                className="w-full border rounded px-3 py-2"
-                disabled={loading}
-              >
-                <option value="">Select sale/invoice</option>
-                {filteredOrders.map((o) => {
-                  const idStr = String(o.id);
-                  return (
-                    <option key={idStr} value={idStr}>
-                      {o.order_number || idStr}
-                    </option>
-                  );
-                })}
-              </select>
               {selectedReference && (
                 <a
                   href={`/sales/${selectedReference}`}
@@ -279,75 +341,51 @@
               )}
             </div>
           </div>
+          {/* Show reference order line items if a reference is selected */}
+          {selectedReference && referenceOrderItems.length > 0 && (
+            <div className="my-4">
+              <div className="font-semibold mb-2">Products in Selected Order</div>
+              <table className="min-w-full text-sm border">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 border">Product</th>
+                    <th className="px-4 py-2 border">Quantity</th>
+                    <th className="px-4 py-2 border">Unit Price</th>
+                    <th className="px-4 py-2 border">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {referenceOrderItems.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="px-4 py-2 border">{item.name}</td>
+                      <td className="px-4 py-2 border text-center">{item.quantity}</td>
+                      <td className="px-4 py-2 border text-right">GHS {Number(item.unit_price).toFixed(2)}</td>
+                      <td className="px-4 py-2 border text-right">GHS {Number(item.total).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           {/* Line Items Editor comes right after Reference/Original Sale */}
           {children}
-          {/* Customer fields, now after line items */}
+          {/* Customer field removed: all returns must reference a sale */}
+          {/* Warehouse field remains */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Customer *</label>
-              <input
-                type="text"
-                name="customer_search"
-                placeholder="Search customer..."
-                className="w-full border rounded px-3 py-2 mb-1"
-                onChange={e => {
-                  const val = e.target.value;
-                  setCustomers((prev) => prev.map(c => ({ ...c, _hidden: val && !c.name.toLowerCase().includes(val.toLowerCase()) })));
-                }}
-                disabled={loading || !!selectedReference}
-              />
+              <label className="block text-sm font-medium mb-1">Store Location *</label>
               <select
-                name="customer_id"
-                value={customerId}
-                onChange={e => setCustomerId(e.target.value)}
-                className="w-full border rounded px-3 py-2"
-                required
-                disabled={loading || !!selectedReference}
-              >
-                <option value="">Walk In Customer</option>
-                {customers.filter(c => !c._hidden).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              {/* Walk In Customer fields */}
-              {customerId === "" && (
-                <div className="mt-2 space-y-2">
-                  <input
-                    type="text"
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Walk In Customer Name"
-                    value={walkInName}
-                    onChange={e => setWalkInName(e.target.value)}
-                    disabled={loading || !!selectedReference}
-                  />
-                  <input
-                    type="text"
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Walk In Customer Phone"
-                    value={walkInPhone}
-                    onChange={e => setWalkInPhone(e.target.value)}
-                    disabled={loading || !!selectedReference}
-                  />
-                </div>
-              )}
-            </div>
-            {/* Warehouse field remains */}
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Warehouse *</label>
-              <select
-                name="warehouse_id"
-                value={form.warehouse_id}
+                name="store_id"
+                value={form.store_id}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 required
                 disabled={loading}
               >
-                <option value="">Select warehouse</option>
-                {warehouses.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
+                <option value="">Select store location</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
                   </option>
                 ))}
               </select>

@@ -14,17 +14,21 @@ const SessionDuration = ({ mode, user, sessionRefreshKey }) => {
         const res = await fetch("/api/registers");
         const data = await res.json();
         if (data.success && data.data && data.data.length > 0) {
-          setRegisters(data.data);
-          // Try to load last used register from localStorage
-          const last = localStorage.getItem("pos_selected_register");
-          const found = data.data.find((r) => r.id === last);
-          setSelectedRegister(found ? found.id : data.data[0].id);
+          let filtered = data.data;
+          if (user?.role === 'cashier' && user?.store_id) {
+            filtered = data.data.filter(r => r.store_id === user.store_id);
+          }
+          setRegisters(filtered);
+          // Auto-select the register for the cashier's store
+          if (filtered.length > 0) {
+            setSelectedRegister(filtered[0].id);
+          }
         }
       } catch (err) {
         setRegisters([]);
       }
     })();
-  }, []);
+  }, [user]);
 
   // Persist selected register
   useEffect(() => {
@@ -81,7 +85,8 @@ const SessionDuration = ({ mode, user, sessionRefreshKey }) => {
         }`}
         value={selectedRegister || ""}
         onChange={(e) => setSelectedRegister(e.target.value)}
-        style={{ minWidth: 120 }}
+        style={{ minWidth: 180 }}
+        disabled={user?.role === 'cashier'}
       >
         {registers.map((r) => (
           <option key={r.id} value={r.id}>

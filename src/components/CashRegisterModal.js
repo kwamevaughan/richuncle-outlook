@@ -35,6 +35,20 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportType, setExportType] = useState('products');
 
+  // Permissions check and filter registers for cashiers
+  const canOperate = user && allowedRoles.includes(user.role);
+  let filteredRegisters = registers;
+  if (user?.role === 'cashier' && user?.store_id) {
+    filteredRegisters = registers.filter(r => r.store_id === user.store_id);
+  }
+
+  // Auto-select the register for the cashier's store
+  useEffect(() => {
+    if (user?.role === 'cashier' && user?.store_id && filteredRegisters.length > 0) {
+      setSelectedRegister(filteredRegisters[0].id);
+    }
+  }, [user, filteredRegisters]);
+
   // Fetch current open session for selected register
   useEffect(() => {
     console.log('[CashRegisterModal] selectedRegister changed:', selectedRegister);
@@ -208,9 +222,6 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
       }
     })();
   }, [session, selectedRegister, actionLoading]);
-
-  // Permissions check
-  const canOperate = user && allowedRoles.includes(user.role);
 
   // Timer for live session duration
   const [now, setNow] = useState(Date.now());
@@ -522,10 +533,10 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
             />
           )}
           <RegisterSelector
-            registers={registers}
+            registers={filteredRegisters}
             selectedRegister={selectedRegister}
             setSelectedRegister={setSelectedRegister}
-            disabled={registers.length === 0}
+            disabled={user?.role === 'cashier' || filteredRegisters.length === 0}
           />
           {error && <div className="text-red-600">{error}</div>}
           {loading ? (

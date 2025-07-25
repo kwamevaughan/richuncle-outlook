@@ -3,7 +3,7 @@ import supabaseAdmin from "@/lib/supabaseAdmin";
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
-      const { register_id, session_id } = req.query;
+      const { register_id, session_id, id } = req.query;
       let query = supabaseAdmin
         .from("orders")
         .select(`
@@ -13,27 +13,54 @@ export default async function handler(req, res) {
             full_name,
             email
           )
-        `)
-        .order("created_at", { ascending: false });
-      if (register_id) query = query.eq("register_id", register_id);
-      if (session_id) query = query.eq("session_id", session_id);
+        `);
+      if (id) {
+        query = query.eq("id", id).single();
+      } else {
+        query = query.order("created_at", { ascending: false });
+        if (register_id) query = query.eq("register_id", register_id);
+        if (session_id) query = query.eq("session_id", session_id);
+      }
       const { data, error } = await query;
 
       if (error) {
         throw error;
       }
 
-      // Transform the data to include payment receiver name
-      const transformedData = data?.map(order => ({
-        ...order,
-        payment_receiver_name: order.payment_receiver_user?.full_name || order.payment_receiver_user?.email || 'Unknown',
-        payment_receiver_user: undefined // Remove the nested object
-      })) || [];
+      if (id) {
+        // Single order fetch
+        const order = data;
+        const transformedOrder = order
+          ? {
+              ...order,
+              payment_receiver_name:
+                order.payment_receiver_user?.full_name ||
+                order.payment_receiver_user?.email ||
+                "Unknown",
+              payment_receiver_user: undefined,
+            }
+          : null;
+        return res.status(200).json({
+          success: true,
+          data: transformedOrder,
+        });
+      } else {
+        // Multiple orders fetch
+        const transformedData =
+          data?.map((order) => ({
+            ...order,
+            payment_receiver_name:
+              order.payment_receiver_user?.full_name ||
+              order.payment_receiver_user?.email ||
+              "Unknown",
+            payment_receiver_user: undefined, // Remove the nested object
+          })) || [];
 
-      return res.status(200).json({
-        success: true,
-        data: transformedData
-      });
+        return res.status(200).json({
+          success: true,
+          data: transformedData,
+        });
+      }
     } catch (error) {
       console.error("Orders API error:", error);
       return res.status(500).json({ error: "Internal server error" });

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
+import Select from 'react-select';
 
 const REASONS = [
   "Damaged",
@@ -23,21 +24,71 @@ export default function SalesReturnItemsEditor({
     setLocalItems(lineItems);
   }, [lineItems]);
 
+  // Remove debug logs for localItems and referenceOrderProducts
+
+  // Auto-populate line items when reference changes and there are no line items
+  useEffect(() => {
+    if (reference && referenceOrderProducts && referenceOrderProducts.length > 0 && localItems.length === 0) {
+      const unmatchedProductIds = [];
+      const autoItems = referenceOrderProducts.map(rp => {
+        let product = null;
+        if (products && products.length > 0) {
+          product = products.find(p => String(p.id) === String(rp.product_id) || String(p.old_id) === String(rp.product_id));
+        }
+        if (!product) {
+          unmatchedProductIds.push(rp.product_id);
+          return null;
+        }
+        return {
+          product_id: product.id, // Always UUID
+          quantity: 1,
+          unit_price: rp.unit_price ?? rp.price ?? 0,
+          total: rp.unit_price ?? rp.price ?? 0,
+          reason: ""
+        };
+      }).filter(item => !!item);
+      setLocalItems(autoItems);
+      if (setLineItems) setLineItems(autoItems);
+      // Optionally, show a warning in the UI if unmatchedProductIds.length > 0
+      // Example: setUnmatchedWarning(unmatchedProductIds)
+    }
+  }, [reference, referenceOrderProducts, products]);
+
   // Only show products from referenced order if reference is set
   const availableProducts = reference && referenceOrderProducts && referenceOrderProducts.length > 0
-    ? products.filter(p => referenceOrderProducts.some(rp => rp.product_id === p.id))
+    ? referenceOrderProducts
+        .filter(rp => typeof rp.product_id === 'string' && rp.product_id.length === 36)
+        .map(rp => ({
+          id: rp.product_id, // Only use UUID
+          name: rp.name || `Product ${rp.product_id}`,
+          ...rp
+        }))
     : products;
 
   const handleItemChange = (idx, field, value) => {
-    const updated = localItems.map((item, i) =>
+    let updated = localItems.map((item, i) =>
       i === idx ? { ...item, [field]: value } : item
     );
+    // If product_id is changed and reference is set, auto-fill unit_price
+    if (field === "product_id" && reference && value) {
+      const refProd = referenceOrderProducts.find(rp => String(rp.product_id) === String(value));
+      if (refProd) {
+        updated[idx].unit_price = refProd.unit_price ?? refProd.price ?? 0;
+      }
+    }
     setLocalItems(updated);
     if (setLineItems) setLineItems(updated);
   };
 
   const handleAddItem = () => {
-    const newItem = { product_id: "", quantity: 1, unit_price: 0, total: 0, reason: "" };
+    // Default to the first available product's UUID
+    const defaultProductId = availableProducts.length > 0 ? availableProducts[0].product_id : "";
+    let defaultUnitPrice = 0;
+    if (defaultProductId) {
+      const prod = availableProducts.find(p => p.product_id === defaultProductId);
+      defaultUnitPrice = prod && prod.unit_price !== undefined ? prod.unit_price : (prod && prod.price !== undefined ? prod.price : 0);
+    }
+    const newItem = { product_id: defaultProductId, quantity: 1, unit_price: defaultUnitPrice, total: defaultUnitPrice, reason: "" };
     const updated = [...localItems, newItem];
     setLocalItems(updated);
     if (setLineItems) setLineItems(updated);
@@ -53,14 +104,16 @@ export default function SalesReturnItemsEditor({
     <div className="space-y-2">
       <div className="flex justify-between items-center mb-2">
         <span className="font-semibold">Line Items</span>
-        <button
-          type="button"
-          className="px-2 py-1 bg-green-600 text-white rounded text-xs flex items-center gap-1"
-          onClick={handleAddItem}
-          disabled={props.disabled || props.disableAdd}
-        >
-          <Icon icon="mdi:plus" className="w-4 h-4" /> Add Item
-        </button>
+        {reference && (
+          <button
+            type="button"
+            className="px-2 py-1 bg-green-600 text-white rounded text-xs flex items-center gap-1"
+            onClick={handleAddItem}
+            disabled={props.disabled || props.disableAdd}
+          >
+            <Icon icon="mdi:plus" className="w-4 h-4" /> Add Item
+          </button>
+        )}
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-xs border">
@@ -68,7 +121,6 @@ export default function SalesReturnItemsEditor({
             <tr className="bg-gray-100">
               <th className="px-2 py-1">Product</th>
               <th className="px-2 py-1">Qty</th>
-              <th className="px-2 py-1">Unit Price</th>
               <th className="px-2 py-1">Total</th>
               <th className="px-2 py-1">Reason for Return</th>
               <th className="px-2 py-1"></th>
@@ -81,20 +133,18 @@ export default function SalesReturnItemsEditor({
               return (
                 <tr key={idx}>
                   <td className="px-2 py-1">
-                    <select
-                      value={item.product_id || ""}
-                      onChange={(e) => handleItemChange(idx, "product_id", e.target.value)}
-                      className="border rounded px-2 py-1"
-                      required
-                      disabled={!!reference}
-                    >
-                      <option value="">Select Product</option>
-                      {availableProducts.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Select
+                      value={availableProducts.find(p => p.product_id === item.product_id)}
+                      onChange={option => handleItemChange(idx, 'product_id', option ? option.product_id : "")}
+                      options={availableProducts}
+                      getOptionLabel={p => p.name}
+                      getOptionValue={p => p.product_id}
+                      isSearchable
+                      placeholder="Select product..."
+                      classNamePrefix="react-select"
+                      menuPortalTarget={document.body}
+                      styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                    />
                   </td>
                   <td className="px-2 py-1">
                     <input
@@ -103,17 +153,6 @@ export default function SalesReturnItemsEditor({
                       value={item.quantity}
                       onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
                       className="border rounded px-2 py-1 w-16"
-                      disabled={props.disabled}
-                    />
-                  </td>
-                  <td className="px-2 py-1">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={item.unit_price}
-                      onChange={(e) => handleItemChange(idx, "unit_price", e.target.value)}
-                      className="border rounded px-2 py-1 w-20"
                       disabled={props.disabled}
                     />
                   </td>
