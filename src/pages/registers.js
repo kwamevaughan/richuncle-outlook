@@ -10,6 +10,7 @@ import ExportModal from "@/components/export/ExportModal";
 import { GenericTable } from "@/components/GenericTable";
 import useLogout from "../hooks/useLogout";
 import ZReportView from "@/components/ZReportView";
+import printZReport from "@/components/printZReport";
 
 const PAGE_SIZE = 10;
 
@@ -38,6 +39,7 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
   const [zReportLoading, setZReportLoading] = useState(false);
   const [zReportError, setZReportError] = useState("");
   const [zReportData, setZReportData] = useState(null);
+  const [showZReportPreview, setShowZReportPreview] = useState(false);
 
   // Only allow admin/manager
   useEffect(() => {
@@ -577,8 +579,57 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
           ) : zReportError ? (
             <div className="text-center py-12 text-red-500">{zReportError}</div>
           ) : (
-            <ZReportView zReport={zReportData} showPrintButton={true} onPrint={() => window.print()} />
+            <>
+              <ZReportView zReport={zReportData} showPrintButton={false} />
+              <div className="flex gap-4 mt-6">
+                <button
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+                  onClick={() => printZReport(zReportData)}
+                >
+                  <Icon icon="material-symbols:print" className="w-5 h-5" /> Print
+                </button>
+                <button
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+                  onClick={() => setShowZReportPreview(true)}
+                >
+                  <Icon icon="mdi:eye-outline" className="w-5 h-5" /> Print Preview
+                </button>
+              </div>
+            </>
           )}
+        </SimpleModal>
+      )}
+
+      {/* Z-Report Print Preview Modal */}
+      {showZReportPreview && (
+        <SimpleModal
+          isOpen={showZReportPreview}
+          onClose={() => setShowZReportPreview(false)}
+          title="Z-Report Print Preview"
+          width="max-w-3xl"
+        >
+          <div className="bg-white p-6 rounded-xl shadow max-w-2xl mx-auto">
+            {/* Render the print HTML as innerHTML for preview */}
+            <div
+              className="border border-gray-200 rounded overflow-auto"
+              style={{ background: '#fff' }}
+              dangerouslySetInnerHTML={{ __html: printZReport.__previewHtml ? printZReport.__previewHtml(zReportData) : printZReport(zReportData, true) }}
+            />
+            <div className="flex gap-4 mt-6">
+              <button
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+                onClick={() => printZReport(zReportData)}
+              >
+                <Icon icon="material-symbols:print" className="w-5 h-5" /> Print
+              </button>
+              <button
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+                onClick={() => setShowZReportPreview(false)}
+              >
+                <Icon icon="mdi:close" className="w-5 h-5" /> Close Preview
+              </button>
+            </div>
+          </div>
         </SimpleModal>
       )}
     </MainLayout>
