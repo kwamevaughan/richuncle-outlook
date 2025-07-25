@@ -7,6 +7,7 @@ import { GenericTable } from "../components/GenericTable";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import SalesReturnItemsEditor from "../components/SalesReturnItemsEditor";
+import toast from 'react-hot-toast';
 
 export default function SalesReturnPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -21,91 +22,22 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
     fetchSalesReturns,
   } = useSalesReturns();
 
-  const [showModal, setShowModal] = useState(false);
-  const [editItem, setEditItem] = useState(null);
-  const [modalLoading, setModalLoading] = useState(false);
-  const [modalError, setModalError] = useState(null);
-  const [lineItems, setLineItems] = useState([]);
+  useEffect(() => {
+    fetchSalesReturns();
+  }, [fetchSalesReturns]);
+
   const [expandedRows, setExpandedRows] = useState([]);
   const [rowLineItems, setRowLineItems] = useState({});
   const [selectedReference, setSelectedReference] = useState("");
   const [products, setProducts] = useState([]);
   const [referenceOrderProducts, setReferenceOrderProducts] = useState([]);
-
-  const openAddModal = () => {
-    setEditItem(null);
-    setLineItems([]);
-    setSelectedReference("");
-    setShowModal(true);
-    setModalError(null);
-  };
-
-  const openEditModal = (item) => {
-    setEditItem(item);
-    setSelectedReference(item.reference || "");
-    fetch(`/api/sales-return-items?sales_return_id=${item.id}`)
-      .then((res) => res.json())
-      .then(({ data }) => setLineItems(data || []));
-    setShowModal(true);
-    setModalError(null);
-  };
-  const closeModal = () => {
-    setShowModal(false);
-    setEditItem(null);
-    setModalError(null);
-    setLineItems([]);
-  };
-
-  const handleSave = async (values, items) => {
-    setModalLoading(true);
-    setModalError(null);
-    try {
-      let ret;
-      if (editItem) {
-        ret = await updateSalesReturn(editItem.id, values);
-      } else {
-        ret = await addSalesReturn(values);
-      }
-      // Save line items
-      await fetch("/api/sales-return-items", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          (items || lineItems).map((item) => ({
-            ...item,
-            sales_return_id: ret.id || ret.data?.id,
-            total: (Number(item.quantity) || 0) * (Number(item.unit_price) || 0),
-          }))
-        ),
-      });
-      closeModal();
-    } catch (err) {
-      setModalError(err.message || "Failed to save sales return");
-    } finally {
-      setModalLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    setModalLoading(true);
-    setModalError(null);
-    try {
-      await fetch("/api/sales-return-items", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sales_return_id: id }),
-      });
-      await deleteSalesReturn(id);
-      closeModal();
-    } catch (err) {
-      setModalError(err.message || "Failed to delete sales return");
-    } finally {
-      setModalLoading(false);
-    }
-  };
+  const [viewItem, setViewItem] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [rowReferenceOrderProducts, setRowReferenceOrderProducts] = useState({});
+  const [orders, setOrders] = useState([]);
 
   // Expand/collapse handler
-  const handleExpandRow = async (returnId) => {
+  const handleExpandRow = async (returnId, reference) => {
     setExpandedRows((prev) =>
       prev.includes(returnId)
         ? prev.filter((id) => id !== returnId)
@@ -116,6 +48,11 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
       const { data } = await res.json();
       setRowLineItems((prev) => ({ ...prev, [returnId]: data || [] }));
     }
+    if (reference && !rowReferenceOrderProducts[returnId]) {
+      const res = await fetch(`/api/order-items?order_id=${reference}`);
+      const { data } = await res.json();
+      setRowReferenceOrderProducts((prev) => ({ ...prev, [returnId]: data || [] }));
+    }
   };
 
   // Fetch and autopopulate line items when reference changes
@@ -125,27 +62,27 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
         .then((res) => res.json())
         .then(({ data }) => {
           if (Array.isArray(data) && products.length > 0) {
-            setLineItems(
-              data
-                .map((item) => {
-                  // Find product by UUID or old_id
-                  const product = products.find(
-                    (p) =>
-                      String(p.id) === String(item.product_id) ||
-                      (p.old_id && String(p.old_id) === String(item.product_id))
-                  );
-                  if (!product) return null; // skip if not found
-                  return {
-                    product_id: product.id, // always UUID
-                    quantity: item.quantity,
-                    unit_price: item.unit_price,
-                    total: (Number(item.quantity) || 0) * (Number(item.unit_price) || 0),
-                    reason: "",
-                    reason_text: "",
-                  };
-                })
-                .filter(Boolean)
-            );
+            // setLineItems( // This line is removed as per the edit hint
+            //   data
+            //     .map((item) => {
+            //       // Find product by UUID or old_id
+            //       const product = products.find(
+            //         (p) =>
+            //           String(p.id) === String(item.product_id) ||
+            //           (p.old_id && String(p.old_id) === String(item.product_id))
+            //       );
+            //       if (!product) return null; // skip if not found
+            //       return {
+            //         product_id: product.id, // always UUID
+            //         quantity: item.quantity,
+            //         unit_price: item.unit_price,
+            //         total: (Number(item.quantity) || 0) * (Number(item.unit_price) || 0),
+            //         reason: "",
+            //         reason_text: "",
+            //       };
+            //     })
+            //     .filter(Boolean)
+            // );
           }
         });
     }
@@ -174,6 +111,41 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
       setReferenceOrderProducts([]);
     }
   }, [selectedReference]);
+
+  useEffect(() => {
+    fetch('/api/orders')
+      .then(res => res.json())
+      .then(({ data }) => setOrders(data || []));
+  }, []);
+
+  const handleApprove = async (row) => {
+    try {
+      await updateSalesReturn(row.id, { status: 'Returned' });
+      toast.success('Sales return approved!');
+      fetchSalesReturns();
+    } catch (err) {
+      toast.error('Failed to approve sales return');
+    }
+  };
+  const handleCancel = async (row) => {
+    try {
+      await updateSalesReturn(row.id, { status: 'Cancelled' });
+      toast.success('Sales return cancelled!');
+      fetchSalesReturns();
+    } catch (err) {
+      toast.error('Failed to cancel sales return');
+    }
+  };
+
+  const handleView = async (row) => {
+    setSelectedReference(row.reference || "");
+    // Fetch line items for this sales return
+    const res = await fetch(`/api/sales-return-items?sales_return_id=${row.id}`);
+    const { data } = await res.json();
+    setRowLineItems((prev) => ({ ...prev, [row.id]: data || [] }));
+    setViewItem(row);
+    setShowViewModal(true);
+  };
 
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
@@ -217,7 +189,7 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                     accessor: "expand",
                     render: (row) => (
                       <button
-                        onClick={() => handleExpandRow(row.id)}
+                        onClick={() => handleExpandRow(row.id, row.reference)}
                         className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                         title={
                           expandedRows.includes(row.id) ? "Collapse" : "Expand"
@@ -243,6 +215,7 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                     header: "Customer",
                     accessor: "customer_name",
                     sortable: true,
+                    render: row => row.customer_name || "Walk In Customer"
                   },
                   { header: "Date", accessor: "date", sortable: true },
                   { header: "Status", accessor: "status", sortable: true },
@@ -252,19 +225,45 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                     sortable: true,
                     render: (row) => `GHS ${row.total}`,
                   },
+                  {
+                    header: 'Actions',
+                    accessor: 'actions',
+                    render: (row) => (
+                      <div className="flex gap-2">
+                        {row.status === 'Pending' && (
+                          <>
+                            <button
+                              className="px-2 py-1 bg-green-600 text-white rounded text-xs"
+                              onClick={() => handleApprove(row)}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              className="px-2 py-1 bg-red-600 text-white rounded text-xs"
+                              onClick={() => handleCancel(row)}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        )}
+                        <button
+                          className="px-2 py-1 bg-blue-600 text-white rounded text-xs"
+                          onClick={() => handleView(row)}
+                        >
+                          View
+                        </button>
+                      </div>
+                    ),
+                  },
                 ]}
-                onEdit={openEditModal}
-                onAddNew={openAddModal}
-                addNewLabel="Add Sales Return"
-                title="Sales Returns"
-                emptyMessage="No sales returns found"
+                // Remove onEdit, onAddNew, addNewLabel, title, emptyMessage, customRowRender for add/edit
                 customRowRender={(row, index, defaultRow) => (
                   <>
                     {defaultRow}
                     {expandedRows.includes(row.id) && (
                       <tr className="bg-gray-50 dark:bg-gray-800">
                         <td colSpan={8} className="p-4">
-                          <div className="font-semibold mb-2">Line Items</div>
+                          {/* <div className="font-semibold mb-2">Line Items</div> */}
                           <SalesReturnItemsEditor
                             lineItems={rowLineItems[row.id] || []}
                             setLineItems={(items) =>
@@ -274,8 +273,8 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                               }))
                             }
                             products={products}
-                            referenceOrderProducts={referenceOrderProducts}
-                            reference={selectedReference}
+                            referenceOrderProducts={rowReferenceOrderProducts[row.id] || []}
+                            reference={row.reference}
                           />
                         </td>
                       </tr>
@@ -284,26 +283,32 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                 )}
               />
             </div>
-            <SalesReturnModals
-              show={showModal}
-              onClose={closeModal}
-              onSave={handleSave}
-              onDelete={editItem ? handleDelete : undefined}
-              salesReturn={editItem}
-              mode={mode}
-              loading={modalLoading}
-              error={modalError}
-              selectedReference={selectedReference}
-              onReferenceChange={setSelectedReference}
-            >
-              <SalesReturnItemsEditor
-                lineItems={lineItems}
-                setLineItems={setLineItems}
-                products={products}
-                referenceOrderProducts={referenceOrderProducts}
-                reference={selectedReference}
-              />
-            </SalesReturnModals>
+            {showViewModal && viewItem && (
+              <SalesReturnModals
+                show={showViewModal}
+                onClose={() => setShowViewModal(false)}
+                salesReturn={viewItem}
+                mode={mode}
+                selectedReference={selectedReference}
+                onReferenceChange={setSelectedReference}
+                orders={orders}
+                // Pass any other required props
+              >
+                <SalesReturnItemsEditor
+                  lineItems={rowLineItems[viewItem.id] || []}
+                  setLineItems={(items) =>
+                    setRowLineItems((prev) => ({
+                      ...prev,
+                      [viewItem.id]: items,
+                    }))
+                  }
+                  products={products}
+                  referenceOrderProducts={referenceOrderProducts}
+                  reference={selectedReference}
+                />
+              </SalesReturnModals>
+            )}
+            {/* Remove SalesReturnModals */}
           </div>
         </div>
       </div>
