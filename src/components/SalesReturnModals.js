@@ -374,21 +374,14 @@
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium mb-1">Store Location *</label>
-              <select
-                name="store_id"
-                value={form.store_id}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-                required
-                disabled={loading}
-              >
-                <option value="">Select store location</option>
-                {stores.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="text"
+                value={stores.find(s => s.id === form.store_id)?.name || ''}
+                readOnly
+                className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
+                disabled
+                placeholder="Store location"
+              />
             </div>
           </div>
           <div className="flex flex-col md:flex-row gap-4">
