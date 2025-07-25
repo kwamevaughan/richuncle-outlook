@@ -27,11 +27,16 @@ function groupByHour(items) {
     loss: 0,
   }));
   const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
+  let referenceDay = today.toISOString().slice(0, 10);
+  const timestamps = items.map(item => item.orders?.timestamp).filter(Boolean);
+  // If no items for today, use the most recent day in the data
+  if (!timestamps.some(ts => ts && ts.slice(0, 10) === referenceDay) && timestamps.length > 0) {
+    referenceDay = timestamps.sort().reverse()[0].slice(0, 10);
+  }
   items.forEach(item => {
     if (!item.orders || !item.orders.timestamp) return;
     const date = new Date(item.orders.timestamp);
-    if (date.toISOString().slice(0, 10) === todayStr) {
+    if (date.toISOString().slice(0, 10) === referenceDay) {
       const hour = date.getHours();
       const revenue = Number(item.price) * Number(item.quantity);
       const cost = Number(item.cost_price || 0) * Number(item.quantity);
@@ -146,7 +151,7 @@ export default function ProfitLossChart({ onRangeChange, selectedStore }) {
       }
     }
     fetchData();
-  }, [selectedRange]);
+  }, [selectedRange, selectedStore]);
 
   return (
     <div className="">

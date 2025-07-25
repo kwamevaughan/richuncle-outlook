@@ -113,7 +113,7 @@ export default function SalesStaticsCard({ selectedStore }) {
       }
     }
     fetchData();
-  }, [year]);
+  }, [year, selectedStore]);
 
   return (
     <div className="">

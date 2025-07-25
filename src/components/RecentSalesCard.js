@@ -85,7 +85,7 @@ export default function RecentSalesCard({ selectedStore }) {
       }
     }
     fetchSales();
-  }, [range]);
+  }, [range, selectedStore]);
 
   const statusOptions = [
     "Processing",

@@ -26,7 +26,7 @@ const HrHeader = ({
   const [addNewDropdownOpen, setAddNewDropdownOpen] = useState(false);
   const addNewDropdownRef = useRef(null);
   const [stores, setStores] = useState([]);
-  const [selectedStore, setSelectedStore] = useState(null);
+  const [selectedStore, setSelectedStore] = useState("");
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -74,8 +74,11 @@ const HrHeader = ({
           setStores(data.data);
           // Try to load last used store from localStorage
           const last = localStorage.getItem('selected_store_id');
-          const found = data.data.find(s => s.id === last);
-          setSelectedStore(found ? found.id : data.data[0].id);
+          if (last && data.data.find(s => s.id === last)) {
+            setSelectedStore(last);
+          } else {
+            setSelectedStore(""); // Default to All Stores
+          }
         }
       } catch (err) {
         setStores([]);

@@ -930,7 +930,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block mb-1 font-medium">Price (in GHS)<span className="text-red-500">*</span></label>
+                  <label className="block mb-1 font-medium">Selling Price (in GHS)<span className="text-red-500">*</span></label>
                   <input type="number" className="w-full border rounded px-3 py-2" value={price} onChange={e => setPrice(e.target.value)} disabled={loading} placeholder="Price" />
                 </div>
                 <div>
