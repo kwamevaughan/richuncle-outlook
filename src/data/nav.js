@@ -193,7 +193,7 @@ export const sidebarNav = [
     ],
   },
   {
-    category: "Peoples",
+    category: "Contacts",
     icon: "mdi:account-group-outline",
     items: [
       {
@@ -205,16 +205,6 @@ export const sidebarNav = [
         href: "/suppliers",
         icon: "mdi:truck-outline",
         label: "Suppliers",
-      },
-      {
-        href: "/stores",
-        icon: "mdi:store-outline",
-        label: "Stores",
-      },
-      {
-        href: "/warehouses",
-        icon: "material-symbols-light:warehouse-outline",
-        label: "Warehouses",
       },
     ],
   },
@@ -362,92 +352,93 @@ export const sidebarNav = [
         icon: "mdi:shield-account-outline",
         label: "Roles & Permissions",
       },
+    ],
+  },
+  {
+    category: "Settings",
+    icon: "solar:settings-linear",
+    items: [
       {
-        href: "/delete-account-request",
-        icon: "mdi:account-remove-outline",
-        label: "Delete Account Request",
+        href: "/general-settings",
+        icon: "mdi:cog-outline",
+        label: "General Settings",
+        subItems: [
+          {
+            href: "/general-settings",
+            icon: "mdi:cog-outline",
+            label: "General Settings",
+          },
+          {
+            href: "/profile",
+            icon: "mdi:account-outline",
+            label: "Profile",
+          },
+          {
+            href: "/security",
+            icon: "mdi:shield-outline",
+            label: "Security",
+          },
+          {
+            href: "/notifications",
+            icon: "mdi:bell-outline",
+            label: "Notifications",
+          },
+          {
+            href: "/connected-apps",
+            icon: "mdi:link-variant-outline",
+            label: "Connected Apps",
+          },
+        ],
+      },
+      {
+        href: "/app-settings",
+        icon: "mdi:cellphone-cog-outline",
+        label: "App Settings",
+        subItems: [
+          {
+            href: "/app-settings",
+            icon: "mdi:cellphone-cog-outline",
+            label: "App Settings",
+          },
+          {
+            href: "/printer",
+            icon: "mdi:printer-outline",
+            label: "Printer",
+          },
+          {
+            href: "/pos",
+            icon: "mdi:point-of-sale-outline",
+            label: "POS",
+          },
+        ],
+      },
+      {
+        href: "/business-locations",
+        icon: "mdi:map-marker-multiple",
+        label: "Business Locations",
+      },
+      {
+        href: "/website-settings",
+        icon: "mdi:web-outline",
+        label: "Website Settings",
+      },
+      {
+        href: "/system-settings",
+        icon: "mdi:desktop-classic-outline",
+        label: "System Settings",
+      },
+      {
+        href: "/financial-settings",
+        icon: "mdi:cash-register-outline",
+        label: "Financial Settings",
+      },
+      {
+        href: "/other-settings",
+        icon: "mdi:dots-horizontal",
+        label: "Other Settings",
       },
     ],
   },
-  // {
-  //   category: "Settings",
-  //   items: [
-  //     {
-  //       href: "/general-settings",
-  //       icon: "mdi:cog-outline",
-  //       label: "General Settings",
-  //       subItems: [
-  //         {
-  //           href: "/general-settings",
-  //           icon: "mdi:cog-outline",
-  //           label: "General Settings",
-  //         },
-  //         {
-  //           href: "/profile",
-  //           icon: "mdi:account-outline",
-  //           label: "Profile",
-  //         },
-  //         {
-  //           href: "/security",
-  //           icon: "mdi:shield-outline",
-  //           label: "Security",
-  //         },
-  //         {
-  //           href: "/notifications",
-  //           icon: "mdi:bell-outline",
-  //           label: "Notifications",
-  //         },
-  //         {
-  //           href: "/connected-apps",
-  //           icon: "mdi:link-variant-outline",
-  //           label: "Connected Apps",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       href: "/app-settings",
-  //       icon: "mdi:cellphone-cog-outline",
-  //       label: "App Settings",
-  //       subItems: [
-  //         {
-  //           href: "/app-settings",
-  //           icon: "mdi:cellphone-cog-outline",
-  //           label: "App Settings",
-  //         },
-  //         {
-  //           href: "/printer",
-  //           icon: "mdi:printer-outline",
-  //           label: "Printer",
-  //         },
-  //         {
-  //           href: "/pos",
-  //           icon: "mdi:point-of-sale-outline",
-  //           label: "POS",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       href: "/website-settings",
-  //       icon: "mdi:web-outline",
-  //       label: "Website Settings",
-  //     },
-  //     {
-  //       href: "/system-settings",
-  //       icon: "mdi:desktop-classic-outline",
-  //       label: "System Settings",
-  //     },
-  //     {
-  //       href: "/financial-settings",
-  //       icon: "mdi:cash-register-outline",
-  //       label: "Financial Settings",
-  //     },
-  //     {
-  //       href: "/other-settings",
-  //       icon: "mdi:dots-horizontal",
-  //       label: "Other Settings",
-  //     },
-  //   ],
-  // },
 ];
 
 // Filter navigation for freelancers

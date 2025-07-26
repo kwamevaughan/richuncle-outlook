@@ -17,10 +17,6 @@ export const supabaseServer = (req, res) => {
     cookies: {
       get(name) {
         const cookieValue = req?.cookies ? req.cookies[name] : undefined;
-        console.log(
-          `[supabaseServer] Server-side cookie ${name}:`,
-          cookieValue ? "Found" : "Not found"
-        );
         return cookieValue;
       },
       set(name, value, options) {

@@ -193,7 +193,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
   const tableActions = [
     {
       label: "Edit",
-      icon: "mdi:pencil",
+      icon: "cuida:edit-outline",
       onClick: (row) => openEditModal(row),
     },
     {
@@ -209,7 +209,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
     },
     {
       label: "Delete",
-      icon: "mdi:delete",
+      icon: "mynaui:trash",
       onClick: (row) => openDeleteModal(row),
       className: "text-red-600 hover:text-red-800",
     },

@@ -10,6 +10,7 @@ import { format, parseISO, isWithinInterval } from 'date-fns';
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import ReactDOM from 'react-dom';
+import TooltipIconButton from "./TooltipIconButton";
 
 // Enhanced useTable hook
 function useTable(data, initialPageSize = 10) {
@@ -259,34 +260,34 @@ export function GenericTable({
             const label = typeof action.label === 'function' ? action.label(row) : action.label;
             const icon = typeof action.icon === 'function' ? action.icon(row) : action.icon;
             return (
-              <button
+              <TooltipIconButton
                 key={label || i}
+                icon={icon || 'mdi:help'}
+                label={label || ''}
                 onClick={() => action.onClick(row)}
-                className={`p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 transition-colors ${action.className || ''}`}
-                title={label || ''}
-              >
-                <Icon icon={icon || 'mdi:help'} className="w-4 h-4" />
-              </button>
+                mode="light"
+                className={`${action.className || ''}`}
+              />
             );
           })}
           {/* Edit/Delete */}
           {onEdit && (
-            <button
+            <TooltipIconButton
+              icon="cuida:edit-outline"
+              label="Edit"
               onClick={() => onEdit(row)}
-              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 transition-colors"
-              title="Edit"
-            >
-              <Icon icon="cuida:edit-outline" className="w-4 h-4" />
-            </button>
+              mode="light"
+              className="bg-blue-50 text-blue-600 text-xs"
+            />
           )}
           {onDelete && (
-            <button
+            <TooltipIconButton
+              icon="mynaui:trash"
+              label="Delete"
               onClick={() => onDelete(row)}
-              className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-colors"
-              title="Delete"
-            >
-              <Icon icon="mynaui:trash" className="w-4 h-4" />
-            </button>
+              mode="light"
+              className="bg-red-50 text-red-600 text-xs"
+            />
           )}
         </div>
       </td>

@@ -56,10 +56,11 @@ const HrSidebar = ({
   };
 
   const toggleItem = (href) => {
-    setExpandedItems((prev) => ({
-      ...prev,
-      [href]: !prev[href],
-    }));
+    setExpandedItems((prev) => {
+      const isExpanding = !prev[href];
+      // Collapse all, then expand only the clicked one if expanding
+      return isExpanding ? { [href]: true } : {};
+    });
   };
 
   const setActiveItemRef = useCallback((element) => {
@@ -175,7 +176,7 @@ const HrSidebar = ({
               .map((item) => (
                 <div
                   key={item.href}
-                  className={`flex items-center gap-2 px-2 mt-4 pt-4 pb-4 mb-2 rounded-lg font-bold text-blue-900 text-sm tracking-wide cursor-pointer transition-all duration-300 hover:bg-orange-50 ${
+                  className={`flex items-center gap-2 px-2 mt-4 pt-4 pb-4 mb-2 rounded-lg font-bold text-gray-500 text-sm tracking-wide cursor-pointer transition-all duration-300 hover:bg-orange-50 ${
                     mode === "dark" ? "bg-white/10 text-gray-200 hover:bg-white/20" : "bg-white"
                   } ${!isOpen && !isMobile ? "justify-center" : ""}`}
                   onClick={() => handleNavigation(item.href, item.label)}
@@ -183,7 +184,7 @@ const HrSidebar = ({
                   {item.icon && (
                     <Icon
                       icon={item.icon}
-                      className={`${item.href === '/dashboard' ? 'h-7 w-7' : 'h-5 w-5'} text-blue-900 transition-all duration-300 ${!isOpen && !isMobile ? "mx-auto" : "mr-2"}`}
+                      className={`${item.href === '/dashboard' ? 'h-7 w-7' : 'h-5 w-5'} text-gray-500 transition-all duration-300 ${!isOpen && !isMobile ? "mx-auto" : "mr-2"}`}
                     />
                   )}
                   <span
@@ -215,7 +216,7 @@ const HrSidebar = ({
                       {icon && (
                         <Icon
                           icon={icon}
-                          className={`h-5 w-5 text-blue-900 transition-all duration-300 ${
+                          className={`h-5 w-5 text-gray-500 transition-all duration-300 ${
                             !isOpen && !isMobile ? "mx-auto" : "mr-2"
                           }`}
                         />
