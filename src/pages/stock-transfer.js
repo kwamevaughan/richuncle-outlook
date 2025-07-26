@@ -7,6 +7,7 @@ import SimpleModal from "@/components/SimpleModal";
 import { GenericTable } from "@/components/GenericTable";
 import TransferDetailsModal from "@/components/TransferDetailsModal";
 import toast from "react-hot-toast";
+import Select from "react-select";
 
 export default function StockTransferPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -420,6 +421,41 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
     }
   ];
 
+  // Custom styles for react-select
+  const selectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      border: state.isFocused ? '2px solid #6366f1' : '1px solid #d1d5db',
+      borderRadius: '8px',
+      minHeight: '44px',
+      boxShadow: state.isFocused ? '0 0 0 1px #6366f1' : 'none',
+      '&:hover': {
+        borderColor: state.isFocused ? '#6366f1' : '#9ca3af'
+      }
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected 
+        ? '#6366f1' 
+        : state.isFocused 
+        ? '#f3f4f6' 
+        : 'white',
+      color: state.isSelected ? 'white' : '#374151',
+      '&:hover': {
+        backgroundColor: state.isSelected ? '#6366f1' : '#f3f4f6'
+      }
+    }),
+    menu: (provided) => ({
+      ...provided,
+      borderRadius: '8px',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: '#9ca3af'
+    })
+  };
+
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
     if (typeof window !== "undefined") {
@@ -444,7 +480,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-800 rounded-lg flex items-center justify-center">
                       <Icon
                         icon="mdi:truck-delivery-outline"
                         className="w-6 h-6 text-white"
@@ -466,7 +502,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
                   </button>
                   <button
                     onClick={() => setShowCreateModal(true)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-900 transition-colors flex items-center gap-2"
                   >
                     <Icon icon="mdi:plus" className="w-4 h-4" />
                     New Transfer
@@ -478,10 +514,10 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
                 <div className="bg-white rounded-lg p-4 shadow-sm border">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                       <Icon
                         icon="mdi:truck-delivery"
-                        className="w-5 h-5 text-indigo-600"
+                        className="w-5 h-5 text-blue-600"
                       />
                     </div>
                     <div>
@@ -590,12 +626,12 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
                   placeholder="Search transfers by number, notes, or tracking..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="all">All Statuses</option>
                   <option value="pending">Pending</option>
@@ -609,7 +645,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
             {/* Content Area */}
             {loading ? (
               <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-gray-500">Loading transfers...</p>
               </div>
             ) : error ? (
@@ -656,12 +692,12 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
         width="max-w-4xl"
       >
         <div className="space-y-6">
-          <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
             <div className="flex items-center gap-2 mb-2">
-              <Icon icon="mdi:information" className="w-5 h-5 text-indigo-600" />
-              <span className="font-medium text-indigo-900">New Transfer</span>
+              <Icon icon="mdi:information" className="w-5 h-5 text-blue-600" />
+              <span className="font-medium text-blue-900">New Transfer</span>
             </div>
-            <p className="text-sm text-indigo-700">
+            <p className="text-sm text-blue-700">
               Create a new stock transfer between warehouses and stores.
             </p>
           </div>
@@ -675,7 +711,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
               <select
                 value={sourceType}
                 onChange={(e) => setSourceType(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
                 <option value="warehouse">Warehouse</option>
                 <option value="store">Store</option>
@@ -689,7 +725,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
               <select
                 value={sourceId}
                 onChange={(e) => setSourceId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
                 <option value="">Select source location</option>
                 {sourceType === "warehouse" 
@@ -710,7 +746,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
               <select
                 value={destinationType}
                 onChange={(e) => setDestinationType(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
                 <option value="warehouse">Warehouse</option>
                 <option value="store">Store</option>
@@ -724,7 +760,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
               <select
                 value={destinationId}
                 onChange={(e) => setDestinationId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
                 <option value="">Select destination location</option>
                 {destinationType === "warehouse" 
@@ -746,7 +782,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
                 type="date"
                 value={expectedDeliveryDate}
                 onChange={(e) => setExpectedDeliveryDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
 
@@ -757,7 +793,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
               <select
                 value={shippingMethod}
                 onChange={(e) => setShippingMethod(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
                 <option value="">Select shipping method</option>
                 <option value="Internal Transfer">Internal Transfer</option>
@@ -777,7 +813,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
                 placeholder="Enter tracking number"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
           </div>
@@ -791,7 +827,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
               onChange={(e) => setTransferNotes(e.target.value)}
               placeholder="Additional notes about this transfer..."
               rows={3}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
 
@@ -806,18 +842,25 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Product
                   </label>
-                  <select
-                    value={selectedProductId}
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  >
-                    <option value="">Select a product</option>
-                    {products.map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} (SKU: {product.sku}) - Stock: {product.quantity}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    options={products.map(product => ({
+                      value: product.id,
+                      label: `${product.name} (SKU: ${product.sku}) - Stock: ${product.quantity || 0}`
+                    }))}
+                    value={products.find(p => p.id === selectedProductId) ? {
+                      value: selectedProductId,
+                      label: `${products.find(p => p.id === selectedProductId)?.name} (SKU: ${products.find(p => p.id === selectedProductId)?.sku}) - Stock: ${products.find(p => p.id === selectedProductId)?.quantity || 0}`
+                    } : null}
+                    onChange={(selectedOption) => {
+                      setSelectedProductId(selectedOption?.value || "");
+                    }}
+                    placeholder="Search and select a product..."
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    styles={selectStyles}
+                    isClearable
+                    isSearchable
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -828,13 +871,13 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
                     value={selectedQuantity}
                     onChange={(e) => setSelectedQuantity(e.target.value)}
                     placeholder="Enter quantity"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
                 <div className="flex items-end">
                   <button
                     onClick={addTransferItem}
-                    className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-blue-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition-colors flex items-center justify-center gap-2"
                   >
                     <Icon icon="mdi:plus" className="w-4 h-4" />
                     Add Item
@@ -886,7 +929,7 @@ export default function StockTransferPage({ mode = "light", toggleMode, ...props
             </button>
             <button
               onClick={handleCreateTransfer}
-              className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-blue-800 text-white rounded-lg hover:bg-blue-900 transition-colors flex items-center justify-center gap-2"
             >
               <Icon icon="mdi:check" className="w-4 h-4" />
               Create Transfer

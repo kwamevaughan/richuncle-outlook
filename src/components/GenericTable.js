@@ -11,6 +11,7 @@ import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import ReactDOM from 'react-dom';
 import TooltipIconButton from "./TooltipIconButton";
+import ExportModal from "./export/ExportModal";
 
 // Enhanced useTable hook
 function useTable(data, initialPageSize = 10) {
@@ -135,6 +136,9 @@ export function GenericTable({
   importType,
   enableDateFilter = false,
   onExport,
+  exportType = "default",
+  exportTitle,
+  stores = [],
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
@@ -149,6 +153,9 @@ export function GenericTable({
   const datePickerRef = useRef();
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef();
+  
+  // Export modal state
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Close popover on outside click
   useEffect(() => {
@@ -345,6 +352,15 @@ export function GenericTable({
                         {addNewLabel}
                       </button>
                     )}
+                    {/* Export Button */}
+                    <button
+                      onClick={() => setShowExportModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ml-2"
+                      title="Export Data"
+                    >
+                      <Icon icon="mdi:export" className="w-4 h-4" />
+                      Export
+                    </button>
                   </div>
                 )}
                 {/* Status Filter for sales returns */}
@@ -431,6 +447,28 @@ export function GenericTable({
                 )}
               </div>
               
+              {/* Export button for non-searchable tables */}
+              {!searchable && (
+                <div className="flex items-center gap-2">
+                  {onAddNew && (
+                    <button
+                      onClick={onAddNew}
+                      className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      <Icon icon="mdi:plus" className="w-4 h-4" />
+                      {addNewLabel}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowExportModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                    title="Export Data"
+                  >
+                    <Icon icon="mdi:export" className="w-4 h-4" />
+                    Export
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -649,6 +687,17 @@ export function GenericTable({
           </div>
         </div>
       </div>
+      
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        users={filteredByDate}
+        mode="light"
+        type={exportType}
+        stores={stores}
+        title={exportTitle || `Export ${title || 'Data'}`}
+      />
     </div>
   );
 }

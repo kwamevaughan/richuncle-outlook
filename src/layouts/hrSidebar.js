@@ -150,8 +150,8 @@ const HrSidebar = ({
       >
         <div className="flex flex-col h-full relative">
           <div
-            className={`flex items-center ${
-              !isOpen && !isMobile ? "justify-center" : "justify-between"
+            className={`flex items-center justify-center ${
+              !isOpen && !isMobile ? "justify-center" : "justify-center"
             } py-4 px-4 shadow-sm bg-blue-900 rounded-t-md`}
           >
             <div className="flex items-center gap-2 ">

@@ -99,6 +99,32 @@ export const sidebarNav = [
     ],
   },
   {
+    category: "Purchases",
+    icon: "mdi:cart-arrow-down",
+    items: [
+      {
+        href: "/purchase-hub",
+        icon: "mdi:view-dashboard",
+        label: "Purchase Hub",
+      },
+      {
+        href: "/purchase-order",
+        icon: "mdi:clipboard-text",
+        label: "Purchase Orders",
+      },
+      {
+        href: "/purchases",
+        icon: "mdi:cart-check",
+        label: "Direct Purchases",
+      },
+      {
+        href: "/purchase-return",
+        icon: "mdi:undo-variant",
+        label: "Purchase Returns",
+      },
+    ],
+  },
+  {
     category: "Promo",
     icon: "mdi:tag-outline",
     items: [
@@ -128,27 +154,6 @@ export const sidebarNav = [
             label: "Discount",
           },
         ],
-      },
-    ],
-  },
-  {
-    category: "Purchases",
-    icon: "mdi:cart-arrow-down",
-    items: [
-      {
-        href: "/purchases",
-        icon: "mdi:cart-outline",
-        label: "Purchases",
-      },
-      {
-        href: "/purchase-order",
-        icon: "solar:copy-broken",
-        label: "Purchase Order",
-      },
-      {
-        href: "/purchase-return",
-        icon: "prime:undo",
-        label: "Purchase Return",
       },
     ],
   },

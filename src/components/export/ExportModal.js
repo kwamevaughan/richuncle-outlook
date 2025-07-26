@@ -38,26 +38,81 @@ const formatDate = (dateString) => {
 export default function ExportModal({ isOpen, onClose, users, mode, type = "users", stores = [], title, getFieldsOrder, getDefaultFields, onToggleType, zreportTab }) {
     // Field logic: use parent-provided for zreport, default for users
     const isZReport = type === 'zreport';
-    const fieldsOrder = isZReport && typeof getFieldsOrder === 'function' ? getFieldsOrder() : [
-        { label: "Name", key: "full_name", icon: "mdi:account" },
-        { label: "Email", key: "email", icon: "mdi:email" },
-        { label: "Role", key: "role", icon: "mdi:account-badge" },
-        { label: "Store", key: "store_name", icon: "mdi:store" },
-        { label: "Status", key: "is_active", icon: "mdi:check-circle" },
-        { label: "Created At", key: "created_at", icon: "mdi:calendar" },
-        { label: "Updated At", key: "updated_at", icon: "mdi:update" },
-        { label: "Last Login", key: "last_login", icon: "mdi:login" },
-    ];
-    const defaultFields = isZReport && typeof getDefaultFields === 'function' ? getDefaultFields() : {
-        full_name: true,
-        email: true,
-        role: true,
-        store_name: true,
-        is_active: true,
-        created_at: true,
-        updated_at: false,
-        last_login: true,
+    
+    // Create dynamic field mapping based on data structure
+    const createDynamicFields = (data) => {
+        if (!data || data.length === 0) return [];
+        
+        const sampleItem = data[0];
+        const fields = [];
+        
+        Object.keys(sampleItem).forEach(key => {
+            // Skip internal fields
+            if (['id', '__typename'].includes(key)) return;
+            
+            // Create field mapping
+            const field = {
+                label: key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+                key: key,
+                icon: getFieldIcon(key)
+            };
+            fields.push(field);
+        });
+        
+        return fields;
     };
+    
+    const getFieldIcon = (key) => {
+        const iconMap = {
+            name: "mdi:account",
+            full_name: "mdi:account",
+            email: "mdi:email",
+            role: "mdi:account-badge",
+            store_name: "mdi:store",
+            warehouse_name: "mdi:warehouse",
+            supplier_name: "mdi:truck",
+            status: "mdi:check-circle",
+            is_active: "mdi:check-circle",
+            created_at: "mdi:calendar",
+            updated_at: "mdi:update",
+            last_login: "mdi:login",
+            date: "mdi:calendar",
+            total: "mdi:currency-usd",
+            quantity: "mdi:numeric",
+            price: "mdi:currency-usd",
+            cost_price: "mdi:currency-usd",
+            sku: "mdi:barcode",
+            barcode: "mdi:barcode",
+            purchase_number: "mdi:receipt",
+            order_number: "mdi:clipboard-text",
+            return_number: "mdi:undo-variant",
+            transfer_number: "mdi:truck-delivery",
+            notes: "mdi:note-text",
+            phone: "mdi:phone",
+            address: "mdi:map-marker",
+            category_name: "mdi:folder",
+            brand_name: "mdi:tag",
+            unit_name: "mdi:ruler",
+            tax_type: "mdi:percent",
+            tax_percentage: "mdi:percent"
+        };
+        
+        return iconMap[key] || "mdi:tag";
+    };
+    
+    const fieldsOrder = isZReport && typeof getFieldsOrder === 'function' ? getFieldsOrder() : createDynamicFields(users);
+    
+    // Create default fields selection
+    const createDefaultFields = (fields) => {
+        const defaults = {};
+        fields.forEach(field => {
+            // Default to true for most fields, false for some internal ones
+            defaults[field.key] = !['updated_at', 'created_at', 'id'].includes(field.key);
+        });
+        return defaults;
+    };
+    
+    const defaultFields = isZReport && typeof getDefaultFields === 'function' ? getDefaultFields() : createDefaultFields(fieldsOrder);
     const [selectedFields, setSelectedFields] = useState(defaultFields);
     const [exportFormat, setExportFormat] = useState("csv");
     const [previewRows, setPreviewRows] = useState(3);
@@ -78,14 +133,31 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
     if (isZReport) {
         formattedUsers = Array.isArray(filteredUsers) ? filteredUsers : [];
     } else {
-        formattedUsers = filteredUsers.map(user => ({
-            ...user,
-            store_name: getStoreName(user.store_id),
-            is_active: user.is_active ? "Active" : "Inactive",
-            created_at: formatDate(user.created_at),
-            updated_at: user.updated_at ? formatDate(user.updated_at) : "-",
-            last_login: user.last_login ? formatDate(user.last_login) : "-",
-        }));
+        formattedUsers = filteredUsers.map(user => {
+            const formatted = { ...user };
+            
+            // Format common fields
+            if (formatted.store_name === undefined && formatted.store_id) {
+                formatted.store_name = getStoreName(formatted.store_id);
+            }
+            if (formatted.is_active !== undefined) {
+                formatted.is_active = formatted.is_active ? "Active" : "Inactive";
+            }
+            if (formatted.created_at) {
+                formatted.created_at = formatDate(formatted.created_at);
+            }
+            if (formatted.updated_at) {
+                formatted.updated_at = formatDate(formatted.updated_at);
+            }
+            if (formatted.last_login) {
+                formatted.last_login = formatDate(formatted.last_login);
+            }
+            if (formatted.date) {
+                formatted.date = formatDate(formatted.date);
+            }
+            
+            return formatted;
+        });
     }
 
 
@@ -164,7 +236,7 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
 
         const doc = new jsPDF();
         doc.setFontSize(18);
-        doc.text("User Data Export", 14, 22);
+        doc.text(modalTitle || "Data Export", 14, 22);
         doc.setFontSize(11);
         doc.setTextColor(100);
 
@@ -179,7 +251,7 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
             styles: { textColor: mode === "dark" ? 255 : 35 },
         });
 
-        doc.save("user_data_export.pdf");
+        doc.save(`${modalTitle?.toLowerCase().replace(/\s+/g, '_') || 'data'}_export.pdf`);
         toast.success("PDF exported successfully!", { icon: "✅" });
     };
 
@@ -369,7 +441,7 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                             <CSVLink
                                 data={formattedUsers}
                                 headers={csvHeaders}
-                                filename={isZReport ? 'zreport_export.csv' : 'user_data_export.csv'}
+                                filename={isZReport ? 'zreport_export.csv' : `${modalTitle?.toLowerCase().replace(/\s+/g, '_') || 'data'}_export.csv`}
                                 onClick={handleExportClick}
                                 className={`px-6 py-2 rounded-full flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg ${
                                     mode === "dark"
