@@ -220,7 +220,13 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1 bg-gray-50 min-h-screen">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
@@ -229,9 +235,9 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                       <Icon
-                        icon="mdi:cart-multiple"
+                        icon="mdi:cart-arrow-down"
                         className="w-7 h-7 text-white"
                       />
                     </div>
@@ -250,7 +256,7 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
                           await Promise.all([
                             fetchPurchases(),
                             fetchPurchaseOrders(),
-                            fetchPurchaseReturns()
+                            fetchPurchaseReturns(),
                           ]);
                           toast.success("Data refreshed successfully");
                         } catch (error) {
@@ -290,9 +296,7 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
                       <div className="text-2xl font-bold text-gray-900">
                         {stats.totalOrders}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Total Orders
-                      </div>
+                      <div className="text-sm text-gray-500">Total Orders</div>
                       <div className="text-xs text-blue-600 font-medium">
                         {stats.pendingOrders} pending
                       </div>
@@ -334,9 +338,7 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
                       <div className="text-2xl font-bold text-gray-900">
                         {stats.totalReturns}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Total Returns
-                      </div>
+                      <div className="text-sm text-gray-500">Total Returns</div>
                       <div className="text-xs text-red-600 font-medium">
                         {stats.pendingReturns} pending
                       </div>
@@ -476,90 +478,278 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
               <div className="bg-white rounded-xl shadow-sm border border-gray-200">
                 {activeTab === "overview" ? (
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                    <div className="space-y-4">
-                      {/* Recent Orders */}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Icon
+                        icon="mdi:history"
+                        className="w-5 h-5 text-blue-600"
+                      />
+                      Recent Activity
+                    </h3>
+                    <div className="space-y-6">
+                      {/* Recent Orders Timeline */}
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Recent Purchase Orders</h4>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          {purchaseOrders.slice(0, 3).map((order) => (
-                            <div key={order.id} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
-                              <div>
-                                <div className="font-medium text-sm">{order.order_number}</div>
-                                <div className="text-xs text-gray-500">{order.supplier_name}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-medium">GHS {order.total?.toLocaleString()}</div>
-                                <div className={`text-xs px-2 py-1 rounded-full inline-block ${getStatusStyle(order.status).bg} ${getStatusStyle(order.status).color}`}>
-                                  {order.status}
-                                </div>
-                              </div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Icon
+                            icon="mdi:clipboard-text"
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          Recent Purchase Orders
+                        </h4>
+                        <div className="bg-white/80 rounded-xl p-4 shadow-sm border border-gray-100">
+                          {purchaseOrders.length === 0 ? (
+                            <div className="flex flex-col items-center py-8 text-gray-400">
+                              <Icon
+                                icon="mdi:clipboard-text-off"
+                                className="w-10 h-10 mb-2"
+                              />
+                              <div>No recent purchase orders</div>
                             </div>
-                          ))}
+                          ) : (
+                            <ol className="relative border-l-2 border-blue-100">
+                              {purchaseOrders.slice(0, 3).map((order, idx) => (
+                                <li
+                                  key={order.id}
+                                  className="mb-6 ml-6 group hover:bg-blue-50 rounded-xl transition-all p-3"
+                                >
+                                  <span className="absolute -left-3 flex items-center justify-center w-6 h-6 bg-blue-100 rounded-full ring-4 ring-white">
+                                    <Icon
+                                      icon="mdi:clipboard-text"
+                                      className="w-4 h-4 text-blue-600"
+                                    />
+                                  </span>
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <div className="font-semibold text-blue-900 text-sm">
+                                        {order.order_number}
+                                      </div>
+                                      <div className="text-xs text-gray-500 flex items-center gap-2">
+                                        <span className="inline-flex items-center gap-1">
+                                          <span className="inline-block w-6 h-6 bg-blue-200 text-blue-800 rounded-full flex items-center justify-center font-bold text-xs">
+                                            {order.supplier_name
+                                              ? order.supplier_name
+                                                  .charAt(0)
+                                                  .toUpperCase()
+                                              : "S"}
+                                          </span>
+                                          {order.supplier_name}
+                                        </span>
+                                        <span className="ml-2">
+                                          {order.warehouse_name}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-sm font-bold text-blue-900">
+                                        GHS {order.total?.toLocaleString()}
+                                      </div>
+                                      <div
+                                        className={`text-xs px-2 py-1 rounded-full inline-block ${
+                                          getStatusStyle(order.status).bg
+                                        } ${
+                                          getStatusStyle(order.status).color
+                                        } font-semibold`}
+                                      >
+                                        <Icon
+                                          icon={
+                                            getStatusStyle(order.status).icon
+                                          }
+                                          className="w-3 h-3 mr-1 inline-block"
+                                        />
+                                        {order.status
+                                          .replace("_", " ")
+                                          .charAt(0)
+                                          .toUpperCase() +
+                                          order.status
+                                            .slice(1)
+                                            .replace("_", " ")}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    {new Date(order.date).toLocaleString()}
+                                  </div>
+                                </li>
+                              ))}
+                            </ol>
+                          )}
                         </div>
                       </div>
-                      
-                      {/* Recent Purchases */}
+                      {/* Recent Purchases Timeline */}
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Recent Direct Purchases</h4>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          {purchases.slice(0, 3).map((purchase) => (
-                            <div key={purchase.id} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-b-0">
-                              <div>
-                                <div className="font-medium text-sm">{purchase.purchase_number}</div>
-                                <div className="text-xs text-gray-500">{purchase.supplier_name}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-medium">GHS {purchase.total?.toLocaleString()}</div>
-                                <div className="text-xs text-gray-500">{new Date(purchase.date).toLocaleDateString()}</div>
-                              </div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Icon
+                            icon="mdi:cart-check"
+                            className="w-4 h-4 text-green-600"
+                          />
+                          Recent Direct Purchases
+                        </h4>
+                        <div className="bg-white/80 rounded-xl p-4 shadow-sm border border-gray-100">
+                          {purchases.length === 0 ? (
+                            <div className="flex flex-col items-center py-8 text-gray-400">
+                              <Icon
+                                icon="mdi:cart-off"
+                                className="w-10 h-10 mb-2"
+                              />
+                              <div>No recent direct purchases</div>
                             </div>
-                          ))}
+                          ) : (
+                            <ol className="relative border-l-2 border-green-100">
+                              {purchases.slice(0, 3).map((purchase, idx) => (
+                                <li
+                                  key={purchase.id}
+                                  className="mb-6 ml-6 group hover:bg-green-50 rounded-xl transition-all p-3"
+                                >
+                                  <span className="absolute -left-3 flex items-center justify-center w-6 h-6 bg-green-100 rounded-full ring-4 ring-white">
+                                    <Icon
+                                      icon="mdi:cart-check"
+                                      className="w-4 h-4 text-green-600"
+                                    />
+                                  </span>
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <div className="font-semibold text-green-900 text-sm">
+                                        {purchase.purchase_number}
+                                      </div>
+                                      <div className="text-xs text-gray-500 flex items-center gap-2">
+                                        <span className="inline-flex items-center gap-1">
+                                          <span className="inline-block w-6 h-6 bg-green-200 text-green-800 rounded-full flex items-center justify-center font-bold text-xs">
+                                            {purchase.supplier_name
+                                              ? purchase.supplier_name
+                                                  .charAt(0)
+                                                  .toUpperCase()
+                                              : "S"}
+                                          </span>
+                                          {purchase.supplier_name}
+                                        </span>
+                                        <span className="ml-2">
+                                          {purchase.warehouse_name}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-sm font-bold text-green-900">
+                                        GHS {purchase.total?.toLocaleString()}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {new Date(
+                                          purchase.date
+                                        ).toLocaleDateString()}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    {new Date(purchase.date).toLocaleString()}
+                                  </div>
+                                </li>
+                              ))}
+                            </ol>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <GenericTable
-                    data={getFilteredData()}
-                    columns={getColumns()}
-                    title={`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`}
-                    emptyMessage={`No ${activeTab} found`}
-                    selectable={false}
-                    searchable={false}
-                    onAddNew={() => {
-                      switch (activeTab) {
-                        case "orders":
-                          setShowCreateOrderModal(true);
-                          break;
-                        case "purchases":
-                          setShowQuickPurchaseModal(true);
-                          break;
-                        case "returns":
-                          setShowReturnModal(true);
-                          break;
-                      }
-                    }}
-                    addNewLabel={`Add ${activeTab.slice(0, -1)}`}
-                    statusOptions={
-                      activeTab === "orders" ? [
-                        { value: "pending", label: "Pending" },
-                        { value: "approved", label: "Approved" },
-                        { value: "in_transit", label: "In Transit" },
-                        { value: "completed", label: "Completed" },
-                        { value: "cancelled", label: "Cancelled" }
-                      ] : activeTab === "purchases" ? [
-                        { value: "pending", label: "Pending" },
-                        { value: "completed", label: "Completed" },
-                        { value: "cancelled", label: "Cancelled" }
-                      ] : activeTab === "returns" ? [
-                        { value: "Pending", label: "Pending" },
-                        { value: "Approved", label: "Approved" },
-                        { value: "Returned", label: "Returned" },
-                        { value: "Cancelled", label: "Cancelled" }
-                      ] : null
-                    }
-                  />
+                  <div className="p-0">
+                    <div className="px-6 pt-6 pb-2 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-xl">
+                      {/* Modern Filter Bar */}
+                      <div className="flex flex-wrap gap-3 items-center">
+                        <div className="relative flex items-center">
+                          <Icon
+                            icon="mdi:magnify"
+                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Search by number, supplier, or warehouse..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 pr-4 py-2 w-64 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm"
+                          />
+                        </div>
+                        <select
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm"
+                        >
+                          <option value="all">All Statuses</option>
+                          <option value="pending">Pending</option>
+                          <option value="approved">Approved</option>
+                          <option value="in_transit">In Transit</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                        <select
+                          value={dateRange}
+                          onChange={(e) => setDateRange(e.target.value)}
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none shadow-sm"
+                        >
+                          <option value="7">Last 7 days</option>
+                          <option value="30">Last 30 days</option>
+                          <option value="90">Last 90 days</option>
+                          <option value="365">Last year</option>
+                          <option value="all">All time</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-b-xl shadow-sm border border-gray-200">
+                      <GenericTable
+                        data={getFilteredData()}
+                        columns={getColumns()}
+                        title={`${
+                          activeTab.charAt(0).toUpperCase() + activeTab.slice(1)
+                        }`}
+                        emptyMessage={
+                          <div className="flex flex-col items-center py-12 text-gray-400">
+                            <Icon
+                              icon="mdi:package-variant"
+                              className="w-12 h-12 mb-2"
+                            />
+                            <div>No {activeTab} found</div>
+                          </div>
+                        }
+                        selectable={false}
+                        searchable={false}
+                        onAddNew={() => {
+                          switch (activeTab) {
+                            case "orders":
+                              setShowCreateOrderModal(true);
+                              break;
+                            case "purchases":
+                              setShowQuickPurchaseModal(true);
+                              break;
+                            case "returns":
+                              setShowReturnModal(true);
+                              break;
+                          }
+                        }}
+                        addNewLabel={`Add ${activeTab.slice(0, -1)}`}
+                        statusOptions={
+                          activeTab === "orders"
+                            ? [
+                                { value: "pending", label: "Pending" },
+                                { value: "approved", label: "Approved" },
+                                { value: "in_transit", label: "In Transit" },
+                                { value: "completed", label: "Completed" },
+                                { value: "cancelled", label: "Cancelled" },
+                              ]
+                            : activeTab === "purchases"
+                            ? [
+                                { value: "pending", label: "Pending" },
+                                { value: "completed", label: "Completed" },
+                                { value: "cancelled", label: "Cancelled" },
+                              ]
+                            : activeTab === "returns"
+                            ? [
+                                { value: "Pending", label: "Pending" },
+                                { value: "Approved", label: "Approved" },
+                                { value: "Returned", label: "Returned" },
+                                { value: "Cancelled", label: "Cancelled" },
+                              ]
+                            : null
+                        }
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
             )}

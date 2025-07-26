@@ -150,6 +150,15 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
   const total = registers.length;
   const open = registers.filter(r => openSessionsMap[r.id]).length;
   const closed = total - open;
+  // Find the most recent closed session
+  const lastClosedSession = useMemo(() => {
+    const closedSessions = sessions.filter(s => s.status === 'closed' && s.closed_at);
+    if (closedSessions.length === 0) return null;
+    return closedSessions.reduce((latest, curr) => {
+      return new Date(curr.closed_at) > new Date(latest.closed_at) ? curr : latest;
+    });
+  }, [sessions]);
+  const lastClosedTime = lastClosedSession ? new Date(lastClosedSession.closed_at).toLocaleString() : null;
 
   // ExportModal fields for registers
   const registerFieldsOrder = [
@@ -220,20 +229,18 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
       <div className="flex flex-col flex-1">
         <div className="py-2">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <Icon
                 icon="mdi:cash-register"
                 className="w-7 h-7 text-blue-900"
               />
               Registers
             </h1>
-            <p className="text-sm text-gray-500 mb-6">
+            <div className="text-sm text-gray-500 mb-6 flex items-center gap-2 justify-between">
               View and manage all registers here. Use the POS to create a new
               register.
-            </p>
-            <div className="flex justify-end mb-4">
               <button
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 onClick={() => router.push("/pos/")}
               >
                 <Icon icon="mdi:plus" className="inline-block mr-2" /> New
@@ -267,6 +274,18 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                 Closed: {closed}
               </span>
             </div>
+            {lastClosedTime && (
+              <TooltipIconButton
+                icon="mdi:clock-outline"
+                label={`Last Closed: ${lastClosedTime}${lastClosedSession && userMap[lastClosedSession.user_id] ? `\nBy: ${userMap[lastClosedSession.user_id]}` : ''}`}
+                mode={mode}
+                className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded shadow-sm text-yellow-900 font-semibold"
+                style={{ minWidth: 0 }}
+              >
+                <Icon icon="mdi:clock-outline" className="w-5 h-5 text-yellow-700" />
+                <span className="font-semibold text-yellow-900">Last Closed: {lastClosedTime}</span>
+              </TooltipIconButton>
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -309,22 +328,6 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                     </option>
                   ))}
                 </select>
-                <TooltipIconButton
-                  icon="mdi:refresh"
-                  label="Refresh"
-                  onClick={fetchAll}
-                  mode={mode}
-                  className={` ${
-                    refreshing || loading ? "animate-spin" : ""
-                  }`}
-                />
-                <TooltipIconButton
-                  icon="mdi:download"
-                  label="Export to CSV/PDF"
-                  onClick={() => setShowExportModal(true)}
-                  mode={mode}
-                  className=""
-                />
               </div>
             </div>
           </div>
@@ -443,16 +446,20 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                   label: "Force Close Session",
                   icon: (row) => {
                     const openSession = openSessionsMap[row.id];
-                    return forceCloseLoading === (openSession && openSession.id) ? "mdi:loading" : "mdi:close-circle";
+                    return forceCloseLoading === (openSession && openSession.id)
+                      ? "mdi:loading"
+                      : "mdi:close-circle";
                   },
                   onClick: (row) => {
                     const openSession = openSessionsMap[row.id];
                     if (openSession) handleForceClose(openSession);
                   },
-                  show: (row) => !!openSessionsMap[row.id] && user.role === "admin",
+                  show: (row) =>
+                    !!openSessionsMap[row.id] && user.role === "admin",
                   render: (row) => {
                     const openSession = openSessionsMap[row.id];
-                    const isLoading = forceCloseLoading === (openSession && openSession.id);
+                    const isLoading =
+                      forceCloseLoading === (openSession && openSession.id);
                     return (
                       <TooltipIconButton
                         icon={isLoading ? "mdi:loading" : "mdi:close-circle"}
@@ -461,7 +468,9 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                           if (openSession) handleForceClose(openSession);
                         }}
                         mode={mode}
-                        className={`bg-red-50 text-red-600 text-xs ${isLoading ? "animate-spin" : ""}`}
+                        className={`bg-red-50 text-red-600 text-xs ${
+                          isLoading ? "animate-spin" : ""
+                        }`}
                         disabled={isLoading}
                       />
                     );

@@ -27,7 +27,6 @@ export default async function handler(req, res) {
         supplier_name: order.supplier?.name || '',
         warehouse_name: order.warehouse?.name || '',
       }));
-      console.log('Transformed purchase_orders data for frontend:', transformed);
       return res.status(200).json({ success: true, data: transformed });
     } catch (error) {
       return res.status(500).json({ success: false, error: error.message });

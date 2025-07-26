@@ -121,12 +121,20 @@ export default function PurchaseReturnPage({ mode = "light", toggleMode, ...prop
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:undo-variant" className="w-7 h-7 text-blue-900" />
+            <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <Icon icon="mdi:undo-variant" className="w-6 h-6 text-white" />
+              </div>
               Purchase Returns
             </h1>
             <p className="text-sm text-gray-500 mb-6">
@@ -134,7 +142,8 @@ export default function PurchaseReturnPage({ mode = "light", toggleMode, ...prop
             </p>
             {loading && (
               <div className="flex items-center gap-2 text-blue-600 mb-4">
-                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" /> Loading...
+                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" />{" "}
+                Loading...
               </div>
             )}
             {error && <div className="text-red-600 mb-4">{error}</div>}
@@ -149,29 +158,54 @@ export default function PurchaseReturnPage({ mode = "light", toggleMode, ...prop
                       <button
                         onClick={() => handleExpandRow(row.id)}
                         className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                        title={expandedRows.includes(row.id) ? "Collapse" : "Expand"}
+                        title={
+                          expandedRows.includes(row.id) ? "Collapse" : "Expand"
+                        }
                       >
-                        <Icon icon={expandedRows.includes(row.id) ? "mdi:chevron-up" : "mdi:chevron-down"} className="w-5 h-5" />
+                        <Icon
+                          icon={
+                            expandedRows.includes(row.id)
+                              ? "mdi:chevron-up"
+                              : "mdi:chevron-down"
+                          }
+                          className="w-5 h-5"
+                        />
                       </button>
                     ),
                   },
-                  { header: "Return Number", accessor: "return_number", sortable: true },
-                  { header: "Supplier", accessor: "supplier_name", sortable: true },
-                  { header: "Warehouse", accessor: "warehouse_name", sortable: true },
+                  {
+                    header: "Return Number",
+                    accessor: "return_number",
+                    sortable: true,
+                  },
+                  {
+                    header: "Supplier",
+                    accessor: "supplier_name",
+                    sortable: true,
+                  },
+                  {
+                    header: "Warehouse",
+                    accessor: "warehouse_name",
+                    sortable: true,
+                  },
                   { header: "Date", accessor: "date", sortable: true },
                   { header: "Status", accessor: "status", sortable: true },
-                  { header: "Total", accessor: "total", sortable: true, render: (row) => `GHS ${row.total}` },
+                  {
+                    header: "Total",
+                    accessor: "total",
+                    sortable: true,
+                    render: (row) => `GHS ${row.total}`,
+                  },
                 ]}
                 onEdit={openEditModal}
                 onAddNew={openAddModal}
                 addNewLabel="Add Purchase Return"
-                title="Purchase Returns"
                 emptyMessage="No purchase returns found"
                 statusOptions={[
                   { value: "Pending", label: "Pending" },
                   { value: "Approved", label: "Approved" },
                   { value: "Returned", label: "Returned" },
-                  { value: "Cancelled", label: "Cancelled" }
+                  { value: "Cancelled", label: "Cancelled" },
                 ]}
                 customRowRender={(row, index, defaultRow) => (
                   <>
@@ -180,7 +214,10 @@ export default function PurchaseReturnPage({ mode = "light", toggleMode, ...prop
                       <tr className="bg-gray-50 dark:bg-gray-800">
                         <td colSpan={8} className="p-4">
                           <div className="font-semibold mb-2">Line Items</div>
-                          <PurchaseReturnItemsEditor items={rowLineItems[row.id] || []} disabled={true} />
+                          <PurchaseReturnItemsEditor
+                            items={rowLineItems[row.id] || []}
+                            disabled={true}
+                          />
                         </td>
                       </tr>
                     )}

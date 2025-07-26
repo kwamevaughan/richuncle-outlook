@@ -1,4 +1,12 @@
 export default function PreviewTable({ filteredUsers, csvHeaders, previewRows, mode }) {
+    // Helper function to safely convert any value to string
+    const safeString = (value) => {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'function') return '[Function]';
+        if (typeof value === 'object') return JSON.stringify(value);
+        return String(value);
+    };
+
     return (
         <div
             className={`mt-2 p-4 rounded-lg border max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-[#f05d23] scrollbar-track-gray-200 ${
@@ -25,7 +33,7 @@ export default function PreviewTable({ filteredUsers, csvHeaders, previewRows, m
                     >
                         {csvHeaders.map((header) => (
                             <td key={header.key} className="p-2">
-                                {user[header.key]}
+                                {safeString(user[header.key])}
                             </td>
                         ))}
                     </tr>

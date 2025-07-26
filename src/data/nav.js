@@ -89,7 +89,7 @@ export const sidebarNav = [
       {
         href: "",
         icon: "",
-        label: "Retrive Orders",
+        label: "Retrieve Orders",
       },
     ],
   },
@@ -123,23 +123,8 @@ export const sidebarNav = [
     category: "Promo",
     icon: "mdi:tag-outline",
     items: [
-      {
-        href: "/coupons",
-        icon: "mdi:tag-outline",
-        label: "Coupons",
-      },
-      {
-        href: "/gift-cards",
-        icon: "mdi:gift-outline",
-        label: "Gift Cards",
-      },
-      {
-        href: "/discount",
-        icon: "mdi:percent-outline",
-        label: "Discount",
-        subItems: [
-          {
-            href: "/discount-plan",
+        {
+            href: "/discount?tab=plans",
             icon: "mdi:file-document-outline",
             label: "Discount Plan",
           },
@@ -148,8 +133,6 @@ export const sidebarNav = [
             icon: "mdi:percent-outline",
             label: "Discount",
           },
-        ],
-      },
     ],
   },
   {

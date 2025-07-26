@@ -7,7 +7,8 @@ export default async function handler(req, res) {
         .from("discounts")
         .select(`
           *,
-          discount_plans(name)
+          discount_plans(name),
+          store:stores(name)
         `)
         .order("created_at", { ascending: false });
 

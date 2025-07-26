@@ -40,8 +40,13 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
     return [{ startDate: new Date(), endDate: new Date(), key: 'selection' }];
   });
   const [validity, setValidity] = useState(item?.validity || "");
+  // Add discount code field
+  const [discountCode, setDiscountCode] = useState(item?.discount_code || "");
+  // Add discount type and store selection
+  const [discountType, setDiscountType] = useState(item?.discount_type || "percentage");
+  const [storeId, setStoreId] = useState(item?.store_id || "all");
+  const [stores, setStores] = useState([]);
   // --- PRODUCTS MODAL STATE ---
-  const [storeId, setStoreId] = useState(item?.store_id || "");
   const [warehouseId, setWarehouseId] = useState(item?.warehouse_id || "");
   const [productName, setProductName] = useState(item?.name || "");
   const [quantity, setQuantity] = useState(item?.quantity || "");
@@ -58,7 +63,6 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   const [brandId, setBrandId] = useState(item?.brand_id || "");
   const [unitId, setUnitId] = useState(item?.unit_id || "");
   const [barcode, setBarcode] = useState(item?.barcode || "");
-  const [stores, setStores] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -117,6 +121,29 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
     }
     return suggestion;
   }
+
+  // Update localCategories when categories prop changes
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      setLocalCategories(categories);
+    }
+  }, [categories]);
+
+  // Fetch stores for discount modal
+  useEffect(() => {
+    if (type === "discounts") {
+      fetch('/api/stores')
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            setStores(result.data || []);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch stores:", err);
+        });
+    }
+  }, [type]);
 
   // Suggest a code from name if user hasn't manually edited code and type is categories
   useEffect(() => {
@@ -284,6 +311,10 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
         setError("Validity is required");
         return;
       }
+      if (!discountCode.trim()) {
+        setError("Discount Code is required");
+        return;
+      }
     } else if (type === "plans") {
       if (!name.trim()) {
         setError("Plan Name is required");
@@ -437,11 +468,15 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           value: value,
           plan_id: planId,
           validity: validity,
+          discount_code: discountCode.trim(),
+          discount_type: discountType,
+          store_id: storeId === "all" ? null : storeId,
           is_active: isActive,
         });
       } else if (type === "plans") {
         await onSave({
           name: name.trim(),
+          description: description.trim(),
           is_active: isActive,
         });
       } else if (type === "variant_attributes") {
@@ -585,95 +620,329 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
       >
         <form onSubmit={handleSubmit}>
           {type === "discounts" ? (
-            <>
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Name<span className="text-red-500">*</span></label>
-                <input
-                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
-                  value={name}
-                  onChange={handleNameChange}
-                  disabled={loading}
-                  placeholder="Discount name"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Value<span className="text-red-500">*</span></label>
-                <input
-                  type="number"
-                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
-                  value={value}
-                  onChange={e => setValue(e.target.value)}
-                  disabled={loading}
-                  placeholder="Discount value (e.g. 10, 20)"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Discount Plan<span className="text-red-500">*</span></label>
-                <select
-                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
-                  value={planId}
-                  onChange={e => setPlanId(e.target.value)}
-                  disabled={loading}
-                >
-                  <option value="">Select a plan</option>
-                  {localCategories.map((plan) => (
-                    <option key={plan.id} value={plan.id}>{plan.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Validity<span className="text-red-500">*</span></label>
-                <DateRange
-                  editableDateInputs={true}
-                  onChange={item => setDateRange([item.selection])}
-                  moveRangeOnFirstSelection={false}
-                  ranges={dateRange}
-                  className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
-                  rangeColors={["#2563eb"]}
-                  disabled={loading}
-                />
-                <div className="text-xs text-gray-400 mt-1">
-                  {`Selected: ${format(dateRange[0].startDate, 'yyyy-MM-dd')} to ${format(dateRange[0].endDate, 'yyyy-MM-dd')}`}
+            <div className="space-y-6">
+              {/* Header Card */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Icon icon="mdi:percent" className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-blue-900">
+                      Discount Details
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Configure your discount settings
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="mb-4 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="form-checkbox"
-                  checked={isActive}
-                  onChange={e => setIsActive(e.target.checked)}
-                  disabled={loading}
-                />
-                <span className="text-sm">Active</span>
+
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-700 flex items-center gap-2">
+                    <Icon
+                      icon="mdi:tag-text"
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    Discount Name<span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    value={name}
+                    onChange={handleNameChange}
+                    disabled={loading}
+                    placeholder="e.g., Summer Sale, Black Friday"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-700 flex items-center gap-2">
+                    <Icon
+                      icon="mdi:barcode"
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    Discount Code<span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono"
+                    value={discountCode}
+                    onChange={(e) =>
+                      setDiscountCode(e.target.value.toUpperCase())
+                    }
+                    disabled={loading}
+                    placeholder="e.g., SUMMER20, BLACKFRIDAY"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Customers will use this code to apply the discount
+                  </p>
+                </div>
               </div>
-            </>
+
+              {/* Value and Plan */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-700 flex items-center gap-2">
+                    <Icon
+                      icon="fa7-solid:cedi-sign"
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    Discount Value<span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      disabled={loading}
+                      placeholder={
+                        discountType === "percentage" ? "10.00" : "5.00"
+                      }
+                    />
+                    <Icon
+                      icon={
+                        discountType === "percentage"
+                          ? "mdi:percent"
+                          : "fa7-solid:cedi-sign"
+                      }
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {discountType === "percentage"
+                      ? "Enter the discount percentage (e.g., 10 for 10%)"
+                      : "Enter the fixed discount amount in GHS (e.g., 5 for GHS 5.00)"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-700 flex items-center gap-2">
+                    <Icon
+                      icon="mdi:package-variant"
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    Discount Plan<span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    value={planId}
+                    onChange={(e) => setPlanId(e.target.value)}
+                    disabled={loading}
+                  >
+                    {localCategories.length === 0 ? (
+                      <option value="">No discount plans available</option>
+                    ) : (
+                      <>
+                        <option value="">Select a discount plan</option>
+                        {localCategories.map((plan) => (
+                          <option key={plan.id} value={plan.id}>
+                            {plan.name}
+                          </option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              {/* Discount Type and Store Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-700 flex items-center gap-2">
+                    <Icon
+                      icon="mdi:format-list-bulleted"
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    Discount Type<span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    value={discountType}
+                    onChange={(e) => setDiscountType(e.target.value)}
+                    disabled={loading}
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount (GHS)</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Choose whether this is a percentage or fixed amount discount
+                  </p>
+                </div>
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-700 flex items-center gap-2">
+                    <Icon icon="mdi:store" className="w-4 h-4 text-blue-600" />
+                    Apply to Store
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    value={storeId}
+                    onChange={(e) => setStoreId(e.target.value)}
+                    disabled={loading}
+                  >
+                    <option value="all">All Stores</option>
+                    {stores.map((store) => (
+                      <option key={store.id} value={store.id}>
+                        {store.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select specific store or apply to all stores
+                  </p>
+                </div>
+              </div>
+
+              {/* Validity Period */}
+              <div>
+                <label className="block mb-2 font-semibold text-gray-700 flex items-center gap-2">
+                  <Icon
+                    icon="mdi:calendar-range"
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  Validity Period<span className="text-red-500">*</span>
+                </label>
+                <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                  <DateRange
+                    editableDateInputs={true}
+                    onChange={(item) => setDateRange([item.selection])}
+                    moveRangeOnFirstSelection={false}
+                    ranges={dateRange}
+                    className="rounded-lg"
+                    rangeColors={["#3b82f6"]}
+                    disabled={loading}
+                  />
+                  <div className="text-sm text-gray-600 mt-3 p-3 bg-white rounded-lg border">
+                    <div className="flex items-center gap-2">
+                      <Icon
+                        icon="mdi:calendar-check"
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="font-medium">Valid from:</span>
+                      <span className="text-blue-700">
+                        {format(dateRange[0].startDate, "MMM dd, yyyy")}
+                      </span>
+                      <span className="text-gray-400">to</span>
+                      <span className="text-blue-700">
+                        {format(dateRange[0].endDate, "MMM dd, yyyy")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Toggle */}
+              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    disabled={loading}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Icon
+                      icon="mdi:check-circle"
+                      className="w-5 h-5 text-green-600"
+                    />
+                    <span className="font-semibold text-gray-700">Active</span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Enable this discount for customers to use
+                </p>
+              </div>
+            </div>
           ) : type === "plans" ? (
-            <>
-              <div className="mb-4">
-                <label className="block mb-1 font-medium">Plan Name<span className="text-red-500">*</span></label>
+            <div className="space-y-6">
+              {/* Header Card */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-200">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Icon
+                      icon="mdi:package-variant"
+                      className="w-7 h-7 text-white"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-blue-900">
+                      Discount Plan Details
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Create a plan to organize your discounts
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plan Information */}
+              <div>
+                <label className="block mb-2 font-semibold text-gray-700 flex items-center gap-2">
+                  <Icon icon="mdi:tag-text" className="w-4 h-4 text-blue-600" />
+                  Plan Name<span className="text-red-500">*</span>
+                </label>
                 <input
-                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   value={name}
                   onChange={handleNameChange}
                   disabled={loading}
-                  placeholder="Plan name"
+                  placeholder="e.g., Seasonal Sales, Holiday Promotions, VIP Discounts"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Give your discount plan a descriptive name
+                </p>
               </div>
-              <div className="mb-4 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="form-checkbox"
-                  checked={isActive}
-                  onChange={e => setIsActive(e.target.checked)}
+
+              {/* Description Field */}
+              <div>
+                <label className="block mb-2 font-semibold text-gray-700 flex items-center gap-2">
+                  <Icon icon="mdi:text" className="w-4 h-4 text-blue-600" />
+                  Description
+                </label>
+                <textarea
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+                  rows="3"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   disabled={loading}
+                  placeholder="Describe the purpose and scope of this discount plan..."
                 />
-                <span className="text-sm">Active</span>
+                <p className="text-xs text-gray-500 mt-1">
+                  Optional description to help organize your discounts
+                </p>
               </div>
-            </>
+
+              {/* Status Toggle */}
+              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    disabled={loading}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Icon
+                      icon="mdi:check-circle"
+                      className="w-5 h-5 text-green-600"
+                    />
+                    <span className="font-semibold text-gray-700">Active</span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Enable this plan to be used for creating discounts
+                </p>
+              </div>
+            </div>
           ) : type === "variant_attributes" ? (
             <>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Variant<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Variant<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={name}
@@ -683,18 +952,23 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Values<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Values<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={valueInput}
-                  onChange={e => setValueInput(e.target.value)}
+                  onChange={(e) => setValueInput(e.target.value)}
                   onKeyDown={handleValueInputKeyDown}
                   disabled={loading}
                   placeholder="Type a value and press comma or Enter"
                 />
                 <div className="flex flex-wrap gap-2 mt-2">
                   {values.map((val, idx) => (
-                    <span key={val + idx} className="inline-flex items-center bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full text-xs font-medium">
+                    <span
+                      key={val + idx}
+                      className="inline-flex items-center bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded-full text-xs font-medium"
+                    >
                       {val}
                       <button
                         type="button"
@@ -708,13 +982,17 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     </span>
                   ))}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">Enter value separated by comma</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Enter value separated by comma
+                </div>
               </div>
             </>
           ) : type === "units" ? (
             <>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Unit<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Unit<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={name}
@@ -724,11 +1002,13 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Symbol<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Symbol<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={symbol}
-                  onChange={e => setSymbol(e.target.value)}
+                  onChange={(e) => setSymbol(e.target.value)}
                   disabled={loading}
                   placeholder="e.g. kg, m, L"
                 />
@@ -737,7 +1017,9 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           ) : type === "stores" ? (
             <>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Store Name<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Store Name<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={name}
@@ -747,33 +1029,39 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Address<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Address<span className="text-red-500">*</span>
+                </label>
                 <textarea
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={address}
-                  onChange={e => setAddress(e.target.value)}
+                  onChange={(e) => setAddress(e.target.value)}
                   disabled={loading}
                   placeholder="Enter store address"
                   rows={3}
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Phone<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Phone<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value)}
                   disabled={loading}
                   placeholder="e.g. +1-555-123-4567"
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Email<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Email<span className="text-red-500">*</span>
+                </label>
                 <input
                   type="email"
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                   placeholder="e.g. store@example.com"
                 />
@@ -782,7 +1070,9 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           ) : type === "customers" ? (
             <>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Name<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Name<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={name}
@@ -797,17 +1087,19 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   type="email"
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                   placeholder="e.g. john@example.com"
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Phone<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Phone<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value)}
                   disabled={loading}
                   placeholder="e.g. +1-555-123-4567"
                 />
@@ -817,7 +1109,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 <textarea
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={address}
-                  onChange={e => setAddress(e.target.value)}
+                  onChange={(e) => setAddress(e.target.value)}
                   disabled={loading}
                   placeholder="Enter address"
                   rows={2}
@@ -829,20 +1121,35 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   type="checkbox"
                   className="form-checkbox"
                   checked={isActive}
-                  onChange={e => setIsActive(e.target.checked)}
+                  onChange={(e) => setIsActive(e.target.checked)}
                   disabled={loading}
                 />
-                <label htmlFor="customer-is-active" className="text-sm cursor-pointer select-none">Active</label>
+                <label
+                  htmlFor="customer-is-active"
+                  className="text-sm cursor-pointer select-none"
+                >
+                  Active
+                </label>
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Profile Picture</label>
-                <CategoryImageUpload value={imageUrl} onChange={setImageUrl} folder="ProfilePictures" userName={name} referralCode={email} />
+                <label className="block mb-1 font-medium">
+                  Profile Picture
+                </label>
+                <CategoryImageUpload
+                  value={imageUrl}
+                  onChange={setImageUrl}
+                  folder="ProfilePictures"
+                  userName={name}
+                  referralCode={email}
+                />
               </div>
             </>
           ) : type === "warehouses" ? (
             <>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Warehouse<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Warehouse<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={name}
@@ -852,46 +1159,56 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Contact Person<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Contact Person<span className="text-red-500">*</span>
+                </label>
                 <select
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={contactPerson}
-                  onChange={e => setContactPerson(e.target.value)}
+                  onChange={(e) => setContactPerson(e.target.value)}
                   disabled={loading}
                 >
                   <option value="">Select a user</option>
                   {usersList.map((user) => (
-                    <option key={user.id} value={user.id}>{user.full_name || user.id}</option>
+                    <option key={user.id} value={user.id}>
+                      {user.full_name || user.id}
+                    </option>
                   ))}
                 </select>
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Phone<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Phone<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value)}
                   disabled={loading}
                   placeholder="e.g. +1-555-123-4567"
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Email<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Email<span className="text-red-500">*</span>
+                </label>
                 <input
                   type="email"
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={warehouseEmail}
-                  onChange={e => setWarehouseEmail(e.target.value)}
+                  onChange={(e) => setWarehouseEmail(e.target.value)}
                   disabled={loading}
                   placeholder="e.g. warehouse@example.com"
                 />
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Address<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Address<span className="text-red-500">*</span>
+                </label>
                 <textarea
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={warehouseAddress}
-                  onChange={e => setWarehouseAddress(e.target.value)}
+                  onChange={(e) => setWarehouseAddress(e.target.value)}
                   disabled={loading}
                   placeholder="Enter warehouse address"
                   rows={3}
@@ -901,46 +1218,116 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           ) : type === "products" ? (
             <>
               <div className="mb-6">
-                <label className="block mb-1 font-medium">Product Name<span className="text-red-500">*</span></label>
-                <input className="w-full border rounded px-3 py-2" value={productName} onChange={e => { setProductName(e.target.value); if (!skuManuallyEdited) setSku(""); }} disabled={loading} placeholder="Product name" />
+                <label className="block mb-1 font-medium">
+                  Product Name<span className="text-red-500">*</span>
+                </label>
+                <input
+                  className="w-full border rounded px-3 py-2"
+                  value={productName}
+                  onChange={(e) => {
+                    setProductName(e.target.value);
+                    if (!skuManuallyEdited) setSku("");
+                  }}
+                  disabled={loading}
+                  placeholder="Product name"
+                />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block mb-1 font-medium">Store<span className="text-red-500">*</span></label>
-                  <select className="w-full border rounded px-3 py-2" value={storeId} onChange={e => setStoreId(e.target.value)} disabled={loading}>
+                  <label className="block mb-1 font-medium">
+                    Store<span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={storeId}
+                    onChange={(e) => setStoreId(e.target.value)}
+                    disabled={loading}
+                  >
                     <option value="">Select a store</option>
-                    {stores.map(store => <option key={store.id} value={store.id}>{store.name}</option>)}
+                    {stores.map((store) => (
+                      <option key={store.id} value={store.id}>
+                        {store.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1 font-medium">Warehouse<span className="text-red-500">*</span></label>
-                  <select className="w-full border rounded px-3 py-2" value={warehouseId} onChange={e => setWarehouseId(e.target.value)} disabled={loading}>
+                  <label className="block mb-1 font-medium">
+                    Warehouse<span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={warehouseId}
+                    onChange={(e) => setWarehouseId(e.target.value)}
+                    disabled={loading}
+                  >
                     <option value="">Select a warehouse</option>
-                    {warehouses.map(wh => <option key={wh.id} value={wh.id}>{wh.name}</option>)}
+                    {warehouses.map((wh) => (
+                      <option key={wh.id} value={wh.id}>
+                        {wh.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block mb-1 font-medium">Quantity<span className="text-red-500">*</span></label>
-                  <input type="number" className="w-full border rounded px-3 py-2" value={quantity} onChange={e => setQuantity(e.target.value)} disabled={loading} placeholder="Quantity" />
+                  <label className="block mb-1 font-medium">
+                    Quantity<span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full border rounded px-3 py-2"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    disabled={loading}
+                    placeholder="Quantity"
+                  />
                 </div>
                 <div>
                   <label className="block mb-1 font-medium">Unit</label>
-                  <select className="w-full border rounded px-3 py-2" value={unitId} onChange={e => setUnitId(e.target.value)} disabled={loading}>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={unitId}
+                    onChange={(e) => setUnitId(e.target.value)}
+                    disabled={loading}
+                  >
                     <option value="">Select a unit</option>
-                    {units.map(unit => <option key={unit.id} value={unit.id}>{unit.name}</option>)}
+                    {units.map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        {unit.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block mb-1 font-medium">Selling Price (in GHS)<span className="text-red-500">*</span></label>
-                  <input type="number" className="w-full border rounded px-3 py-2" value={price} onChange={e => setPrice(e.target.value)} disabled={loading} placeholder="Price" />
+                  <label className="block mb-1 font-medium">
+                    Selling Price (in GHS)
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full border rounded px-3 py-2"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    disabled={loading}
+                    placeholder="Price"
+                  />
                 </div>
                 <div>
-                  <label className="block mb-1 font-medium">Cost Price (in GHS)<span className="text-red-500">*</span></label>
-                  <input type="number" className="w-full border rounded px-3 py-2" value={costPrice} onChange={e => setCostPrice(e.target.value)} disabled={loading} placeholder="Cost Price" />
+                  <label className="block mb-1 font-medium">
+                    Cost Price (in GHS)<span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full border rounded px-3 py-2"
+                    value={costPrice}
+                    onChange={(e) => setCostPrice(e.target.value)}
+                    disabled={loading}
+                    placeholder="Cost Price"
+                  />
                 </div>
               </div>
               {/* Charge Tax Toggle */}
@@ -948,50 +1335,106 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 <span className="font-medium">Charge Tax?</span>
                 <button
                   type="button"
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${chargeTax ? 'bg-blue-600' : 'bg-gray-300'}`}
-                  onClick={() => setChargeTax(v => !v)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    chargeTax ? "bg-blue-600" : "bg-gray-300"
+                  }`}
+                  onClick={() => setChargeTax((v) => !v)}
                   aria-pressed={chargeTax}
                 >
                   <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${chargeTax ? 'translate-x-5' : 'translate-x-1'}`}
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                      chargeTax ? "translate-x-5" : "translate-x-1"
+                    }`}
                   />
                 </button>
-                <span className="text-sm text-gray-500">{chargeTax ? 'Yes' : 'No'}</span>
+                <span className="text-sm text-gray-500">
+                  {chargeTax ? "Yes" : "No"}
+                </span>
               </div>
               {/* Tax fields, only if chargeTax is true */}
               {chargeTax && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div>
-                    <label className="block mb-1 font-medium">Tax Type<span className="text-red-500">*</span></label>
-                    <select className="w-full border rounded px-3 py-2" value={taxType} onChange={e => setTaxType(e.target.value)} disabled={loading}>
-                      <option value="exclusive">Exclusive (Tax added on top)</option>
-                      <option value="inclusive">Inclusive (Tax included in price)</option>
+                    <label className="block mb-1 font-medium">
+                      Tax Type<span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      className="w-full border rounded px-3 py-2"
+                      value={taxType}
+                      onChange={(e) => setTaxType(e.target.value)}
+                      disabled={loading}
+                    >
+                      <option value="exclusive">
+                        Exclusive (Tax added on top)
+                      </option>
+                      <option value="inclusive">
+                        Inclusive (Tax included in price)
+                      </option>
                     </select>
                   </div>
                   <div>
-                    <label className="block mb-1 font-medium">Tax Percentage (%)<span className="text-red-500">*</span></label>
-                    <input type="number" min="0" max="100" step="0.01" className="w-full border rounded px-3 py-2" value={taxPercentage} onChange={e => setTaxPercentage(e.target.value)} disabled={loading} placeholder="0.00" />
+                    <label className="block mb-1 font-medium">
+                      Tax Percentage (%)<span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      className="w-full border rounded px-3 py-2"
+                      value={taxPercentage}
+                      onChange={(e) => setTaxPercentage(e.target.value)}
+                      disabled={loading}
+                      placeholder="0.00"
+                    />
                     <div className="text-xs text-gray-500 mt-1">
-                      {taxType === 'exclusive' 
-                        ? 'Tax will be added on top of the selling price (e.g., GHS 100 + 15% = GHS 115)' 
-                        : 'Tax is included in the selling price (e.g., GHS 115 includes 15% tax = GHS 100 + GHS 15)'}
+                      {taxType === "exclusive"
+                        ? "Tax will be added on top of the selling price (e.g., GHS 100 + 15% = GHS 115)"
+                        : "Tax is included in the selling price (e.g., GHS 115 includes 15% tax = GHS 100 + GHS 15)"}
                     </div>
                     {price && taxPercentage && Number(taxPercentage) > 0 && (
                       <div className="text-xs bg-blue-50 border border-blue-200 rounded p-2 mt-2">
                         <div className="font-medium text-blue-800 mb-1">
-                          Tax Calculation for "{productName || 'Product'}":
+                          Tax Calculation for "{productName || "Product"}":
                         </div>
-                        {taxType === 'exclusive' ? (
+                        {taxType === "exclusive" ? (
                           <div className="text-blue-700">
                             <div>Price: GHS {Number(price).toFixed(2)}</div>
-                            <div>Tax ({taxPercentage}%): GHS {(Number(price) * Number(taxPercentage) / 100).toFixed(2)}</div>
-                            <div className="font-medium">Total: GHS {(Number(price) * (1 + Number(taxPercentage) / 100)).toFixed(2)}</div>
+                            <div>
+                              Tax ({taxPercentage}%): GHS{" "}
+                              {(
+                                (Number(price) * Number(taxPercentage)) /
+                                100
+                              ).toFixed(2)}
+                            </div>
+                            <div className="font-medium">
+                              Total: GHS{" "}
+                              {(
+                                Number(price) *
+                                (1 + Number(taxPercentage) / 100)
+                              ).toFixed(2)}
+                            </div>
                           </div>
                         ) : (
                           <div className="text-blue-700">
-                            <div>Total Price: GHS {Number(price).toFixed(2)}</div>
-                            <div>Price without tax: GHS {(Number(price) / (1 + Number(taxPercentage) / 100)).toFixed(2)}</div>
-                            <div className="font-medium">Tax included: GHS {(Number(price) - (Number(price) / (1 + Number(taxPercentage) / 100))).toFixed(2)}</div>
+                            <div>
+                              Total Price: GHS {Number(price).toFixed(2)}
+                            </div>
+                            <div>
+                              Price without tax: GHS{" "}
+                              {(
+                                Number(price) /
+                                (1 + Number(taxPercentage) / 100)
+                              ).toFixed(2)}
+                            </div>
+                            <div className="font-medium">
+                              Tax included: GHS{" "}
+                              {(
+                                Number(price) -
+                                Number(price) /
+                                  (1 + Number(taxPercentage) / 100)
+                              ).toFixed(2)}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1002,52 +1445,123 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block mb-1 font-medium">SKU</label>
-                  <input className="w-full border rounded px-3 py-2" value={sku} onChange={e => setSku(e.target.value)} disabled={loading} placeholder="SKU" />
+                  <input
+                    className="w-full border rounded px-3 py-2"
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    disabled={loading}
+                    placeholder="SKU"
+                  />
                 </div>
                 <div>
                   <label className="block mb-1 font-medium">Barcode</label>
-                  <input className="w-full border rounded px-3 py-2" value={barcode} onChange={e => setBarcode(e.target.value)} disabled={loading} placeholder="Barcode" />
+                  <input
+                    className="w-full border rounded px-3 py-2"
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    disabled={loading}
+                    placeholder="Barcode"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block mb-1 font-medium">Category<span className="text-red-500">*</span></label>
+                  <label className="block mb-1 font-medium">
+                    Category<span className="text-red-500">*</span>
+                  </label>
                   <div className="flex gap-2">
-                    <select className="w-full border rounded px-3 py-2" value={categoryId} onChange={e => setCategoryId(e.target.value)} disabled={loading}>
+                    <select
+                      className="w-full border rounded px-3 py-2"
+                      value={categoryId}
+                      onChange={(e) => setCategoryId(e.target.value)}
+                      disabled={loading}
+                    >
                       <option value="">Select a category</option>
-                      {localCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                      {localCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
                     </select>
-                    <button type="button" className="w-40 px-2 py-1 bg-blue-500 text-white rounded" onClick={() => setShowAddCategory(true)} disabled={loading}>Add New</button>
+                    <button
+                      type="button"
+                      className="w-40 px-2 py-1 bg-blue-500 text-white rounded-lg"
+                      onClick={() => setShowAddCategory(true)}
+                      disabled={loading}
+                    >
+                      Add New
+                    </button>
                   </div>
                   {showAddCategory && (
                     <div className="mt-2 flex gap-2">
-                      <input className="w-full border rounded px-3 py-2" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="New category name" />
-                      <button type="button" className="px-2 py-1 bg-green-500 text-white rounded" onClick={handleAddCategory} disabled={loading}>Save</button>
-                      <button type="button" className="px-2 py-1 bg-gray-300 text-black rounded" onClick={() => setShowAddCategory(false)} disabled={loading}>Cancel</button>
+                      <input
+                        className="w-full border rounded px-3 py-2"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder="New category name"
+                      />
+                      <button
+                        type="button"
+                        className="px-2 py-1 bg-green-500 text-white rounded-lg"
+                        onClick={handleAddCategory}
+                        disabled={loading}
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        className="px-2 py-1 bg-gray-300 text-black rounded-lg"
+                        onClick={() => setShowAddCategory(false)}
+                        disabled={loading}
+                      >
+                        Cancel
+                      </button>
                     </div>
                   )}
                 </div>
                 <div>
                   <label className="block mb-1 font-medium">Sub Category</label>
-                  <select className="w-full border rounded px-3 py-2" value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)} disabled={loading || !categoryId}>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={subcategoryId}
+                    onChange={(e) => setSubcategoryId(e.target.value)}
+                    disabled={loading || !categoryId}
+                  >
                     <option value="">Select a subcategory</option>
-                    {subcategories.filter(sc => sc.category_id === categoryId).map(sc => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+                    {subcategories
+                      .filter((sc) => sc.category_id === categoryId)
+                      .map((sc) => (
+                        <option key={sc.id} value={sc.id}>
+                          {sc.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block mb-1 font-medium">Brand</label>
-                  <select className="w-full border rounded px-3 py-2" value={brandId} onChange={e => setBrandId(e.target.value)} disabled={loading}>
+                  <select
+                    className="w-full border rounded px-3 py-2"
+                    value={brandId}
+                    onChange={(e) => setBrandId(e.target.value)}
+                    disabled={loading}
+                  >
                     <option value="">Select a brand</option>
-                    {brands.map(brand => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
               {/* Variant Attributes Section */}
               {variantAttributes.length > 0 && (
                 <div className="mb-6">
-                  <label className="block mb-2 font-medium">Product Specifications (Optional)</label>
+                  <label className="block mb-2 font-medium">
+                    Product Specifications (Optional)
+                  </label>
                   <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
                     {variantAttributes.map((attr) => (
                       <div key={attr.id} className="flex items-center gap-3">
@@ -1058,85 +1572,133 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                           <select
                             className="w-full border rounded px-3 py-2 text-sm"
                             value={selectedVariantAttributes[attr.id] || ""}
-                            onChange={(e) => setSelectedVariantAttributes(prev => ({
-                              ...prev,
-                              [attr.id]: e.target.value
-                            }))}
+                            onChange={(e) =>
+                              setSelectedVariantAttributes((prev) => ({
+                                ...prev,
+                                [attr.id]: e.target.value,
+                              }))
+                            }
                             disabled={loading}
                           >
                             <option value="">Select {attr.name}</option>
-                            {attr.values && attr.values.split(',').map((value, index) => (
-                              <option key={index} value={value.trim()}>
-                                {value.trim()}
-                              </option>
-                            ))}
+                            {attr.values &&
+                              attr.values.split(",").map((value, index) => (
+                                <option key={index} value={value.trim()}>
+                                  {value.trim()}
+                                </option>
+                              ))}
                           </select>
                         </div>
                       </div>
                     ))}
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    Select variant attributes to create product variations (e.g., Size, Color, etc.)
+                    Select variant attributes to create product variations
+                    (e.g., Size, Color, etc.)
                   </p>
                 </div>
               )}
               <div className="mb-6">
                 <label className="block mb-1 font-medium">Item Barcode</label>
                 <div className="flex gap-2">
-                  <input className="w-full border rounded px-3 py-2" value={barcode} onChange={e => setBarcode(e.target.value)} disabled={loading} placeholder="Barcode" />
+                  <input
+                    className="w-full border rounded px-3 py-2"
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    disabled={loading}
+                    placeholder="Barcode"
+                  />
                 </div>
               </div>
               {barcode && (
                 <div className="mt-2 flex justify-center">
-                  <Barcode value={barcode} height={60} width={2} displayValue={false} />
+                  <Barcode
+                    value={barcode}
+                    height={60}
+                    width={2}
+                    displayValue={false}
+                  />
                 </div>
               )}
               <div className="mb-6">
                 <label className="block mb-1 font-medium">Image</label>
-                <CategoryImageUpload value={imageUrl} onChange={setImageUrl} folder="ProductImages" userName={productName} referralCode={sku} />
+                <CategoryImageUpload
+                  value={imageUrl}
+                  onChange={setImageUrl}
+                  folder="ProductImages"
+                  userName={productName}
+                  referralCode={sku}
+                />
               </div>
               <div className="mb-4 flex items-center gap-2">
-                <input type="checkbox" className="form-checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} disabled={loading} />
+                <input
+                  type="checkbox"
+                  className="form-checkbox"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                  disabled={loading}
+                />
                 <span className="text-sm">Active</span>
               </div>
-              {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
+              {error && (
+                <div className="text-red-600 mb-2 text-sm">{error}</div>
+              )}
               <div className="flex justify-end gap-2 mt-6">
-                <button type="button" className="px-4 py-2 rounded bg-gray-200 text-gray-700" onClick={onClose} disabled={loading}>Cancel</button>
-                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white" disabled={loading}>Save</button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700"
+                  onClick={onClose}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+                  disabled={loading}
+                >
+                  Save
+                </button>
               </div>
             </>
           ) : type === "expenses" ? (
             <>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Title<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Title<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={expenseTitle}
-                  onChange={e => setExpenseTitle(e.target.value)}
+                  onChange={(e) => setExpenseTitle(e.target.value)}
                   disabled={loading}
                   placeholder="e.g. Office Supplies, Rent Payment"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block mb-1 font-medium">Amount (GHS)<span className="text-red-500">*</span></label>
+                  <label className="block mb-1 font-medium">
+                    Amount (GHS)<span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                     value={expenseAmount}
-                    onChange={e => setExpenseAmount(e.target.value)}
+                    onChange={(e) => setExpenseAmount(e.target.value)}
                     disabled={loading}
                     placeholder="0.00"
                   />
                 </div>
                 <div>
-                  <label className="block mb-1 font-medium">Date<span className="text-red-500">*</span></label>
+                  <label className="block mb-1 font-medium">
+                    Date<span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="date"
                     className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                     value={expenseDate}
-                    onChange={e => setExpenseDate(e.target.value)}
+                    onChange={(e) => setExpenseDate(e.target.value)}
                     disabled={loading}
                   />
                 </div>
@@ -1147,21 +1709,25 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   <select
                     className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                     value={expenseCategoryId}
-                    onChange={e => setExpenseCategoryId(e.target.value)}
+                    onChange={(e) => setExpenseCategoryId(e.target.value)}
                     disabled={loading}
                   >
                     <option value="">Select a category</option>
-                    {expenseCategories.map(category => (
-                      <option key={category.id} value={category.id}>{category.name}</option>
+                    {expenseCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1 font-medium">Payment Method<span className="text-red-500">*</span></label>
+                  <label className="block mb-1 font-medium">
+                    Payment Method<span className="text-red-500">*</span>
+                  </label>
                   <select
                     className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                     value={paymentMethod}
-                    onChange={e => setPaymentMethod(e.target.value)}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
                     disabled={loading}
                   >
                     <option value="cash">Cash</option>
@@ -1170,11 +1736,13 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 </div>
               </div>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Status<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Status<span className="text-red-500">*</span>
+                </label>
                 <select
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={expenseStatus}
-                  onChange={e => setExpenseStatus(e.target.value)}
+                  onChange={(e) => setExpenseStatus(e.target.value)}
                   disabled={loading}
                 >
                   <option value="paid">Paid</option>
@@ -1187,26 +1755,42 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 <textarea
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={expenseDescription}
-                  onChange={e => setExpenseDescription(e.target.value)}
+                  onChange={(e) => setExpenseDescription(e.target.value)}
                   disabled={loading}
                   placeholder="Enter expense description"
                   rows={3}
                 />
               </div>
-              {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
+              {error && (
+                <div className="text-red-600 mb-2 text-sm">{error}</div>
+              )}
               <div className="flex justify-end gap-2 mt-6">
-                <button type="button" className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100" onClick={onClose} disabled={loading}>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
+                  onClick={onClose}
+                  disabled={loading}
+                >
                   Cancel
                 </button>
-                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" disabled={loading}>
-                  {loading && <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />} Save
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2"
+                  disabled={loading}
+                >
+                  {loading && (
+                    <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />
+                  )}{" "}
+                  Save
                 </button>
               </div>
             </>
           ) : type === "expense-categories" ? (
             <>
               <div className="mb-4">
-                <label className="block mb-1 font-medium">Name<span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium">
+                  Name<span className="text-red-500">*</span>
+                </label>
                 <input
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={name}
@@ -1220,19 +1804,33 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 <textarea
                   className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                   value={description}
-                  onChange={e => setDescription(e.target.value)}
+                  onChange={(e) => setDescription(e.target.value)}
                   disabled={loading}
                   placeholder="Enter category description"
                   rows={3}
                 />
               </div>
-              {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
+              {error && (
+                <div className="text-red-600 mb-2 text-sm">{error}</div>
+              )}
               <div className="flex justify-end gap-2 mt-6">
-                <button type="button" className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100" onClick={onClose} disabled={loading}>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
+                  onClick={onClose}
+                  disabled={loading}
+                >
                   Cancel
                 </button>
-                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" disabled={loading}>
-                  {loading && <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />} Save
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2"
+                  disabled={loading}
+                >
+                  {loading && (
+                    <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />
+                  )}{" "}
+                  Save
                 </button>
               </div>
             </>
@@ -1260,7 +1858,9 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 maxLength={10}
                 placeholder="e.g. TSHIR, FS, DJ, ACC"
               />
-              <div className="text-xs text-gray-400 mt-1">Short, unique code for this category (e.g. TSHIR, FS, DJ, ACC)</div>
+              <div className="text-xs text-gray-400 mt-1">
+                Short, unique code for this category (e.g. TSHIR, FS, DJ, ACC)
+              </div>
             </div>
           )}
           {type === "categories" && (
@@ -1269,7 +1869,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               <textarea
                 className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                 value={description}
-                onChange={e => setDescription(e.target.value)}
+                onChange={(e) => setDescription(e.target.value)}
                 disabled={loading}
                 placeholder="Enter category description"
                 rows={2}
@@ -1282,7 +1882,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 type="checkbox"
                 className="form-checkbox"
                 checked={isActive}
-                onChange={e => setIsActive(e.target.checked)}
+                onChange={(e) => setIsActive(e.target.checked)}
                 disabled={loading}
               />
               <span className="text-sm">Active</span>
@@ -1294,7 +1894,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               <select
                 className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
                 value={categoryId}
-                onChange={e => setCategoryId(e.target.value)}
+                onChange={(e) => setCategoryId(e.target.value)}
                 disabled={loading}
               >
                 {localCategories.map((cat) => (
@@ -1306,22 +1906,45 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
             </div>
           )}
           {error && <div className="text-red-600 mb-2 text-sm">{error}</div>}
-          {type !== "variant_attributes" && type !== "units" && type !== "stores" && type !== "warehouses" && type !== "customers" && type !== "discounts" && type !== "plans" && type !== "products" && type !== "expenses" && type !== "expense-categories" && (
-            <div className="mb-4">
-              <label className="block mb-1 font-medium">Image</label>
-              <CategoryImageUpload value={imageUrl} onChange={setImageUrl} />
-            </div>
-          )}
-          {type !== "products" && type !== "expenses" && type !== "expense-categories" && (
-            <div className="flex justify-end gap-2 mt-6">
-              <button type="button" className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100" onClick={onClose} disabled={loading}>
-                Cancel
-              </button>
-              <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2" disabled={loading}>
-                {loading && <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />} Save
-              </button>
-            </div>
-          )}
+          {type !== "variant_attributes" &&
+            type !== "units" &&
+            type !== "stores" &&
+            type !== "warehouses" &&
+            type !== "customers" &&
+            type !== "discounts" &&
+            type !== "plans" &&
+            type !== "products" &&
+            type !== "expenses" &&
+            type !== "expense-categories" && (
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Image</label>
+                <CategoryImageUpload value={imageUrl} onChange={setImageUrl} />
+              </div>
+            )}
+          {type !== "products" &&
+            type !== "expenses" &&
+            type !== "expense-categories" && (
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
+                  onClick={onClose}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2"
+                  disabled={loading}
+                >
+                  {loading && (
+                    <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />
+                  )}{" "}
+                  Save
+                </button>
+              </div>
+            )}
         </form>
       </SimpleModal>
     </>

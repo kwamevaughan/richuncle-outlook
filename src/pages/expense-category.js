@@ -144,10 +144,12 @@ export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...pro
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                  <Icon
-                    icon="mdi:folder-outline"
-                    className="w-7 h-7 text-blue-900"
-                  />
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <Icon
+                      icon="mdi:folder-outline"
+                      className="w-7 h-7 text-white"
+                    />
+                  </div>
                   Expense Categories
                 </h1>
                 <p className="text-sm text-gray-500 mb-6">
@@ -155,7 +157,7 @@ export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...pro
                 </p>
               </div>
               <Link href="/expenses">
-                <button className="bg-blue-900 text-white px-4 py-2 rounded-md">
+                <button className="bg-blue-900 text-white px-4 py-2 rounded-lg">
                   Back to Expenses
                 </button>
               </Link>
@@ -191,7 +193,6 @@ export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...pro
                 onDelete={openConfirm}
                 onAddNew={openAddModal}
                 addNewLabel="Add Expense Category"
-                title="Expense Categories"
                 emptyMessage="No expense categories available"
               />
             </div>

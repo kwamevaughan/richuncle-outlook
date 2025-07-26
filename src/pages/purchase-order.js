@@ -220,7 +220,7 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                       <Icon
                         icon="mdi:clipboard-text"
                         className="w-6 h-6 text-white"
@@ -470,7 +470,7 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                   onDelete={handleDelete}
                   onAddNew={openAddModal}
                   addNewLabel="Add Purchase Order"
-                  title="Purchase Orders"
+                  title=""
                   emptyMessage="No purchase orders found"
                   statusOptions={[
                     { value: "pending", label: "Pending" },

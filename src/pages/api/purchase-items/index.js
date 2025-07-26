@@ -10,13 +10,38 @@ export default async function handler(req, res) {
     }
     const { data, error } = await supabaseAdmin
       .from('purchase_items')
-      .select('*')
+      .select(`
+        *,
+        product:products(
+          id,
+          name,
+          sku,
+          description,
+          price,
+          cost_price,
+          quantity,
+          image_url
+        )
+      `)
       .eq('purchase_id', purchase_id)
       .order('created_at', { ascending: true });
     if (error) {
       return res.status(500).json({ success: false, error: error.message });
     }
-    return res.status(200).json({ success: true, data: data || [] });
+    
+    // Transform the data to flatten the product information
+    const transformedData = (data || []).map(item => ({
+      ...item,
+      product_name: item.product?.name || 'Unknown Product',
+      product_sku: item.product?.sku || '',
+      product_description: item.product?.description || '',
+      product_price: item.product?.price || 0,
+      product_cost_price: item.product?.cost_price || 0,
+      product_quantity: item.product?.quantity || 0,
+      product_image_url: item.product?.image_url || ''
+    }));
+    
+    return res.status(200).json({ success: true, data: transformedData });
   }
 
   if (req.method === 'POST') {

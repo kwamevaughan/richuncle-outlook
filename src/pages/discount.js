@@ -8,6 +8,7 @@ import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
 import SimpleModal from "../components/SimpleModal";
+import ExportModal from "../components/export/ExportModal";
 
 export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
   const [tab, setTab] = useState("discounts");
@@ -22,9 +23,17 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showExportModal, setShowExportModal] = useState(false);
   const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
+
+  // Set initial tab based on URL query parameter
+  React.useEffect(() => {
+    if (router.query.tab === 'plans') {
+      setTab('plans');
+    }
+  }, [router.query.tab]);
 
   // Fetch discounts and plans
   const fetchDiscounts = async () => {
@@ -68,8 +77,52 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
     p.name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Flatten data for export to prevent nested object errors
+  const flattenObject = (obj) => {
+    const result = {};
+    for (const key in obj) {
+      if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+      const value = obj[key];
+      if (value === null || value === undefined) {
+        result[key] = '';
+      } else if (typeof value === 'object') {
+        // If it's an array, show count; if object, JSON.stringify
+        if (Array.isArray(value)) {
+          result[key] = `Array(${value.length})`;
+        } else if (value && value.name) {
+          result[key] = value.name;
+        } else {
+          result[key] = JSON.stringify(value);
+        }
+      } else {
+        result[key] = String(value);
+      }
+    }
+    return result;
+  };
+
+  const flattenedDiscounts = discounts.map(discount => flattenObject({
+    id: discount.id,
+    name: discount.name,
+    discount_code: discount.discount_code,
+    value: discount.value,
+    discount_type: discount.discount_type,
+    plan_name: discount.discount_plans?.name,
+    store_name: discount.store?.name || 'All Stores',
+    validity: discount.validity,
+    is_active: discount.is_active,
+    created_at: discount.created_at,
+    updated_at: discount.updated_at
+  }));
+
+  const flattenedPlans = plans.map(plan => flattenObject(plan));
+
   // Modal helpers
   const openAddModal = (type) => {
+    if (type === "discounts" && (!plans || plans.length === 0)) {
+      toast.error("Please create a Discount Plan first.");
+      return;
+    }
     setModalType("add");
     setEditItem(null);
     setShowModal(true);
@@ -194,66 +247,234 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
-      <div className="flex flex-1">
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
+      <div className="flex flex-1 bg-gray-50 min-h-screen">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:percent" className="w-7 h-7 text-blue-900" />
-              Discount Management
-            </h1>
-            <p className="text-sm text-gray-500 mb-6">
-              Manage discounts and discount plans here.
-            </p>
+            {/* Enhanced Header */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                      <Icon icon="mdi:percent-outline" className="w-7 h-7 text-white" />
+                    </div>
+                    Discount Management
+                  </h1>
+                  <p className="text-gray-600">
+                    Manage discounts and discount plans for your business
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      fetchDiscounts();
+                      fetchPlans();
+                    }}
+                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm"
+                  >
+                    <Icon icon="mdi:refresh" className="w-4 h-4" />
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Enhanced Statistics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white rounded-lg p-4 shadow-sm border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Icon
+                        icon="mdi:percent"
+                        className="w-5 h-5 text-blue-600"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {discounts.length}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Total Discounts
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-4 shadow-sm border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <Icon
+                        icon="mdi:check-circle"
+                        className="w-5 h-5 text-green-600"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {discounts.filter(d => d.is_active).length}
+                      </div>
+                      <div className="text-sm text-gray-500">Active Discounts</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-4 shadow-sm border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Icon
+                        icon="mdi:package-variant"
+                        className="w-5 h-5 text-blue-600"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {plans.length}
+                      </div>
+                      <div className="text-sm text-gray-500">Discount Plans</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-4 shadow-sm border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <Icon
+                        icon="mdi:calendar-check"
+                        className="w-5 h-5 text-orange-600"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {plans.filter(p => p.is_active).length}
+                      </div>
+                      <div className="text-sm text-gray-500">Active Plans</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Search and Filters */}
+            <div className="bg-white rounded-lg p-4 shadow-sm border mb-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Icon icon="mdi:magnify" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search discounts and plans..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none shadow-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modern Tab Navigation */}
+            <div className="bg-white rounded-t-xl shadow-sm border border-gray-200 mb-0">
+              <div className="flex border-b border-gray-200">
+                <button
+                  className={`px-6 py-4 font-semibold text-sm transition-all duration-200 border-b-2 focus:outline-none ${
+                    tab === "discounts"
+                      ? "border-blue-500 text-blue-600 bg-blue-50"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  }`}
+                  onClick={() => setTab("discounts")}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon icon="mdi:percent" className="w-4 h-4" />
+                    Discounts ({discounts.length})
+                  </div>
+                </button>
+                <button
+                  className={`px-6 py-4 font-semibold text-sm transition-all duration-200 border-b-2 focus:outline-none ${
+                    tab === "plans"
+                      ? "border-blue-500 text-blue-600 bg-blue-50"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  }`}
+                  onClick={() => setTab("plans")}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon icon="mdi:package-variant" className="w-4 h-4" />
+                    Discount Plans ({plans.length})
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Content Area */}
             {loading && (
               <div className="flex items-center gap-2 text-blue-600 mb-4">
-                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" />{" "}
-                Loading...
+                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" /> Loading...
               </div>
             )}
             {error && <div className="text-red-600 mb-4">{error}</div>}
-            <div className="flex gap-2 mb-4">
-              <button
-                className={`px-4 py-2 rounded-t-lg font-semibold transition-colors duration-200 border-b-2 focus:outline-none ${
-                  tab === "discounts"
-                    ? "border-blue-500 text-blue-600 bg-white dark:bg-gray-900"
-                    : "border-transparent text-gray-500 bg-gray-50 dark:bg-gray-800"
-                }`}
-                onClick={() => setTab("discounts")}
-              >
-                Discounts
-              </button>
-              <button
-                className={`px-4 py-2 rounded-t-lg font-semibold transition-colors duration-200 border-b-2 focus:outline-none ${
-                  tab === "plans"
-                    ? "border-blue-500 text-blue-600 bg-white dark:bg-gray-900"
-                    : "border-transparent text-gray-500 bg-gray-50 dark:bg-gray-800"
-                }`}
-                onClick={() => setTab("plans")}
-              >
-                Discount Plans
-              </button>
-            </div>
-            <div className="bg-white dark:bg-gray-900 rounded-xl">
+            
+            <div className="bg-white rounded-b-xl shadow-sm border border-gray-200">
               {tab === "discounts" ? (
                 <GenericTable
                   data={filteredDiscounts}
                   columns={[
                     { header: "Name", accessor: "name", sortable: true },
-                    { header: "Value", accessor: "value", sortable: true },
+                    { header: "Code", accessor: "discount_code", sortable: true, render: (row) => (
+                      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded text-gray-700">
+                        {row.discount_code || "N/A"}
+                      </span>
+                    )},
+                    { header: "Value", accessor: "value", sortable: true, render: (row) => (
+                      <div>
+                        <span className="font-semibold text-blue-600">
+                          {row.discount_type === "fixed" ? `GHS ${row.value}` : `${row.value}%`}
+                        </span>
+                        <div className="text-xs text-gray-500">
+                          {row.discount_type === "fixed" ? "Fixed Amount" : "Percentage"}
+                        </div>
+                      </div>
+                    )},
                     {
                       header: "Discount Plan",
                       accessor: "plan_id",
                       sortable: false,
-                      render: (row) => row.plan?.name || "-",
+                      render: (row) => row.discount_plans?.name || "-",
                     },
-                    { header: "Validity", accessor: "validity", sortable: true },
+                    {
+                      header: "Store",
+                      accessor: "store_id",
+                      sortable: false,
+                      render: (row) => row.store?.name || "All Stores",
+                    },
+                    {
+                      header: "Validity",
+                      accessor: "validity",
+                      sortable: true,
+                      render: (row) => {
+                        if (!row.validity) return "-";
+                        const [start, end] = row.validity.split(' to ');
+                        return (
+                          <div className="text-xs">
+                            <div className="text-gray-600">From: {new Date(start).toLocaleDateString()}</div>
+                            <div className="text-gray-600">To: {new Date(end).toLocaleDateString()}</div>
+                          </div>
+                        );
+                      }
+                    },
                     {
                       header: "Status",
                       accessor: "is_active",
                       sortable: true,
                       render: (row) => (
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            row.is_active
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
                           {row.is_active ? "Active" : "Inactive"}
                         </span>
                       ),
@@ -263,18 +484,38 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                   onDelete={openConfirm}
                   onAddNew={() => openAddModal("discounts")}
                   addNewLabel="Add New Discount"
+                  onExport={() => setShowExportModal(true)}
+                  emptyMessage={
+                    <div className="flex flex-col items-center py-12 text-gray-400">
+                      <Icon icon="mdi:percent-off" className="w-12 h-12 mb-2" />
+                      <div>No discounts found</div>
+                    </div>
+                  }
                 />
               ) : (
                 <GenericTable
                   data={filteredPlans}
                   columns={[
                     { header: "Plan Name", accessor: "name", sortable: true },
+                    { header: "Description", accessor: "description", sortable: false, render: (row) => (
+                      <div className="max-w-xs">
+                        <span className="text-sm text-gray-600">
+                          {row.description || "No description"}
+                        </span>
+                      </div>
+                    )},
                     {
                       header: "Status",
                       accessor: "is_active",
                       sortable: true,
                       render: (row) => (
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            row.is_active
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
                           {row.is_active ? "Active" : "Inactive"}
                         </span>
                       ),
@@ -284,6 +525,13 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                   onDelete={openConfirm}
                   onAddNew={() => openAddModal("plans")}
                   addNewLabel="Add New Discount Plan"
+                  onExport={() => setShowExportModal(true)}
+                  emptyMessage={
+                    <div className="flex flex-col items-center py-12 text-gray-400">
+                      <Icon icon="mdi:package-variant-off" className="w-12 h-12 mb-2" />
+                      <div>No discount plans found</div>
+                    </div>
+                  }
                 />
               )}
             </div>
@@ -316,7 +564,10 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                       closeModal();
                     }
                   } catch (err) {
-                    setErrorModal({ open: true, message: err.message || "Failed to save" });
+                    setErrorModal({
+                      open: true,
+                      message: err.message || "Failed to save",
+                    });
                   }
                 }}
               />
@@ -360,7 +611,8 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                     className="w-12 h-12 text-red-500 mx-auto mb-4"
                   />
                   <div className="text-lg font-semibold mb-2">
-                    Are you sure you want to delete {deleteItem?.name || deleteItem?.id}?
+                    Are you sure you want to delete{" "}
+                    {deleteItem?.name || deleteItem?.id}?
                   </div>
                   <div className="flex justify-center gap-4 mt-6">
                     <button
@@ -379,6 +631,14 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                 </div>
               </SimpleModal>
             )}
+            <ExportModal
+              isOpen={showExportModal}
+              onClose={() => setShowExportModal(false)}
+              users={tab === "discounts" ? flattenedDiscounts : flattenedPlans}
+              mode={mode}
+              type={tab === "discounts" ? "discounts" : "discount-plans"}
+              title={`Export ${tab === "discounts" ? "Discounts" : "Discount Plans"} Data`}
+            />
           </div>
         </div>
       </div>

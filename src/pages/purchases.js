@@ -45,6 +45,9 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
     supplierCount: 0
   });
   
+  // Add products state for line items modal
+  const [products, setProducts] = useState([]);
+  
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -53,6 +56,10 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
 
   useEffect(() => {
     fetchPurchases();
+    // Fetch products for line items modal
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then(({ data }) => setProducts(data || []));
   }, [fetchPurchases]);
 
   // Calculate statistics
@@ -333,7 +340,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                       <Icon
                         icon="mdi:cart-check"
                         className="w-6 h-6 text-white"
@@ -355,7 +362,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                   </button>
                   <button
                     onClick={openAddModal}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                   >
                     <Icon icon="mdi:plus" className="w-4 h-4" />
                     New Purchase
@@ -445,12 +452,12 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                   placeholder="Search purchases by number, supplier, or warehouse..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All Statuses</option>
                   <option value="pending">Pending</option>
@@ -460,7 +467,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                 <select
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value)}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="7">Last 7 days</option>
                   <option value="30">Last 30 days</option>
@@ -473,7 +480,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
 
             {/* Content Area */}
             {loading && (
-              <div className="flex items-center gap-2 text-green-600 mb-4">
+              <div className="flex items-center gap-2 text-blue-600 mb-4">
                 <Icon icon="mdi:loading" className="animate-spin w-5 h-5" /> Loading...
               </div>
             )}
@@ -503,7 +510,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                       render: (row) => (
                         <button
                           onClick={() => handleExpandRow(row.id)}
-                          className="p-1 text-green-600 hover:bg-green-50 rounded"
+                          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                           title={expandedRows.includes(row.id) ? "Collapse" : "Expand"}
                         >
                           <Icon icon={expandedRows.includes(row.id) ? "mdi:chevron-up" : "mdi:chevron-down"} className="w-5 h-5" />
@@ -546,7 +553,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                               setViewItemsModal({ open: true, items: rowLineItems[row.id] });
                             }
                           }}
-                          className="p-1 text-green-600 hover:bg-green-50 rounded"
+                          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
                           title="View Items"
                         >
                           <Icon icon="mdi:eye-outline" className="w-5 h-5" />
@@ -558,7 +565,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                   onDelete={openConfirm}
                   onAddNew={openAddModal}
                   addNewLabel="Add Purchase"
-                  title="Direct Purchases"
+                  title=""
                   emptyMessage="No purchases found"
                   statusOptions={[
                     { value: "pending", label: "Pending" },
@@ -644,7 +651,60 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                 mode={mode}
                 width="max-w-2xl"
               >
-                <PurchaseItemsEditor items={viewItemsModal.items} disabled={true} />
+                <div className="space-y-6">
+                  {/* Header */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Icon icon="mdi:format-list-bulleted" className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-gray-900">Line Items</div>
+                      <div className="text-sm text-gray-500">Details of all products in this purchase</div>
+                    </div>
+                  </div>
+                  {/* Items Table/Card */}
+                  {(!viewItemsModal.items || viewItemsModal.items.length === 0) ? (
+                    <div className="flex flex-col items-center py-12 text-gray-400">
+                      <Icon icon="mdi:package-variant" className="w-12 h-12 mb-2" />
+                      <div>No line items found</div>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm rounded-xl overflow-hidden">
+                        <thead>
+                          <tr className="bg-blue-50 text-blue-900">
+                            <th className="px-4 py-3 text-left font-semibold">Product</th>
+                            <th className="px-4 py-3 text-left font-semibold">Quantity</th>
+                            <th className="px-4 py-3 text-left font-semibold">Unit Cost</th>
+                            <th className="px-4 py-3 text-left font-semibold">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                          {viewItemsModal.items.map((item, idx) => {
+                            const product = products.find((p) => p.id === item.product_id);
+                            return (
+                              <tr key={idx} className="hover:bg-green-50 transition-all">
+                                <td className="px-4 py-3">
+                                  <div>
+                                    <div className="font-medium text-gray-900">
+                                      {product?.name || item.product_name || item.name || 'Unknown Product'}
+                                    </div>
+                                    {(product?.sku || item.product_sku) && (
+                                      <div className="text-xs text-gray-500">SKU: {product?.sku || item.product_sku}</div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-gray-700">{item.quantity}</td>
+                                <td className="px-4 py-3 text-gray-700">GHS {Number(item.unit_cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                <td className="px-4 py-3 font-semibold text-green-700">GHS {((Number(item.quantity) || 0) * (Number(item.unit_cost) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </SimpleModal>
             )}
           </div>

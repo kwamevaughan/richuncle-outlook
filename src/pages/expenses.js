@@ -175,12 +175,23 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="jam:document" className="w-7 h-7 text-blue-900" />
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <Icon
+                  icon="mdi:file-document-outline"
+                  className="w-7 h-7 text-white"
+                />
+              </div>{" "}
               Expenses Management
             </h1>
             <p className="text-sm text-gray-500 mb-6">
@@ -218,7 +229,9 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
             {/* Date Range Picker */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Expenses</h2>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Expenses
+                </h2>
                 <p className="text-sm text-gray-500">
                   Showing {filteredExpenses.length} expenses
                 </p>
@@ -236,12 +249,20 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <div className="lg:col-span-2">
-                <ExpenseChart expenses={filteredExpenses} dateRange={dateRange} />
+                <ExpenseChart
+                  expenses={filteredExpenses}
+                  dateRange={dateRange}
+                />
               </div>
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-                  <Icon icon="mdi:lightning-bolt" className="w-6 h-6 text-blue-500" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Quick Actions
+                  </h3>
+                  <Icon
+                    icon="mdi:lightning-bolt"
+                    className="w-6 h-6 text-blue-500"
+                  />
                 </div>
                 <div className="space-y-3">
                   <button
@@ -252,7 +273,7 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
                     Add New Expense
                   </button>
                   <button
-                    onClick={() => router.push('/expense-category')}
+                    onClick={() => router.push("/expense-category")}
                     className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Icon icon="mdi:folder-outline" className="w-5 h-5" />
@@ -267,35 +288,73 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
                 data={filteredExpenses}
                 columns={[
                   { header: "Title", accessor: "title", sortable: true },
-                  { header: "Category", accessor: "category_name", sortable: false, render: (row) => 
-                    row.category_name || "Uncategorized"
+                  {
+                    header: "Category",
+                    accessor: "category_name",
+                    sortable: false,
+                    render: (row) => row.category_name || "Uncategorized",
                   },
-                  { header: "Amount", accessor: "amount", sortable: true, render: (row) => 
-                    `GHS ${parseFloat(row.amount || 0).toFixed(2)}`
+                  {
+                    header: "Amount",
+                    accessor: "amount",
+                    sortable: true,
+                    render: (row) =>
+                      `GHS ${parseFloat(row.amount || 0).toFixed(2)}`,
                   },
-                  { header: "Date", accessor: "expense_date", sortable: true, render: (row) => 
-                    new Date(row.expense_date).toLocaleDateString()
+                  {
+                    header: "Date",
+                    accessor: "expense_date",
+                    sortable: true,
+                    render: (row) =>
+                      new Date(row.expense_date).toLocaleDateString(),
                   },
-                  { header: "Payment Method", accessor: "payment_method", sortable: true, render: (row) => 
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      row.payment_method === 'cash' ? 'bg-green-100 text-green-800' :
-                      row.payment_method === 'momo' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {row.payment_method?.replace('_', ' ').toUpperCase() || 'N/A'}
-                    </span>
+                  {
+                    header: "Payment Method",
+                    accessor: "payment_method",
+                    sortable: true,
+                    render: (row) => (
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          row.payment_method === "cash"
+                            ? "bg-green-100 text-green-800"
+                            : row.payment_method === "momo"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {row.payment_method?.replace("_", " ").toUpperCase() ||
+                          "N/A"}
+                      </span>
+                    ),
                   },
-                  { header: "Status", accessor: "status", sortable: true, render: (row) => 
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      row.status === 'paid' ? 'bg-green-100 text-green-800' :
-                      row.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {row.status?.toUpperCase() || 'UNKNOWN'}
-                    </span>
+                  {
+                    header: "Status",
+                    accessor: "status",
+                    sortable: true,
+                    render: (row) => (
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          row.status === "paid"
+                            ? "bg-green-100 text-green-800"
+                            : row.status === "pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {row.status?.toUpperCase() || "UNKNOWN"}
+                      </span>
+                    ),
                   },
-                  { header: "Description", accessor: "description", sortable: false, render: (row) => 
-                    row.description ? (row.description.length > 50 ? row.description.substring(0, 50) + '...' : row.description) : '-'
+                  {
+                    header: "Description",
+                    accessor: "description",
+                    sortable: false,
+                    render: (row) =>
+                      row.description
+                        ? row.description.length > 50
+                          ? row.description.substring(0, 50) + "..."
+                          : row.description
+                        : "-",
                   },
                 ]}
                 onEdit={openEditModal}

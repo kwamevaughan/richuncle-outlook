@@ -1,11 +1,12 @@
+require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
 // You'll need to add your Supabase URL and anon key here
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role key for admin operations
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY; // Use service role key for admin operations
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables');
+  console.error('Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables');
   process.exit(1);
 }
 
@@ -95,19 +96,40 @@ async function updateDatabase() {
 
     // Update existing products
     console.log('Updating existing products with default values...');
-    const { error: updateProductsError } = await supabase
-      .from('products')
-      .update({ 
-        cost_price: 0.00,
-        tax_type: 'exclusive',
-        tax_percentage: 0.00
-      })
-      .or('cost_price.is.null,tax_type.is.null,tax_percentage.is.null');
+    const { error: updateProductsError } = await supabase.rpc('exec_sql', {
+      sql: `
+        UPDATE products 
+        SET cost_price = 0.00 
+        WHERE cost_price IS NULL;
+      `
+    });
     
     if (updateProductsError) {
       console.error('Error updating products:', updateProductsError);
     } else {
-      console.log('✓ Updated existing products');
+      console.log('✓ Updated existing products with default cost_price');
+    }
+
+    // Add discount_type and store_id to discounts table
+    console.log('Adding discount_type and store_id columns to discounts table...');
+    const { error: discountTypeError } = await supabase.rpc('exec_sql', {
+      sql: 'ALTER TABLE discounts ADD COLUMN IF NOT EXISTS discount_type VARCHAR(20) DEFAULT \'percentage\';'
+    });
+    
+    if (discountTypeError) {
+      console.error('Error adding discount_type to discounts:', discountTypeError);
+    } else {
+      console.log('✓ Added discount_type to discounts table');
+    }
+
+    const { error: storeIdError } = await supabase.rpc('exec_sql', {
+      sql: 'ALTER TABLE discounts ADD COLUMN IF NOT EXISTS store_id UUID REFERENCES stores(id);'
+    });
+    
+    if (storeIdError) {
+      console.error('Error adding store_id to discounts:', storeIdError);
+    } else {
+      console.log('✓ Added store_id to discounts table with foreign key constraint');
     }
 
     // Update existing order_items

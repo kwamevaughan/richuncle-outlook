@@ -156,7 +156,25 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                 formatted.date = formatDate(formatted.date);
             }
             
-            return formatted;
+            // Ensure all values are strings for CSV export
+            const safeFormatted = {};
+            for (const [key, value] of Object.entries(formatted)) {
+                if (value === null || value === undefined) {
+                    safeFormatted[key] = '';
+                } else if (typeof value === 'object') {
+                    if (Array.isArray(value)) {
+                        safeFormatted[key] = `Array(${value.length})`;
+                    } else if (value && value.name) {
+                        safeFormatted[key] = value.name;
+                    } else {
+                        safeFormatted[key] = JSON.stringify(value);
+                    }
+                } else {
+                    safeFormatted[key] = String(value);
+                }
+            }
+            
+            return safeFormatted;
         });
     }
 
