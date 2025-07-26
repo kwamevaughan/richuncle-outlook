@@ -11,6 +11,8 @@ const useLogin = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const [isRecaptchaLoading, setIsRecaptchaLoading] = useState(false);
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -24,9 +26,40 @@ const useLogin = () => {
     }));
   };
 
+  const handleRecaptchaChange = (token) => {
+    setRecaptchaToken(token);
+  };
+
+  const handleRecaptchaExpired = () => {
+    setRecaptchaToken(null);
+    toast.error("reCAPTCHA expired. Please verify again.");
+  };
+
+  const handleRecaptchaError = () => {
+    setRecaptchaToken(null);
+    toast.error("reCAPTCHA error. Please try again.");
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    await login(loginData.email, loginData.password, loginData.rememberMe);
+    
+    if (!recaptchaToken) {
+      toast.error("Please complete the reCAPTCHA verification.");
+      return;
+    }
+    
+    setIsRecaptchaLoading(true);
+    try {
+      await login(loginData.email, loginData.password, loginData.rememberMe, recaptchaToken);
+    } catch (error) {
+      // Reset reCAPTCHA on login failure
+      setRecaptchaToken(null);
+      if (window.grecaptcha) {
+        window.grecaptcha.reset();
+      }
+    } finally {
+      setIsRecaptchaLoading(false);
+    }
   };
 
   const handleSocialLogin = async (provider) => {
@@ -52,8 +85,13 @@ const useLogin = () => {
     setLoginData,
     showPassword,
     togglePasswordVisibility,
+    recaptchaToken,
+    isRecaptchaLoading,
     handleLogin,
     handleLoginChange,
+    handleRecaptchaChange,
+    handleRecaptchaExpired,
+    handleRecaptchaError,
     handleSocialLogin,
     showForgotPasswordModal,
     setShowForgotPasswordModal,

@@ -2,18 +2,55 @@ const bcrypt = require("bcrypt");
 import supabaseAdmin from "../../../lib/supabaseAdmin";
 const cookie = require('cookie');
 
+// Function to verify reCAPTCHA token
+async function verifyRecaptcha(token) {
+  try {
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
+    });
+
+    const data = await response.json();
+    
+    if (!data.success) {
+      console.error('reCAPTCHA verification failed:', data['error-codes']);
+    }
+    
+    return data.success;
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email, password } = req.body;
+  const { email, password, recaptchaToken } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
   }
 
+  if (!recaptchaToken) {
+    return res.status(400).json({ error: "reCAPTCHA verification is required" });
+  }
+
   try {
     console.log("Login API: Starting login process for email:", email);
+    
+    // Verify reCAPTCHA token
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+    if (!isRecaptchaValid) {
+      console.error("Login API: reCAPTCHA verification failed");
+      return res.status(400).json({ error: "reCAPTCHA verification failed. Please try again." });
+    }
+
+    console.log("Login API: reCAPTCHA verified successfully");
     
     // Find user by email
     const { data: userData, error: userError } = await supabaseAdmin

@@ -10,10 +10,10 @@ export const useAuth = () => {
 
   const { login, logout, signInWithSocial, resetPassword } = context;
 
-  const handleLogin = async (email, password, rememberMe) => {
+  const handleLogin = async (email, password, rememberMe, recaptchaToken) => {
     const toastId = toast.loading("Please wait...");
     try {
-      await login(email, password, rememberMe);
+      await login(email, password, rememberMe, recaptchaToken);
       toast.dismiss(toastId);
       toast.success("Login successful! Redirecting...");
     } catch (error) {

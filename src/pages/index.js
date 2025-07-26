@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { Icon } from "@iconify/react";
+import ReCAPTCHA from "react-google-recaptcha";
 import useLogin from "@/hooks/useLogin";
 import SimpleModal from "@/components/SimpleModal";
 
@@ -12,14 +13,20 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
     setLoginData,
     showPassword,
     togglePasswordVisibility,
+    recaptchaToken,
+    isRecaptchaLoading,
     handleLogin,
     handleLoginChange,
+    handleRecaptchaChange,
+    handleRecaptchaExpired,
+    handleRecaptchaError,
     handleSocialLogin,
     showForgotPasswordModal,
     setShowForgotPasswordModal,
     handleForgotPassword,
   } = useLogin();
-    const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
+  const recaptchaRef = useRef(null);
 
 
   // Remove per-page cashier redirect logic
@@ -97,6 +104,37 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                 </div>
               </div>
 
+              <div className="mb-6">
+                <div className="flex flex-col items-center">
+                  <p className="text-xs text-gray-600 mb-2 text-center">
+                    Please verify that you're not a robot
+                  </p>
+                  <div className={`transition-opacity duration-300 ${recaptchaToken ? 'opacity-100' : 'opacity-90'}`}>
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                      onChange={handleRecaptchaChange}
+                      onExpired={handleRecaptchaExpired}
+                      onError={handleRecaptchaError}
+                      theme="light"
+                      size="normal"
+                      onLoad={() => console.log('reCAPTCHA loaded successfully')}
+                    />
+                  </div>
+                  {!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
+                    <p className="text-xs text-red-500 mt-2">
+                      reCAPTCHA configuration error. Please contact support.
+                    </p>
+                  )}
+                  {recaptchaToken && (
+                    <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                      <Icon icon="solar:check-circle-bold" className="w-3 h-3" />
+                      Verification complete
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="flex flex-col md:flex-row items-center justify-between mb-8 space-y-2 md:space-y-0">
                 <div className="flex items-center">
                   <div
@@ -144,9 +182,19 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
 
               <button
                 type="submit"
-                className="w-full bg-blue-900 text-white font-bold py-3 rounded-full transform transition-transform duration-700 ease-in-out hover:scale-105"
+                disabled={isRecaptchaLoading || !recaptchaToken}
+                className={`w-full bg-blue-900 text-white font-bold py-3 rounded-full transform transition-transform duration-700 ease-in-out hover:scale-105 ${
+                  (isRecaptchaLoading || !recaptchaToken) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                Access Dashboard
+                {isRecaptchaLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Icon icon="solar:loading-bold" className="w-5 h-5 animate-spin" />
+                    Verifying...
+                  </div>
+                ) : (
+                  'Access Dashboard'
+                )}
               </button>
             </form>
           </div>

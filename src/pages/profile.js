@@ -625,7 +625,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-gradient-to-r from-gray-50 to-blue-50/50 px-8 py-6 border-b border-gray-100">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                       <Icon icon="solar:user-id-bold" className="w-5 h-5 text-white" />
                     </div>
                     <div>

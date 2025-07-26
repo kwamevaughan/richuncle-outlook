@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = async (email, password, rememberMe) => {
+  const login = async (email, password, rememberMe, recaptchaToken) => {
     try {
       // Use our custom login API
       const response = await fetch("/api/auth/login", {
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, recaptchaToken }),
       });
 
       const result = await response.json();
