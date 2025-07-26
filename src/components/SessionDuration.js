@@ -105,15 +105,18 @@ const SessionDuration = ({ mode, user, sessionRefreshKey }) => {
         }
         disabled
       >
-        <span className="font-semibold">Session Duration :</span>
-        <Icon
-          icon="mdi:clock-outline"
-          className={`h-4 w-4 ${
-            mode === "dark" ? "text-green-400" : "text-green-600"
-          }`}
-        />
-        <span className="text-sm">
-          {session ? formatDuration(duration) : "No session open"}
+        <span className="font-semibold whitespace-nowrap">
+          Session Duration:{" "}
+          <Icon
+            icon="mdi:clock-outline"
+            className={`h-4 w-4 inline ${
+              mode === "dark" ? "text-green-400" : "text-green-600"
+            }`}
+          />
+          {" "}
+          <span className="text-sm font-normal">
+            {session ? formatDuration(duration) : "No session open"}
+          </span>
         </span>
       </div>
     </div>

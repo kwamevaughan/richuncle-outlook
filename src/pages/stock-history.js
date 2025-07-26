@@ -160,7 +160,7 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
   const columns = [
     {
       accessor: 'date',
-      header: 'Date & Time',
+      Header: 'Date & Time',
       sortable: true,
       render: (row) => (
         <div className="text-sm text-gray-900">
@@ -170,7 +170,7 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
     },
     {
       accessor: 'type',
-      header: 'Type',
+      Header: 'Type',
       sortable: true,
       render: (row) => {
         const style = getTypeStyle(row.type);
@@ -184,7 +184,7 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
     },
     {
       accessor: 'description',
-      header: 'Description',
+      Header: 'Description',
       sortable: true,
       render: (row) => (
         <div className="text-sm text-gray-900 max-w-xs truncate" title={row.description}>
@@ -194,7 +194,7 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
     },
     {
       accessor: 'product_name',
-      header: 'Product',
+      Header: 'Product',
       sortable: true,
       render: (row) => (
         <div className="text-sm text-gray-900">
@@ -204,7 +204,7 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
     },
     {
       accessor: 'quantity',
-      header: 'Quantity',
+      Header: 'Quantity',
       sortable: true,
       render: (row) => (
         <div className="text-sm font-semibold text-gray-900">
@@ -214,7 +214,7 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
     },
     {
       accessor: 'reference',
-      header: 'Reference',
+      Header: 'Reference',
       sortable: true,
       render: (row) => (
         <div className="text-sm text-gray-500">

@@ -124,14 +124,14 @@ export const sidebarNav = [
     icon: "mdi:tag-outline",
     items: [
       {
+        href: "/discount?tab=discounts",
+        icon: "mdi:percent-outline",
+        label: "Discount",
+      },
+      {
         href: "/discount?tab=plans",
         icon: "mdi:file-document-outline",
         label: "Discount Plan",
-      },
-      {
-        href: "/discount",
-        icon: "mdi:percent-outline",
-        label: "Discount",
       },
     ],
   },
@@ -178,64 +178,62 @@ export const sidebarNav = [
     category: "Reports",
     icon: "streamline-plump:file-report",
     items: [
-      
-          {
-            href: "/reports?tab=sales",
-            icon: "mdi:chart-line",
-            label: "Sales Report",
-          },
-          {
-            href: "/reports?tab=inventory",
-            icon: "mdi:package-variant",
-            label: "Inventory Report",
-          },
-          {
-            href: "/reports?tab=purchases",
-            icon: "mdi:cart-outline",
-            label: "Purchases Report",
-          },
-          {
-            href: "/reports?tab=customers",
-            icon: "mdi:account-group",
-            label: "Customers Report",
-          },
-          {
-            href: "/reports?tab=suppliers",
-            icon: "mdi:truck-delivery",
-            label: "Suppliers Report",
-          },
-          {
-            href: "/reports?tab=products",
-            icon: "mdi:cube-outline",
-            label: "Products Report",
-          },
-          {
-            href: "/reports?tab=expenses",
-            icon: "mdi:file-document-outline",
-            label: "Expenses Report",
-          },
-          {
-            href: "/reports?tab=profit-loss",
-            icon: "mdi:chart-areaspline",
-            label: "Profit & Loss",
-          },
-          {
-            href: "/reports?tab=tax",
-            icon: "mdi:calculator",
-            label: "Tax Report",
-          },
-          {
-            href: "/reports?tab=annual",
-            icon: "mdi:calendar-year",
-            label: "Annual Report",
-          },
-          {
-            href: "/reports?tab=z-report",
-            icon: "mdi:receipt-long",
-            label: "Z-Report (Register)",
+      {
+        href: "/reports?tab=sales",
+        icon: "mdi:chart-line",
+        label: "Sales Report",
+      },
+      {
+        href: "/reports?tab=inventory",
+        icon: "mdi:package-variant",
+        label: "Inventory Report",
+      },
+      {
+        href: "/reports?tab=purchases",
+        icon: "mdi:cart-outline",
+        label: "Purchases Report",
+      },
+      {
+        href: "/reports?tab=customers",
+        icon: "mdi:account-group",
+        label: "Customers Report",
+      },
+      {
+        href: "/reports?tab=suppliers",
+        icon: "mdi:truck-delivery",
+        label: "Suppliers Report",
+      },
+      {
+        href: "/reports?tab=products",
+        icon: "mdi:cube-outline",
+        label: "Products Report",
+      },
+      {
+        href: "/reports?tab=expenses",
+        icon: "mdi:file-document-outline",
+        label: "Expenses Report",
+      },
+      {
+        href: "/reports?tab=profit-loss",
+        icon: "mdi:chart-areaspline",
+        label: "Profit & Loss",
+      },
+      {
+        href: "/reports?tab=tax",
+        icon: "mdi:calculator",
+        label: "Tax Report",
+      },
+      {
+        href: "/reports?tab=annual",
+        icon: "mdi:calendar-year",
+        label: "Annual Report",
+      },
+      {
+        href: "/reports?tab=z-report",
+        icon: "mdi:receipt-long",
+        label: "Z-Report (Register)",
       },
     ],
-    
   },
   {
     category: "User Management",
@@ -258,94 +256,15 @@ export const sidebarNav = [
     icon: "solar:settings-linear",
     items: [
       {
-        href: "/general-settings",
-        icon: "mdi:cog-outline",
-        label: "General Settings",
-        subItems: [
-          {
-            href: "/general-settings",
-            icon: "mdi:cog-outline",
-            label: "General Settings",
-          },
-          {
-            href: "/profile",
-            icon: "mdi:account-outline",
-            label: "Profile",
-          },
-          {
-            href: "/security",
-            icon: "mdi:shield-outline",
-            label: "Security",
-          },
-          {
-            href: "/notifications",
-            icon: "mdi:bell-outline",
-            label: "Notifications",
-          },
-          {
-            href: "/connected-apps",
-            icon: "mdi:link-variant-outline",
-            label: "Connected Apps",
-          },
-        ],
-      },
-      {
-        href: "/app-settings",
-        icon: "mdi:cellphone-cog-outline",
-        label: "App Settings",
-        subItems: [
-          {
-            href: "/app-settings",
-            icon: "mdi:cellphone-cog-outline",
-            label: "App Settings",
-          },
-          {
-            href: "/printer",
-            icon: "mdi:printer-outline",
-            label: "Printer",
-          },
-          {
-            href: "/pos",
-            icon: "mdi:point-of-sale-outline",
-            label: "POS",
-          },
-        ],
+        href: "/profile",
+        icon: "mdi:account-outline",
+        label: "Profile",
       },
       {
         href: "/business-locations",
         icon: "mdi:map-marker-multiple",
         label: "Business Locations",
       },
-      {
-        href: "/website-settings",
-        icon: "mdi:web-outline",
-        label: "Website Settings",
-      },
-      {
-        href: "/system-settings",
-        icon: "mdi:desktop-classic-outline",
-        label: "System Settings",
-      },
-      {
-        href: "/financial-settings",
-        icon: "mdi:cash-register-outline",
-        label: "Financial Settings",
-      },
-      {
-        href: "/other-settings",
-        icon: "mdi:dots-horizontal",
-        label: "Other Settings",
-      },
     ],
   },
 ];
-
-// Filter navigation for freelancers
-export const getFilteredNav = (jobType) => {
-  if (jobType?.toLowerCase() === "freelancer") {
-    return sidebarNav.filter((item) =>
-      ["Dashboard", "Inventory", "Sales", "Promo"].includes(item.category)
-    );
-  }
-  return sidebarNav;
-};

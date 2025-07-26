@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { Icon } from "@iconify/react";
-import { sidebarNav, getFilteredNav } from "@/data/nav";
+import { sidebarNav } from "@/data/nav";
 
 const HrSidebar = ({
   mode,
@@ -20,7 +20,7 @@ const HrSidebar = ({
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedItems, setExpandedItems] = useState({});
 
-  const filteredNav = getFilteredNav(user?.job_type);
+  const filteredNav = sidebarNav;
 
   useEffect(() => {
     if (
@@ -90,37 +90,68 @@ const HrSidebar = ({
 
   const isActive = (href) => {
     if (!router) return "";
-    const pathname = href.split('?')[0];
-    return router.pathname === pathname
-      ? "bg-orange-100 text-blue-900 shadow-md"
-      : "text-gray-700 hover:bg-gray-100";
+    const [pathname, queryString] = href.split('?');
+    
+    // If pathnames don't match, not active
+    if (router.pathname !== pathname) {
+      return "text-gray-700 hover:bg-gray-100";
+    }
+    
+    // If href has no query parameters, only active if current router also has no query params
+    if (!queryString) {
+      const isActive = Object.keys(router.query).length === 0;
+      return isActive ? "bg-orange-100 text-blue-900 shadow-md" : "text-gray-700 hover:bg-gray-100";
+    }
+    
+    // If href has query parameters, check if they match
+    const hrefParams = new URLSearchParams(queryString);
+    const hrefTab = hrefParams.get('tab');
+    const currentTab = router.query.tab;
+    
+    // If href has a tab parameter, only active if it matches current tab exactly
+    if (hrefTab !== null) {
+      const isActive = hrefTab === currentTab;
+      return isActive ? "bg-orange-100 text-blue-900 shadow-md" : "text-gray-700 hover:bg-gray-100";
+    }
+    
+    // For other query parameters, check if they match
+    const isActive = Object.keys(hrefParams).every(key => 
+      router.query[key] === hrefParams.get(key)
+    );
+    return isActive ? "bg-orange-100 text-blue-900 shadow-md" : "text-gray-700 hover:bg-gray-100";
   };
 
   const isSubItemActive = (href) => {
     if (!router) return "";
     const [pathname, queryString] = href.split('?');
     if (router.pathname !== pathname) return "text-gray-600 hover:bg-gray-50 ml-0";
-    if (!queryString) return router.pathname === pathname
-      ? "bg-orange-50 text-blue-800 shadow-sm ml-0"
-      : "text-gray-600 hover:bg-gray-50 ml-0";
-    // Parse tab from query string
-    const params = new URLSearchParams(queryString);
-    const tab = params.get('tab');
+    
+    // Parse tab from href query string
+    const hrefParams = new URLSearchParams(queryString || '');
+    const hrefTab = hrefParams.get('tab');
+    
+    // Get current tab from router
     const currentTab = router.query.tab;
-    return tab === currentTab
-      ? "bg-orange-50 text-blue-800 shadow-sm ml-0"
-      : "text-gray-600 hover:bg-gray-50 ml-0";
+    
+    
+    
+    // If href has no tab parameter, only active if current router also has no tab
+    if (!hrefTab) {
+      const isActive = !currentTab;
+      
+      return isActive ? "bg-orange-50 text-blue-800 shadow-sm ml-0" : "text-gray-600 hover:bg-gray-50 ml-0";
+    }
+    
+    // If href has a tab parameter, only active if it matches current tab exactly
+    const isActive = hrefTab === currentTab;
+    console.log(`[isSubItemActive] hrefTab: ${hrefTab}, currentTab: ${currentTab}, isActive: ${isActive}`);
+    return isActive ? "bg-orange-50 text-blue-800 shadow-sm ml-0" : "text-gray-600 hover:bg-gray-50 ml-0";
   };
 
   const handleNavigation = async (href, label) => {
     if (!router) return;
     try {
-      console.log(
-        "[HrSidebar] Navigating to:",
-        href,
-        "Label:",
-        typeof label === "function" ? label(user?.job_type) : label
-      );
+      
       
       // Check if we're navigating to the same pathname but different query params
       const [pathname, queryString] = href.split('?');
@@ -135,7 +166,13 @@ const HrSidebar = ({
         }
         await router.replace({
           pathname: router.pathname,
-          query: { ...router.query, ...queryObj },
+          query: queryObj,
+        }, undefined, { shallow: true });
+      } else if (isSamePath && !queryString) {
+        // If navigating to same path but no query string, clear all query params
+        await router.replace({
+          pathname: router.pathname,
+          query: {},
         }, undefined, { shallow: true });
       } else {
         // Use push for different pathnames
@@ -172,7 +209,8 @@ const HrSidebar = ({
         `}
         style={{
           width: isMobile ? "100vw" : isOpen ? "240px" : "64px",
-          height: isMobile ? "100vh" : "calc(100vh - 24px)",
+          height: isMobile ? "100vh" : "calc(100vh - 48px)",
+          maxHeight: isMobile ? "100vh" : "calc(100vh - 48px)",
         }}
       >
         <div className="flex flex-col h-full relative">
@@ -193,29 +231,37 @@ const HrSidebar = ({
           </div>
 
           <div
-            className={`flex-grow px-2 overflow-y-auto flex flex-col scrollbar-thin ${
+            className={`flex-grow px-2 overflow-y-auto flex flex-col scrollbar-thin pb-4 ${
               !isOpen && !isMobile ? "items-center" : ""
             }`}
           >
             {/* Render standalone nav items (e.g., Home) */}
             {filteredNav
-              .filter(entry => !entry.items)
+              .filter((entry) => !entry.items)
               .map((item) => (
                 <div
                   key={item.href}
                   className={`flex items-center gap-2 px-2 mt-4 pt-4 pb-4 mb-2 rounded-lg font-bold text-gray-500 text-sm tracking-wide cursor-pointer transition-all duration-300 hover:bg-orange-50 ${
-                    mode === "dark" ? "bg-white/10 text-gray-200 hover:bg-white/20" : "bg-white"
+                    mode === "dark"
+                      ? "bg-white/10 text-gray-200 hover:bg-white/20"
+                      : "bg-white"
                   } ${!isOpen && !isMobile ? "justify-center" : ""}`}
                   onClick={() => handleNavigation(item.href, item.label)}
                 >
                   {item.icon && (
                     <Icon
                       icon={item.icon}
-                      className={`${item.href === '/dashboard' ? 'h-7 w-7' : 'h-5 w-5'} text-gray-500 transition-all duration-300 ${!isOpen && !isMobile ? "mx-auto" : "mr-2"}`}
+                      className={`${
+                        item.href === "/dashboard" ? "h-7 w-7" : "h-5 w-5"
+                      } text-gray-500 transition-all duration-300 ${
+                        !isOpen && !isMobile ? "mx-auto" : "mr-2"
+                      }`}
                     />
                   )}
                   <span
-                    className={`transition-all duration-300${!isOpen && !isMobile ? " hidden" : ""}`}
+                    className={`transition-all duration-300${
+                      !isOpen && !isMobile ? " hidden" : ""
+                    }`}
                   >
                     {item.label}
                   </span>
@@ -223,7 +269,7 @@ const HrSidebar = ({
               ))}
             {/* Render categories */}
             {filteredNav
-              .filter(entry => entry.items)
+              .filter((entry) => entry.items)
               .map(({ category, items, icon }, index) => (
                 <div
                   key={category}
@@ -233,13 +279,17 @@ const HrSidebar = ({
                 >
                   {index !== 0 && <div className="my-2" />}
                   <div
-                    className={`flex items-center justify-between text-sm tracking-wide font-medium text-gray-600 px-2 py-3 cursor-pointer transition-all duration-300 rounded-lg hover:bg-orange-50 hover:shadow-sm ${
+                    className={`flex items-center justify-between text-md tracking-wide font-medium text-gray-600 px-2 py-3 cursor-pointer transition-all duration-300 rounded-lg hover:bg-orange-50 hover:shadow-sm ${
                       !isOpen && !isMobile ? "justify-center" : ""
                     }`}
                     onClick={() => handleCategoryInteraction(category)}
-                    onMouseEnter={() => { if (!isOpen && !isMobile) toggleSidebar(); }}
+                    onMouseEnter={() => {
+                      if (!isOpen && !isMobile) toggleSidebar();
+                    }}
                   >
-                    <span className={`flex items-center gap-2 transition-all duration-300 capitalize`}>
+                    <span
+                      className={`flex items-center gap-2 transition-all duration-300 capitalize`}
+                    >
                       {icon && (
                         <Icon
                           icon={icon}
@@ -249,7 +299,9 @@ const HrSidebar = ({
                         />
                       )}
                       <span
-                        className={`transition-all duration-300${!isOpen && !isMobile ? " hidden" : ""}`}
+                        className={`transition-all duration-300${
+                          !isOpen && !isMobile ? " hidden" : ""
+                        }`}
                       >
                         {category}
                       </span>
@@ -272,14 +324,15 @@ const HrSidebar = ({
                   <div
                     className={`overflow-hidden transition-all duration-300 ${
                       expandedCategories[category]
-                        ? "max-h-96 opacity-100"
+                        ? "max-h-[800px] opacity-100"
                         : "max-h-0 opacity-0"
                     }`}
-                     style={{ transitionProperty: 'max-height, opacity', transitionDuration: '500ms' }}
+                    style={{
+                      transitionProperty: "max-height, opacity",
+                      transitionDuration: "500ms",
+                    }}
                   >
-                    <ul
-                      className={`pl-8 pt-2 flex flex-col relative z-10`}
-                    >
+                    <ul className={`pl-8 pt-2 flex flex-col relative z-10`}>
                       {Array.isArray(items) && items.length > 0 ? (
                         items.map(({ href, icon, label, subItems }) => {
                           const isActiveItem = isActive(href);
@@ -287,8 +340,10 @@ const HrSidebar = ({
                           const isExpanded = expandedItems[href];
 
                           // Intercept Retrieve Layaways/Orders
-                          const isRetrieveLayaways = !href && label === 'Retrieve Layaways';
-                          const isRetrieveOrders = !href && label === 'Retrive Orders';
+                          const isRetrieveLayaways =
+                            !href && label === "Retrieve Layaways";
+                          const isRetrieveOrders =
+                            !href && label === "Retrive Orders";
 
                           return (
                             <li key={href + label} className="px-2 pl-2">
@@ -297,11 +352,19 @@ const HrSidebar = ({
                                 data-href={href}
                                 onClick={() => {
                                   if (isRetrieveLayaways) {
-                                    window.dispatchEvent(new CustomEvent('open-retrieve-layaways-modal'));
+                                    window.dispatchEvent(
+                                      new CustomEvent(
+                                        "open-retrieve-layaways-modal"
+                                      )
+                                    );
                                     return;
                                   }
                                   if (isRetrieveOrders) {
-                                    window.dispatchEvent(new CustomEvent('open-retrieve-orders-modal'));
+                                    window.dispatchEvent(
+                                      new CustomEvent(
+                                        "open-retrieve-orders-modal"
+                                      )
+                                    );
                                     return;
                                   }
                                   if (hasSubItems) {
@@ -330,11 +393,11 @@ const HrSidebar = ({
                                       !isOpen && !isMobile
                                         ? "opacity-0 w-0 overflow-hidden"
                                         : ""
-                                    } ${mode === "dark" ? "text-gray-100" : ""}`}
+                                    } ${
+                                      mode === "dark" ? "text-gray-100" : ""
+                                    }`}
                                   >
-                                    {typeof label === "function"
-                                      ? label(user?.job_type)
-                                      : label}
+                                    {label}
                                   </span>
                                 </div>
                                 {hasSubItems && (
@@ -373,7 +436,10 @@ const HrSidebar = ({
                                           <li
                                             key={subHref}
                                             onClick={() =>
-                                              handleNavigation(subHref, subLabel)
+                                              handleNavigation(
+                                                subHref,
+                                                subLabel
+                                              )
                                             }
                                             className={`relative py-2 px-2 pl-2 flex items-center font-normal text-sm w-full cursor-pointer rounded-lg hover:shadow-sm transition-all duration-200 group mb-1 ${isSubActive} ${
                                               !isOpen && !isMobile
@@ -396,9 +462,7 @@ const HrSidebar = ({
                                                   : ""
                                               }`}
                                             >
-                                              {typeof subLabel === "function"
-                                                ? subLabel(user?.job_type)
-                                                : subLabel}
+                                              {subLabel}
                                             </span>
                                           </li>
                                         );
@@ -450,6 +514,23 @@ const HrSidebar = ({
               }`}
             >
               <div className="flex flex-col gap-2 text-gray-700 text-sm pt-2">
+                <div
+                  className="flex items-center space-x-4 cursor-pointer rounded-lg p-2 hover:bg-gray-200"
+                  onClick={() => router.push("/profile")}
+                >
+                  <div className="overflow-hidden rounded-full">
+                    <Icon icon="mdi:account-outline" className="h-6 w-6" />
+                  </div>
+                  {isOpen || isMobile ? (
+                    <div className="flex items-center gap-2 transition-all duration-300">
+                      <span className="text-sm font-medium text-black">
+                        View Profile
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+
+
                 <div className="py-2 hover:bg-gray-200 rounded-2xl p-2">
                   <button
                     onClick={toggleMode}

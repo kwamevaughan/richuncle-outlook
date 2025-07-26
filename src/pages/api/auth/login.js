@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     // Find user by email
     const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
-      .select("id, email, full_name, role, avatar_url, is_active, created_at, updated_at, password, last_login, store_id")
+      .select("id, email, full_name, role, avatar_url, avatar_file_id, is_active, created_at, updated_at, password, last_login, store_id")
       .eq("email", email)
       .single();
 

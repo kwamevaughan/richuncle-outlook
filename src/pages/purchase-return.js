@@ -152,7 +152,7 @@ export default function PurchaseReturnPage({ mode = "light", toggleMode, ...prop
                 data={purchaseReturns}
                 columns={[
                   {
-                    header: "",
+                    Header: "",
                     accessor: "expand",
                     render: (row) => (
                       <button
@@ -174,24 +174,24 @@ export default function PurchaseReturnPage({ mode = "light", toggleMode, ...prop
                     ),
                   },
                   {
-                    header: "Return Number",
+                    Header: "Return Number",
                     accessor: "return_number",
                     sortable: true,
                   },
                   {
-                    header: "Supplier",
+                    Header: "Supplier",
                     accessor: "supplier_name",
                     sortable: true,
                   },
                   {
-                    header: "Warehouse",
+                    Header: "Warehouse",
                     accessor: "warehouse_name",
                     sortable: true,
                   },
-                  { header: "Date", accessor: "date", sortable: true },
-                  { header: "Status", accessor: "status", sortable: true },
+                  { Header: "Date", accessor: "date", sortable: true },
+                  { Header: "Status", accessor: "status", sortable: true },
                   {
-                    header: "Total",
+                    Header: "Total",
                     accessor: "total",
                     sortable: true,
                     render: (row) => `GHS ${row.total}`,

@@ -8,13 +8,13 @@ export default function SalesTable({ sales, loading, error, onViewDetails, onExp
     <GenericTable
       data={sales}
       columns={[
-        { header: "Date", accessor: "timestamp", sortable: true, render: row => row.timestamp ? row.timestamp.split("T")[0] : "-" },
-        { header: "Sale #", accessor: "id", sortable: true },
-        { header: "Customer", accessor: "customer_name", sortable: true, render: row => row.customer_name || "Walk In Customer" },
-        { header: "Total", accessor: "total", sortable: true, render: row => `GHS ${Number(row.total).toFixed(2)}` },
-        { header: "Status", accessor: "status", sortable: true, render: row => <StatusPill status={row.status} /> },
-        { header: "Payment", accessor: "payment_method", sortable: true, render: row => row.payment_method || "-" },
-        { header: "Staff", accessor: "payment_receiver_name", sortable: true, render: row => row.payment_receiver_name || "-" },
+        { Header: "Date", accessor: "timestamp", sortable: true, render: row => row.timestamp ? row.timestamp.split("T")[0] : "-" },
+        { Header: "Sale #", accessor: "id", sortable: true },
+        { Header: "Customer", accessor: "customer_name", sortable: true, render: row => row.customer_name || "Walk In Customer" },
+        { Header: "Total", accessor: "total", sortable: true, render: row => `GHS ${Number(row.total).toFixed(2)}` },
+        { Header: "Status", accessor: "status", sortable: true, render: row => <StatusPill status={row.status} /> },
+        { Header: "Payment", accessor: "payment_method", sortable: true, render: row => row.payment_method || "-" },
+        { Header: "Staff", accessor: "payment_receiver_name", sortable: true, render: row => row.payment_receiver_name || "-" },
       ]}
       actions={[
         {

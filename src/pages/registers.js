@@ -348,7 +348,7 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
               data={pagedRegisters}
               columns={[
                 {
-                  header: "Register",
+                  Header: "Register",
                   accessor: "name",
                   render: (row) => (
                     <span className="flex items-center gap-2 font-semibold text-gray-900">
@@ -361,7 +361,7 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                   ),
                 },
                 {
-                  header: "Store",
+                  Header: "Store",
                   accessor: "store_id",
                   render: (row) =>
                     storeNameMap[row.store_id] ||
@@ -370,7 +370,7 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                     "-",
                 },
                 {
-                  header: "Status",
+                  Header: "Status",
                   accessor: "status",
                   render: (row) => {
                     const openSession = openSessionsMap[row.id];
@@ -394,7 +394,7 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                   },
                 },
                 {
-                  header: "Current Session",
+                  Header: "Current Session",
                   accessor: "current_session",
                   render: (row) => {
                     const openSession = openSessionsMap[row.id];

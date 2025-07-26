@@ -159,11 +159,11 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
             <GenericTable
               data={customers}
               columns={[
-                { header: "Name", accessor: "name", sortable: true },
-                { header: "Email", accessor: "email", sortable: true },
-                { header: "Phone", accessor: "phone", sortable: true },
-                { header: "Address", accessor: "address", sortable: true },
-                { header: "Image", accessor: "image_url", render: (row) => (
+                { Header: "Name", accessor: "name", sortable: true },
+                { Header: "Email", accessor: "email", sortable: true },
+                { Header: "Phone", accessor: "phone", sortable: true },
+                { Header: "Address", accessor: "address", sortable: true },
+                { Header: "Image", accessor: "image_url", render: (row) => (
                   row.image_url ? (
                     <Image src={row.image_url} alt={row.name || "Profile"} width={40} height={40} className="w-10 h-10 rounded-full object-cover border" />
                   ) : (
@@ -172,7 +172,7 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
                     </span>
                   )
                 ) },
-                { header: "Status", accessor: "is_active", sortable: true, render: (row) => (
+                { Header: "Status", accessor: "is_active", sortable: true, render: (row) => (
                   <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
                     {row.is_active ? "Active" : "Inactive"}
                   </span>

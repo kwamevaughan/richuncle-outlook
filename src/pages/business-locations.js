@@ -310,13 +310,13 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
               <GenericTable
                 data={stores}
                 columns={[
-                  { header: "Store Name", accessor: "name", sortable: true },
-                  { header: "Address", accessor: "address", sortable: true },
-                  { header: "Phone", accessor: "phone", sortable: true },
-                  { header: "Email", accessor: "email", sortable: true },
-                  { header: "Total Products", accessor: "product_count", sortable: false },
+                  { Header: "Store Name", accessor: "name", sortable: true },
+                  { Header: "Address", accessor: "address", sortable: true },
+                  { Header: "Phone", accessor: "phone", sortable: true },
+                  { Header: "Email", accessor: "email", sortable: true },
+                  { Header: "Total Products", accessor: "product_count", sortable: false },
                   { 
-                    header: "Status", 
+                    Header: "Status", 
                     accessor: "is_active", 
                     sortable: true, 
                     render: (row) => (
@@ -344,9 +344,9 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
               <GenericTable
                 data={warehouses}
                 columns={[
-                  { header: "Warehouse", accessor: "name", sortable: true },
+                  { Header: "Warehouse", accessor: "name", sortable: true },
                   { 
-                    header: "Contact Person", 
+                    Header: "Contact Person", 
                     accessor: "contact_person", 
                     sortable: true, 
                     render: (row) => {
@@ -354,11 +354,11 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
                       return user ? user.full_name : row.contact_person || "Not assigned";
                     }
                   },
-                  { header: "Address", accessor: "address", sortable: true },
-                  { header: "Phone", accessor: "phone", sortable: true },
-                  { header: "Total Products", accessor: "product_count", sortable: false },
+                  { Header: "Address", accessor: "address", sortable: true },
+                  { Header: "Phone", accessor: "phone", sortable: true },
+                  { Header: "Total Products", accessor: "product_count", sortable: false },
                   { 
-                    header: "Status", 
+                    Header: "Status", 
                     accessor: "is_active", 
                     sortable: true, 
                     render: (row) => (

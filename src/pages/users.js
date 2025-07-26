@@ -10,6 +10,8 @@ import UserModals from "@/components/UserModals";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import ExportModal from "@/components/export/ExportModal";
+import { toast } from "react-toastify";
+import { useRouter } from "next/router";
 
 export default function UsersPage({ mode = "light", toggleMode, ...props }) {
   const { user: currentUser, loading: userLoading, LoadingComponent } = useUser();
@@ -17,7 +19,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
   const usersHook = useUsers();
   const [stores, setStores] = useState([]);
   const [showExportModal, setShowExportModal] = useState(false);
-
+  const router = useRouter();
   useEffect(() => {
     async function fetchStores() {
       const res = await fetch("/api/stores");
@@ -77,7 +79,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
   const columns = [
     {
       accessor: 'avatar_url',
-      header: 'Avatar',
+      Header: 'Avatar',
       sortable: false,
       render: (row) => {
         if (!row) return <div className="flex items-center">-</div>;
@@ -103,14 +105,24 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
     },
     {
       accessor: 'full_name',
-      header: 'Name',
+      Header: 'Name',
       sortable: true,
       render: (row) => {
         if (!row) return <div>-</div>;
         
+        const isCurrentUser = currentUser && row.id === currentUser.id;
+        
         return (
           <div>
-            <div className="font-medium text-gray-900">{row.full_name || "No name"}</div>
+            <div className="flex items-center gap-2">
+              <div className="font-medium text-gray-900">{row.full_name || "No name"}</div>
+              {isCurrentUser && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <Icon icon="mdi:account-check" className="w-3 h-3 mr-1" />
+                  You
+                </span>
+              )}
+            </div>
             <div className="text-sm text-gray-500">{row.email}</div>
           </div>
         );
@@ -118,7 +130,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
     },
     {
       accessor: 'role',
-      header: 'Role',
+      Header: 'Role',
       sortable: true,
       render: (row) => {
         if (!row) return <span>-</span>;
@@ -133,7 +145,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
     },
     {
       accessor: 'store_id',
-      header: 'Store',
+      Header: 'Store',
       sortable: false,
       render: (row) => {
         if (!row || !row.store_id) return <span>-</span>;
@@ -143,7 +155,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
     },
     {
       accessor: 'is_active',
-      header: 'Status',
+      Header: 'Status',
       sortable: true,
       render: (row) => {
         if (!row) return <span>-</span>;
@@ -161,7 +173,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
     },
     {
       accessor: 'created_at',
-      header: 'Created',
+      Header: 'Created',
       sortable: true,
       render: (row) => {
         if (!row || !row.created_at) return <div className="text-sm text-gray-900">-</div>;
@@ -175,7 +187,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
     },
     {
       accessor: 'last_login',
-      header: 'Last Login',
+      Header: 'Last Login',
       sortable: true,
       render: (row) => {
         if (!row) return <div className="text-sm text-gray-900">-</div>;
@@ -194,7 +206,16 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
     {
       label: "Edit",
       icon: "cuida:edit-outline",
-      onClick: (row) => openEditModal(row),
+      onClick: (row) => {
+        if (currentUser && row.id === currentUser.id) {
+          // Redirect to profile page for own account
+          router.push('/profile');
+        } else {
+          // Open edit modal for other users
+          openEditModal(row);
+        }
+      },
+      tooltip: (row) => currentUser && row.id === currentUser.id ? "Go to Profile page" : "Edit user",
     },
     {
       label: "Reset Password",
@@ -206,12 +227,16 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
       icon: (row) =>
         row && row.is_active ? "mdi:account-off" : "mdi:account-check",
       onClick: (row) => toggleUserStatus(row),
+      disabled: (row) => currentUser && row.id === currentUser.id, // Disable status toggle for own account
+      tooltip: (row) => currentUser && row.id === currentUser.id ? "You cannot deactivate your own account" : undefined,
     },
     {
       label: "Delete",
       icon: "mynaui:trash",
       onClick: (row) => openDeleteModal(row),
       className: "text-red-600 hover:text-red-800",
+      disabled: (row) => currentUser && row.id === currentUser.id, // Disable delete for own account
+      tooltip: (row) => currentUser && row.id === currentUser.id ? "You cannot delete your own account" : undefined,
     },
   ];
 
@@ -241,41 +266,48 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                     <Icon
-                      icon="mdi:account-multiple"
-                      className="w-6 h-6 text-white"
+                      icon="mdi:account-group"
+                      className="w-7 h-7 text-white"
                     />
                   </div>
-                  User Management
+                  User Management Hub
                 </h1>
                 <p className="text-gray-600">
-                  Manage users, assign roles, and control access permissions
+                  Manage users and their roles
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                {isAdmin && (
-                  <>
-                    <button
-                      onClick={openCreateModal}
-                      className="px-4 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                      <Icon icon="mdi:plus" className="w-4 h-4" />
-                      Add User
-                    </button>
-                    <button
-                      onClick={() => setShowExportModal(true)}
-                      className="px-4 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                      <Icon icon="mdi:export" className="w-4 h-4" />
-                      Export Data
-                    </button>
-                  </>
-                )}
+                <button
+                  onClick={() => {
+                    const fetchAllData = async () => {
+                      try {
+                        await Promise.all([
+                          fetchUsers(),
+                        ]);
+                        toast.success("Users refreshed successfully");
+                      } catch (error) {
+                        toast.error("Failed to refresh users");
+                      } finally {
+                      }
+                    };
+                    fetchAllData();
+                  }}
+                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm"
+                >
+                  <Icon icon="mdi:refresh" className="w-4 h-4" />
+                  Refresh Users
+                </button>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <Icon icon="mdi:plus" className="w-4 h-4" />
+                  New User
+                </button>
               </div>
             </div>
-
-            
           </div>
 
           {/* Filters */}

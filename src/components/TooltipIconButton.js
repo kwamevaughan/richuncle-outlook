@@ -10,6 +10,7 @@ const TooltipIconButton = ({
   mode = "light",
   className = "",
   children,
+  disabled = false,
 }) => {
   const btnRef = useRef();
   const [show, setShow] = useState(false);
@@ -38,22 +39,25 @@ const TooltipIconButton = ({
     <>
       <div
         ref={btnRef}
-        onClick={onClick}
-        className={`relative group inline-block z-20 p-2 rounded-full focus:outline-none cursor-pointer ${
+        onClick={disabled ? undefined : onClick}
+        className={`relative group inline-block z-20 p-2 rounded-full focus:outline-none ${
+          disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+        } ${
           mode === "dark" ? "hover:bg-gray-700" : "hover:bg-sky-50"
         } ${className}`}
         role="button"
-        tabIndex={0}
+        tabIndex={disabled ? -1 : 0}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
             onClick?.(e);
           }
         }}
-        onMouseEnter={() => setShow(true)}
+        onMouseEnter={() => !disabled && setShow(true)}
         onMouseLeave={() => setShow(false)}
-        onFocus={() => setShow(true)}
+        onFocus={() => !disabled && setShow(true)}
         onBlur={() => setShow(false)}
         aria-label={label}
+        aria-disabled={disabled}
       >
         {children || <Icon icon={icon} className="h-5 w-5" />}
       </div>

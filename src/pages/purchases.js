@@ -505,7 +505,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                   data={filteredPurchases}
                   columns={[
                     {
-                      header: "",
+                      Header: "",
                       accessor: "expand",
                       render: (row) => (
                         <button
@@ -517,13 +517,13 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                         </button>
                       ),
                     },
-                    { header: "Purchase Number", accessor: "purchase_number", sortable: true },
-                    { header: "Supplier", accessor: "supplier_name", sortable: true },
-                    { header: "Warehouse", accessor: "warehouse_name", sortable: true },
-                    { header: "Date", accessor: "date", sortable: true, render: (row) => 
+                    { Header: "Purchase Number", accessor: "purchase_number", sortable: true },
+                    { Header: "Supplier", accessor: "supplier_name", sortable: true },
+                    { Header: "Warehouse", accessor: "warehouse_name", sortable: true },
+                    { Header: "Date", accessor: "date", sortable: true, render: (row) => 
                       new Date(row.date).toLocaleDateString() 
                     },
-                    { header: "Status", accessor: "status", sortable: true, render: (row) => {
+                    { Header: "Status", accessor: "status", sortable: true, render: (row) => {
                       const statusColors = {
                         pending: "bg-yellow-100 text-yellow-800",
                         completed: "bg-green-100 text-green-800",
@@ -535,11 +535,11 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                         </span>
                       );
                     }},
-                    { header: "Total", accessor: "total", sortable: true, render: (row) => 
+                    { Header: "Total", accessor: "total", sortable: true, render: (row) => 
                       `GHS ${(row.total || 0).toLocaleString()}` 
                     },
                     {
-                      header: "Line Items",
+                      Header: "Line Items",
                       accessor: "view_items",
                       render: (row) => (
                         <button

@@ -336,7 +336,11 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                         </div>
                         <ul className="py-4 space-y-2">
                           <li
-                            className={`flex items-center w-full gap-2 text-sm transition-all ${
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              router.push('/profile');
+                            }}
+                            className={`flex items-center w-full gap-2 text-sm transition-all cursor-pointer ${
                               mode === "dark"
                                 ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
                                 : "text-gray-500 hover:text-blue-800"
@@ -348,19 +352,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                             />
                             <span className="">Profile</span>
                           </li>
-                          <li
-                            className={`flex items-center w-full gap-2 text-sm transition-all ${
-                              mode === "dark"
-                                ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
-                                : "text-gray-500 hover:text-blue-800"
-                            }`}
-                          >
-                            <Icon
-                              icon="fluent-mdl2:radio-bullet"
-                              className="h-5 w-5 "
-                            />
-                            <span className="">Settings</span>
-                          </li>
+
                         </ul>
                         <button
                           onClick={onLogout}

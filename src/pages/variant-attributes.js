@@ -165,10 +165,10 @@ export default function VariantAttributesPage({ mode = "light", toggleMode, ...p
               <GenericTable
                 data={variantAttributes}
                 columns={[
-                  { header: "Name/Variant", accessor: "name", sortable: true },
-                  { header: "Values", accessor: "values", sortable: true },
+                  { Header: "Name/Variant", accessor: "name", sortable: true },
+                  { Header: "Values", accessor: "values", sortable: true },
                   {
-                    header: "Status",
+                    Header: "Status",
                     accessor: "is_active",
                     sortable: true,
                     render: (row) => (

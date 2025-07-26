@@ -175,14 +175,14 @@ export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...pro
               <GenericTable
                 data={expenseCategories}
                 columns={[
-                  { header: "Name", accessor: "name", sortable: true },
+                  { Header: "Name", accessor: "name", sortable: true },
                   {
-                    header: "Description",
+                    Header: "Description",
                     accessor: "description",
                     sortable: false,
                   },
                   {
-                    header: "Created At",
+                    Header: "Created At",
                     accessor: "created_at",
                     sortable: true,
                     render: (row) =>

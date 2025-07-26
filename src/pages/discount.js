@@ -30,7 +30,9 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
 
   // Set initial tab based on URL query parameter
   React.useEffect(() => {
-    if (router.query.tab === 'plans') {
+    if (router.query.tab === 'discounts') {
+      setTab('discounts');
+    } else if (router.query.tab === 'plans') {
       setTab('plans');
     }
   }, [router.query.tab]);
@@ -384,7 +386,13 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                       ? "border-blue-500 text-blue-600 bg-blue-50"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                   }`}
-                  onClick={() => setTab("discounts")}
+                  onClick={() => {
+                    setTab("discounts");
+                    router.replace({
+                      pathname: router.pathname,
+                      query: { ...router.query, tab: "discounts" },
+                    }, undefined, { shallow: true });
+                  }}
                 >
                   <div className="flex items-center gap-2">
                     <Icon icon="mdi:percent" className="w-4 h-4" />
@@ -397,7 +405,13 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                       ? "border-blue-500 text-blue-600 bg-blue-50"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                   }`}
-                  onClick={() => setTab("plans")}
+                  onClick={() => {
+                    setTab("plans");
+                    router.replace({
+                      pathname: router.pathname,
+                      query: { ...router.query, tab: "plans" },
+                    }, undefined, { shallow: true });
+                  }}
                 >
                   <div className="flex items-center gap-2">
                     <Icon icon="mdi:package-variant" className="w-4 h-4" />
@@ -420,13 +434,13 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                 <GenericTable
                   data={filteredDiscounts}
                   columns={[
-                    { header: "Name", accessor: "name", sortable: true },
-                    { header: "Code", accessor: "discount_code", sortable: true, render: (row) => (
+                    { Header: "Name", accessor: "name", sortable: true },
+                    { Header: "Code", accessor: "discount_code", sortable: true, render: (row) => (
                       <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded text-gray-700">
                         {row.discount_code || "N/A"}
                       </span>
                     )},
-                    { header: "Value", accessor: "value", sortable: true, render: (row) => (
+                    { Header: "Value", accessor: "value", sortable: true, render: (row) => (
                       <div>
                         <span className="font-semibold text-blue-600">
                           {row.discount_type === "fixed" ? `GHS ${row.value}` : `${row.value}%`}
@@ -437,19 +451,19 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                       </div>
                     )},
                     {
-                      header: "Discount Plan",
+                      Header: "Discount Plan",
                       accessor: "plan_id",
                       sortable: false,
                       render: (row) => row.discount_plans?.name || "-",
                     },
                     {
-                      header: "Store",
+                      Header: "Store",
                       accessor: "store_id",
                       sortable: false,
                       render: (row) => row.store?.name || "All Stores",
                     },
                     {
-                      header: "Validity",
+                      Header: "Validity",
                       accessor: "validity",
                       sortable: true,
                       render: (row) => {
@@ -464,7 +478,7 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                       }
                     },
                     {
-                      header: "Status",
+                      Header: "Status",
                       accessor: "is_active",
                       sortable: true,
                       render: (row) => (
@@ -496,8 +510,8 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                 <GenericTable
                   data={filteredPlans}
                   columns={[
-                    { header: "Plan Name", accessor: "name", sortable: true },
-                    { header: "Description", accessor: "description", sortable: false, render: (row) => (
+                    { Header: "Plan Name", accessor: "name", sortable: true },
+                    { Header: "Description", accessor: "description", sortable: false, render: (row) => (
                       <div className="max-w-xs">
                         <span className="text-sm text-gray-600">
                           {row.description || "No description"}
@@ -505,7 +519,7 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                       </div>
                     )},
                     {
-                      header: "Status",
+                      Header: "Status",
                       accessor: "is_active",
                       sortable: true,
                       render: (row) => (
@@ -540,7 +554,7 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                 type={tab}
                 mode={mode}
                 item={editItem}
-                categories={plans}
+                categories={tab === "discounts" ? plans : discounts}
                 onClose={closeModal}
                 onSave={async (values) => {
                   try {
@@ -644,4 +658,4 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
       </div>
     </MainLayout>
   );
-} 
+}

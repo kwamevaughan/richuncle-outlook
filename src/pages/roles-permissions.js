@@ -226,13 +226,13 @@ export default function RolesPermissionsPage({
   // --- Permissions Table ---
   const permColumns = [
     {
-      header: "Permission",
+      Header: "Permission",
       accessor: "key",
       render: (row) => (
         <span className="font-semibold text-gray-900">{row.key}</span>
       ),
     },
-    { header: "Label", accessor: "label" },
+    { Header: "Label", accessor: "label" },
   ];
   const permActions = [
     {
@@ -268,15 +268,15 @@ export default function RolesPermissionsPage({
   // --- Roles Table ---
   const columns = [
     {
-      header: "Role",
+      Header: "Role",
       accessor: "name",
       render: (row) => (
         <span className="font-semibold text-gray-900">{row.name}</span>
       ),
     },
-    { header: "Description", accessor: "description" },
+    { Header: "Description", accessor: "description" },
     {
-      header: "# Users",
+      Header: "# Users",
       accessor: "users",
       render: (row) => <span>{userCounts[row.id] || 0}</span>,
     },

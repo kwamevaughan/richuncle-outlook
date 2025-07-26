@@ -181,16 +181,16 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
   // Table columns configuration
   const getColumns = () => {
     const baseColumns = [
-      { header: "Number", accessor: "order_number", sortable: true, render: (row) => 
+      { Header: "Number", accessor: "order_number", sortable: true, render: (row) => 
         row.order_number || row.purchase_number || row.return_number 
       },
-      { header: "Supplier", accessor: "supplier_name", sortable: true },
-      { header: "Warehouse", accessor: "warehouse_name", sortable: true },
-      { header: "Date", accessor: "date", sortable: true, render: (row) => 
+      { Header: "Supplier", accessor: "supplier_name", sortable: true },
+      { Header: "Warehouse", accessor: "warehouse_name", sortable: true },
+      { Header: "Date", accessor: "date", sortable: true, render: (row) => 
         new Date(row.date).toLocaleDateString() 
       },
       { 
-        header: "Status", 
+        Header: "Status", 
         accessor: "status", 
         sortable: true, 
         render: (row) => {
@@ -203,7 +203,7 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
           );
         }
       },
-      { header: "Total", accessor: "total", sortable: true, render: (row) => 
+      { Header: "Total", accessor: "total", sortable: true, render: (row) => 
         `GHS ${(row.total || 0).toLocaleString()}` 
       },
     ];

@@ -13,6 +13,7 @@ export default async function handler(req, res) {
           full_name,
           role,
           avatar_url,
+          avatar_file_id,
           is_active,
           created_at,
           updated_at,
@@ -43,6 +44,14 @@ export default async function handler(req, res) {
   } else if (req.method === "POST") {
     try {
       const userData = req.body;
+
+      // Convert empty strings to null for UUID fields to prevent database errors
+      const uuidFields = ['store_id', 'avatar_file_id'];
+      uuidFields.forEach(field => {
+        if (userData[field] === "") {
+          userData[field] = null;
+        }
+      });
 
       // Generate UUID if not provided
       if (!userData.id) {

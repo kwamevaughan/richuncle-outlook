@@ -113,9 +113,11 @@ export const AuthProvider = ({ children }) => {
         name: userData.full_name,
         role: userData.role,
         avatar_url: userData.avatar_url,
+        avatar_file_id: userData.avatar_file_id,
         is_active: userData.is_active,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
+        last_login: userData.last_login,
         store_id: userData.store_id,
       };
 

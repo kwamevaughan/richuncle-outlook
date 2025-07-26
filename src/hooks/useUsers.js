@@ -196,12 +196,24 @@ export default function useUsers() {
       errors.confirmPassword = "Passwords do not match";
     }
 
-    if (formData.role === 'cashier' && !formData.store_id) {
+    if (formData.role === 'cashier' && (!formData.store_id || formData.store_id === "")) {
       errors.store_id = "Store is required for cashiers";
     }
     
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  // Clean form data by converting empty strings to null for UUID fields
+  const cleanFormData = (data) => {
+    const cleaned = { ...data };
+    const uuidFields = ['store_id', 'avatar_file_id'];
+    uuidFields.forEach(field => {
+      if (cleaned[field] === "") {
+        cleaned[field] = null;
+      }
+    });
+    return cleaned;
   };
 
   // Create user
@@ -210,13 +222,14 @@ export default function useUsers() {
     
     setIsSubmitting(true);
     try {
+      const cleanData = cleanFormData(formData);
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...formData,
+          ...cleanData,
           password: password
         })
       });
@@ -244,7 +257,8 @@ export default function useUsers() {
     
     setIsSubmitting(true);
     try {
-      const updateData = { ...formData };
+      const cleanData = cleanFormData(formData);
+      const updateData = { ...cleanData };
       if (password) {
         updateData.password = password;
       }

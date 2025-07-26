@@ -320,16 +320,21 @@ export function GenericTable({
               return <React.Fragment key={action.label || i}>{action.render(row)}</React.Fragment>;
             }
             if (typeof action.onClick !== 'function') return null;
+            
             const label = typeof action.label === 'function' ? action.label(row) : action.label;
             const icon = typeof action.icon === 'function' ? action.icon(row) : action.icon;
+            const isDisabled = typeof action.disabled === 'function' ? action.disabled(row) : action.disabled;
+            const tooltip = typeof action.tooltip === 'function' ? action.tooltip(row) : action.tooltip;
+            
             return (
               <TooltipIconButton
                 key={label || i}
                 icon={icon || 'mdi:help'}
-                label={label || ''}
-                onClick={() => action.onClick(row)}
+                label={tooltip || label || ''}
+                onClick={isDisabled ? undefined : () => action.onClick(row)}
                 mode="light"
-                className={`${action.className || ''}`}
+                className={`${action.className || ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={isDisabled}
               />
             );
           })}

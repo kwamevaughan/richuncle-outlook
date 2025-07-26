@@ -287,29 +287,29 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
               <GenericTable
                 data={filteredExpenses}
                 columns={[
-                  { header: "Title", accessor: "title", sortable: true },
+                  { Header: "Title", accessor: "title", sortable: true },
                   {
-                    header: "Category",
+                    Header: "Category",
                     accessor: "category_name",
                     sortable: false,
                     render: (row) => row.category_name || "Uncategorized",
                   },
                   {
-                    header: "Amount",
+                    Header: "Amount",
                     accessor: "amount",
                     sortable: true,
                     render: (row) =>
                       `GHS ${parseFloat(row.amount || 0).toFixed(2)}`,
                   },
                   {
-                    header: "Date",
+                    Header: "Date",
                     accessor: "expense_date",
                     sortable: true,
                     render: (row) =>
                       new Date(row.expense_date).toLocaleDateString(),
                   },
                   {
-                    header: "Payment Method",
+                    Header: "Payment Method",
                     accessor: "payment_method",
                     sortable: true,
                     render: (row) => (
@@ -328,7 +328,7 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
                     ),
                   },
                   {
-                    header: "Status",
+                    Header: "Status",
                     accessor: "status",
                     sortable: true,
                     render: (row) => (
@@ -346,7 +346,7 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
                     ),
                   },
                   {
-                    header: "Description",
+                    Header: "Description",
                     accessor: "description",
                     sortable: false,
                     render: (row) =>

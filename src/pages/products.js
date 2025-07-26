@@ -206,8 +206,8 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
               <GenericTable
                 data={products}
                 columns={[
-                  { header: "SKU", accessor: "sku", sortable: true },
-                  { header: "Product Name", accessor: "name", sortable: true, render: (row) => (
+                  { Header: "SKU", accessor: "sku", sortable: true },
+                  { Header: "Product Name", accessor: "name", sortable: true, render: (row) => (
                     <span className="flex items-center gap-2">
                       {row.image_url ? (
                         <Image src={row.image_url} alt={row.name} width={32} height={32} className="rounded object-cover border w-8 h-8" />
@@ -217,12 +217,12 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                       <span>{row.name}</span>
                     </span>
                   )},
-                  { header: "Category", accessor: "category_id", sortable: false, render: (row) => row.category_name || "-" },
-                  { header: "Brand", accessor: "brand_id", sortable: false, render: (row) => row.brand_name || "-" },
-                  { header: "Selling Price", accessor: "price", sortable: true, render: (row) => `GHS ${row.price}` },
-                  { header: "Cost Price", accessor: "cost_price", sortable: true, render: (row) => `GHS ${row.cost_price || 0}` },
+                  { Header: "Category", accessor: "category_id", sortable: false, render: (row) => row.category_name || "-" },
+                  { Header: "Brand", accessor: "brand_id", sortable: false, render: (row) => row.brand_name || "-" },
+                  { Header: "Selling Price", accessor: "price", sortable: true, render: (row) => `GHS ${row.price}` },
+                  { Header: "Cost Price", accessor: "cost_price", sortable: true, render: (row) => `GHS ${row.cost_price || 0}` },
                   { 
-                    header: "Tax", 
+                    Header: "Tax", 
                     accessor: "tax_type", 
                     sortable: true, 
                     render: (row) => {
@@ -243,10 +243,10 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                       );
                     }
                   },
-                  { header: "Unit", accessor: "unit_id", sortable: false, render: (row) => row.unit_name || "-" },
-                  { header: "Qty", accessor: "quantity", sortable: true },
+                  { Header: "Unit", accessor: "unit_id", sortable: false, render: (row) => row.unit_name || "-" },
+                  { Header: "Qty", accessor: "quantity", sortable: true },
                   { 
-                    header: "Specs", 
+                    Header: "Specs", 
                     accessor: "variant_attributes", 
                     sortable: false, 
                     render: (row) => {

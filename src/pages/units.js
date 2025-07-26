@@ -183,16 +183,16 @@ export default function UnitsPage({ mode = "light", toggleMode, ...props }) {
               <GenericTable
                 data={units}
                 columns={[
-                  { header: "Unit Name", accessor: "name", sortable: true },
-                  { header: "Symbol", accessor: "symbol", sortable: true },
+                  { Header: "Unit Name", accessor: "name", sortable: true },
+                  { Header: "Symbol", accessor: "symbol", sortable: true },
                   { 
-                    header: "No of Products", 
+                    Header: "No of Products", 
                     accessor: "product_count", 
                     sortable: false,
                     render: (row) => row.product_count || "0"
                   },
                   {
-                    header: "Status",
+                    Header: "Status",
                     accessor: "is_active",
                     sortable: true,
                     render: (row) => (

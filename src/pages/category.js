@@ -284,7 +284,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                 <GenericTable
                   data={filteredCategories}
                   columns={[
-                    { header: "Name", accessor: "name", sortable: true, render: (row) => (
+                    { Header: "Name", accessor: "name", sortable: true, render: (row) => (
                       <span className="flex items-center gap-2">
                         {row.image_url && (
                           <img src={row.image_url} alt={row.name} width={32} height={32} className="rounded object-cover border w-8 h-8" />
@@ -292,11 +292,11 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                         <span>{row.name}</span>
                       </span>
                     )},
-                    { header: "Category Code", accessor: "code", sortable: true },
-                    { header: "Description", accessor: "description", sortable: true },
-                    { header: "No Of Products", accessor: "product_count", sortable: false },
+                    { Header: "Category Code", accessor: "code", sortable: true },
+                    { Header: "Description", accessor: "description", sortable: true },
+                    { Header: "No Of Products", accessor: "product_count", sortable: false },
                     {
-                      header: "Status",
+                      Header: "Status",
                       accessor: "is_active",
                       sortable: true,
                       render: (row) => (
@@ -317,16 +317,16 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                 <GenericTable
                   data={filteredSubCategories}
                   columns={[
-                    { header: "Name", accessor: "name", sortable: true },
+                    { Header: "Name", accessor: "name", sortable: true },
                     {
-                      header: "Category",
+                      Header: "Category",
                       accessor: "category_id",
                       sortable: false,
                       render: (row) => categories.find((c) => c.id === row.category_id)?.name || "-",
                     },
-                    { header: "Description", accessor: "description", sortable: true },
+                    { Header: "Description", accessor: "description", sortable: true },
                     {
-                      header: "Status",
+                      Header: "Status",
                       accessor: "is_active",
                       sortable: true,
                       render: (row) => (
@@ -335,7 +335,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                         </span>
                       ),
                     },
-                    { header: "Image", accessor: "image_url", type: "image" },
+                    { Header: "Image", accessor: "image_url", type: "image" },
                   ]}
                   onEdit={(item) => openEditModal("subcategories", item)}
                   onDelete={openConfirm}

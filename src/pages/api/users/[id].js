@@ -21,6 +21,8 @@ export default async function handler(req, res) {
           full_name,
           role,
           avatar_url,
+          avatar_file_id,
+          crop_transform,
           is_active,
           created_at,
           updated_at,
@@ -58,6 +60,14 @@ export default async function handler(req, res) {
   } else if (req.method === "PUT") {
     try {
       const updateData = req.body;
+
+      // Convert empty strings to null for UUID fields to prevent database errors
+      const uuidFields = ['store_id', 'avatar_file_id'];
+      uuidFields.forEach(field => {
+        if (updateData[field] === "") {
+          updateData[field] = null;
+        }
+      });
 
       // Hash password if present
       if (updateData.password) {

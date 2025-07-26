@@ -99,26 +99,35 @@ export default function UserModals({
               ))}
             </select>
           </div>
-          {formData.role === 'cashier' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Store *
-              </label>
-              <select
-                value={formData.store_id || ''}
-                onChange={e => setFormData({ ...formData, store_id: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-              >
-                <option value="">Select a store</option>
-                {stores.map(store => (
-                  <option key={store.id} value={store.id}>{store.name}</option>
-                ))}
-              </select>
-              {formErrors.store_id && (
-                <p className="text-red-500 text-sm mt-1">{formErrors.store_id}</p>
-              )}
-            </div>
-          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Icon icon="solar:shop-bold" className="w-4 h-4" />
+              Store {formData.role === 'cashier' ? '*' : '(optional)'}
+            </label>
+            <select
+              value={formData.store_id || ''}
+              onChange={e => setFormData({ ...formData, store_id: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            >
+              <option value="">Select a store</option>
+              {stores.map(store => (
+                <option key={store.id} value={store.id}>{store.name}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              {formData.role === 'cashier' 
+                ? 'Cashiers must be assigned to a specific store to process transactions.'
+                : 'Store assignment is optional for administrators and managers.'
+              }
+            </p>
+            {formErrors.store_id && (
+              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                <Icon icon="solar:info-circle-bold" className="w-4 h-4" />
+                {formErrors.store_id}
+              </p>
+            )}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -282,26 +291,35 @@ export default function UserModals({
               ))}
             </select>
           </div>
-          {formData.role === 'cashier' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Store *
-              </label>
-              <select
-                value={formData.store_id || ''}
-                onChange={e => setFormData({ ...formData, store_id: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-              >
-                <option value="">Select a store</option>
-                {stores.map(store => (
-                  <option key={store.id} value={store.id}>{store.name}</option>
-                ))}
-              </select>
-              {formErrors.store_id && (
-                <p className="text-red-500 text-sm mt-1">{formErrors.store_id}</p>
-              )}
-            </div>
-          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Icon icon="solar:shop-bold" className="w-4 h-4" />
+              Store {formData.role === 'cashier' ? '*' : '(optional)'}
+            </label>
+            <select
+              value={formData.store_id || ''}
+              onChange={e => setFormData({ ...formData, store_id: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            >
+              <option value="">Select a store</option>
+              {stores.map(store => (
+                <option key={store.id} value={store.id}>{store.name}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              {formData.role === 'cashier' 
+                ? 'Cashiers must be assigned to a specific store to process transactions.'
+                : 'Store assignment is optional for administrators and managers.'
+              }
+            </p>
+            {formErrors.store_id && (
+              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                <Icon icon="solar:info-circle-bold" className="w-4 h-4" />
+                {formErrors.store_id}
+              </p>
+            )}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

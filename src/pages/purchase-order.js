@@ -430,7 +430,7 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                   data={filteredOrders}
                   columns={[
                     {
-                      header: "",
+                      Header: "",
                       accessor: "expand",
                       render: (row) => (
                         <button
@@ -442,14 +442,14 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                         </button>
                       ),
                     },
-                    { header: "Order Number", accessor: "order_number", sortable: true },
-                    { header: "Supplier", accessor: "supplier_name", sortable: true },
-                    { header: "Warehouse", accessor: "warehouse_name", sortable: true },
-                    { header: "Date", accessor: "date", sortable: true, render: (row) => 
+                    { Header: "Order Number", accessor: "order_number", sortable: true },
+                    { Header: "Supplier", accessor: "supplier_name", sortable: true },
+                    { Header: "Warehouse", accessor: "warehouse_name", sortable: true },
+                    { Header: "Date", accessor: "date", sortable: true, render: (row) => 
                       new Date(row.date).toLocaleDateString() 
                     },
                     { 
-                      header: "Status", 
+                      Header: "Status", 
                       accessor: "status", 
                       sortable: true, 
                       render: (row) => {
@@ -462,7 +462,7 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                         );
                       }
                     },
-                    { header: "Total", accessor: "total", sortable: true, render: (row) => 
+                    { Header: "Total", accessor: "total", sortable: true, render: (row) => 
                       `GHS ${(row.total || 0).toLocaleString()}` 
                     },
                   ]}

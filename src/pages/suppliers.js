@@ -116,16 +116,16 @@ export default function SuppliersPage({ mode = "light", toggleMode, ...props }) 
               <GenericTable
                 data={suppliers}
                 columns={[
-                  { header: "Name", accessor: "name", sortable: true },
-                  { header: "Email", accessor: "email", sortable: true },
-                  { header: "Phone", accessor: "phone", sortable: true },
-                  { header: "Company", accessor: "company", sortable: true },
-                  { header: "Status", accessor: "is_active", sortable: true, render: (row) => (
+                  { Header: "Name", accessor: "name", sortable: true },
+                  { Header: "Email", accessor: "email", sortable: true },
+                  { Header: "Phone", accessor: "phone", sortable: true },
+                  { Header: "Company", accessor: "company", sortable: true },
+                  { Header: "Status", accessor: "is_active", sortable: true, render: (row) => (
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                       {row.is_active ? "Active" : "Inactive"}
                     </span>
                   ) },
-                  { header: "Created", accessor: "created_at", sortable: true, render: (row) => (
+                  { Header: "Created", accessor: "created_at", sortable: true, render: (row) => (
                     <span>{row.created_at ? new Date(row.created_at).toLocaleDateString() : "-"}</span>
                   ) },
                 ]}
