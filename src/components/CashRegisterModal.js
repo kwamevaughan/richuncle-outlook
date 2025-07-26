@@ -551,7 +551,16 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
               </div>
             </div>
           ) : zReport ? (
-            <ZReportView zReport={zReport} onPrint={handlePrintZReport} showPrintButton={true} />
+            <ZReportView 
+              zReport={zReport} 
+              onPrint={handlePrintZReport} 
+              showPrintButton={true} 
+              onClose={() => {
+                setZReport(null);
+                setSession(null);
+                if (onSessionChanged) onSessionChanged();
+              }}
+            />
           ) : session ? (
             <>              
 

@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react";
 import printZReport from "./printZReport";
 
-export default function ZReportView({ zReport, onPrint, showPrintButton = true }) {
+export default function ZReportView({ zReport, onPrint, showPrintButton = true, onClose }) {
   if (!zReport) return <div className="text-center py-8 text-gray-400">No Z-Report data.</div>;
   const session = zReport.session || {};
   const paymentBreakdown = zReport.paymentBreakdown || {};
@@ -122,6 +122,10 @@ export default function ZReportView({ zReport, onPrint, showPrintButton = true }
               onClick={() => printZReport(zReport)}
             >
               <Icon icon="material-symbols:print" className="w-5 h-5" /> Print Z-Report
+            </button>
+
+            <button className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg px-6 py-3 font-semibold transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2" onClick={() => onClose && onClose()}>
+              <Icon icon="mdi:close" className="w-5 h-5" /> Close Report
             </button>
           </div>
         )}
