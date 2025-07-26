@@ -95,8 +95,11 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
                 className="w-10 h-10 rounded-full object-cover border"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-blue-800 flex items-center justify-center text-white font-semibold">
-                {row.full_name ? row.full_name.charAt(0).toUpperCase() : "U"}
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border">
+                <Icon 
+                  icon="hugeicons:ai-user" 
+                  className="w-6 h-6 text-gray-400" 
+                />
               </div>
             )}
           </div>

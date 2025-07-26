@@ -301,8 +301,16 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
                   <div className="flex items-center">
-                    <div className="overflow-hidden">
-                      <Icon icon="hugeicons:ai-user" className="h-6 w-6" />
+                    <div className="overflow-hidden rounded-full w-6 h-6">
+                      {user && user.avatar_url ? (
+                        <img 
+                          src={user.avatar_url} 
+                          alt={user.name || "User"} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Icon icon="hugeicons:ai-user" className="h-6 w-6" />
+                      )}
                     </div>
                   </div>
 
@@ -316,11 +324,19 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                     >
                       <div className="p-4">
                         <div className="flex items-center gap-2 w-full">
-                          <div className="overflow-hidden flex-shrink-0">
-                            <Icon
-                              icon="hugeicons:ai-user"
-                              className="h-6 w-6"
-                            />
+                          <div className="overflow-hidden flex-shrink-0 rounded-full w-6 h-6">
+                            {user && user.avatar_url ? (
+                              <img 
+                                src={user.avatar_url} 
+                                alt={user.name || "User"} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Icon
+                                icon="hugeicons:ai-user"
+                                className="h-6 w-6"
+                              />
+                            )}
                           </div>
                           <div className="flex flex-col">
                             <div className="flex gap-2">

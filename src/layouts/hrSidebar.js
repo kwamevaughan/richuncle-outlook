@@ -496,8 +496,16 @@ const HrSidebar = ({
               className="flex items-center space-x-4 cursor-pointer rounded-lg p-2 hover:bg-gray-200"
               onClick={() => setShowLogout((prev) => !prev)}
             >
-              <div className="overflow-hidden rounded-full">
-                <Icon icon="hugeicons:ai-user" className="h-6 w-6" />
+              <div className="overflow-hidden rounded-full w-6 h-6">
+                {user && user.avatar_url ? (
+                  <img 
+                    src={user.avatar_url} 
+                    alt={user.name || "User"} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Icon icon="hugeicons:ai-user" className="h-6 w-6" />
+                )}
               </div>
               {isOpen || isMobile ? (
                 <div className="flex items-center gap-2 transition-all duration-300">
@@ -518,8 +526,16 @@ const HrSidebar = ({
                   className="flex items-center space-x-4 cursor-pointer rounded-lg p-2 hover:bg-gray-200"
                   onClick={() => router.push("/profile")}
                 >
-                  <div className="overflow-hidden rounded-full">
-                    <Icon icon="mdi:account-outline" className="h-6 w-6" />
+                  <div className="overflow-hidden rounded-full w-6 h-6">
+                    {user && user.avatar_url ? (
+                      <img 
+                        src={user.avatar_url} 
+                        alt={user.name || "User"} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Icon icon="mdi:account-outline" className="h-6 w-6" />
+                    )}
                   </div>
                   {isOpen || isMobile ? (
                     <div className="flex items-center gap-2 transition-all duration-300">
