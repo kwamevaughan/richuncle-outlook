@@ -2,9 +2,32 @@ import SimpleModal from "./SimpleModal";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import Barcode from 'react-barcode';
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 export default function ViewProductModal({ product, isOpen, onClose, mode }) {
+  const [variantAttributes, setVariantAttributes] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch variant attributes when modal opens
+  useEffect(() => {
+    if (isOpen && product?.variant_attributes) {
+      setLoading(true);
+      fetch('/api/variant-attributes')
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            setVariantAttributes(result.data || []);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch variant attributes:", err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [isOpen, product?.variant_attributes]);
+
   if (!product) return null;
 
   const formatPrice = (price) => {
@@ -233,6 +256,56 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
             ))}
           </div>
         </div>
+
+        {/* Variant Attributes Section */}
+        {product.variant_attributes && Object.keys(product.variant_attributes).length > 0 && (
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Icon icon="mdi:format-list-bulleted" className="text-xl" />
+              Variant Attributes
+            </h3>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Icon icon="mdi:loading" className="animate-spin w-6 h-6 text-blue-600" />
+                <span className="ml-2 text-gray-600">Loading variant attributes...</span>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(product.variant_attributes).map(([attrId, value]) => {
+                    const attribute = variantAttributes.find(attr => attr.id === attrId);
+                    return (
+                      <div key={attrId} className="group">
+                        <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                          <Icon
+                            icon="mdi:tag-outline"
+                            className="text-lg flex-shrink-0 mt-0.5 text-slate-500 dark:text-slate-400"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                              {attribute ? attribute.name : `Attribute ${attrId}`}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
+                                {value}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
+                    <Icon icon="mdi:information-outline" className="text-lg" />
+                    <span>This product has {Object.keys(product.variant_attributes).length} variant attribute{Object.keys(product.variant_attributes).length > 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Additional Actions or Info */}
         <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">

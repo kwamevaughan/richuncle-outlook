@@ -221,16 +221,49 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                   { header: "Brand", accessor: "brand_id", sortable: false, render: (row) => row.brand_name || "-" },
                   { header: "Selling Price", accessor: "price", sortable: true, render: (row) => `GHS ${row.price}` },
                   { header: "Cost Price", accessor: "cost_price", sortable: true, render: (row) => `GHS ${row.cost_price || 0}` },
-                  { header: "Tax Type", accessor: "tax_type", sortable: true, render: (row) => (
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      row.tax_type === 'inclusive' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                    }`}>
-                      {row.tax_type === 'inclusive' ? 'Inclusive' : 'Exclusive'}
-                    </span>
-                  )},
-                  { header: "Tax %", accessor: "tax_percentage", sortable: true, render: (row) => `${row.tax_percentage || 0}%` },
+                  { 
+                    header: "Tax", 
+                    accessor: "tax_type", 
+                    sortable: true, 
+                    render: (row) => {
+                      if (!row.tax_type || !row.tax_percentage) {
+                        return <span className="text-gray-400">No Tax</span>;
+                      }
+                      return (
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            row.tax_type === 'inclusive' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                          }`}>
+                            {row.tax_type === 'inclusive' ? 'Inclusive' : 'Exclusive'}
+                          </span>
+                          <span className="text-xs text-gray-600">
+                            {row.tax_percentage}%
+                          </span>
+                        </div>
+                      );
+                    }
+                  },
                   { header: "Unit", accessor: "unit_id", sortable: false, render: (row) => row.unit_name || "-" },
                   { header: "Qty", accessor: "quantity", sortable: true },
+                  { 
+                    header: "Variants", 
+                    accessor: "variant_attributes", 
+                    sortable: false, 
+                    render: (row) => {
+                      if (!row.variant_attributes || Object.keys(row.variant_attributes).length === 0) {
+                        return <span className="text-gray-400">-</span>;
+                      }
+                      return (
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(row.variant_attributes).map(([attrId, value]) => (
+                            <span key={attrId} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                              {value}
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    }
+                  },
                 ]}
                 onEdit={openEditModal}
                 onDelete={openConfirm}

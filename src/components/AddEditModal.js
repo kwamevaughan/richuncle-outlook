@@ -65,6 +65,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   const [units, setUnits] = useState([]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [variantAttributes, setVariantAttributes] = useState([]);
+  const [selectedVariantAttributes, setSelectedVariantAttributes] = useState(item?.variant_attributes || {});
   const [sellingType, setSellingType] = useState(() => {
     let val = item?.selling_type;
     if (Array.isArray(val) && val.length === 1 && typeof val[0] === "string" && val[0].startsWith("[")) {
@@ -168,7 +170,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
         fetch('/api/categories'),
         fetch('/api/subcategories'),
         fetch('/api/brands'),
-        fetch('/api/units')
+        fetch('/api/units'),
+        fetch('/api/variant-attributes')
       ])
       .then(responses => Promise.all(responses.map(r => r.json())))
       .then(results => {
@@ -178,6 +181,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
         if (results[3].success) setSubcategories(results[3].data || []);
         if (results[4].success) setBrands(results[4].data || []);
         if (results[5].success) setUnits(results[5].data || []);
+        if (results[6].success) setVariantAttributes(results[6].data || []);
       })
       .catch(err => {
         console.error("Failed to fetch dropdown data:", err);
@@ -495,6 +499,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           unit_id: unitId || null,
           barcode: barcode.trim(),
           image_url: imageUrl,
+          variant_attributes: Object.keys(selectedVariantAttributes).length > 0 ? selectedVariantAttributes : null,
           is_active: isActive,
         };
         await onSave(cleanedProduct);
@@ -1039,6 +1044,42 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </select>
                 </div>
               </div>
+              {/* Variant Attributes Section */}
+              {variantAttributes.length > 0 && (
+                <div className="mb-6">
+                  <label className="block mb-2 font-medium">Variant Attributes (Optional)</label>
+                  <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                    {variantAttributes.map((attr) => (
+                      <div key={attr.id} className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {attr.name}
+                          </label>
+                          <select
+                            className="w-full border rounded px-3 py-2 text-sm"
+                            value={selectedVariantAttributes[attr.id] || ""}
+                            onChange={(e) => setSelectedVariantAttributes(prev => ({
+                              ...prev,
+                              [attr.id]: e.target.value
+                            }))}
+                            disabled={loading}
+                          >
+                            <option value="">Select {attr.name}</option>
+                            {attr.values && attr.values.split(',').map((value, index) => (
+                              <option key={index} value={value.trim()}>
+                                {value.trim()}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Select variant attributes to create product variations (e.g., Size, Color, etc.)
+                  </p>
+                </div>
+              )}
               <div className="mb-6">
                 <label className="block mb-1 font-medium">Item Barcode</label>
                 <div className="flex gap-2">
