@@ -1,10 +1,8 @@
 import supabaseAdmin from "@/lib/supabaseAdmin";
 import { randomUUID } from 'crypto';
 
-console.log('Loaded purchase-orders API route');
 
 export default async function handler(req, res) {
-  console.log('purchase-orders API called', req.method);
   if (req.method === 'GET') {
     try {
       // Adjust the select as needed for joins
@@ -17,7 +15,6 @@ export default async function handler(req, res) {
         `)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      console.log('Raw purchase_orders data from DB:', data);
       // Map DB fields to frontend expectations
       const transformed = (data || []).map(order => ({
         ...order,
