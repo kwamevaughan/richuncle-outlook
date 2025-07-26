@@ -452,8 +452,22 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
   // GenericTable columns configuration
   const columns = [
     {
+      accessor: 'stock_status',
+      Header: 'Status',
+      sortable: true,
+      render: (row) => {
+        const stockStatus = getStockStatus(row.quantity);
+        return (
+          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase shadow-sm border ${stockStatus.bg} ${stockStatus.color}`}>
+            <Icon icon={stockStatus.icon} className="w-3 h-3" />
+            {stockStatus.status}
+          </span>
+        );
+      }
+    },
+    {
       accessor: 'name',
-      header: 'Product',
+      Header: 'Product',
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-3">
@@ -469,7 +483,7 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
     },
     {
       accessor: 'category',
-      header: 'Category',
+      Header: 'Category',
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-2">
@@ -480,7 +494,7 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
     },
     {
       accessor: 'quantity',
-      header: 'Stock Status',
+      Header: 'Stock Status',
       sortable: true,
       render: (row) => {
         const stockStatus = getStockStatus(row.quantity);
@@ -495,7 +509,7 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
     },
     {
       accessor: 'price',
-      header: 'Price',
+      Header: 'Price',
       sortable: true,
       render: (row) => (
         <div className="text-sm font-semibold text-gray-900">
@@ -505,7 +519,7 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
     },
     {
       accessor: 'value',
-      header: 'Value',
+      Header: 'Value',
       sortable: true,
       render: (row) => {
         const quantity = parseInt(row.quantity) || 0;

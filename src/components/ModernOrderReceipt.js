@@ -16,7 +16,7 @@ const ModernOrderReceipt = ({
 
   const formatCurrency = (amount) => {
     const num = Number(amount) || 0;
-    return `GHS ${num.toFixed(2)}`;
+    return `GHS ${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatDate = (dateString) => {

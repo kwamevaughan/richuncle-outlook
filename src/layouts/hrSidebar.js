@@ -98,8 +98,16 @@ const HrSidebar = ({
 
   const isSubItemActive = (href) => {
     if (!router) return "";
-    const pathname = href.split('?')[0];
-    return router.pathname === pathname
+    const [pathname, queryString] = href.split('?');
+    if (router.pathname !== pathname) return "text-gray-600 hover:bg-gray-50 ml-0";
+    if (!queryString) return router.pathname === pathname
+      ? "bg-orange-50 text-blue-800 shadow-sm ml-0"
+      : "text-gray-600 hover:bg-gray-50 ml-0";
+    // Parse tab from query string
+    const params = new URLSearchParams(queryString);
+    const tab = params.get('tab');
+    const currentTab = router.query.tab;
+    return tab === currentTab
       ? "bg-orange-50 text-blue-800 shadow-sm ml-0"
       : "text-gray-600 hover:bg-gray-50 ml-0";
   };
@@ -113,7 +121,26 @@ const HrSidebar = ({
         "Label:",
         typeof label === "function" ? label(user?.job_type) : label
       );
-      await router.push(href);
+      
+      // Check if we're navigating to the same pathname but different query params
+      const [pathname, queryString] = href.split('?');
+      const isSamePath = router.pathname === pathname;
+      
+      if (isSamePath && queryString) {
+        // Use replace to update query params without adding to history
+        const params = new URLSearchParams(queryString);
+        const queryObj = {};
+        for (const [key, value] of params.entries()) {
+          queryObj[key] = value;
+        }
+        await router.replace({
+          pathname: router.pathname,
+          query: { ...router.query, ...queryObj },
+        }, undefined, { shallow: true });
+      } else {
+        // Use push for different pathnames
+        await router.push(href);
+      }
     } catch (error) {
       console.error("[HrSidebar] Navigation error:", error);
     }

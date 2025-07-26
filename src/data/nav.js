@@ -123,16 +123,16 @@ export const sidebarNav = [
     category: "Promo",
     icon: "mdi:tag-outline",
     items: [
-        {
-            href: "/discount?tab=plans",
-            icon: "mdi:file-document-outline",
-            label: "Discount Plan",
-          },
-          {
-            href: "/discount",
-            icon: "mdi:percent-outline",
-            label: "Discount",
-          },
+      {
+        href: "/discount?tab=plans",
+        icon: "mdi:file-document-outline",
+        label: "Discount Plan",
+      },
+      {
+        href: "/discount",
+        icon: "mdi:percent-outline",
+        label: "Discount",
+      },
     ],
   },
   {
@@ -141,7 +141,7 @@ export const sidebarNav = [
     items: [
       {
         href: "/expenses",
-        icon: "jam:document",
+        icon: "mdi:file-document-outline",
         label: "Expenses",
         subItems: [
           {
@@ -156,28 +156,11 @@ export const sidebarNav = [
           },
         ],
       },
-      {
-        href: "/income",
-        icon: "jam:document",
-        label: "Income",
-        subItems: [
-          {
-            href: "/income",
-            icon: "jam:document",
-            label: "Income",
-          },
-          {
-            href: "/income-category",
-            icon: "mdi:folder-outline",
-            label: "Income Category",
-          },
-        ],
-      },
     ],
   },
   {
     category: "Contacts",
-    icon: "mdi:account-group-outline",
+    icon: "tabler:users",
     items: [
       {
         href: "/customers",
@@ -191,136 +174,69 @@ export const sidebarNav = [
       },
     ],
   },
-  // {
-  //   category: "Reports",
-  //   items: [
-  //     {
-  //       href: "/sales-report",
-  //       icon: "mdi:cart-sale",
-  //       label: "Sales Report",
-  //       subItems: [
-  //         {
-  //           href: "/sales-report",
-  //           icon: "mdi:cart-sale",
-  //           label: "Sales Report",
-  //         },
-  //         {
-  //           href: "/best-seller",
-  //           icon: "mdi:trophy-outline",
-  //           label: "Best Seller",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       href: "/purchase-report",
-  //       icon: "bx:purchase-tag",
-  //       label: "Purchase Report",
-  //     },
-  //     {
-  //       href: "/inventory-report",
-  //       icon: "material-symbols:inventory-sharp",
-  //       label: "Inventory Report",
-  //       subItems: [
-  //         {
-  //           href: "/inventory-report",
-  //           icon: "mdi:package-variant-closed-outline",
-  //           label: "Inventory Report",
-  //         },
-  //         {
-  //           href: "/stock-history",
-  //           icon: "mdi:history",
-  //           label: "Stock History",
-  //         },
-  //         {
-  //           href: "/sold-stock",
-  //           icon: "mdi:package-variant-remove",
-  //           label: "Sold Stock",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       href: "/supplier-report",
-  //       icon: "mdi:truck-delivery-outline",
-  //       label: "Supplier Report",
-  //       subItems: [
-  //         {
-  //           href: "/supplier-report",
-  //           icon: "mdi:truck-delivery-outline",
-  //           label: "Supplier Report",
-  //         },
-  //         {
-  //           href: "/supplier-due-report",
-  //           icon: "mdi:alert-circle-outline",
-  //           label: "Supplier Due Report",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       href: "/customer-report",
-  //       icon: "mdi:account-group-outline",
-  //       label: "Customer Report",
-  //       subItems: [
-  //         {
-  //           href: "/customer-report",
-  //           icon: "mdi:account-group-outline",
-  //           label: "Customer Report",
-  //         },
-  //         {
-  //           href: "/customer-due-report",
-  //           icon: "mdi:alert-circle-outline",
-  //           label: "Customer Due Report",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       href: "/product-report",
-  //       icon: "mdi:package-outline",
-  //       label: "Product Report",
-  //       subItems: [
-  //         {
-  //           href: "/product-report",
-  //           icon: "mdi:package-outline",
-  //           label: "Product Report",
-  //         },
-  //         {
-  //           href: "/product-expiry-report",
-  //           icon: "mdi:clock-alert-outline",
-  //           label: "Product Expiry Report",
-  //         },
-  //         {
-  //           href: "/product-quantity-alert",
-  //           icon: "mdi:alert-outline",
-  //           label: "Product Quantity Alert",
-  //         },
-  //       ],
-  //     },
-  //     {
-  //       href: "/expense-report",
-  //       icon: "carbon:document",
-  //       label: "Expense Report",
-  //     },
-  //     {
-  //       href: "/income-report",
-  //       icon: "entypo:line-graph",
-  //       label: "Income Report",
-  //     },
-  //     {
-  //       href: "/tax-report",
-  //       icon: "mdi:receipt-outline",
-  //       label: "Tax Report",
-  //     },
-  //     {
-  //       href: "/profit-loss",
-  //       icon: "mdi:chart-pie-outline",
-  //       label: "Profit & Loss",
-  //     },
-  //     {
-  //       href: "/annual-report",
-  //       icon: "mdi:calendar-year-outline",
-  //       label: "Annual Report",
-  //     },
-  //   ],
-  // },
+  {
+    category: "Reports",
+    icon: "streamline-plump:file-report",
+    items: [
+      
+          {
+            href: "/reports?tab=sales",
+            icon: "mdi:chart-line",
+            label: "Sales Report",
+          },
+          {
+            href: "/reports?tab=inventory",
+            icon: "mdi:package-variant",
+            label: "Inventory Report",
+          },
+          {
+            href: "/reports?tab=purchases",
+            icon: "mdi:cart-outline",
+            label: "Purchases Report",
+          },
+          {
+            href: "/reports?tab=customers",
+            icon: "mdi:account-group",
+            label: "Customers Report",
+          },
+          {
+            href: "/reports?tab=suppliers",
+            icon: "mdi:truck-delivery",
+            label: "Suppliers Report",
+          },
+          {
+            href: "/reports?tab=products",
+            icon: "mdi:cube-outline",
+            label: "Products Report",
+          },
+          {
+            href: "/reports?tab=expenses",
+            icon: "mdi:file-document-outline",
+            label: "Expenses Report",
+          },
+          {
+            href: "/reports?tab=profit-loss",
+            icon: "mdi:chart-areaspline",
+            label: "Profit & Loss",
+          },
+          {
+            href: "/reports?tab=tax",
+            icon: "mdi:calculator",
+            label: "Tax Report",
+          },
+          {
+            href: "/reports?tab=annual",
+            icon: "mdi:calendar-year",
+            label: "Annual Report",
+          },
+          {
+            href: "/reports?tab=z-report",
+            icon: "mdi:receipt-long",
+            label: "Z-Report (Register)",
+      },
+    ],
+    
+  },
   {
     category: "User Management",
     icon: "mdi:account-cog-outline",

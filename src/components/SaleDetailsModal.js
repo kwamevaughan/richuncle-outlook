@@ -145,7 +145,7 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
                     <div className="text-sm text-gray-600 mb-1">Total Amount</div>
-                    <div className="text-2xl font-bold text-gray-900">GHS {Number(sale.total).toFixed(2)}</div>
+                    <div className="text-2xl font-bold text-gray-900">GHS {Number(sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   </div>
                 </div>
               </div>
@@ -161,23 +161,23 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-gray-600">Subtotal</span>
-                    <span className="font-semibold text-gray-900">GHS {Number(sale.subtotal || sale.total).toFixed(2)}</span>
+                    <span className="font-semibold text-gray-900">GHS {Number(sale.subtotal || sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   {sale.tax && (
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-gray-600">Tax</span>
-                      <span className="font-semibold text-gray-900">GHS {Number(sale.tax).toFixed(2)}</span>
+                      <span className="font-semibold text-gray-900">GHS {Number(sale.tax).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   {sale.discount && (
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-gray-600">Discount</span>
-                      <span className="font-semibold text-red-600">-GHS {Number(sale.discount).toFixed(2)}</span>
+                      <span className="font-semibold text-red-600">-GHS {Number(sale.discount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600 font-semibold">Total</span>
-                    <span className="text-xl font-bold text-gray-900">GHS {Number(sale.total).toFixed(2)}</span>
+                    <span className="text-xl font-bold text-gray-900">GHS {Number(sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
@@ -224,12 +224,12 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
                         <div className="flex-1">
                           <div className="font-semibold text-gray-900">{item.name || item.product_name || item.product_id}</div>
                           <div className="text-sm text-gray-500">
-                            {item.quantity} × GHS {Number(item.price || item.unit_price).toFixed(2)}
+                            {item.quantity} × GHS {Number(item.price || item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-gray-900">
-                            GHS {Number(item.total || ((Number(item.quantity) || 0) * (Number(item.price || item.unit_price) || 0))).toFixed(2)}
+                            GHS {Number(item.total || ((Number(item.quantity) || 0) * (Number(item.price || item.unit_price) || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                       </div>

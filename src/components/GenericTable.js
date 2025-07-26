@@ -66,8 +66,42 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
     return filteredData;
   }, [filteredData, sortBy]);
 
+  // Column sorting
+  const columnSortedData = useMemo(() => {
+    if (!sortKey) return sortedData;
+    
+    return [...sortedData].sort((a, b) => {
+      let aValue = a[sortKey];
+      let bValue = b[sortKey];
+      
+      // Handle null/undefined values
+      if (aValue === null || aValue === undefined) aValue = '';
+      if (bValue === null || bValue === undefined) bValue = '';
+      
+      // Handle numeric values
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDir === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      // Handle date values
+      if (aValue instanceof Date && bValue instanceof Date) {
+        return sortDir === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      // Handle string values (including dates as strings)
+      const aStr = String(aValue).toLowerCase();
+      const bStr = String(bValue).toLowerCase();
+      
+      if (sortDir === 'asc') {
+        return aStr.localeCompare(bStr);
+      } else {
+        return bStr.localeCompare(aStr);
+      }
+    });
+  }, [sortedData, sortKey, sortDir]);
+
   const totalPages = Math.ceil(sortedData.length / pageSize);
-  const paged = sortedData.slice((page - 1) * pageSize, page * pageSize);
+  const paged = columnSortedData.slice((page - 1) * pageSize, page * pageSize);
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -110,7 +144,7 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
     toggleSelect,
     selectAll,
     setSearchTerm,
-    totalItems: sortedData.length,
+    totalItems: columnSortedData.length,
     statusFilter,
     setStatusFilter,
     sortBy,
@@ -142,6 +176,8 @@ export function GenericTable({
   stores = [],
   statusOptions = null,
   onRefresh,
+  getFieldsOrder,
+  getDefaultFields,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
@@ -243,7 +279,7 @@ export function GenericTable({
           return (
             <td
               key={col.accessor}
-              className="px-4 py-4 text-sm text-gray-900 dark:text-white"
+              className="px-4 py-4 text-sm text-gray-900 dark:text-white capitalize"
             >
               {col.render(row, value, index)}
             </td>
@@ -267,7 +303,7 @@ export function GenericTable({
         return (
           <td
             key={col.accessor}
-            className="px-4 py-4 text-sm text-gray-900 dark:text-white"
+            className="px-4 py-4 text-sm text-gray-900 dark:text-white capitalize"
           >
             {value}
           </td>
@@ -544,22 +580,23 @@ export function GenericTable({
                 <th
                   key={col.accessor}
                   className={`px-4 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 ${
-                    col.sortable
+                    col.sortable !== false
                       ? "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none"
                       : ""
                   }`}
                   onClick={
-                    col.sortable
+                    col.sortable !== false
                       ? () => table.handleSort(col.accessor)
                       : undefined
                   }
                 >
                   <div className="flex items-center gap-2">
-                    {col.header
-                      .split(" ")
-                      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                      .join(" ")}
-                    {col.sortable && (
+                    {col.Header
+                      ? col.Header.split(" ")
+                          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                          .join(" ")
+                      : ""}
+                    {col.sortable !== false && (
                       <div className="flex flex-col">
                         <Icon
                           icon="mdi:chevron-up"
@@ -584,9 +621,12 @@ export function GenericTable({
                   </div>
                 </th>
               ))}
-              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">
-                Actions
-              </th>
+              {/* Only render actions column if needed */}
+              {(actions.length > 0 || onEdit || onDelete) && (
+                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <TableBody
@@ -609,7 +649,7 @@ export function GenericTable({
                         columns.length +
                         (selectable ? 1 : 0) +
                         (enableDragDrop ? 1 : 0) +
-                        1
+                        ((actions.length > 0 || onEdit || onDelete) ? 1 : 0)
                       }
                       className="px-4 py-12 text-center"
                     >
@@ -723,6 +763,8 @@ export function GenericTable({
         type={exportType}
         stores={stores}
         title={exportTitle || `Export ${title || 'Data'}`}
+        getFieldsOrder={getFieldsOrder}
+        getDefaultFields={getDefaultFields}
       />
     </div>
   );
