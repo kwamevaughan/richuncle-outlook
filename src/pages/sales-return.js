@@ -332,22 +332,12 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                   )}
                 </>
               )}
-              extraControls={
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium">Status:</label>
-                  <select
-                    className="border rounded px-2 py-1 text-sm"
-                    value={statusFilter}
-                    onChange={e => setStatusFilter(e.target.value)}
-                  >
-                    <option value="">All</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Returned">Returned</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Refunded">Refunded</option>
-                  </select>
-                </div>
-              }
+              statusOptions={[
+                { value: "Pending", label: "Pending" },
+                { value: "Returned", label: "Returned" },
+                { value: "Cancelled", label: "Cancelled" },
+                { value: "Refunded", label: "Refunded" }
+              ]}
             />
             {showViewModal && viewItem && (
               <SalesReturnModals

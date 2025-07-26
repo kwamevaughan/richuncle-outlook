@@ -467,10 +467,18 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                     },
                   ]}
                   onEdit={openEditModal}
+                  onDelete={handleDelete}
                   onAddNew={openAddModal}
                   addNewLabel="Add Purchase Order"
                   title="Purchase Orders"
                   emptyMessage="No purchase orders found"
+                  statusOptions={[
+                    { value: "pending", label: "Pending" },
+                    { value: "approved", label: "Approved" },
+                    { value: "in_transit", label: "In Transit" },
+                    { value: "completed", label: "Completed" },
+                    { value: "cancelled", label: "Cancelled" }
+                  ]}
                   onImport={null}
                   importType="purchase-orders"
                   customRowRender={(row, index, defaultRow) => (

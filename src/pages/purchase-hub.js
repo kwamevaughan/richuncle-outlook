@@ -541,6 +541,24 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
                       }
                     }}
                     addNewLabel={`Add ${activeTab.slice(0, -1)}`}
+                    statusOptions={
+                      activeTab === "orders" ? [
+                        { value: "pending", label: "Pending" },
+                        { value: "approved", label: "Approved" },
+                        { value: "in_transit", label: "In Transit" },
+                        { value: "completed", label: "Completed" },
+                        { value: "cancelled", label: "Cancelled" }
+                      ] : activeTab === "purchases" ? [
+                        { value: "pending", label: "Pending" },
+                        { value: "completed", label: "Completed" },
+                        { value: "cancelled", label: "Cancelled" }
+                      ] : activeTab === "returns" ? [
+                        { value: "Pending", label: "Pending" },
+                        { value: "Approved", label: "Approved" },
+                        { value: "Returned", label: "Returned" },
+                        { value: "Cancelled", label: "Cancelled" }
+                      ] : null
+                    }
                   />
                 )}
               </div>

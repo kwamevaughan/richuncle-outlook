@@ -14,7 +14,7 @@ import TooltipIconButton from "./TooltipIconButton";
 import ExportModal from "./export/ExportModal";
 
 // Enhanced useTable hook
-function useTable(data, initialPageSize = 10) {
+function useTable(data, initialPageSize = 10, statusOptions = null) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [sortKey, setSortKey] = useState(null);
@@ -28,7 +28,7 @@ function useTable(data, initialPageSize = 10) {
   const filteredData = useMemo(() => {
     let result = data;
     // Status filter for sales returns
-    if (statusFilter && statusFilter !== "all") {
+    if (statusFilter && statusFilter !== "all" && statusOptions) {
       result = result.filter(row => row.status === statusFilter);
     }
     // Search filter
@@ -50,7 +50,7 @@ function useTable(data, initialPageSize = 10) {
       result = result.filter(row => row.created_at && new Date(row.created_at) >= last7);
     }
     return result;
-  }, [data, searchTerm, statusFilter, sortBy]);
+  }, [data, searchTerm, statusFilter, sortBy, statusOptions]);
 
   // Sorting
   const sortedData = useMemo(() => {
@@ -134,11 +134,12 @@ export function GenericTable({
   onImport,
   customRowRender,
   importType,
-  enableDateFilter = false,
+  enableDateFilter = true,
   onExport,
   exportType = "default",
   exportTitle,
   stores = [],
+  statusOptions = null,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
@@ -187,7 +188,7 @@ export function GenericTable({
   }, [safeData, dateRange, enableDateFilter]);
 
   // Use filtered data for table
-  const table = useTable(filteredByDate);
+  const table = useTable(filteredByDate, 10, statusOptions);
   const TableBody = enableDragDrop ? CategoryDragDrop : "tbody";
 
   const handleBulkDelete = () => {
@@ -352,31 +353,25 @@ export function GenericTable({
                         {addNewLabel}
                       </button>
                     )}
-                    {/* Export Button */}
-                    <button
-                      onClick={() => setShowExportModal(true)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ml-2"
-                      title="Export Data"
-                    >
-                      <Icon icon="mdi:export" className="w-4 h-4" />
-                      Export
-                    </button>
                   </div>
                 )}
                 {/* Status Filter for sales returns */}
-                <div>
-                  <select
-                    value={table.statusFilter}
-                    onChange={e => table.setStatusFilter(e.target.value)}
-                    className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  >
-                    <option value="all">All</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Returned">Returned</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Refunded">Refunded</option>
-                  </select>
-                </div>
+                {statusOptions && (
+                  <div>
+                    <select
+                      value={table.statusFilter}
+                      onChange={e => table.setStatusFilter(e.target.value)}
+                      className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    >
+                      <option value="all">All</option>
+                      {statusOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {/* Sort By Filter */}
                 <div>
                   {/* <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Sort By</label> */}
@@ -445,6 +440,15 @@ export function GenericTable({
                     )}
                   </div>
                 )}
+                {/* Export Button - Always visible */}
+                <button
+                  onClick={() => setShowExportModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  title="Export Data"
+                >
+                  <Icon icon="mdi:export" className="w-4 h-4" />
+                  Export
+                </button>
               </div>
               
               {/* Export button for non-searchable tables */}
@@ -459,14 +463,6 @@ export function GenericTable({
                       {addNewLabel}
                     </button>
                   )}
-                  <button
-                    onClick={() => setShowExportModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                    title="Export Data"
-                  >
-                    <Icon icon="mdi:export" className="w-4 h-4" />
-                    Export
-                  </button>
                 </div>
               )}
             </div>

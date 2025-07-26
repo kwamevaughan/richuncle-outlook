@@ -558,8 +558,13 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                   onDelete={openConfirm}
                   onAddNew={openAddModal}
                   addNewLabel="Add Purchase"
-                  title="Purchases"
+                  title="Direct Purchases"
                   emptyMessage="No purchases found"
+                  statusOptions={[
+                    { value: "pending", label: "Pending" },
+                    { value: "completed", label: "Completed" },
+                    { value: "cancelled", label: "Cancelled" }
+                  ]}
                   onImport={handleImportPurchases}
                   mode={mode}
                   // Custom row rendering for expand/collapse

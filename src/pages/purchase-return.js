@@ -167,6 +167,12 @@ export default function PurchaseReturnPage({ mode = "light", toggleMode, ...prop
                 addNewLabel="Add Purchase Return"
                 title="Purchase Returns"
                 emptyMessage="No purchase returns found"
+                statusOptions={[
+                  { value: "Pending", label: "Pending" },
+                  { value: "Approved", label: "Approved" },
+                  { value: "Returned", label: "Returned" },
+                  { value: "Cancelled", label: "Cancelled" }
+                ]}
                 customRowRender={(row, index, defaultRow) => (
                   <>
                     {defaultRow}
