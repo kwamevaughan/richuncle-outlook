@@ -9,6 +9,7 @@ import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
 import ErrorBoundary from "../components/ErrorBoundary";
+import Link from "next/link";
 
 export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
@@ -130,17 +131,35 @@ export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...pro
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:folder-outline" className="w-7 h-7 text-blue-900" />
-              Expense Categories
-            </h1>
-            <p className="text-sm text-gray-500 mb-6">
-              Manage your expense categories here.
-            </p>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                  <Icon
+                    icon="mdi:folder-outline"
+                    className="w-7 h-7 text-blue-900"
+                  />
+                  Expense Categories
+                </h1>
+                <p className="text-sm text-gray-500 mb-6">
+                  Manage your expense categories here.
+                </p>
+              </div>
+              <Link href="/expenses">
+                <button className="bg-blue-900 text-white px-4 py-2 rounded-md">
+                  Back to Expenses
+                </button>
+              </Link>
+            </div>
 
             {loading && (
               <div className="flex items-center gap-2 text-blue-600 mb-4">
@@ -155,9 +174,17 @@ export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...pro
                 data={expenseCategories}
                 columns={[
                   { header: "Name", accessor: "name", sortable: true },
-                  { header: "Description", accessor: "description", sortable: false },
-                  { header: "Created At", accessor: "created_at", sortable: true, render: (row) => 
-                    new Date(row.created_at).toLocaleDateString()
+                  {
+                    header: "Description",
+                    accessor: "description",
+                    sortable: false,
+                  },
+                  {
+                    header: "Created At",
+                    accessor: "created_at",
+                    sortable: true,
+                    render: (row) =>
+                      new Date(row.created_at).toLocaleDateString(),
                   },
                 ]}
                 onEdit={openEditModal}

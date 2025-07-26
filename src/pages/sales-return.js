@@ -303,7 +303,7 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                 {
                   label: 'View',
                   icon: 'mdi:eye',
-                  className: 'bg-blue-600 text-white',
+                  className: 'bg-blue-500/10 text-blue-500',
                   onClick: row => handleView(row)
                 }
               ]}

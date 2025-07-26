@@ -267,10 +267,10 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
     let modalTitle = title || (isZReport ? 'Export Z-Report Data' : type === 'user' ? 'Export User Data' : 'Export Data');
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[9999]">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-[9999]">
             <div
-                className={`rounded-xl max-w-2xl w-full mx-0 shadow-2xl transform transition-all duration-300 animate-fade-in flex flex-col max-h-[80vh] ${
-                    mode === "dark" ? "bg-gray-800 text-white" : "bg-white text-[#231812]"
+                className={`rounded-xl max-w-2xl w-full mx-0 shadow-2xl transform transition-all duration-300 animate-fade-in flex flex-col max-h-[80vh] backdrop-blur-md bg-white/95 border border-white/20 ${
+                    mode === "dark" ? "bg-gray-800/95 text-white border-gray-700/20" : "bg-white/95 text-[#231812] border-white/20"
                 }`}
             >
                 <div className="bg-blue-800 rounded-t-xl p-4 flex items-center justify-between">

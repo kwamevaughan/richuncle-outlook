@@ -12,6 +12,7 @@ import 'react-date-range/dist/theme/default.css';
 import ReactDOM from 'react-dom';
 import TooltipIconButton from "./TooltipIconButton";
 import ExportModal from "./export/ExportModal";
+import toast from "react-hot-toast";
 
 // Enhanced useTable hook
 function useTable(data, initialPageSize = 10, statusOptions = null) {
@@ -140,6 +141,7 @@ export function GenericTable({
   exportTitle,
   stores = [],
   statusOptions = null,
+  onRefresh,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
@@ -190,6 +192,23 @@ export function GenericTable({
   // Use filtered data for table
   const table = useTable(filteredByDate, 10, statusOptions);
   const TableBody = enableDragDrop ? CategoryDragDrop : "tbody";
+
+  // Refresh function
+  const handleRefresh = () => {
+    if (onRefresh) {
+      // If custom refresh function is provided, use it
+      onRefresh();
+    } else {
+      // Default refresh behavior - reset table state
+      table.setPage(1);
+      table.setSearchTerm("");
+      table.setStatusFilter("all");
+      table.setSortBy("recent");
+      setDateRange([{ startDate: null, endDate: null, key: 'selection' }]);
+      table.selected = [];
+    }
+    toast.success("Table data refreshed successfully!");
+  };
 
   const handleBulkDelete = () => {
     if (table.selected.length > 0 && onDelete) {
@@ -440,19 +459,30 @@ export function GenericTable({
                     )}
                   </div>
                 )}
-                {/* Export Button - Always visible */}
+                {/* Refresh Button - Always visible */}
+                <TooltipIconButton
+                  icon="mdi:refresh"
+                  label="Refresh Data"
+                  onClick={handleRefresh}
+                  mode="light"
+                  className="bg-blue-50 text-blue-600 text-xs"
+                />
+              </div>
+              
+              {/* Export button positioned on the right */}
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowExportModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   title="Export Data"
                 >
                   <Icon icon="mdi:export" className="w-4 h-4" />
-                  Export
+                  Export Data
                 </button>
               </div>
               
               {/* Export button for non-searchable tables */}
-              {!searchable && (
+              {/* {!searchable && (
                 <div className="flex items-center gap-2">
                   {onAddNew && (
                     <button
@@ -464,7 +494,7 @@ export function GenericTable({
                     </button>
                   )}
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>

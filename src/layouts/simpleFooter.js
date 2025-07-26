@@ -44,7 +44,7 @@ const SimpleFooter = ({ mode, isSidebarOpen }) => {
             <span>Copyright © {currentYear} -</span>
             <span className="relative group mt-1 md:mt-0">
               <span className="">
-                Rich Uncle Outlook
+                RichUncle Outlook
               </span>
             </span>
           </div>

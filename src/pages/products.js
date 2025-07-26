@@ -246,7 +246,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                   { header: "Unit", accessor: "unit_id", sortable: false, render: (row) => row.unit_name || "-" },
                   { header: "Qty", accessor: "quantity", sortable: true },
                   { 
-                    header: "Variants", 
+                    header: "Specs", 
                     accessor: "variant_attributes", 
                     sortable: false, 
                     render: (row) => {

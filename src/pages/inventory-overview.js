@@ -8,7 +8,7 @@ import { GenericTable } from "@/components/GenericTable";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 
-export default function ManageStockPage({ mode = "light", toggleMode, ...props }) {
+export default function InventoryOverviewPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
   const router = useRouter();
@@ -24,19 +24,20 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockStatusFilter, setStockStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState("table"); // table or grid
+  const [stockThreshold, setStockThreshold] = useState(10);
   
   // Modal states
-  const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
   const [showQuickUpdateModal, setShowQuickUpdateModal] = useState(false);
+  const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedProducts, setSelectedProducts] = useState([]);
   
   // Form states
-  const [bulkUpdateQuantity, setBulkUpdateQuantity] = useState("");
-  const [bulkUpdateType, setBulkUpdateType] = useState("set");
   const [quickUpdateQuantity, setQuickUpdateQuantity] = useState("");
   const [quickUpdateType, setQuickUpdateType] = useState("add");
+  const [bulkUpdateQuantity, setBulkUpdateQuantity] = useState("");
+  const [bulkUpdateType, setBulkUpdateType] = useState("set");
   const [importData, setImportData] = useState("");
   
   // Statistics
@@ -45,6 +46,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
     inStock: 0,
     lowStock: 0,
     outOfStock: 0,
+    critical: 0,
     totalValue: 0
   });
 
@@ -82,22 +84,23 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
   // Calculate statistics
   const calculateStats = (productData) => {
     const total = productData.length;
-    const inStock = productData.filter(p => parseInt(p.quantity) > 10).length;
-    const lowStock = productData.filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 10).length;
+    const inStock = productData.filter(p => parseInt(p.quantity) > stockThreshold).length;
+    const lowStock = productData.filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= stockThreshold).length;
     const outOfStock = productData.filter(p => parseInt(p.quantity) <= 0).length;
+    const critical = productData.filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 5).length;
     const totalValue = productData.reduce((sum, p) => {
       const quantity = parseInt(p.quantity) || 0;
       const price = parseFloat(p.price) || 0;
       return sum + (quantity * price);
     }, 0);
 
-    setStats({ total, inStock, lowStock, outOfStock, totalValue });
+    setStats({ total, inStock, lowStock, outOfStock, critical, totalValue });
   };
 
   // Initial fetch
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [stockThreshold]);
 
   // Open Quick Update modal if quickUpdateId is present in query
   useEffect(() => {
@@ -123,10 +126,13 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
     let matchesStockStatus = true;
     switch (stockStatusFilter) {
       case "in-stock":
-        matchesStockStatus = quantity > 10;
+        matchesStockStatus = quantity > stockThreshold;
         break;
       case "low-stock":
-        matchesStockStatus = quantity > 0 && quantity <= 10;
+        matchesStockStatus = quantity > 0 && quantity <= stockThreshold;
+        break;
+      case "critical":
+        matchesStockStatus = quantity > 0 && quantity <= 5;
         break;
       case "out-of-stock":
         matchesStockStatus = quantity <= 0;
@@ -155,7 +161,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
       icon: 'mdi:alert-circle',
       priority: 'high'
     };
-    if (qty <= 10) return { 
+    if (qty <= stockThreshold) return { 
       status: 'Low Stock', 
       color: 'text-orange-600', 
       bg: 'bg-orange-50 border-orange-200', 
@@ -169,6 +175,60 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
       icon: 'mdi:check-circle',
       priority: 'low'
     };
+  };
+
+  // Handle quick update
+  const handleQuickUpdate = async () => {
+    if (!quickUpdateQuantity || !selectedProduct) {
+      toast.error("Please enter quantity");
+      return;
+    }
+
+    const quantity = parseInt(quickUpdateQuantity);
+    if (isNaN(quantity) || quantity < 0) {
+      toast.error("Please enter a valid quantity");
+      return;
+    }
+
+    try {
+      const currentStock = parseInt(selectedProduct.quantity) || 0;
+      let newStock;
+
+      switch (quickUpdateType) {
+        case "add":
+          newStock = currentStock + quantity;
+          break;
+        case "subtract":
+          newStock = Math.max(0, currentStock - quantity);
+          break;
+        case "set":
+          newStock = quantity;
+          break;
+        default:
+          newStock = currentStock;
+      }
+
+      const response = await fetch(`/api/products/${selectedProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ quantity: newStock })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success(`Updated ${selectedProduct.name}`);
+        setQuickUpdateQuantity("");
+        setShowQuickUpdateModal(false);
+        setSelectedProduct(null);
+        fetchProducts();
+      } else {
+        throw new Error(result.error || "Failed to update product");
+      }
+    } catch (err) {
+      toast.error("Failed to update product");
+    }
   };
 
   // Handle bulk update
@@ -233,60 +293,6 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
     }
   };
 
-  // Handle quick update
-  const handleQuickUpdate = async () => {
-    if (!quickUpdateQuantity || !selectedProduct) {
-      toast.error("Please enter quantity");
-      return;
-    }
-
-    const quantity = parseInt(quickUpdateQuantity);
-    if (isNaN(quantity) || quantity < 0) {
-      toast.error("Please enter a valid quantity");
-      return;
-    }
-
-    try {
-      const currentStock = parseInt(selectedProduct.quantity) || 0;
-      let newStock;
-
-      switch (quickUpdateType) {
-        case "add":
-          newStock = currentStock + quantity;
-          break;
-        case "subtract":
-          newStock = Math.max(0, currentStock - quantity);
-          break;
-        case "set":
-          newStock = quantity;
-          break;
-        default:
-          newStock = currentStock;
-      }
-
-      const response = await fetch(`/api/products/${selectedProduct.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ quantity: newStock })
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        toast.success(`Updated ${selectedProduct.name}`);
-        setQuickUpdateQuantity("");
-        setShowQuickUpdateModal(false);
-        setSelectedProduct(null);
-        fetchProducts();
-      } else {
-        throw new Error(result.error || "Failed to update product");
-      }
-    } catch (err) {
-      toast.error("Failed to update product");
-    }
-  };
-
   // Handle import
   const handleImport = async () => {
     if (!importData.trim()) {
@@ -295,11 +301,10 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
     }
 
     try {
-      // Parse CSV data (simplified - you might want to use a proper CSV parser)
       const lines = importData.trim().split('\n');
       const updates = [];
 
-      for (let i = 1; i < lines.length; i++) { // Skip header
+      for (let i = 1; i < lines.length; i++) {
         const [sku, quantity] = lines[i].split(',').map(s => s.trim());
         if (sku && quantity) {
           const product = products.find(p => p.sku === sku);
@@ -392,6 +397,25 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
             </div>
           </div>
 
+          {/* Progress Bar */}
+          <div className="mb-4">
+            <div className="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Stock Level</span>
+              <span>{quantity}/{stockThreshold}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  quantity === 0 ? 'bg-red-500' :
+                  quantity <= 5 ? 'bg-red-400' :
+                  quantity <= stockThreshold ? 'bg-orange-400' :
+                  'bg-green-400'
+                }`}
+                style={{ width: `${Math.min((quantity / stockThreshold) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="space-y-2">
             <button
@@ -415,7 +439,8 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
               }}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
             >
-              <Icon icon="mdi:pencil" className="w-4 h-4" />
+                        <Icon icon="mdi:pencil" className="w-4 h-4" />
+                        
               Edit Stock
             </button>
           </div>
@@ -498,25 +523,27 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
   // Custom actions for the table
   const tableActions = [
     {
-      label: 'Add Stock',
-      icon: 'mdi:plus',
+      label: "Add Stock",
+      icon: "mdi:plus-circle-outline",
+      className: "bg-blue-500/10 text-blue-600",
       onClick: (row) => {
         setSelectedProduct(row);
         setQuickUpdateType("add");
         setQuickUpdateQuantity("");
         setShowQuickUpdateModal(true);
-      }
+      },
     },
     {
-      label: 'Edit Stock',
-      icon: 'mdi:pencil',
+      label: "Edit Stock",
+      icon: "cuida:edit-outline",
+      className: "bg-blue-500/10 text-blue-600",
       onClick: (row) => {
         setSelectedProduct(row);
         setQuickUpdateType("set");
         setQuickUpdateQuantity(row.quantity.toString());
         setShowQuickUpdateModal(true);
-      }
-    }
+      },
+    },
   ];
 
   if (userLoading && LoadingComponent) return LoadingComponent;
@@ -543,29 +570,23 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
                       <Icon
-                        icon="material-symbols-light:stockpot-outline"
+                        icon="mdi:view-dashboard"
                         className="w-6 h-6 text-white"
                       />
                     </div>
-                    Manage Stock
+                    Inventory Overview
                   </h1>
                   <p className="text-gray-600">
-                    View and manage stock levels for all products
+                    Monitor and manage your complete inventory with real-time stock levels
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => fetchProducts()}
-                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm"
-                  >
-                    <Icon icon="mdi:refresh" className="w-4 h-4" />
-                    Refresh
-                  </button>
+                  
                   <button
                     onClick={() => setShowImportModal(true)}
-                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                   >
                     <Icon icon="mdi:file-import" className="w-4 h-4" />
                     Import CSV
@@ -583,7 +604,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
               </div>
 
               {/* Enhanced Statistics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
                 <div className="bg-white rounded-lg p-4 shadow-sm border">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -622,10 +643,10 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
 
                 <div className="bg-white rounded-lg p-4 shadow-sm border">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                       <Icon
                         icon="mdi:alert"
-                        className="w-5 h-5 text-orange-600"
+                        className="w-5 h-5 text-blue-600"
                       />
                     </div>
                     <div>
@@ -640,6 +661,23 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
                 <div className="bg-white rounded-lg p-4 shadow-sm border">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                      <Icon
+                        icon="mdi:alert-circle"
+                        className="w-5 h-5 text-red-600"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {stats.critical}
+                      </div>
+                      <div className="text-sm text-gray-500">Critical</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-4 shadow-sm border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                       <Icon
                         icon="mdi:close-circle"
                         className="w-5 h-5 text-red-600"
@@ -681,12 +719,12 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
                   placeholder="Search products by name or SKU..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="all">All Categories</option>
                   {categories.map((cat) => (
@@ -698,12 +736,23 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
                 <select
                   value={stockStatusFilter}
                   onChange={(e) => setStockStatusFilter(e.target.value)}
-                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="all">All Stock Levels</option>
                   <option value="in-stock">In Stock</option>
                   <option value="low-stock">Low Stock</option>
+                  <option value="critical">Critical (≤5)</option>
                   <option value="out-of-stock">Out of Stock</option>
+                </select>
+                <select
+                  value={stockThreshold}
+                  onChange={(e) => setStockThreshold(parseInt(e.target.value))}
+                  className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  <option value={5}>≤5 units</option>
+                  <option value={10}>≤10 units</option>
+                  <option value={15}>≤15 units</option>
+                  <option value={20}>≤20 units</option>
                 </select>
                 <div className="flex bg-gray-100 rounded-lg p-1">
                   <button
@@ -733,8 +782,8 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
             {/* Content Area */}
             {loading ? (
               <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading products...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading inventory...</p>
               </div>
             ) : error ? (
               <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
@@ -772,7 +821,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
                     data={filteredProducts}
                     columns={columns}
                     actions={tableActions}
-                    title="Product Stock Management"
+                    title="Inventory Overview"
                     emptyMessage="No products found"
                     selectable={true}
                     searchable={false}
@@ -784,70 +833,6 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
           </div>
         </div>
       </div>
-
-      {/* Bulk Update Modal */}
-      <SimpleModal
-        isOpen={showBulkUpdateModal}
-        onClose={() => setShowBulkUpdateModal(false)}
-        title="Bulk Update Stock"
-        width="max-w-md"
-      >
-        <div className="space-y-6">
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <div className="flex items-center gap-2 mb-2">
-              <Icon icon="mdi:information" className="w-5 h-5 text-blue-600" />
-              <span className="font-medium text-blue-900">Bulk Update</span>
-            </div>
-            <p className="text-sm text-blue-700">
-              Update stock for {selectedProducts.length} selected products
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Update Type
-            </label>
-            <select
-              value={bulkUpdateType}
-              onChange={(e) => setBulkUpdateType(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-            >
-              <option value="add">Add to Current Stock</option>
-              <option value="subtract">Subtract from Current Stock</option>
-              <option value="set">Set to Specific Amount</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quantity
-            </label>
-            <input
-              type="number"
-              value={bulkUpdateQuantity}
-              onChange={(e) => setBulkUpdateQuantity(e.target.value)}
-              placeholder="Enter quantity"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={() => setShowBulkUpdateModal(false)}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleBulkUpdate}
-              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-            >
-              <Icon icon="mdi:check" className="w-4 h-4" />
-              Update Stock
-            </button>
-          </div>
-        </div>
-      </SimpleModal>
 
       {/* Quick Update Modal */}
       <SimpleModal
@@ -885,7 +870,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
             <select
               value={quickUpdateType}
               onChange={(e) => setQuickUpdateType(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="add">Add to Current Stock</option>
               <option value="subtract">Subtract from Current Stock</option>
@@ -902,7 +887,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
               value={quickUpdateQuantity}
               onChange={(e) => setQuickUpdateQuantity(e.target.value)}
               placeholder="Enter quantity"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
 
@@ -915,7 +900,71 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
             </button>
             <button
               onClick={handleQuickUpdate}
-              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <Icon icon="mdi:check" className="w-4 h-4" />
+              Update Stock
+            </button>
+          </div>
+        </div>
+      </SimpleModal>
+
+      {/* Bulk Update Modal */}
+      <SimpleModal
+        isOpen={showBulkUpdateModal}
+        onClose={() => setShowBulkUpdateModal(false)}
+        title="Bulk Update Stock"
+        width="max-w-md"
+      >
+        <div className="space-y-6">
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Icon icon="mdi:information" className="w-5 h-5 text-blue-600" />
+              <span className="font-medium text-blue-900">Bulk Update</span>
+            </div>
+            <p className="text-sm text-blue-700">
+              Update stock for {selectedProducts.length} selected products
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Update Type
+            </label>
+            <select
+              value={bulkUpdateType}
+              onChange={(e) => setBulkUpdateType(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            >
+              <option value="add">Add to Current Stock</option>
+              <option value="subtract">Subtract from Current Stock</option>
+              <option value="set">Set to Specific Amount</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Quantity
+            </label>
+            <input
+              type="number"
+              value={bulkUpdateQuantity}
+              onChange={(e) => setBulkUpdateQuantity(e.target.value)}
+              placeholder="Enter quantity"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={() => setShowBulkUpdateModal(false)}
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBulkUpdate}
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
             >
               <Icon icon="mdi:check" className="w-4 h-4" />
               Update Stock
@@ -932,12 +981,12 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
         width="max-w-2xl"
       >
         <div className="space-y-6">
-          <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
             <div className="flex items-center gap-2 mb-2">
-              <Icon icon="mdi:information" className="w-5 h-5 text-orange-600" />
-              <span className="font-medium text-orange-900">CSV Import</span>
+              <Icon icon="mdi:information" className="w-5 h-5 text-blue-600" />
+              <span className="font-medium text-blue-900">CSV Import</span>
             </div>
-            <p className="text-sm text-orange-700">
+            <p className="text-sm text-blue-700">
               Paste CSV data with SKU and quantity columns. Format: SKU,Quantity
             </p>
           </div>
@@ -951,7 +1000,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
               onChange={(e) => setImportData(e.target.value)}
               placeholder="SKU,Quantity&#10;ABC123,50&#10;DEF456,25"
               rows={10}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors font-mono text-sm"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors font-mono text-sm"
             />
           </div>
 
@@ -964,7 +1013,7 @@ export default function ManageStockPage({ mode = "light", toggleMode, ...props }
             </button>
             <button
               onClick={handleImport}
-              className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
             >
               <Icon icon="mdi:file-import" className="w-4 h-4" />
               Import Data

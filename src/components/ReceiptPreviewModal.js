@@ -67,7 +67,7 @@ const ReceiptPreviewModal = ({
       <body>
         <div class="receipt">
           <div class="header">
-            <div class="store-name">RICH UNCLE OUTLOOK</div>
+            <div class="store-name">RICHUNCLE OUTLOOK</div>
             <div class="store-info">Accra, Ghana</div>
             <div class="store-info">Tel: +233 059 861 2130</div>
           </div>
@@ -243,7 +243,7 @@ const ReceiptPreviewModal = ({
         {/* Receipt Preview */}
         <div className="bg-gray-50 rounded-lg p-6 font-mono text-sm">
           <div className="text-center border-b border-dashed border-gray-400 pb-3 mb-4">
-            <div className="text-lg font-bold">RICH UNCLE OUTLOOK</div>
+            <div className="text-lg font-bold">RICHUNCLE OUTLOOK</div>
             <div className="text-xs">Accra, Ghana</div>
             <div className="text-xs">Tel: +233 059 861 2130</div>
           </div>

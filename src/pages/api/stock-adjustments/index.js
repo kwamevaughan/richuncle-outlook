@@ -33,18 +33,34 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     try {
-      const { data, error } = await supabaseAdmin
+      const adjustmentData = req.body;
+      const { product_id, adjustment_type, quantity_adjusted, quantity_after } = adjustmentData;
+
+      // First, create the adjustment record
+      const { data: adjustmentResult, error: adjustmentError } = await supabaseAdmin
         .from("stock_adjustments")
-        .insert([req.body])
+        .insert([adjustmentData])
         .select();
 
-      if (error) {
-        throw error;
+      if (adjustmentError) {
+        throw adjustmentError;
+      }
+
+      // Then, update the product's quantity
+      const { error: productUpdateError } = await supabaseAdmin
+        .from("products")
+        .update({ quantity: quantity_after })
+        .eq("id", product_id);
+
+      if (productUpdateError) {
+        console.error("Error updating product quantity:", productUpdateError);
+        // Note: We don't throw here to avoid leaving the adjustment record without updating the product
+        // In a production system, you might want to implement a rollback mechanism
       }
 
       return res.status(201).json({
         success: true,
-        data: data[0]
+        data: adjustmentResult[0]
       });
     } catch (error) {
       console.error("Create stock adjustment error:", error);

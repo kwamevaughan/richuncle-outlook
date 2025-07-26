@@ -254,13 +254,6 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => fetchUsers()}
-                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm"
-                >
-                  <Icon icon="mdi:refresh" className="w-4 h-4" />
-                  Refresh
-                </button>
                 {isAdmin && (
                   <>
                     <button
@@ -333,6 +326,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
               selectable={false}
               searchable={false}
               onExport={isAdmin ? () => setShowExportModal(true) : undefined}
+              onRefresh={fetchUsers}
             />
           )}
         </div>

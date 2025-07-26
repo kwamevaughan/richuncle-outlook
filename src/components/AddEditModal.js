@@ -1047,7 +1047,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               {/* Variant Attributes Section */}
               {variantAttributes.length > 0 && (
                 <div className="mb-6">
-                  <label className="block mb-2 font-medium">Variant Attributes (Optional)</label>
+                  <label className="block mb-2 font-medium">Product Specifications (Optional)</label>
                   <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
                     {variantAttributes.map((attr) => (
                       <div key={attr.id} className="flex items-center gap-3">

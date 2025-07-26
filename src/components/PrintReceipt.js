@@ -82,7 +82,7 @@ const PrintReceipt = ({
       <body>
         <div class="receipt">
           <div class="header">
-            <div class="store-name">RICH UNCLE OUTLOOK</div>
+            <div class="store-name">RICHUNCLE OUTLOOK</div>
             <div class="store-info">Accra, Ghana</div>
             <div class="store-info">Tel: +233 059 861 2130</div>
           </div>

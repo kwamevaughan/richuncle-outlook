@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import { GenericTable } from "./GenericTable";
 import StatusPill from "./StatusPill";
 
-export default function SalesTable({ sales, loading, error, onViewDetails }) {
+export default function SalesTable({ sales, loading, error, onViewDetails, onExport }) {
   return (
     <GenericTable
       data={sales}
@@ -29,6 +29,7 @@ export default function SalesTable({ sales, loading, error, onViewDetails }) {
       searchable={true}
       enableDateFilter={true}
       selectable={false}
+      onExport={onExport}
     />
   );
 } 
