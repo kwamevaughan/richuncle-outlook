@@ -15,11 +15,6 @@ export const sidebarNav = [
         label: "Products",
       },
       {
-        href: "/low-stocks",
-        icon: "mdi:alert-circle-outline",
-        label: "Low Stocks",
-      },
-      {
         href: "/category",
         icon: "mdi:folder-outline",
         label: "Category",
@@ -46,19 +41,19 @@ export const sidebarNav = [
     icon: "mdi:warehouse",
     items: [
       {
-        href: "/manage-stock",
-        icon: "material-symbols-light:stockpot-outline",
-        label: "Manage Stock",
+        href: "/inventory-overview",
+        icon: "mdi:view-dashboard",
+        label: "Inventory Overview",
       },
       {
-        href: "/stock-adjustment",
-        icon: "mdi:adjust",
-        label: "Stock Adjustment",
+        href: "/stock-operations",
+        icon: "mdi:tools",
+        label: "Stock Operations",
       },
       {
-        href: "/stock-transfer",
-        icon: "mdi:truck-delivery-outline",
-        label: "Stock Transfer",
+        href: "/stock-history",
+        icon: "mdi:history",
+        label: "Stock History",
       },
     ],
   },

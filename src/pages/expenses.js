@@ -279,8 +279,7 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
                   { header: "Payment Method", accessor: "payment_method", sortable: true, render: (row) => 
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                       row.payment_method === 'cash' ? 'bg-green-100 text-green-800' :
-                      row.payment_method === 'card' ? 'bg-blue-100 text-blue-800' :
-                      row.payment_method === 'bank_transfer' ? 'bg-purple-100 text-purple-800' :
+                      row.payment_method === 'momo' ? 'bg-blue-100 text-blue-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {row.payment_method?.replace('_', ' ').toUpperCase() || 'N/A'}

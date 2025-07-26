@@ -235,7 +235,7 @@ const HrHeader = ({
               </div>
               <div className="relative" ref={addNewDropdownRef}>
                 <button
-                  className="flex items-center justify-center gap-2 bg-orange-400 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                  className="flex items-center justify-center gap-2 bg-blue-900 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
                   onClick={() => setAddNewDropdownOpen((prev) => !prev)}
                 >
                   <Icon icon="icons8:plus" className={`h-3 w-3 text-white`} />
@@ -299,7 +299,7 @@ const HrHeader = ({
               </div>
               
               <Link href="/pos/">
-                <button className="flex items-center justify-center gap-2 bg-blue-950 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500">
+                <button className="flex items-center justify-center gap-2 bg-blue-900 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500">
                   <Icon
                     icon="akar-icons:laptop-device"
                     className={`h-3 w-3 text-white`}

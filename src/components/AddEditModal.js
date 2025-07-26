@@ -1165,10 +1165,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     disabled={loading}
                   >
                     <option value="cash">Cash</option>
-                    <option value="card">Card</option>
-                    <option value="bank_transfer">Bank Transfer</option>
-                    <option value="check">Check</option>
-                    <option value="other">Other</option>
+                    <option value="momo">Mobile Money</option>
                   </select>
                 </div>
               </div>
