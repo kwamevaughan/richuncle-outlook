@@ -125,11 +125,11 @@ export default function SalesReturnItemsEditor({
           </button>
         )}
       </div>
-      {selectableProducts.length === 0 && (
+      {/* {selectableProducts.length === 0 && (
         <div className="text-xs text-red-500 mt-1">
           All products in this order have already been added.
         </div>
-      )}
+      )} */}
       <div className="overflow-x-auto">
         <table className="min-w-full text-xs border">
           <thead>

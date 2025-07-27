@@ -929,7 +929,7 @@ const PaymentForm = ({
 
             <div className="relative flex justify-between items-center">
               <h2 className="text-2xl font-semibold text-white tracking-tight">
-                Finalize Sale - {getPaymentTypeLabel(paymentType)} Payment
+                Finalize Sale - {getPaymentTypeLabel(paymentType)}
               </h2>
               <button
                 type="button"
@@ -1017,7 +1017,7 @@ const PaymentForm = ({
                   </label>
                   <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-700 font-medium flex items-center gap-2">
                     <Icon icon={getPaymentTypeIcon(paymentType)} className="w-5 h-5 text-green-600" />
-                    {getPaymentTypeLabel(paymentType)} Payment
+                    {getPaymentTypeLabel(paymentType)}
                   </div>
                 </div>
               )}

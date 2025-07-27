@@ -220,7 +220,7 @@ const PosOrderList = ({
     : null;
 
   return (
-    <div className="w-full md:w-full lg:w-5/12 xl:w-4/12 p-4 gap-6 flex flex-col bg-gray-200 rounded-lg h-screen overflow-auto">
+    <div className="w-full md:w-full lg:w-5/12 xl:w-6/12 p-4 gap-6 flex flex-col bg-gray-200 rounded-lg h-screen overflow-auto">
       <div className="bg-white rounded-lg p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
