@@ -633,7 +633,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           registers={registers}
           setRegisters={setRegisters}
         />
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 flex-1 min-h-0 overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-2 sm:gap-4 lg:gap-8 flex-1 min-h-0 overflow-hidden">
           <PosOrderList
             className="w-full lg:w-3/5 min-h-0 overflow-auto order-2 lg:order-1"
             selectedProducts={selectedProducts}

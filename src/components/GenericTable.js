@@ -263,12 +263,12 @@ export function GenericTable({
     return (
     <>
       {selectable && (
-        <td className="px-4 py-4">
+        <td className="px-2 sm:px-4 py-3 sm:py-4">
           <input
             type="checkbox"
             checked={table.selected.includes(row.id)}
             onChange={() => table.toggleSelect(row.id)}
-            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
           />
         </td>
       )}
@@ -280,7 +280,7 @@ export function GenericTable({
           return (
             <td
               key={col.accessor}
-              className={`px-4 py-4 text-sm capitalize ${
+              className={`px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm capitalize ${
                 mode === "dark" ? "text-white" : "text-gray-900"
               }`}
             >
@@ -291,11 +291,11 @@ export function GenericTable({
 
         if (col.type === "image") {
           return (
-            <td key={col.accessor} className="px-4 py-4">
+            <td key={col.accessor} className="px-2 sm:px-4 py-3 sm:py-4">
               <Image
                 src={value}
                 alt={row.name || "Image"}
-                className={`w-10 h-10 rounded-full object-cover border-2 ${
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 ${
                   mode === "dark" ? "border-gray-600" : "border-gray-200"
                 }`}
                 width={40}
@@ -308,16 +308,18 @@ export function GenericTable({
         return (
           <td
             key={col.accessor}
-            className={`px-4 py-4 text-sm ${
+            className={`px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm ${
               mode === "dark" ? "text-white" : "text-gray-900"
             }`}
           >
-            {value}
+            <div className="truncate max-w-[120px] sm:max-w-none">
+              {value}
+            </div>
           </td>
         );
       })}
-      <td className="px-4 py-4">
-        <div className="flex items-center gap-2">
+      <td className="px-2 sm:px-4 py-3 sm:py-4">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Custom actions */}
           {actions.map((action, i) => {
             if (!action) return null;
@@ -390,49 +392,51 @@ export function GenericTable({
     }`}>
       {/* Header */}
       {(title || searchable || onAddNew || enableDateFilter) && (
-        <div className={`p-6 border-b ${
+        <div className={`p-3 sm:p-6 border-b ${
           mode === "dark" 
             ? "border-gray-700 bg-gray-800" 
             : "border-gray-200 bg-gray-50"
         }`}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
             {title && (
-              <h2 className={`text-xl font-semibold mb-2 sm:mb-0 ${
+              <h2 className={`text-lg sm:text-xl font-semibold mb-2 sm:mb-0 ${
                 mode === "dark" ? "text-white" : "text-gray-900"
               }`}>
                 {title}
               </h2>
             )}
-            <div className="flex flex-1 flex-col sm:flex-row sm:items-center gap-4 w-full">
+            <div className="flex flex-1 flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full">
               {/* Unified Filter/Search Row */}
-              <div className="flex flex-1 flex-wrap gap-3 items-center">
+              <div className="flex flex-1 flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 items-start sm:items-center">
                 {/* Search */}
                 {searchable && (
-                  <div className="relative flex items-center gap-2">
+                  <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
                     
-                    <Icon
-                      icon="mdi:magnify"
-                      className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
-                        mode === "dark" ? "text-gray-400" : "text-gray-400"
-                      }`}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      value={table.searchTerm}
-                      onChange={(e) => table.setSearchTerm(e.target.value)}
-                      className={`pl-10 pr-4 py-2 w-56 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
-                        mode === "dark" 
-                          ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
-                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                      }`}
-                    />
+                    <div className="relative w-full sm:w-56">
+                      <Icon
+                        icon="mdi:magnify"
+                        className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-400"
+                        }`}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={table.searchTerm}
+                        onChange={(e) => table.setSearchTerm(e.target.value)}
+                        className={`pl-10 pr-4 py-2 w-full border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+                          mode === "dark" 
+                            ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                            : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                        }`}
+                      />
+                    </div>
                     {onAddNew && (
                       <button
                         onClick={onAddNew}
-                        className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ml-2"
+                        className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full sm:w-auto"
                       >
-                        <Icon icon="mdi:plus" className="w-4 h-4" />
+                        <Icon icon="mdi:plus" className="w-3 h-3 sm:w-4 sm:h-4" />
                         {addNewLabel}
                       </button>
                     )}
@@ -440,11 +444,11 @@ export function GenericTable({
                 )}
                 {/* Status Filter for sales returns */}
                 {statusOptions && (
-                  <div>
+                  <div className="w-full sm:w-auto">
                     <select
                       value={table.statusFilter}
                       onChange={e => table.setStatusFilter(e.target.value)}
-                      className={`border rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                      className={`border rounded-md px-3 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full sm:w-auto ${
                         mode === "dark" 
                           ? "border-gray-600 bg-gray-800 text-gray-100" 
                           : "border-gray-300 bg-white text-gray-900"
@@ -460,12 +464,12 @@ export function GenericTable({
                   </div>
                 )}
                 {/* Sort By Filter */}
-                <div>
+                <div className="w-full sm:w-auto">
                   {/* <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Sort By</label> */}
                   <select
                     value={table.sortBy}
                     onChange={e => table.setSortBy(e.target.value)}
-                    className={`border rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                    className={`border rounded-md px-3 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-full sm:w-auto ${
                       mode === "dark" 
                         ? "border-gray-600 bg-gray-800 text-gray-100" 
                         : "border-gray-300 bg-white text-gray-900"
@@ -480,19 +484,19 @@ export function GenericTable({
                 </div>
                 {/* Date Filter Button */}
                 {enableDateFilter && (
-                  <div className="relative">
+                  <div className="relative w-full sm:w-auto">
                     <button
                       type="button"
                       ref={buttonRef}
-                      className={`flex items-center gap-2 px-3 py-2 border rounded-lg transition-colors ${
+                      className={`flex items-center justify-center gap-2 px-3 py-2 border rounded-lg transition-colors w-full sm:w-auto ${
                         mode === "dark" 
                           ? "border-gray-600 bg-gray-800 text-gray-200 hover:bg-gray-700" 
                           : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
                       }`}
                       onClick={handleDateButtonClick}
                     >
-                      <Icon icon="mdi:calendar-range" className="w-4 h-4" />
-                      Filter by Date
+                      <Icon icon="mdi:calendar-range" className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-xs sm:text-sm">Filter by Date</span>
                     </button>
                     {showDatePicker && ReactDOM.createPortal(
                       <div
@@ -546,24 +550,26 @@ export function GenericTable({
                   </div>
                 )}
                 {/* Refresh Button - Always visible */}
-                <TooltipIconButton
-                  icon="mdi:refresh"
-                  label="Refresh Data"
-                  onClick={handleRefresh}
-                  mode={mode}
-                  className="bg-blue-50 text-blue-600 text-xs"
-                />
+                <div className="w-full sm:w-auto">
+                  <TooltipIconButton
+                    icon="mdi:refresh"
+                    label="Refresh Data"
+                    onClick={handleRefresh}
+                    mode={mode}
+                    className="bg-blue-50 text-blue-600 text-xs w-full sm:w-auto"
+                  />
+                </div>
               </div>
               
               {/* Export button positioned on the right */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setShowExportModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full sm:w-auto"
                   title="Export Data"
                 >
-                  <Icon icon="mdi:export" className="w-4 h-4" />
-                  Export Data
+                  <Icon icon="mdi:export" className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="text-xs sm:text-sm">Export Data</span>
                 </button>
               </div>
               
@@ -588,13 +594,13 @@ export function GenericTable({
 
       {/* Bulk Actions */}
       {selectable && table.selected.length > 0 && (
-        <div className={`px-6 py-3 border-b ${
+        <div className={`px-3 sm:px-6 py-3 border-b ${
           mode === "dark" 
             ? "bg-blue-900/20 border-blue-800" 
             : "bg-blue-50 border-blue-200"
         }`}>
-          <div className="flex items-center justify-between">
-            <span className={`text-sm font-medium ${
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+            <span className={`text-xs sm:text-sm font-medium ${
               mode === "dark" ? "text-blue-300" : "text-blue-700"
             }`}>
               {table.selected.length} item
@@ -602,7 +608,7 @@ export function GenericTable({
             </span>
             <button
               onClick={handleBulkDelete}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${
+              className={`flex items-center justify-center gap-2 px-3 py-1.5 text-xs sm:text-sm rounded-md transition-colors w-full sm:w-auto ${
                 mode === "dark" 
                   ? "bg-red-900/30 text-red-300 hover:bg-red-900/50" 
                   : "bg-red-100 text-red-700 hover:bg-red-200"
@@ -622,9 +628,9 @@ export function GenericTable({
             mode === "dark" ? "bg-gray-800" : "bg-gray-50"
           }`}>
             <tr>
-              {enableDragDrop && <th className="w-8 px-3 py-4"></th>}
+              {enableDragDrop && <th className="w-6 sm:w-8 px-2 sm:px-3 py-3 sm:py-4"></th>}
               {selectable && (
-                <th className="w-12 px-4 py-4">
+                <th className="w-10 sm:w-12 px-2 sm:px-4 py-3 sm:py-4">
                   <input
                     type="checkbox"
                     checked={
@@ -634,14 +640,14 @@ export function GenericTable({
                       )
                     }
                     onChange={table.selectAll}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                   />
                 </th>
               )}
               {columns.map((col) => (
                 <th
                   key={col.accessor}
-                  className={`px-4 py-4 text-left text-sm font-semibold ${
+                  className={`px-2 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold ${
                     mode === "dark" ? "text-gray-300" : "text-gray-600"
                   } ${
                     col.sortable !== false
@@ -658,17 +664,19 @@ export function GenericTable({
                       : undefined
                   }
                 >
-                  <div className="flex items-center gap-2">
-                    {col.Header
-                      ? col.Header.split(" ")
-                          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                          .join(" ")
-                      : ""}
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <span className="truncate">
+                      {col.Header
+                        ? col.Header.split(" ")
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                            .join(" ")
+                        : ""}
+                    </span>
                     {col.sortable !== false && (
-                      <div className="flex flex-col">
+                      <div className="flex flex-col flex-shrink-0">
                         <Icon
                           icon="mdi:chevron-up"
-                          className={`w-3 h-3 ${
+                          className={`w-2 h-2 sm:w-3 sm:h-3 ${
                             table.sortKey === col.accessor &&
                             table.sortDir === "asc"
                               ? "text-blue-600"
@@ -677,7 +685,7 @@ export function GenericTable({
                         />
                         <Icon
                           icon="mdi:chevron-down"
-                          className={`w-3 h-3 -mt-1 ${
+                          className={`w-2 h-2 sm:w-3 sm:h-3 -mt-0.5 sm:-mt-1 ${
                             table.sortKey === col.accessor &&
                             table.sortDir === "desc"
                               ? "text-blue-600"
@@ -691,7 +699,7 @@ export function GenericTable({
               ))}
               {/* Only render actions column if needed */}
               {(actions.length > 0 || onEdit || onDelete) && (
-                <th className={`px-4 py-4 text-left text-xs font-semibold ${
+                <th className={`px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold ${
                   mode === "dark" ? "text-gray-300" : "text-gray-600"
                 }`}>
                   Actions
@@ -761,16 +769,16 @@ export function GenericTable({
       </div>
 
       {/* Footer with pagination */}
-      <div className={`px-6 py-4 border-t ${
+      <div className={`px-3 sm:px-6 py-4 border-t ${
         mode === "dark" 
           ? "bg-gray-800 border-gray-700" 
           : "bg-gray-50 border-gray-200"
       }`}>
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className={`flex items-center gap-4 text-sm ${
+          <div className={`flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm ${
             mode === "dark" ? "text-gray-300" : "text-gray-700"
           }`}>
-            <div>
+            <div className="text-center sm:text-left">
               Showing{" "}
               <span className="font-medium">
                 {(table.page - 1) * table.pageSize + 1}
@@ -786,7 +794,7 @@ export function GenericTable({
               <select
                 value={table.pageSize}
                 onChange={(e) => table.setPageSize(Number(e.target.value))}
-                className={`border rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                className={`border rounded-md px-2 sm:px-3 py-1.5 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                   mode === "dark" 
                     ? "border-gray-600 bg-gray-800 text-gray-100" 
                     : "border-gray-300 bg-white text-gray-900"
@@ -801,18 +809,18 @@ export function GenericTable({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => table.handlePage(table.page - 1)}
               disabled={table.page === 1}
-              className={`flex items-center gap-2 px-4 py-2 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                 mode === "dark" 
                   ? "border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700" 
                   : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               }`}
             >
-              <Icon icon="mdi:chevron-left" className="w-4 h-4" />
-              Previous
+              <Icon icon="mdi:chevron-left" className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Previous</span>
             </button>
 
             <div className="flex items-center gap-1">
@@ -822,7 +830,7 @@ export function GenericTable({
                   <button
                     key={pageNum}
                     onClick={() => table.handlePage(pageNum)}
-                    className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                    className={`px-2 sm:px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${
                       table.page === pageNum
                         ? "bg-blue-900 text-white shadow-sm"
                         : `${
@@ -841,14 +849,14 @@ export function GenericTable({
             <button
               onClick={() => table.handlePage(table.page + 1)}
               disabled={table.page === table.totalPages}
-              className={`flex items-center gap-2 px-4 py-2 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
                 mode === "dark" 
                   ? "border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700" 
                   : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               }`}
             >
-              Next
-              <Icon icon="mdi:chevron-right" className="w-4 h-4" />
+              <span className="hidden sm:inline">Next</span>
+              <Icon icon="mdi:chevron-right" className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>

@@ -160,12 +160,12 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-col justify-center p-">
+      <div className="flex flex-col justify-center py-4">
         {/* Header Row: Welcome Text on Left, Hello on Right */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">Welcome, {user.name}</h1>
-            <p className="flex items-center text-sm text-gray-500">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div className="flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold mb-2">Welcome, {user.name}</h1>
+            <p className="flex flex-wrap items-center text-xs sm:text-sm text-gray-500">
               {ordersLoading ? (
                 <span>Loading orders...</span>
               ) : orderError ? (
@@ -190,17 +190,19 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
             </p>
           </div>
 
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          <div className="flex-shrink-0">
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
         </div>
 
         {/* Low Stock Notification Box */}
         {showLowStock && (
-          <div className={`flex items-center justify-between mt-4 p-2 rounded-md ${
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between mt-4 p-3 rounded-md ${
             mode === "dark" 
               ? "bg-orange-900/30 border border-orange-600/50" 
               : "bg-orange-100"
           }`}>
-            <p className={`text-sm flex gap-2 ${
+            <p className={`text-xs sm:text-sm flex flex-wrap gap-1 sm:gap-2 ${
               mode === "dark" ? "text-gray-200" : "text-gray-500"
             }`}>
               {stockLoading ? (
@@ -234,13 +236,13 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
               )}
             </p>
             <button
-              className="flex items-center justify-end cursor-pointer"
+              className="flex items-center justify-end cursor-pointer mt-2 sm:mt-0"
               onClick={() => setShowLowStock(false)}
               aria-label="Close notification"
             >
               <Icon
                 icon="iconamoon:close"
-                className={`text-2xl ${
+                className={`text-xl sm:text-2xl ${
                   mode === "dark" ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"
                 }`}
               />
@@ -254,18 +256,18 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
         selectedStore={selectedStore}
       />
 
-      <div className="flex gap-4 mt-4 mb-4">
-        <div className="w-2/3 bg-white rounded-lg shadow-md">
+      <div className="flex flex-col lg:flex-row gap-4 mt-4 mb-4">
+        <div className="w-full lg:w-2/3 bg-white rounded-lg shadow-md">
           <ProfitLossChart selectedStore={selectedStore} />
         </div>
-        <div className="w-1/3 flex flex-col gap-4 bg-white rounded-lg shadow-md h-full">
+        <div className="w-full lg:w-1/3 flex flex-col gap-4 bg-white rounded-lg shadow-md h-full">
           <div className="border-b-2 border-gray-100 pb-4">
             <OverallInfoCard />
           </div>
           <CustomersOverviewCard selectedStore={selectedStore} />
         </div>
       </div>
-      <div className="flex gap-4 mt-4">
+      <div className="flex flex-col md:flex-row gap-4 mt-4">
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
           <TopSellingProductsCard selectedStore={selectedStore} />
         </div>
@@ -279,7 +281,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
         </div>
       </div>
 
-      <div className="flex gap-4 mt-4">
+      <div className="flex flex-col md:flex-row gap-4 mt-4">
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
           <SalesStaticsCard selectedStore={selectedStore} />
         </div>
@@ -288,7 +290,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
           <RecentTransactionsCard selectedStore={selectedStore} />
         </div>
       </div>
-      <div className="flex gap-4 mt-4">
+      <div className="flex flex-col lg:flex-row gap-4 mt-4">
         <div className="flex-1 bg-white rounded-lg shadow-md p-4">
           <TopCustomersCard selectedStore={selectedStore} />
         </div>

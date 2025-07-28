@@ -17,6 +17,8 @@ const HrHeader = ({
   onLogout,
   user,
   onSearchModalToggle,
+  isHeaderVisible = true,
+  toggleHeader = null,
 }) => {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -96,19 +98,36 @@ const HrHeader = ({
     }
   }, [selectedStore]);
 
-  const isMobile = windowWidth !== null && windowWidth < 640;
+    const isMobile = windowWidth !== null && windowWidth < 640;
 
   return (
     <>
+      {/* Floating toggle button for mobile when header is hidden */}
+      {isMobile && !isHeaderVisible && (
+        <button
+          onClick={toggleHeader}
+          className={`fixed top-2 right-2 z-50 p-2 rounded-full shadow-lg transition-all duration-300 ${
+            mode === "dark" 
+              ? "bg-gray-800 text-white hover:bg-gray-700" 
+              : "bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+          title="Show Header"
+        >
+          <Icon icon="mdi:menu" className="w-5 h-5" />
+        </button>
+      )}
+
       <header
         ref={headerRef}
-        className={`fixed top-0 left-0 right-0 z-10 transition-transform duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-10 transition-all duration-300 ${
           mode === "dark" ? "bg-[#101827]" : "bg-transparent"
+        } ${
+          isMobile && !isHeaderVisible ? "-translate-y-full" : ""
         }`}
       >
         <div
           className={`
-            p-2 m-4 transition-transform duration-300
+            ${isMobile ? "p-1 m-1" : "p-2 m-4"} transition-transform duration-300
             ${
               isMobile
                 ? "ml-0"
@@ -129,7 +148,7 @@ const HrHeader = ({
               {/* Sidebar toggle button: always visible */}
               <button
                 onClick={toggleSidebar}
-                className="text-gray-500 hover:scale-110 transition-transform md:inline-flex mr-2"
+                className="text-gray-500 hover:scale-110 transition-transform md:inline-flex mr-2 flex-shrink-0"
                 title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
                 aria-label={
                   isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"
@@ -139,11 +158,12 @@ const HrHeader = ({
                   icon={
                     isSidebarOpen ? "dashicons:arrow-left-alt" : "ri:menu-line"
                   }
-                  className="w-6 h-6"
+                  className={`${isMobile ? "w-5 h-5" : "w-6 h-6"}`}
                 />
               </button>
-              {/* End sidebar toggle button */}
-              <div className="flex-grow">
+              
+              {/* Search component - responsive */}
+              <div className="flex-grow min-w-0">
                 <Search
                   mode={mode}
                   onSearchModalToggle={onSearchModalToggle}
@@ -152,10 +172,11 @@ const HrHeader = ({
               </div>
             </div>
 
-            <div className="flex justify-center items-center w-full gap-2">
-              <div className="relative" ref={storeDropdownRef}>
+            <div className={`flex justify-center items-center w-full ${isMobile ? "gap-1" : "gap-2"}`}>
+              {/* Store dropdown - responsive */}
+              <div className="relative flex-shrink-0" ref={storeDropdownRef}>
                 <button
-                  className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-md hover:shadow-md transition-all duration-300
+                  className={`flex items-center gap-1 ${isMobile ? "text-xs px-1.5 py-1" : "text-sm px-3 py-1.5"} rounded-md hover:shadow-md transition-all duration-300
                     ${
                       mode === "dark"
                         ? "bg-gray-800 text-gray-100 hover:bg-gray-700"
@@ -165,20 +186,22 @@ const HrHeader = ({
                 >
                   <Icon
                     icon="mdi:store-outline"
-                    className={`h-4 w-4 ${
+                    className={`${isMobile ? "h-3 w-3" : "h-4 w-4"} ${
                       mode === "dark" ? "text-gray-200" : ""
                     }`}
                   />
-                  {stores.length > 0
-                    ? selectedStore
-                      ? stores.find(s => s.id === selectedStore)?.name || "Select Store"
-                      : "All Stores"
-                    : "Select Store"}
+                  <span className={`${isMobile ? "hidden sm:inline" : ""}`}>
+                    {stores.length > 0
+                      ? selectedStore
+                        ? stores.find(s => s.id === selectedStore)?.name || "Select Store"
+                        : "All Stores"
+                      : "Select Store"}
+                  </span>
                   <Icon
                     icon={
                       storeDropdownOpen ? "mdi:chevron-up" : "mdi:chevron-down"
                     }
-                    className={`h-4 w-4 ${
+                    className={`${isMobile ? "h-3 w-3" : "h-4 w-4"} ${
                       mode === "dark" ? "text-gray-200" : ""
                     }`}
                   />
@@ -235,16 +258,17 @@ const HrHeader = ({
                   </ul>
                 </div>
               </div>
-              <div className="relative" ref={addNewDropdownRef}>
+              {/* Add New dropdown - responsive */}
+              <div className="relative flex-shrink-0" ref={addNewDropdownRef}>
                 <button
-                  className="flex items-center justify-center gap-2 bg-blue-900 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500"
+                  className={`flex items-center justify-center gap-1 bg-blue-900 font-semibold text-white ${isMobile ? "text-xs px-1.5 py-1" : "text-sm px-3 py-1.5"} rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500`}
                   onClick={() => setAddNewDropdownOpen((prev) => !prev)}
                 >
-                  <Icon icon="icons8:plus" className={`h-3 w-3 text-white`} />
-                  Add New
+                  <Icon icon="icons8:plus" className={`${isMobile ? "h-2.5 w-2.5" : "h-3 w-3"} text-white`} />
+                  <span className={`${isMobile ? "hidden sm:inline" : ""}`}>Add New</span>
                 </button>
                 <div
-                  className={`absolute right-0 mt-2 w-[620px] rounded-xl shadow-lg overflow-hidden transition-all duration-300 z-30
+                  className={`absolute right-0 mt-2 ${isMobile ? "w-[280px]" : "w-[620px]"} rounded-xl shadow-lg overflow-hidden transition-all duration-300 z-30
                     ${
                       mode === "dark"
                         ? "bg-gray-900 text-gray-100"
@@ -256,7 +280,7 @@ const HrHeader = ({
                         : "max-h-0 opacity-0 scale-95"
                     }`}
                 >
-                  <div className="grid grid-cols-6 gap-3 p-4">
+                  <div className={`grid ${isMobile ? "grid-cols-3" : "grid-cols-6"} gap-2 p-3`}>
                     {[
                       { label: "Category", icon: "mdi:folder-outline", href: "/category" },
                       { label: "Product", icon: "mdi:package-variant", href: "/products" },
@@ -267,12 +291,12 @@ const HrHeader = ({
                       { label: "User", icon: "mdi:account-outline", href: "/users" },
                       { label: "Customer", icon: "mdi:account-group-outline", href: "/customers" },
                       { label: "Supplier", icon: "mdi:truck-outline", href: "/suppliers" },
-                      { label: "Transfer", icon: "mdi:bank-transfer", href: "/stock-transfer" },
-                      { label: "Store", icon: "mdi:store-outline", href: "/stores" },
+                      { label: "Transfer", icon: "mdi:bank-transfer", href: "/stock-operations" },
+                      { label: "Store", icon: "mdi:store-outline", href: "/business-locations" },
                     ].map((item) => (
                       <Link key={item.label} href={item.href} legacyBehavior passHref>
                         <a
-                          className={`flex flex-col items-center justify-center rounded-lg p-2 text-xs font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 border ${
+                          className={`flex flex-col items-center justify-center rounded-lg ${isMobile ? "p-1" : "p-2"} text-xs font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 border ${
                             mode === "dark"
                               ? "bg-gray-800 border-gray-700 text-gray-100 hover:bg-gray-700"
                               : "bg-white border-gray-200 hover:bg-orange-50"
@@ -281,7 +305,7 @@ const HrHeader = ({
                           onClick={() => setAddNewDropdownOpen(false)}
                         >
                           <span
-                            className={`flex items-center justify-center h-8 w-8 rounded-full mb-1 ${
+                            className={`flex items-center justify-center ${isMobile ? "h-6 w-6" : "h-8 w-8"} rounded-full ${isMobile ? "mb-0.5" : "mb-1"} ${
                               mode === "dark"
                                 ? "bg-gray-900 hover:bg-gray-700"
                                 : "bg-gray-100 hover:bg-orange-50"
@@ -289,10 +313,10 @@ const HrHeader = ({
                           >
                             <Icon
                               icon={item.icon}
-                              className={`h-5 w-5 ${mode === "dark" ? "text-orange-300" : "text-blue-950"}`}
+                              className={`${isMobile ? "h-3 w-3" : "h-5 w-5"} ${mode === "dark" ? "text-orange-300" : "text-blue-950"}`}
                             />
                           </span>
-                          <span className={mode === "dark" ? "text-gray-100" : ""}>{item.label}</span>
+                          <span className={`${isMobile ? "text-[10px]" : "text-xs"} ${mode === "dark" ? "text-gray-100" : ""}`}>{item.label}</span>
                         </a>
                       </Link>
                     ))}
@@ -300,20 +324,25 @@ const HrHeader = ({
                 </div>
               </div>
               
-              <Link href="/pos/">
-                <button className="flex items-center justify-center gap-2 bg-blue-900 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500">
+              {/* POS button - responsive */}
+              <Link href="/pos/" className="flex-shrink-0">
+                <button className={`flex items-center justify-center gap-1 bg-blue-900 font-semibold text-white ${isMobile ? "text-xs px-1.5 py-1" : "text-sm px-3 py-1.5"} rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500`}>
                   <Icon
                     icon="akar-icons:laptop-device"
-                    className={`h-3 w-3 text-white`}
+                    className={`${isMobile ? "h-2.5 w-2.5" : "h-3 w-3"} text-white`}
                   />
-                  POS
+                  <span className={`${isMobile ? "hidden sm:inline" : ""}`}>POS</span>
                 </button>
               </Link>
 
-              <LanguageSwitch mode={mode} />
+              {/* Language and notification buttons - responsive */}
+              <div className={`flex items-center ${isMobile ? "gap-1" : "gap-2"}`}>
+                <LanguageSwitch mode={mode} />
 
-              <NotificationButton mode={mode} user={user} />
+                <NotificationButton mode={mode} user={user} />
+              </div>
 
+              {/* Theme toggle - responsive */}
               <TooltipIconButton
                 label={
                   <span
@@ -334,14 +363,16 @@ const HrHeader = ({
                       ? "line-md:sunny-filled-loop-to-moon-filled-alt-loop-transition"
                       : "line-md:moon-alt-to-sunny-outline-loop-transition"
                   }
-                  className={`h-6 w-6 ${
+                  className={`${isMobile ? "h-5 w-5" : "h-6 w-6"} ${
                     mode === "dark" ? "text-blue-900" : "text-yellow-500"
                   }`}
                 />
               </TooltipIconButton>
 
+              {/* Fullscreen toggle - responsive */}
               <FullscreenToggle mode={mode} />
 
+              {/* Profile dropdown - responsive */}
               <TooltipIconButton
                 label={
                   <span
@@ -359,7 +390,7 @@ const HrHeader = ({
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
                   <div className="flex items-center">
-                    <div className="overflow-hidden rounded-full w-6 h-6">
+                    <div className={`overflow-hidden rounded-full ${isMobile ? "w-5 h-5" : "w-6 h-6"}`}>
                       {user && user.avatar_url ? (
                         <img 
                           src={user.avatar_url} 
@@ -367,14 +398,14 @@ const HrHeader = ({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Icon icon="hugeicons:ai-user" className="h-6 w-6" />
+                        <Icon icon="hugeicons:ai-user" className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`} />
                       )}
                     </div>
                   </div>
 
                   {dropdownOpen && (
                     <div
-                      className={`absolute top-full mt-2 right-0 w-80 rounded-2xl shadow-lg z-10 ${
+                      className={`absolute top-full mt-2 right-0 ${isMobile ? "w-64" : "w-80"} rounded-2xl shadow-lg z-10 ${
                         mode === "dark"
                           ? "bg-gray-900 text-gray-100"
                           : "bg-white/95 text-black"
@@ -382,7 +413,7 @@ const HrHeader = ({
                     >
                       <div className="p-4">
                         <div className="flex items-center gap-2 w-full">
-                          <div className="overflow-hidden flex-shrink-0 rounded-full w-6 h-6">
+                          <div className={`overflow-hidden flex-shrink-0 rounded-full ${isMobile ? "w-5 h-5" : "w-6 h-6"}`}>
                             {user && user.avatar_url ? (
                               <img 
                                 src={user.avatar_url} 
@@ -392,13 +423,13 @@ const HrHeader = ({
                             ) : (
                               <Icon
                                 icon="hugeicons:ai-user"
-                                className="h-6 w-6"
+                                className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`}
                               />
                             )}
                           </div>
-                          <div className="flex flex-col">
-                            <div className="flex gap-2">
-                              <span className={`text-md font-semibold ${
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <div className={`flex ${isMobile ? "flex-col gap-1" : "gap-2"}`}>
+                              <span className={`${isMobile ? "text-sm" : "text-md"} font-semibold truncate ${
                                 mode === "dark" ? "text-white" : "text-black"
                               }`}>
                                 {user.name}
@@ -411,7 +442,7 @@ const HrHeader = ({
                                 {user.role}
                               </span>
                             </div>
-                            <span className={`text-xs ${
+                            <span className={`text-xs truncate ${
                               mode === "dark" ? "text-gray-300" : "text-gray-600"
                             }`}>{user.agencyName}</span>
                           </div>
@@ -458,7 +489,7 @@ const HrHeader = ({
           </div>
         </div>
       </header>
-      <div className="h-[72px]" aria-hidden="true"></div>
+      <div className={`${isMobile && !isHeaderVisible ? "h-0" : isMobile ? "h-[60px]" : "h-[72px]"}`} aria-hidden="true"></div>
     </>
   );
 };

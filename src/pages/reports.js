@@ -197,49 +197,49 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-4 sm:mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <Icon icon="mdi:chart-bar" className="w-7 h-7 text-white" />
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <Icon icon="mdi:chart-bar" className="w-4 h-4 sm:w-5 sm:h-5 lg:w-7 lg:h-7 text-white" />
                   </div>
                   Reports Hub
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Comprehensive business insights and performance analytics
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                  className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
-                  <Icon icon="mdi:menu" className="w-4 h-4" />
-                  {showMenu ? "Hide Menu" : "Show Menu"}
+                  <Icon icon="mdi:menu" className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{showMenu ? "Hide Menu" : "Show Menu"}</span>
                 </button>
 
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
-                  <Icon icon="mdi:filter" className="w-4 h-4" />
-                  {showFilters ? "Hide Filters" : "Show Filters"}
+                  <Icon icon="mdi:filter" className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">{showFilters ? "Hide Filters" : "Show Filters"}</span>
                 </button>
               </div>
             </div>
 
             {/* Global Filters */}
             {showFilters && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Icon icon="mdi:calendar" className="text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Icon icon="mdi:calendar" className="text-gray-500 w-4 h-4" />
+                    <span className="text-xs sm:text-sm font-medium text-gray-700">
                       Date Range:
                     </span>
                     <select
                       ref={dateRangeDropdownRef}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
                       value={dropdownValue}
                       onChange={(e) => {
                         setDropdownValue(e.target.value);
@@ -357,20 +357,20 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
 
             {/* Tabs Navigation */}
             {showMenu && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-6">
-                <div className="flex flex-wrap gap-2">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-4 sm:mb-6">
+                <div className="flex flex-wrap gap-1 sm:gap-2">
                   {tabs.map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                         activeTab === tab.id
                           ? `bg-blue-500 text-white shadow-md`
                           : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                       }`}
                     >
-                      <Icon icon={tab.icon} className="w-4 h-4" />
-                      {tab.label}
+                      <Icon icon={tab.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">{tab.label}</span>
                     </button>
                   ))}
                 </div>
@@ -379,27 +379,27 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
 
             {/* Active Tab Indicator (when menu is hidden) */}
             {!showMenu && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <Icon
                       icon={getActiveTab()?.icon}
-                      className="w-5 h-5 text-blue-500"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500"
                     />
-                    <h2 className="text-lg font-semibold text-gray-900">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                       {getActiveTab()?.label}
                     </h2>
-                    <span className="text-sm text-gray-500">•</span>
-                    <p className="text-sm text-gray-600">
+                    <span className="hidden sm:inline text-sm text-gray-500">•</span>
+                    <p className="text-xs sm:text-sm text-gray-600">
                       {getActiveTab()?.description}
                     </p>
                   </div>
                   <button
                     onClick={() => setShowMenu(true)}
-                    className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-1"
+                    className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-1"
                   >
-                    <Icon icon="mdi:menu" className="w-4 h-4" />
-                    Show Menu
+                    <Icon icon="mdi:menu" className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Show Menu</span>
                   </button>
                 </div>
               </div>

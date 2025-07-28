@@ -12,6 +12,9 @@ const HrSidebar = ({
   isOpen,
   toggleSidebar,
   disableRouter = false,
+  isHeaderVisible = true,
+  toggleHeader = null,
+  isMobile = false,
 }) => {
   const [windowWidth, setWindowWidth] = useState(null);
   const router = !disableRouter ? useRouter() : null;
@@ -151,7 +154,7 @@ const HrSidebar = ({
   const handleNavigation = async (href, label) => {
     if (!router) return;
     try {
-      
+      console.log("[HrSidebar] Navigation started:", { href, label, isMobile, isOpen });
       
       // Check if we're navigating to the same pathname but different query params
       const [pathname, queryString] = href.split('?');
@@ -178,6 +181,13 @@ const HrSidebar = ({
         // Use push for different pathnames
         await router.push(href);
       }
+      
+      // Close sidebar on mobile after navigation
+      if (isMobile && isOpen) {
+        console.log("[HrSidebar] Closing sidebar on mobile navigation");
+        // Close immediately for better UX
+        toggleSidebar();
+      }
     } catch (error) {
       console.error("[HrSidebar] Navigation error:", error);
     }
@@ -196,14 +206,21 @@ const HrSidebar = ({
 
   if (windowWidth === null) return null;
 
-  const isMobile = windowWidth < 640;
+  console.log("[HrSidebar] Rendering sidebar:", { isMobile, isOpen, windowWidth });
 
   return (
     <div className="relative z-[20]">
+      {/* Mobile backdrop/overlay */}
+      {isMobile && isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={toggleSidebar}
+        />
+      )}
       <div
         ref={sidebarRef}
         className={`fixed left-0 top-0 z-50 rounded-xl m-0 md:m-3 transition-all duration-300
-          ${isMobile ? "block" : "block"}
+          ${isMobile ? (isOpen ? "block" : "hidden") : "block"}
           ${mode === "dark" ? "" : "bg-white"}
           group shadow-lg shadow-black/20 custom-scrollbar
         `}
@@ -215,8 +232,8 @@ const HrSidebar = ({
       >
         <div className="flex flex-col h-full relative">
           <div
-            className={`flex items-center justify-center ${
-              !isOpen && !isMobile ? "justify-center" : "justify-center"
+            className={`flex items-center justify-between ${
+              !isOpen && !isMobile ? "justify-center" : "justify-between"
             } py-4 px-4 shadow-sm bg-blue-900 rounded-t-md`}
           >
             <div className="flex items-center gap-2 ">
@@ -228,6 +245,36 @@ const HrSidebar = ({
                 {!isOpen && !isMobile ? "R" : "RichUncle Outlook"}
               </p>
             </div>
+            
+            {/* Mobile close button */}
+            {isMobile && (
+              <button
+                onClick={toggleSidebar}
+                className="text-white hover:scale-110 transition-transform p-1 rounded"
+                title="Close Sidebar"
+                aria-label="Close Sidebar"
+              >
+                <Icon 
+                  icon="mdi:close" 
+                  className="w-6 h-6" 
+                />
+              </button>
+            )}
+            
+            {/* Mobile header toggle button */}
+            {isMobile && toggleHeader && (
+              <button
+                onClick={toggleHeader}
+                className="text-white hover:scale-110 transition-transform p-1 rounded"
+                title={isHeaderVisible ? "Hide Header" : "Show Header"}
+                aria-label={isHeaderVisible ? "Hide Header" : "Show Header"}
+              >
+                <Icon 
+                  icon={isHeaderVisible ? "mdi:chevron-up" : "mdi:chevron-down"} 
+                  className="w-5 h-5" 
+                />
+              </button>
+            )}
           </div>
 
           <div
@@ -361,6 +408,12 @@ const HrSidebar = ({
                                         "open-retrieve-layaways-modal"
                                       )
                                     );
+                                    // Close sidebar on mobile for special events
+                                    if (isMobile && isOpen) {
+                                      console.log("[HrSidebar] Closing sidebar on mobile for layaways event");
+                                      // Close immediately for better UX
+                                      toggleSidebar();
+                                    }
                                     return;
                                   }
                                   if (isRetrieveOrders) {
@@ -369,6 +422,12 @@ const HrSidebar = ({
                                         "open-retrieve-orders-modal"
                                       )
                                     );
+                                    // Close sidebar on mobile for special events
+                                    if (isMobile && isOpen) {
+                                      console.log("[HrSidebar] Closing sidebar on mobile for orders event");
+                                      // Close immediately for better UX
+                                      toggleSidebar();
+                                    }
                                     return;
                                   }
                                   if (hasSubItems) {
