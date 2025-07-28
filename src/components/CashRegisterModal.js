@@ -36,6 +36,11 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportType, setExportType] = useState('products');
 
+  // New state for progressive disclosure
+  const [showHistory, setShowHistory] = useState(false);
+  const [showQuickCashIn, setShowQuickCashIn] = useState(false);
+  const [showQuickCashOut, setShowQuickCashOut] = useState(false);
+
   // Permissions check and filter registers for cashiers
   const canOperate = user && allowedRoles.includes(user.role);
   let filteredRegisters = registers;
@@ -241,6 +246,11 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
     sessionDurationSeconds = Math.floor((ms % 60000) / 1000); // seconds
   }
 
+  // Calculate current cash
+  const currentCash = session ? 
+    Number(session.opening_cash) + 
+    movements.reduce((sum, m) => sum + (m.type === "cash_in" ? m.amount : -m.amount), 0) : 0;
+
   // Open register
   const handleOpenRegister = async () => {
     if (!canOperate || !selectedRegister) return;
@@ -302,6 +312,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
       if (result.success) {
         setCashInAmount(0);
         setCashInReason("");
+        setShowQuickCashIn(false);
         // Refresh movements
         setActionLoading(true);
       } else {
@@ -345,6 +356,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
       if (result.success) {
         setCashOutAmount(0);
         setCashOutReason("");
+        setShowQuickCashOut(false);
         setShowLargeOutConfirm(false);
         // Refresh movements
         setActionLoading(true);
@@ -420,6 +432,10 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
     const operator = session.user || session.user_id || 'N/A';
     const openedAt = session.opened_at ? new Date(session.opened_at).toLocaleString() : 'N/A';
     const closedAt = session.closed_at ? new Date(session.closed_at).toLocaleString() : 'N/A';
+    
+    // Get register name from session register_id or fallback to selectedRegister
+    const sessionRegisterId = session.register_id || selectedRegister;
+    const registerName = registers.find((r) => r.id === sessionRegisterId)?.name || 'Unknown Register';
     const printContent = `
       <html>
         <head>
@@ -438,7 +454,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
         <body>
           <div class="header">
             <h1>Z-Report</h1>
-            <p>Register: ${registers.find((r) => r.id === selectedRegister)?.name || selectedRegister}</p>
+            <p>Register: ${registerName}</p>
           </div>
           <div class="section">
             <h3>Session Period</h3>
@@ -477,11 +493,15 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
   };
 
   function exportZReportCSV(zReport) {
+    const session = zReport?.data?.session || zReport?.session || {};
+    const sessionRegisterId = session.register_id || selectedRegister;
+    const registerName = registers.find((r) => r.id === sessionRegisterId)?.name || 'Unknown Register';
+    
     const csvContent = [
       ["Z-Report"],
       [
         "Register",
-        registers.find((r) => r.id === selectedRegister)?.name || selectedRegister,
+        registerName,
       ],
       ["Date", new Date().toLocaleString()],
       [""],
@@ -509,6 +529,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
         onClose={onClose}
         title="Cash Register"
         width="max-w-4xl"
+        disableOutsideClick={true}
       >
         <div className="space-y-6">
           {user && user.role === "admin" && (
@@ -562,9 +583,9 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
               }}
             />
           ) : session ? (
-            <>              
-
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200 mb-4">
+            <>
+              {/* Session Overview - Always Visible */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
@@ -577,7 +598,9 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                     {sessionDuration % 60}m {sessionDurationSeconds}s
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                
+                {/* Cash Overview Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Opening Cash</div>
                     <div className="font-bold text-lg text-blue-600">
@@ -587,16 +610,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="text-sm text-gray-600">Current Cash</div>
                     <div className="font-bold text-lg text-green-600">
-                      GHS{" "}
-                      {Number(
-                        session.opening_cash +
-                          movements.reduce(
-                            (sum, m) =>
-                              sum +
-                              (m.type === "cash_in" ? m.amount : -m.amount),
-                            0
-                          )
-                      ).toLocaleString()}
+                      GHS {Number(currentCash).toLocaleString()}
                     </div>
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -622,78 +636,130 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Cash In Form */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Icon
-                    icon="material-symbols:add-circle-outline"
-                    className="w-5 h-5 text-green-600"
-                  />
-                  Cash In
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <input
-                    type="number"
-                    value={cashInAmount || ""}
-                    onChange={(e) => setCashInAmount(Number(e.target.value))}
-                    placeholder="Amount"
-                    className="border rounded px-3 py-2"
-                  />
-                  <input
-                    type="text"
-                    value={cashInReason}
-                    onChange={(e) => setCashInReason(e.target.value)}
-                    placeholder="Reason"
-                    className="border rounded px-3 py-2"
-                  />
+                {/* Quick Action Buttons */}
+                <div className="grid grid-cols-3 gap-3">
                   <button
-                    onClick={handleCashIn}
-                    disabled={actionLoading || !cashInAmount || !cashInReason}
-                    className="bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
+                    onClick={() => setShowQuickCashIn(true)}
+                    className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
                   >
-                    {actionLoading ? "Adding..." : "Add Cash In"}
+                    <Icon icon="mdi:plus-circle" className="w-5 h-5" />
+                    <span className="hidden sm:inline">Quick Cash In</span>
+                    <span className="sm:hidden">Cash In</span>
+                  </button>
+                  <button
+                    onClick={() => setShowQuickCashOut(true)}
+                    className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
+                  >
+                    <Icon icon="mdi:minus-circle" className="w-5 h-5" />
+                    <span className="hidden sm:inline">Quick Cash Out</span>
+                    <span className="sm:hidden">Cash Out</span>
+                  </button>
+                  <button
+                    onClick={() => setShowHistory(!showHistory)}
+                    className="flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
+                  >
+                    <Icon icon={showHistory ? "mdi:chevron-up" : "mdi:chevron-down"} className="w-5 h-5" />
+                    <span className="hidden sm:inline">{showHistory ? "Hide" : "Show"} History</span>
+                    <span className="sm:hidden">History</span>
                   </button>
                 </div>
               </div>
 
-              {/* Cash Out Form */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Icon
-                    icon="material-symbols:remove-circle-outline"
-                    className="w-5 h-5 text-red-600"
-                  />
-                  Cash Out
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <input
-                    type="number"
-                    value={cashOutAmount || ""}
-                    onChange={(e) => setCashOutAmount(Number(e.target.value))}
-                    placeholder="Amount"
-                    className="border rounded px-3 py-2"
-                  />
-                  <input
-                    type="text"
-                    value={cashOutReason}
-                    onChange={(e) => setCashOutReason(e.target.value)}
-                    placeholder="Reason"
-                    className="border rounded px-3 py-2"
-                  />
-                  <button
-                    onClick={handleCashOut}
-                    disabled={actionLoading || !cashOutAmount || !cashOutReason}
-                    className="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
-                  >
-                    {actionLoading ? "Adding..." : "Add Cash Out"}
-                  </button>
+              {/* Quick Cash In Modal */}
+              {showQuickCashIn && (
+                <div className="bg-white rounded-xl p-6 shadow-sm border">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <Icon icon="mdi:plus-circle" className="w-5 h-5 text-green-600" />
+                      Quick Cash In
+                    </h4>
+                    <button
+                      onClick={() => setShowQuickCashIn(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <Icon icon="mdi:close" className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input
+                      type="number"
+                      value={cashInAmount || ""}
+                      onChange={(e) => setCashInAmount(Number(e.target.value))}
+                      placeholder="Amount"
+                      className="border rounded px-3 py-2"
+                    />
+                    <input
+                      type="text"
+                      value={cashInReason}
+                      onChange={(e) => setCashInReason(e.target.value)}
+                      placeholder="Reason"
+                      className="border rounded px-3 py-2"
+                    />
+                    <button
+                      onClick={handleCashIn}
+                      disabled={actionLoading || !cashInAmount || !cashInReason}
+                      className="bg-green-600 hover:bg-green-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
+                    >
+                      {actionLoading ? "Adding..." : "Add Cash In"}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Movements History */}
-              <MovementLog movements={movements} userMap={userMap} />
+              {/* Quick Cash Out Modal */}
+              {showQuickCashOut && (
+                <div className="bg-white rounded-xl p-6 shadow-sm border">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <Icon icon="mdi:minus-circle" className="w-5 h-5 text-red-600" />
+                      Quick Cash Out
+                    </h4>
+                    <button
+                      onClick={() => setShowQuickCashOut(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <Icon icon="mdi:close" className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input
+                      type="number"
+                      value={cashOutAmount || ""}
+                      onChange={(e) => setCashOutAmount(Number(e.target.value))}
+                      placeholder="Amount"
+                      className="border rounded px-3 py-2"
+                    />
+                    <input
+                      type="text"
+                      value={cashOutReason}
+                      onChange={(e) => setCashOutReason(e.target.value)}
+                      placeholder="Reason"
+                      className="border rounded px-3 py-2"
+                    />
+                    <button
+                      onClick={handleCashOut}
+                      disabled={actionLoading || !cashOutAmount || !cashOutReason}
+                      className="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
+                    >
+                      {actionLoading ? "Adding..." : "Add Cash Out"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+
+
+              {/* History Section - Collapsible */}
+              {showHistory && (
+                <div className="bg-white rounded-xl p-6 shadow-sm border">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <Icon icon="mdi:history" className="w-5 h-5 text-gray-600" />
+                    Movement History
+                  </h4>
+                  <MovementLog movements={movements} userMap={userMap} />
+                </div>
+              )}
 
               {/* Sales Summary */}
               <SalesSummary session={session} salesSummary={salesSummary} movements={movements} />
@@ -808,6 +874,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
           onClose={() => setShowCloseConfirm(false)}
           title="Close Register?"
           width="max-w-md"
+          disableOutsideClick={true}
         >
           <div className="p-2">
             <p className="text-gray-600 mb-6">
@@ -817,13 +884,13 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
             <div className="flex gap-3">
               <button
                 onClick={() => setShowCloseConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
               >
                 Cancel
               </button>
               <button
                 onClick={doCloseRegister}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg"
               >
                 Close Register
               </button>
@@ -838,6 +905,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
           onClose={() => setShowLargeOutConfirm(false)}
           title="Large Cash Out"
           width="max-w-md"
+          disableOutsideClick={true}
         >
           <div className="p-2">
             <p className="text-gray-600 mb-6">

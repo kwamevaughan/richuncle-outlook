@@ -9,7 +9,8 @@ const SimpleModal = ({
   mode = "light",
   width = "max-w-2xl",
   rightElement,
-  hasUnsavedChanges = false 
+  hasUnsavedChanges = false,
+  disableOutsideClick = false
 }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
@@ -48,7 +49,7 @@ const SimpleModal = ({
                 ? "bg-gradient-to-br from-slate-900/20 via-blue-900/10 to-blue-900/20"
                 : "bg-gradient-to-br from-white/20 via-blue-50/30 to-blue-50/20"
             }`}
-          onClick={handleClose}
+          onClick={disableOutsideClick ? (e) => e.stopPropagation() : handleClose}
           style={{
             backgroundImage: `
               radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),

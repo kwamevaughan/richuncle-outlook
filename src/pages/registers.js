@@ -485,6 +485,10 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
               emptyMessage="No registers found"
               selectable={false}
               searchable={false}
+              onRefresh={fetchAll}
+              onRowClick={(row) => router.push(`/pos/${row.id}`)}
+              onRowDoubleClick={(row) => router.push(`/pos/${row.id}`)}
+              onRowRightClick={(row) => router.push(`/pos/${row.id}`)}
             />
           </div>
         )}
@@ -663,8 +667,17 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                                     `/api/cash-register-sessions/${sess.id}/z-report`
                                   );
                                   const json = await res.json();
-                                  if (json.success) setZReportData(json.data);
-                                  else
+                                  if (json.success) {
+                                    // Add register name to the zReport data
+                                    const zReportWithRegister = {
+                                      ...json.data,
+                                      session: {
+                                        ...json.data.session,
+                                        register_name: selectedRegister.name || selectedRegister.id
+                                      }
+                                    };
+                                    setZReportData(zReportWithRegister);
+                                  } else
                                     setZReportError(
                                       json.error || "Failed to fetch Z-Report"
                                     );

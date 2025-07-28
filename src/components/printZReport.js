@@ -4,6 +4,9 @@ export default function printZReport(zReport) {
   const session = zReport.session || {};
   const paymentBreakdown = zReport.paymentBreakdown || {};
   const productsSold = zReport.productsSold || [];
+  
+  // Get register name from session data or fallback to register_id
+  const registerName = session.register_name || session.register?.name || session.register_id || 'Unknown Register';
   const printContent = `
     <!DOCTYPE html>
     <html>
@@ -45,7 +48,7 @@ export default function printZReport(zReport) {
       <div class="zreport">
         <div class="header">
           <div class="title">Z-Report</div>
-          <div class="info">Register: ${session.register_id || '-'}</div>
+          <div class="info">Register: ${registerName}</div>
         </div>
         <div class="section">
           <div class="section-title">Session Period</div>
@@ -117,11 +120,14 @@ printZReport.__previewHtml = function(zReport) {
   const session = zReport.session || {};
   const paymentBreakdown = zReport.paymentBreakdown || {};
   const productsSold = zReport.productsSold || [];
+  
+  // Get register name from session data or fallback to register_id
+  const registerName = session.register_name || session.register?.name || session.register_id || 'Unknown Register';
   return `
     <div class="zreport">
       <div class="header">
         <div class="title">Z-Report</div>
-        <div class="info">Register: ${session.register_id || '-'}</div>
+        <div class="info">Register: ${registerName}</div>
       </div>
       <div class="section">
         <div class="section-title">Session Period</div>
