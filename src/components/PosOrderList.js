@@ -81,6 +81,7 @@ const PosOrderList = ({
   allUsers,
   orderId,
   className = "",
+  mode = "light",
 }) => {
 
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -233,11 +234,11 @@ const PosOrderList = ({
     : null;
 
   return (
-    <div className={`p-4 gap-6 flex flex-col bg-gray-200 rounded-lg h-screen overflow-auto ${className}`}>
-      <div className="bg-white rounded-lg p-6">
+    <div className={`p-4 gap-6 flex flex-col ${mode === "dark" ? "bg-gray-800" : "bg-gray-200"} rounded-lg h-screen overflow-auto ${className}`}>
+      <div className={`${mode === "dark" ? "bg-gray-900" : "bg-white"} rounded-lg p-6`}>
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-bold">Order List</h2>
+          <h2 className={`text-xl font-bold ${mode === "dark" ? "text-white" : "text-black"}`}>Order List</h2>
           <div className="flex items-center gap-2">
             <span className="bg-blue-900 text-white text-xs font-bold rounded-lg px-3 py-1">
               #{orderId}
@@ -246,17 +247,17 @@ const PosOrderList = ({
         </div>
         {/* Customer Info */}
         <div className="mb-4">
-          <label className="block font-semibold mb-1">
+          <label className={`block font-semibold mb-1 ${mode === "dark" ? "text-white" : "text-black"}`}>
             Customer Information
             {selectedDbCustomer && (
-              <span className="ml-2 text-blue-700 font-normal">
+              <span className={`ml-2 font-normal ${mode === "dark" ? "text-blue-400" : "text-blue-700"}`}>
                 - {selectedDbCustomer.name}
               </span>
             )}
           </label>
           <div className="flex gap-2 mb-2">
             <select
-              className="border rounded px-3 py-2 w-full"
+              className={`border rounded px-3 py-2 w-full ${mode === "dark" ? "bg-gray-800 text-white border-gray-600" : "bg-white text-black border-gray-300"}`}
               value={
                 selectedCustomerId.startsWith("db_")
                   ? "customer_db"
@@ -312,27 +313,27 @@ const PosOrderList = ({
         {/* Order Details */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <div className="font-bold">Order Details</div>
+            <div className={`font-bold ${mode === "dark" ? "text-white" : "text-black"}`}>Order Details</div>
             <div className="flex items-center gap-2">
-              <span className="bg-gray-100 text-gray-700 text-xs rounded px-2 py-1">
+              <span className={`text-xs rounded px-2 py-1 ${mode === "dark" ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-700"}`}>
                 Items : {selectedProducts.length}
               </span>
               <button
-                className="text-xs text-red-400 hover:text-red-600"
+                className={`text-xs hover:text-red-600 ${mode === "dark" ? "text-red-400" : "text-red-400"}`}
                 onClick={handleClearAll}
               >
                 Clear all
               </button>
             </div>
           </div>
-          <div className="border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
-            <div className="grid grid-cols-3 bg-gray-50 text-sm font-bold text-gray-600 px-4 py-2">
+          <div className={`border rounded-lg overflow-hidden max-h-60 overflow-y-auto ${mode === "dark" ? "border-gray-600" : "border-gray-300"}`}>
+            <div className={`grid grid-cols-3 text-sm font-bold px-4 py-2 ${mode === "dark" ? "bg-gray-800 text-gray-300" : "bg-gray-50 text-gray-600"}`}>
               <div>Item</div>
               <div className="text-center">Quantity</div>
               <div className="text-right">Sub Total</div>
             </div>
             {selectedProducts.length === 0 && (
-              <div className="text-gray-400 text-center py-6">
+              <div className={`text-center py-6 ${mode === "dark" ? "text-gray-500" : "text-gray-400"}`}>
                 No products selected.
               </div>
             )}
@@ -343,35 +344,35 @@ const PosOrderList = ({
               return (
                 <div
                   key={id}
-                  className="grid grid-cols-3 items-center px-4 py-2 border-t text-sm"
+                  className={`grid grid-cols-3 items-center px-4 py-2 border-t text-sm ${mode === "dark" ? "border-gray-600" : "border-gray-200"}`}
                 >
                   <div className="flex items-center gap-2">
                     <Icon
                       icon="mdi:delete-outline"
-                      className="w-4 h-4 text-gray-400 hover:text-red-500 cursor-pointer"
+                      className={`w-4 h-4 cursor-pointer ${mode === "dark" ? "text-gray-500 hover:text-red-400" : "text-gray-400 hover:text-red-500"}`}
                       onClick={() => handleRemove(id)}
                     />
-                    {product.name}
+                    <span className={mode === "dark" ? "text-white" : "text-black"}>{product.name}</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => handleQty(id, -1)}
-                      className="w-6 h-6 flex items-center justify-center rounded-full text-base font-bold text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700 transition"
+                      className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${mode === "dark" ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white" : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"}`}
                     >
                       -
                     </button>
-                    <span className="w-6 text-center">{qty}</span>
+                    <span className={`w-6 text-center ${mode === "dark" ? "text-white" : "text-black"}`}>{qty}</span>
                     <button
                       onClick={() => handleQty(id, 1)}
-                      className="w-6 h-6 flex items-center justify-center rounded-full text-base font-bold text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700 transition"
+                      className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${mode === "dark" ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white" : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"}`}
                     >
                       +
                     </button>
                   </div>
-                  <div className="text-right font-semibold">
+                  <div className={`text-right font-semibold ${mode === "dark" ? "text-white" : "text-black"}`}>
                     GHS {(product.price * qty).toLocaleString()}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className={`text-xs mt-1 ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
                     {user?.role !== "cashier" && (
                       <>
                         Stock: {product.quantity} | 
@@ -390,14 +391,14 @@ const PosOrderList = ({
           </div>
           {/* Discount Selector */}
           <div className="mt-4 mb-2">
-            <label className="block text-sm font-semibold text-blue-800 mb-2">
+            <label className={`block text-sm font-semibold mb-2 ${mode === "dark" ? "text-blue-400" : "text-blue-800"}`}>
               Select Discount
             </label>
             <div className={`flex flex-col sm:flex-row gap-3 ${user?.role === "cashier" ? "" : ""}`}>
               {/* Discount Dropdown */}
               <div className={user?.role === "cashier" ? "w-full" : "flex-1 min-w-0"}>
                 <select
-                  className="w-full px-4 py-3 bg-white border border-blue-300 rounded-lg text-blue-800 font-medium text-base focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                  className={`w-full px-4 py-3 border rounded-lg font-medium text-base focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${mode === "dark" ? "bg-gray-800 border-blue-500 text-blue-300" : "bg-white border-blue-300 text-blue-800"}`}
                   value={selectedDiscountId}
                   onChange={(e) => setSelectedDiscountId(e.target.value)}
                 >
@@ -413,7 +414,7 @@ const PosOrderList = ({
                   ))}
                 </select>
                 {discountLabel !== "No discount" && (
-                  <div className="text-xs text-gray-600 mt-1 ml-1">{discountLabel}</div>
+                  <div className={`text-xs mt-1 ml-1 ${mode === "dark" ? "text-gray-400" : "text-gray-600"}`}>{discountLabel}</div>
                 )}
               </div>
               
@@ -480,14 +481,14 @@ const PosOrderList = ({
           </div>
         {/* Payment Summary */}
         <div className="mb-2">
-          <div className="font-bold mb-2">Payment Summary</div>
-          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+          <div className={`font-bold mb-2 ${mode === "dark" ? "text-white" : "text-black"}`}>Payment Summary</div>
+          <div className={`flex justify-between items-center text-xs mb-2 ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
             <span>Items: {selectedProducts.length}</span>
             <span>Total Items: {selectedProducts.reduce((sum, productId) => sum + (quantities[productId] || 1), 0)}</span>
           </div>
           <div className="flex flex-col gap-1 text-sm">
             <div className="flex justify-between items-center">
-              <span>Discount</span>
+              <span className={mode === "dark" ? "text-white" : "text-black"}>Discount</span>
               <span className="text-red-500">
                 -GHS {discount.toLocaleString()}
               </span>
@@ -506,9 +507,9 @@ const PosOrderList = ({
 
           </div>
         </div>
-        <div className="border-t my-2"></div>
+        <div className={`border-t my-2 ${mode === "dark" ? "border-gray-600" : "border-gray-200"}`}></div>
         <div className="flex justify-between items-center text-lg font-bold">
-          <span>Total Payable</span>
+          <span className={mode === "dark" ? "text-white" : "text-black"}>Total Payable</span>
           <span className="text-blue-900">GHS {total.toLocaleString()}</span>
         </div>
       </div>

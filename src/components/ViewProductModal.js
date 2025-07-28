@@ -264,6 +264,7 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
               <Icon icon="mdi:format-list-bulleted" className="text-xl" />
               Variant Attributes
             </h3>
+            
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Icon icon="mdi:loading" className="animate-spin w-6 h-6 text-blue-600" />
@@ -272,34 +273,93 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(product.variant_attributes).map(([attrId, value]) => {
-                    const attribute = variantAttributes.find(attr => attr.id === attrId);
-                    return (
-                      <div key={attrId} className="group">
-                        <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                          <Icon
-                            icon="mdi:tag-outline"
-                            className="text-lg flex-shrink-0 mt-0.5 text-slate-500 dark:text-slate-400"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
-                              {attribute ? attribute.name : `Attribute ${attrId}`}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
-                                {value}
-                              </span>
+                  {(() => {
+                    // Handle different data structures
+                    let attributesToDisplay = [];
+                    
+                    if (typeof product.variant_attributes === 'string') {
+                      try {
+                        // Parse JSON string
+                        const parsed = JSON.parse(product.variant_attributes);
+                        attributesToDisplay = Object.entries(parsed);
+                      } catch (e) {
+                        // If it's not JSON, treat as a single value
+                        attributesToDisplay = [['Value', product.variant_attributes]];
+                      }
+                    } else if (Array.isArray(product.variant_attributes)) {
+                      // If it's an array, convert to object with index keys
+                      attributesToDisplay = product.variant_attributes.map((value, index) => [`Attribute ${index + 1}`, value]);
+                    } else if (typeof product.variant_attributes === 'object') {
+                      // If it's already an object, use as is
+                      attributesToDisplay = Object.entries(product.variant_attributes);
+                    } else {
+                      // Fallback
+                      attributesToDisplay = [['Value', String(product.variant_attributes)]];
+                    }
+                    
+                    return attributesToDisplay.map(([attrId, value], index) => {
+                      // Try to find the attribute name from the fetched attributes
+                      const attribute = variantAttributes.find(attr => attr.id === attrId || attr.id === String(attrId));
+                      const displayName = attribute ? attribute.name : `Attribute ${index + 1}`;
+                      
+                      return (
+                        <div key={index} className="group">
+                          <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <Icon
+                              icon="mdi:tag-outline"
+                              className="text-lg flex-shrink-0 mt-0.5 text-slate-500 dark:text-slate-400"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">
+                                {displayName}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full font-medium">
+                                  {String(value)}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
                 <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                     <Icon icon="mdi:information-outline" className="text-lg" />
-                    <span>This product has {Object.keys(product.variant_attributes).length} variant attribute{Object.keys(product.variant_attributes).length > 1 ? 's' : ''}</span>
+                    <span>This product has {(() => {
+                      if (typeof product.variant_attributes === 'string') {
+                        try {
+                          const parsed = JSON.parse(product.variant_attributes);
+                          return Object.keys(parsed).length;
+                        } catch (e) {
+                          return 1;
+                        }
+                      } else if (Array.isArray(product.variant_attributes)) {
+                        return product.variant_attributes.length;
+                      } else if (typeof product.variant_attributes === 'object') {
+                        return Object.keys(product.variant_attributes).length;
+                      }
+                      return 1;
+                    })()} variant attribute{(() => {
+                      const count = (() => {
+                        if (typeof product.variant_attributes === 'string') {
+                          try {
+                            const parsed = JSON.parse(product.variant_attributes);
+                            return Object.keys(parsed).length;
+                          } catch (e) {
+                            return 1;
+                          }
+                        } else if (Array.isArray(product.variant_attributes)) {
+                          return product.variant_attributes.length;
+                        } else if (typeof product.variant_attributes === 'object') {
+                          return Object.keys(product.variant_attributes).length;
+                        }
+                        return 1;
+                      })();
+                      return count > 1 ? 's' : '';
+                    })()}</span>
                   </div>
                 </div>
               </>

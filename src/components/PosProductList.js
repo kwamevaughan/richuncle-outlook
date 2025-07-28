@@ -8,7 +8,7 @@ import SimpleModal from "./SimpleModal";
 import TooltipIconButton from "@/components/TooltipIconButton";
 import Select, { components } from 'react-select';
 
-const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts, hasOpenSession = true, sessionCheckLoading = false, className = "" }) => {
+const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts, hasOpenSession = true, sessionCheckLoading = false, className = "", mode = "light" }) => {
   const { categories, loading: catLoading, error: catError } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, _setProducts] = useState([]);
@@ -209,7 +209,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
       toast.error('Checking register status, please wait...');
       return;
     }
-    if (user?.role === 'cashier' && !hasOpenSession) {
+    if (!hasOpenSession) {
       toast.error('You must open a cash register before making sales.');
       return;
     }
@@ -242,7 +242,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
   return (
     <div className={className}>
-      <div className="flex rounded-lg overflow-hidden h-screen bg-white">
+      <div className={`flex rounded-lg overflow-hidden h-screen ${mode === "dark" ? "bg-gray-900" : "bg-white"}`}>
         {/* Tab Content: Products Grid */}
         <div className="w-full px-6 py-0 flex flex-col">
           <div className="flex justify-between items-center gap-4 mb-4">
@@ -306,8 +306,8 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
               <TooltipIconButton
                 label="Open Barcode Scanner"
-                mode="light"
-                className="ml-2 p-3 rounded-2xl border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95"
+                mode={mode}
+                className={`ml-2 p-3 rounded-2xl border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95 ${mode === "dark" ? "bg-gray-800 hover:bg-gray-700 border-gray-600" : "bg-white hover:bg-blue-50 border-gray-300"}`}
                 onClick={() => setShowBarcodeModal(true)}
               >
                 <Icon icon="tabler:barcode" className="w-6 h-6" />
@@ -315,8 +315,8 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
               <TooltipIconButton
                 label="Refresh Product List"
-                mode="light"
-                className="ml-2 p-3 rounded-2xl border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95"
+                mode={mode}
+                className={`ml-2 p-3 rounded-2xl border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95 ${mode === "dark" ? "bg-gray-800 hover:bg-gray-700 border-gray-600" : "bg-white hover:bg-blue-50 border-gray-300"}`}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -328,7 +328,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               >
                 <Icon
                   icon="material-symbols:refresh"
-                  className="w-6 h-6 text-blue-800"
+                  className={`w-6 h-6 ${mode === "dark" ? "text-blue-400" : "text-blue-800"}`}
                 />
               </TooltipIconButton>
             </div>
@@ -341,8 +341,8 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               disabled={categoryPage === 0}
               className={`p-3 rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
                 categoryPage === 0
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-white text-gray-700 hover:bg-blue-50 active:scale-95"
+                  ? `${mode === "dark" ? "bg-gray-700 text-gray-500" : "bg-gray-100 text-gray-400"} cursor-not-allowed`
+                  : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-white text-gray-700 hover:bg-blue-50"} active:scale-95`
               }`}
             >
               <Icon icon="mdi:chevron-left" className="w-6 h-6" />
@@ -351,20 +351,20 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
             {/* Categories Container */}
             <div className="flex gap-4 flex-1 justify-center items-center">
               {catLoading && (
-                <div className="p-4 text-blue-600">Loading...</div>
+                <div className={`p-4 ${mode === "dark" ? "text-blue-400" : "text-blue-600"}`}>Loading...</div>
               )}
-              {catError && <div className="p-4 text-red-600">{catError}</div>}
+              {catError && <div className={`p-4 ${mode === "dark" ? "text-red-400" : "text-red-600"}`}>{catError}</div>}
               {!catLoading && !catError && visibleCategories.length === 0 && (
-                <div className="p-4 text-gray-400">No categories</div>
+                <div className={`p-4 ${mode === "dark" ? "text-gray-500" : "text-gray-400"}`}>No categories</div>
               )}
               {visibleCategories.map((cat) => (
                 <button
                   type="button"
                   key={cat.id}
-                  className={`flex flex-col items-center justify-center px-3 py-3 text-center text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none hover:bg-blue-100 bg-white gap-2 min-w-[80px] min-h-[70px] touch-manipulation active:scale-95 ${
+                  className={`flex flex-col items-center justify-center px-3 py-3 text-center text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none gap-2 min-w-[80px] min-h-[70px] touch-manipulation active:scale-95 ${
                     selectedCategory === cat.id
-                      ? "bg-blue-100 text-blue-700 border-blue-400 scale-105"
-                      : "text-gray-700 border-transparent"
+                      ? `${mode === "dark" ? "bg-blue-600 text-white border-blue-500" : "bg-blue-100 text-blue-700 border-blue-400"} scale-105`
+                      : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-600" : "bg-white text-gray-700 hover:bg-blue-100 border-transparent"}`
                   }`}
                   onClick={(e) => {
                     e.preventDefault();
@@ -395,8 +395,8 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               disabled={categoryPage >= totalPages - 1}
               className={`p-3 rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
                 categoryPage >= totalPages - 1
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                  : "bg-white text-gray-700 hover:bg-blue-50 active:scale-95"
+                  ? `${mode === "dark" ? "bg-gray-700 text-gray-500" : "bg-gray-100 text-gray-400"} cursor-not-allowed opacity-50`
+                  : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-white text-gray-700 hover:bg-blue-50"} active:scale-95`
               }`}
             >
               <Icon icon="mdi:chevron-right" className="w-6 h-6" />
@@ -404,11 +404,11 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
           </div>
 
           {prodLoading && (
-            <div className="text-blue-600">Loading products...</div>
+            <div className={`${mode === "dark" ? "text-blue-400" : "text-blue-600"}`}>Loading products...</div>
           )}
-          {prodError && <div className="text-red-600">{prodError}</div>}
+          {prodError && <div className={`${mode === "dark" ? "text-red-400" : "text-red-600"}`}>{prodError}</div>}
           {!prodLoading && !prodError && displayedProducts.length === 0 && (
-            <div className="text-gray-400">No products found.</div>
+            <div className={`${mode === "dark" ? "text-gray-500" : "text-gray-400"}`}>No products found.</div>
           )}
           
           {/* Products Grid with Load More */}
@@ -417,37 +417,38 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               {displayedProducts.map((product) => (
                 <div
                   key={product.id}
-                  className={`group relative border-2 rounded-xl p-4 flex flex-col items-center bg-white hover:shadow-lg transition-all duration-200 cursor-pointer min-h-[220px] touch-manipulation m-0.5
+                  className={`group relative border-2 rounded-xl p-4 flex flex-col items-center transition-all duration-200 cursor-pointer min-h-[220px] touch-manipulation m-0.5
                     ${
                       selectedProducts.includes(product.id)
-                        ? "border-green-500 shadow-green-100 scale-105"
-                        : "border-gray-200"
+                        ? `${mode === "dark" ? "border-green-400 shadow-green-900" : "border-green-500 shadow-green-100"} scale-105`
+                        : `${mode === "dark" ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"}`
                     }
-                    group-hover:border-green-500 group-hover:shadow-green-100
+                    ${mode === "dark" ? "group-hover:border-green-400 group-hover:shadow-green-900" : "group-hover:border-green-500 group-hover:shadow-green-100"}
+                    hover:shadow-lg
                     active:scale-95
                   `}
                   style={{
                     boxShadow: selectedProducts.includes(product.id)
-                      ? "0 0 0 0 #22c55e"
+                      ? mode === "dark" ? "0 0 0 0 #4ade80" : "0 0 0 0 #22c55e"
                       : undefined,
                   }}
                   onMouseEnter={(e) =>
                     e.currentTarget.classList.add(
-                      "border-green-500",
-                      "shadow-green-100"
+                      mode === "dark" ? "border-green-400" : "border-green-500",
+                      mode === "dark" ? "shadow-green-900" : "shadow-green-100"
                     )
                   }
                   onMouseLeave={(e) =>
                     !selectedProducts.includes(product.id) &&
                     e.currentTarget.classList.remove(
-                      "border-green-500",
-                      "shadow-green-100"
+                      mode === "dark" ? "border-green-400" : "border-green-500",
+                      mode === "dark" ? "shadow-green-900" : "shadow-green-100"
                     )
                   }
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (user?.role === "cashier" && !hasOpenSession) {
+                    if (!hasOpenSession) {
                       toast.error(
                         "You must open a cash register before making sales."
                       );
@@ -484,7 +485,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       />
                     </div>
                   )}
-                  <div className="text-sm text-gray-500 mb-2 self-start">
+                  <div className={`text-sm mb-2 self-start ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
                     {(() => {
                       const cat = categories.find(
                         (c) => c.id === product.category_id
@@ -492,7 +493,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       return cat ? cat.name : "";
                     })()}
                   </div>
-                  <div className="font-semibold mb-2 self-start truncate max-w-full overflow-hidden text-base">
+                  <div className={`font-semibold mb-2 self-start truncate max-w-full overflow-hidden text-base ${mode === "dark" ? "text-white" : "text-black"}`}>
                     {product.name}
                   </div>
 
@@ -516,41 +517,26 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     </div>
                   )}
 
-                  <span className="border-t w-full py-1"></span>
+                  <span className={`border-t w-full py-1 ${mode === "dark" ? "border-gray-600" : "border-gray-200"}`}></span>
 
-                  <div className="flex flex-col gap-2 self-start mt-2 w-full">
+                  <div className="flex flex-col gap-1 self-start mt-2 w-full">
                     <div className="flex items-center justify-between w-full">
-                      <span className="text-lg font-bold text-blue-700">
+                      <span className={`text-lg font-bold ${mode === "dark" ? "text-blue-400" : "text-blue-700"}`}>
                         GHS {product.price}
                       </span>
-                      {user?.role !== "cashier" && (
-                        <span className="text-sm text-gray-500">
-                          Cost: GHS {product.cost_price || 0}
-                        </span>
-                      )}
                     </div>
-                    {product.cost_price &&
-                      product.cost_price > 0 &&
-                      user?.role !== "cashier" && (
-                        <div className="text-xs text-green-600 font-medium">
-                          Profit: GHS{" "}
-                          {(
-                            (product.price - product.cost_price) *
-                            (quantities[product.id] || 1)
-                          ).toFixed(2)}
-                        </div>
-                      )}
-                    {product.tax_percentage &&
-                      product.tax_percentage > 0 &&
-                      user?.role !== "cashier" && (
-                        <div className="text-xs text-orange-600 font-medium">
-                          Tax: {product.tax_percentage}% (
-                          {product.tax_type === "inclusive"
-                            ? "Included"
-                            : "Added"}
-                          )
-                        </div>
-                      )}
+                    {user?.role !== "cashier" && (
+                      <div className={`flex items-center justify-between text-xs ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                        {product.cost_price && product.cost_price > 0 && (
+                          <span>Cost: GHS {product.cost_price}</span>
+                        )}
+                        {product.tax_percentage && product.tax_percentage > 0 && (
+                          <span className="text-orange-600">
+                            Tax: {product.tax_percentage}%
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -585,7 +571,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
             
             {/* Products Count Info */}
             {!prodLoading && displayedProducts.length > 0 && (
-              <div className="text-center py-2 text-sm text-gray-500">
+              <div className={`text-center py-2 text-sm ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
                 Showing {displayedProducts.length} of {filteredProducts.length} products
               </div>
             )}
@@ -633,6 +619,10 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               onKeyDown={(e) => {
                 if (e.key === "Enter" && barcodeProduct) {
                   // Add product immediately on Enter
+                  if (!hasOpenSession) {
+                    toast.error('You must open a cash register before making sales.');
+                    return;
+                  }
                   if (barcodeQty > barcodeProduct.quantity) {
                     toast.error(
                       user?.role === "cashier" 
@@ -721,6 +711,10 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               <button
                 className="w-full bg-green-600 text-white rounded-lg py-4 font-semibold mt-4 text-lg touch-manipulation active:scale-95"
                 onClick={() => {
+                  if (!hasOpenSession) {
+                    toast.error('You must open a cash register before making sales.');
+                    return;
+                  }
                   if (barcodeQty > barcodeProduct.quantity) {
                     toast.error(
                       user?.role === "cashier" 

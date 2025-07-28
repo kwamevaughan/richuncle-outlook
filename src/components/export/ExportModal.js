@@ -307,7 +307,13 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                 {isZReport && (
                   <div className="flex gap-4 px-6 pt-4">
                     <button
-                      className={`px-4 py-2 rounded-lg font-semibold ${zreportTab === 'products' ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}
+                      className={`px-4 py-2 rounded-lg font-semibold ${
+                        zreportTab === 'products' 
+                          ? 'bg-blue-700 text-white' 
+                          : mode === "dark"
+                            ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
                       onClick={() => {
                         if (typeof onToggleType === 'function') onToggleType('products');
                       }}
@@ -315,7 +321,13 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                       Products Sold
                     </button>
                     <button
-                      className={`px-4 py-2 rounded-lg font-semibold ${zreportTab === 'payments' ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}
+                      className={`px-4 py-2 rounded-lg font-semibold ${
+                        zreportTab === 'payments' 
+                          ? 'bg-blue-700 text-white' 
+                          : mode === "dark"
+                            ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
                       onClick={() => {
                         if (typeof onToggleType === 'function') onToggleType('payments');
                       }}
@@ -331,8 +343,8 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                                 <label
                                     className={`block text-sm font-medium ${
                                         mode === "dark"
-                                            ? "text-gray-200 bg-gray-800"
-                                            : "text-[#231812] bg-white"
+                                            ? "text-gray-200"
+                                            : "text-gray-900"
                                     }`}
                                 >
                                     Select Fields to Export
@@ -342,8 +354,8 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                                         onClick={handleSelectAll}
                                         className={`text-xs px-2 py-1 rounded-full ${
                                             mode === "dark"
-                                                ? "bg-gray-700 text-blue-500 hover:bg-gray-600"
-                                                : "bg-gray-200 text-blue-500 hover:bg-gray-300"
+                                                ? "bg-gray-600 text-blue-300 hover:bg-gray-500 hover:text-blue-200"
+                                                : "bg-gray-200 text-blue-600 hover:bg-gray-300 hover:text-blue-700"
                                         }`}
                                     >
                                         All
@@ -352,8 +364,8 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                                         onClick={handleSelectNone}
                                         className={`text-xs px-2 py-1 rounded-full ${
                                             mode === "dark"
-                                                ? "bg-gray-700 text-blue-500 hover:bg-gray-600"
-                                                : "bg-gray-200 text-blue-500 hover:bg-gray-300"
+                                                ? "bg-gray-600 text-blue-300 hover:bg-gray-500 hover:text-blue-200"
+                                                : "bg-gray-200 text-blue-600 hover:bg-gray-300 hover:text-blue-700"
                                         }`}
                                     >
                                         None
@@ -387,8 +399,8 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                             <label
                                 className={`block text-sm font-medium mb-2 ${
                                     mode === "dark"
-                                        ? "text-gray-200 bg-gray-800"
-                                        : "text-[#231812] bg-white"
+                                        ? "text-gray-200"
+                                        : "text-gray-900"
                                 }`}
                             >
                                 Export Format
@@ -399,7 +411,7 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                                 className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-800 text-sm ${
                                     mode === "dark"
                                         ? "bg-gray-700 border-gray-600 text-white"
-                                        : "bg-gray-50 border-gray-300 text-[#231812]"
+                                        : "bg-white border-gray-300 text-gray-900"
                                 }`}
                             >
                                 <option value="csv">CSV</option>
@@ -410,8 +422,8 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                             <label
                                 className={`block text-sm font-medium mb-2 ${
                                     mode === "dark"
-                                        ? "text-gray-200 bg-gray-800"
-                                        : "text-[#231812] bg-white"
+                                        ? "text-gray-200"
+                                        : "text-gray-900"
                                 }`}
                             >
                                 Preview Rows
@@ -422,7 +434,7 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                                 className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-800 text-sm ${
                                     mode === "dark"
                                         ? "bg-gray-700 border-gray-600 text-white"
-                                        : "bg-gray-50 border-gray-300 text-[#231812]"
+                                        : "bg-white border-gray-300 text-gray-900"
                                 }`}
                             >
                                 <option value={3}>3 Rows</option>
@@ -448,9 +460,13 @@ export default function ExportModal({ isOpen, onClose, users, mode, type = "user
                             onClick={onClose}
                             className={`px-6 py-2 rounded-full flex items-center gap-2 transition duration-200 shadow-md hover:shadow-lg ${
                                 mode === "dark"
-                                    ? "bg-gray-700 text-white hover:bg-gray-600"
-                                    : "bg-gray-200 text-[#231812] hover:bg-gray-300"
+                                    ? "bg-gray-700 text-white hover:bg-gray-600 hover:text-white"
+                                    : " text-gray-700 hover:bg-gray-600 hover:text-gray-800"
                             }`}
+                            style={{
+                                backgroundColor: mode === "dark" ? "#374151!important" : "#e5e7eb!important",
+                                color: mode === "dark" ? "#fff!important" : "#374151!important"
+                            }}
                         >
                             <Icon icon="mdi:close" width={20} height={20} />
                             Cancel

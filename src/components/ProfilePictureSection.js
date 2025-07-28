@@ -11,18 +11,29 @@ export default function ProfilePictureSection({
   onReposition,
   onResetCrop,
   onRemoveImage,
-  onImageSelect
+  onImageSelect,
+  mode = "light"
 }) {
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
+    <div className={`rounded-xl p-6 border ${
+      mode === "dark" 
+        ? "bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-800" 
+        : "bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100"
+    }`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <h3 className={`text-lg font-semibold flex items-center gap-2 ${
+          mode === "dark" ? "text-white" : "text-gray-900"
+        }`}>
           <Icon icon="solar:gallery-bold" className="w-5 h-5 text-blue-600" />
           Profile Picture
         </h3>
         {formData.avatar_url && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border">
+            <span className={`text-xs px-2 py-1 rounded-full border ${
+              mode === "dark" 
+                ? "text-gray-400 bg-gray-700 border-gray-600" 
+                : "text-gray-500 bg-white border-gray-300"
+            }`}>
               {cropTransform ? 'Repositioned' : 'Original'}
             </span>
           </div>
@@ -45,7 +56,11 @@ export default function ProfilePictureSection({
               <>
                 <button
                   onClick={() => onReposition(formData.avatar_url)}
-                  className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+                  className={`px-4 py-2 border rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                    mode === "dark" 
+                      ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600" 
+                      : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                  }`}
                 >
                   <Icon icon="solar:crop-bold" className="w-4 h-4" />
                   Reposition
@@ -55,7 +70,11 @@ export default function ProfilePictureSection({
                   <button
                     onClick={onResetCrop}
                     disabled={uploadingImage}
-                    className="px-4 py-2 bg-white border border-orange-200 text-orange-600 rounded-lg hover:bg-orange-50 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
+                    className={`px-4 py-2 border rounded-lg transition-all duration-200 disabled:opacity-50 flex items-center gap-2 ${
+                      mode === "dark" 
+                        ? "bg-gray-700 border-orange-600 text-orange-400 hover:bg-orange-900/20" 
+                        : "bg-white border-orange-200 text-orange-600 hover:bg-orange-50"
+                    }`}
                   >
                     <Icon icon="solar:refresh-bold" className="w-4 h-4" />
                     {uploadingImage ? 'Resetting...' : 'Reset'}
@@ -64,7 +83,11 @@ export default function ProfilePictureSection({
                 
                 <button
                   onClick={onRemoveImage}
-                  className="px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-all duration-200 flex items-center gap-2"
+                  className={`px-4 py-2 border rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                    mode === "dark" 
+                      ? "bg-gray-700 border-red-600 text-red-400 hover:bg-red-900/20" 
+                      : "bg-white border-red-200 text-red-600 hover:bg-red-50"
+                  }`}
                 >
                   <Icon icon="solar:trash-bin-trash-bold" className="w-4 h-4" />
                   Remove
@@ -73,7 +96,9 @@ export default function ProfilePictureSection({
             )}
           </div>
           
-          <p className="text-xs text-gray-500">
+          <p className={`text-xs ${
+            mode === "dark" ? "text-gray-400" : "text-gray-500"
+          }`}>
             Supported: JPEG, PNG, GIF, WebP (max 5MB)
           </p>
           
@@ -94,7 +119,9 @@ export default function ProfilePictureSection({
                       className={`w-8 h-8 ${isDragActive ? 'text-blue-600' : 'text-gray-400'}`}
                     />
                   </div>
-                  <p className="text-sm text-gray-500 text-center">
+                  <p className={`text-sm text-center ${
+                    mode === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}>
                     {uploading ? 'Uploading...' : isDragActive ? 'Drop image here' : 'Drag & drop or click to upload'}
                   </p>
                 </div>

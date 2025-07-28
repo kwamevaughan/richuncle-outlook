@@ -66,23 +66,39 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
       >
         <div className="space-y-8">
           {/* Header Card */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-sm border border-blue-200">
+          <div className={`rounded-xl p-6 shadow-sm border ${
+            mode === "dark" 
+              ? "bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border-blue-700" 
+              : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+          }`}>
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <div className="flex flex-col items-center md:items-start gap-3 min-w-[100px]">
                 <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                   <Icon icon="mdi:cart-check" className="w-8 h-8 text-white" />
                 </div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-blue-100 text-blue-800">
+                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${
+                  mode === "dark" 
+                    ? "bg-blue-900/50 text-blue-300" 
+                    : "bg-blue-100 text-blue-800"
+                }`}>
                   Sale
                 </div>
               </div>
               <div className="flex-1 flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-sm font-mono">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-mono ${
+                    mode === "dark" 
+                      ? "bg-gray-700 text-gray-300" 
+                      : "bg-gray-100 text-gray-700"
+                  }`}>
                     <Icon icon="mdi:identifier" className="w-4 h-4" />
                     #{sale.sale_number || sale.id}
                   </div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-sm">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm ${
+                    mode === "dark" 
+                      ? "bg-gray-700 text-gray-300" 
+                      : "bg-gray-100 text-gray-700"
+                  }`}>
                     <Icon icon="mdi:calendar" className="w-4 h-4" />
                     {sale.timestamp ? new Date(sale.timestamp).toLocaleString() : "-"}
                   </div>
@@ -91,7 +107,9 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
                     {sale.status?.charAt(0).toUpperCase() + sale.status?.slice(1) || "Unknown"}
                   </div>
                 </div>
-                <div className="text-xl font-bold text-gray-900">
+                <div className={`text-xl font-bold ${
+                  mode === "dark" ? "text-white" : "text-gray-900"
+                }`}>
                   Sale to {sale.customer_name || "Walk In Customer"}
                 </div>
               </div>
@@ -103,23 +121,37 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
             {/* Customer & Payment Info */}
             <div className="space-y-6">
               {/* Customer Information */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <div className={`rounded-xl p-6 shadow-sm border ${
+                mode === "dark" 
+                  ? "bg-gray-800 border-gray-700" 
+                  : "bg-white border-gray-200"
+              }`}>
+                <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                  mode === "dark" ? "text-white" : "text-gray-900"
+                }`}>
                   <Icon icon="mdi:account" className="w-5 h-5 text-blue-600" />
                   Customer Information
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      mode === "dark" ? "bg-blue-900/50" : "bg-blue-100"
+                    }`}>
                       <Icon icon="mdi:account" className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-900">{sale.customer_name || "Walk In Customer"}</div>
-                      <div className="text-sm text-gray-500">{sale.customer_email || "No email provided"}</div>
+                      <div className={`font-semibold ${
+                        mode === "dark" ? "text-white" : "text-gray-900"
+                      }`}>{sale.customer_name || "Walk In Customer"}</div>
+                      <div className={`text-sm ${
+                        mode === "dark" ? "text-gray-400" : "text-gray-500"
+                      }`}>{sale.customer_email || "No email provided"}</div>
                     </div>
                   </div>
                   {sale.customer_phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className={`flex items-center gap-2 text-sm ${
+                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    }`}>
                       <Icon icon="mdi:phone" className="w-4 h-4" />
                       {sale.customer_phone}
                     </div>
@@ -128,24 +160,42 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
               </div>
 
               {/* Payment Information */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <div className={`rounded-xl p-6 shadow-sm border ${
+                mode === "dark" 
+                  ? "bg-gray-800 border-gray-700" 
+                  : "bg-white border-gray-200"
+              }`}>
+                <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                  mode === "dark" ? "text-white" : "text-gray-900"
+                }`}>
                   <Icon icon="mdi:credit-card" className="w-5 h-5 text-green-600" />
                   Payment Details
                 </h3>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      mode === "dark" ? "bg-green-900/50" : "bg-green-100"
+                    }`}>
                       <Icon icon={getPaymentMethodIcon(sale.payment_method)} className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
-                      <div className="font-semibold capitalize text-gray-900">{sale.payment_method || "Not specified"}</div>
-                      <div className="text-sm text-gray-500">Payment method</div>
+                      <div className={`font-semibold capitalize ${
+                        mode === "dark" ? "text-white" : "text-gray-900"
+                      }`}>{sale.payment_method || "Not specified"}</div>
+                      <div className={`text-sm ${
+                        mode === "dark" ? "text-gray-400" : "text-gray-500"
+                      }`}>Payment method</div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-sm text-gray-600 mb-1">Total Amount</div>
-                    <div className="text-2xl font-bold text-gray-900">GHS {Number(sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div className={`rounded-lg p-3 ${
+                    mode === "dark" ? "bg-gray-700" : "bg-gray-50"
+                  }`}>
+                    <div className={`text-sm mb-1 ${
+                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    }`}>Total Amount</div>
+                    <div className={`text-2xl font-bold ${
+                      mode === "dark" ? "text-white" : "text-gray-900"
+                    }`}>GHS {Number(sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   </div>
                 </div>
               </div>
@@ -153,49 +203,87 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
 
             {/* Financial Summary */}
             <div className="space-y-6">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <div className={`rounded-xl p-6 shadow-sm border ${
+                mode === "dark" 
+                  ? "bg-gray-800 border-gray-700" 
+                  : "bg-white border-gray-200"
+              }`}>
+                <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                  mode === "dark" ? "text-white" : "text-gray-900"
+                }`}>
                   <Icon icon="mdi:calculator" className="w-5 h-5 text-purple-600" />
                   Financial Summary
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-semibold text-gray-900">GHS {Number(sale.subtotal || sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <div className={`flex justify-between items-center py-2 border-b ${
+                    mode === "dark" ? "border-gray-700" : "border-gray-100"
+                  }`}>
+                    <span className={`${
+                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    }`}>Subtotal</span>
+                    <span className={`font-semibold ${
+                      mode === "dark" ? "text-white" : "text-gray-900"
+                    }`}>GHS {Number(sale.subtotal || sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   {sale.tax && (
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600">Tax</span>
-                      <span className="font-semibold text-gray-900">GHS {Number(sale.tax).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <div className={`flex justify-between items-center py-2 border-b ${
+                      mode === "dark" ? "border-gray-700" : "border-gray-100"
+                    }`}>
+                      <span className={`${
+                        mode === "dark" ? "text-gray-300" : "text-gray-600"
+                      }`}>Tax</span>
+                      <span className={`font-semibold ${
+                        mode === "dark" ? "text-white" : "text-gray-900"
+                      }`}>GHS {Number(sale.tax).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   {sale.discount && (
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600">Discount</span>
+                    <div className={`flex justify-between items-center py-2 border-b ${
+                      mode === "dark" ? "border-gray-700" : "border-gray-100"
+                    }`}>
+                      <span className={`${
+                        mode === "dark" ? "text-gray-300" : "text-gray-600"
+                      }`}>Discount</span>
                       <span className="font-semibold text-red-600">-GHS {Number(sale.discount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-gray-600 font-semibold">Total</span>
-                    <span className="text-xl font-bold text-gray-900">GHS {Number(sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className={`font-semibold ${
+                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    }`}>Total</span>
+                    <span className={`text-xl font-bold ${
+                      mode === "dark" ? "text-white" : "text-gray-900"
+                    }`}>GHS {Number(sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
 
               {/* Staff Information */}
               {sale.payment_receiver_name && (
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <div className={`rounded-xl p-6 shadow-sm border ${
+                  mode === "dark" 
+                    ? "bg-gray-800 border-gray-700" 
+                    : "bg-white border-gray-200"
+                }`}>
+                  <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                    mode === "dark" ? "text-white" : "text-gray-900"
+                  }`}>
                     <Icon icon="mdi:account-tie" className="w-5 h-5 text-indigo-600" />
                     Cashier Information
                   </h3>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      mode === "dark" ? "bg-indigo-900/50" : "bg-indigo-100"
+                    }`}>
                       <Icon icon="mdi:account-tie" className="w-5 h-5 text-indigo-600" />
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-900">{sale.payment_receiver_name}</div>
-                      <div className="text-sm text-gray-500">Payment receiver</div>
+                      <div className={`font-semibold ${
+                        mode === "dark" ? "text-white" : "text-gray-900"
+                      }`}>{sale.payment_receiver_name}</div>
+                      <div className={`text-sm ${
+                        mode === "dark" ? "text-gray-400" : "text-gray-500"
+                      }`}>Payment receiver</div>
                     </div>
                   </div>
                 </div>
@@ -204,31 +292,49 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
 
             {/* Items List */}
             <div className="space-y-6">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <div className={`rounded-xl p-6 shadow-sm border ${
+                mode === "dark" 
+                  ? "bg-gray-800 border-gray-700" 
+                  : "bg-white border-gray-200"
+              }`}>
+                <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                  mode === "dark" ? "text-white" : "text-gray-900"
+                }`}>
                   <Icon icon="mdi:package-variant" className="w-5 h-5 text-orange-600" />
                   Items ({items.length})
                 </h3>
                 <div className="space-y-3">
                   {items.length === 0 ? (
-                    <div className="text-center text-gray-400 py-8">
+                    <div className={`text-center py-8 ${
+                      mode === "dark" ? "text-gray-500" : "text-gray-400"
+                    }`}>
                       <Icon icon="mdi:package-variant-off" className="w-12 h-12 mx-auto mb-2" />
                       <div>No items found</div>
                     </div>
                   ) : (
                     items.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <div key={idx} className={`flex items-center gap-3 p-3 rounded-lg ${
+                        mode === "dark" ? "bg-gray-700" : "bg-gray-50"
+                      }`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          mode === "dark" ? "bg-orange-900/50" : "bg-orange-100"
+                        }`}>
                           <Icon icon="mdi:package-variant" className="w-4 h-4 text-orange-600" />
                         </div>
                         <div className="flex-1">
-                          <div className="font-semibold text-gray-900">{item.name || item.product_name || item.product_id}</div>
-                          <div className="text-sm text-gray-500">
+                          <div className={`font-semibold ${
+                            mode === "dark" ? "text-white" : "text-gray-900"
+                          }`}>{item.name || item.product_name || item.product_id}</div>
+                          <div className={`text-sm ${
+                            mode === "dark" ? "text-gray-400" : "text-gray-500"
+                          }`}>
                             {item.quantity} × GHS {Number(item.price || item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-semibold text-gray-900">
+                          <div className={`font-semibold ${
+                            mode === "dark" ? "text-white" : "text-gray-900"
+                          }`}>
                             GHS {Number(item.total || ((Number(item.quantity) || 0) * (Number(item.price || item.unit_price) || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </div>
@@ -244,7 +350,11 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
           <div className="flex justify-end gap-3 pt-6">
             <button
               type="button"
-              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+              className={`px-6 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                mode === "dark" 
+                  ? "bg-gray-700 text-gray-200 hover:bg-gray-600" 
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
               onClick={() => setShowReceiptModal(true)}
             >
               <Icon icon="mdi:printer" className="w-4 h-4" />

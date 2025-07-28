@@ -317,7 +317,7 @@ const HrHeader = ({
               <TooltipIconButton
                 label={
                   <span
-                    className={mode === "dark" ? "text-black" : "text-black"}
+                    className={mode === "dark" ? "text-white" : "text-black"}
                   >
                     {mode === "dark"
                       ? "Switch to Light Mode"
@@ -345,7 +345,7 @@ const HrHeader = ({
               <TooltipIconButton
                 label={
                   <span
-                    className={mode === "dark" ? "text-black" : "text-black"}
+                    className={mode === "dark" ? "text-white" : "text-black"}
                   >
                     {dropdownOpen ? "Close Profile" : "Open Profile"}
                   </span>
@@ -398,14 +398,22 @@ const HrHeader = ({
                           </div>
                           <div className="flex flex-col">
                             <div className="flex gap-2">
-                              <span className="text-md font-semibold">
+                              <span className={`text-md font-semibold ${
+                                mode === "dark" ? "text-white" : "text-black"
+                              }`}>
                                 {user.name}
                               </span>
-                              <span className="rounded-md capitalize bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-green-600/20 ring-inset">
+                              <span className={`rounded-md capitalize px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                                mode === "dark" 
+                                  ? "bg-green-900/30 text-green-300 ring-green-600/30" 
+                                  : "bg-green-50 text-green-700 ring-green-600/20"
+                              }`}>
                                 {user.role}
                               </span>
                             </div>
-                            <span className="text-xs">{user.agencyName}</span>
+                            <span className={`text-xs ${
+                              mode === "dark" ? "text-gray-300" : "text-gray-600"
+                            }`}>{user.agencyName}</span>
                           </div>
                         </div>
                         <ul className="py-4 space-y-2">
@@ -431,11 +439,11 @@ const HrHeader = ({
 
                         <button
                           onClick={onLogout}
-                          className={`flex items-center w-full gap-2 border-t h-10 font-thin text-sm text-red-500 hover:text-red-600 transition-colors rounded-lg p-2
+                          className={`flex items-center w-full gap-2 border-t h-10 font-thin text-sm transition-colors rounded-lg p-2
                             ${
                               mode === "dark"
-                                ? "hover:bg-gray-800 border-gray-700"
-                                : "hover:bg-gray-100 border-gray-200"
+                                ? "text-red-400 hover:text-red-300 hover:bg-gray-800 border-gray-700"
+                                : "text-red-500 hover:text-red-600 hover:bg-gray-100 border-gray-200"
                             }`}
                         >
                           <Icon icon="mdi:logout" className="h-5 w-5" />

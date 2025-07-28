@@ -126,7 +126,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
                 </span>
               )}
             </div>
-            <div className="text-sm text-gray-500">{row.email}</div>
+            <div className="text-sm normal-case text-gray-500">{row.email}</div>
           </div>
         );
       }

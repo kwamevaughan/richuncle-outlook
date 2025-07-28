@@ -140,11 +140,6 @@ export const sidebarNav = [
     icon: "mdi:currency-usd",
     items: [
       {
-        href: "/expenses",
-        icon: "mdi:file-document-outline",
-        label: "Expenses",
-        subItems: [
-          {
             href: "/expenses",
             icon: "jam:document",
             label: "Expenses",
@@ -155,8 +150,6 @@ export const sidebarNav = [
             label: "Expense Category",
           },
         ],
-      },
-    ],
   },
   {
     category: "Contacts",

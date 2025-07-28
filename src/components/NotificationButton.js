@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import NotificationSystem from "./NotificationSystem";
+import TooltipIconButton from "./TooltipIconButton";
 
-const NotificationButton = ({ mode, user }) => {
+const NotificationButton = ({ mode, user, showLabel = false }) => {
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -59,21 +60,51 @@ const NotificationButton = ({ mode, user }) => {
 
   return (
     <div className="relative">
-      <button
-        className="flex items-center justify-center p-2 rounded-full bg-white/50 hover:-mt-1 transition-all duration-500 relative"
-        onClick={() => setNotifDropdownOpen((prev) => !prev)}
-        aria-label="Notifications"
-      >
-        <Icon
-          icon="mdi:bell-outline"
-          className="h-5 w-5 text-gray-600"
-        />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] flex items-center justify-center">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
+      {showLabel ? (
+        <button
+          className={`w-full flex items-center gap-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] relative ${
+            mode === "dark"
+              ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+              : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+          }`}
+          onClick={() => setNotifDropdownOpen((prev) => !prev)}
+          aria-label="Notifications"
+        >
+          <Icon
+            icon="mdi:bell-outline"
+            className="h-5 w-5"
+          />
+          <span>Notifications</span>
+          {unreadCount > 0 && (
+            <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] flex items-center justify-center">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </button>
+      ) : (
+        <div className="relative">
+          <TooltipIconButton
+            label={
+              <span className={mode === "dark" ? "text-white" : "text-black"}>
+                Notifications {unreadCount > 0 ? `(${unreadCount > 99 ? '99+' : unreadCount})` : ''}
+              </span>
+            }
+            mode={mode}
+            onClick={() => setNotifDropdownOpen((prev) => !prev)}
+            className="bg-white/50 hover:-mt-1 transition-all duration-500"
+          >
+            <Icon
+              icon="mdi:bell-outline"
+              className="h-5 w-5 text-gray-600"
+            />
+          </TooltipIconButton>
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] flex items-center justify-center">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </div>
+      )}
       
       <NotificationSystem
         mode={mode}

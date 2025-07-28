@@ -7,18 +7,31 @@ export default function ProfileFormSection({
   isEditing,
   isSubmitting,
   onFormDataChange,
-  onSave
+  onSave,
+  mode = "light"
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="bg-gradient-to-r from-gray-50 to-blue-50/50 px-8 py-6 border-b border-gray-100">
+    <div className={`rounded-2xl shadow-sm border overflow-hidden ${
+      mode === "dark" 
+        ? "bg-gray-800 border-gray-700" 
+        : "bg-white border-gray-100"
+    }`}>
+      <div className={`px-8 py-6 border-b ${
+        mode === "dark" 
+          ? "bg-gradient-to-r from-gray-700 to-blue-900/50 border-gray-700" 
+          : "bg-gradient-to-r from-gray-50 to-blue-50/50 border-gray-100"
+      }`}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
             <Icon icon="solar:user-id-bold" className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Profile Information</h2>
-            <p className="text-gray-600 text-sm">Manage your personal details</p>
+            <h2 className={`text-xl font-bold ${
+              mode === "dark" ? "text-white" : "text-gray-900"
+            }`}>Profile Information</h2>
+            <p className={`text-sm ${
+              mode === "dark" ? "text-gray-300" : "text-gray-600"
+            }`}>Manage your personal details</p>
           </div>
         </div>
       </div>
@@ -28,7 +41,9 @@ export default function ProfileFormSection({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Full Name */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <label className={`block text-sm font-semibold flex items-center gap-2 ${
+              mode === "dark" ? "text-gray-300" : "text-gray-700"
+            }`}>
               <Icon icon="solar:user-bold" className="w-4 h-4" />
               Full Name
             </label>
@@ -38,13 +53,23 @@ export default function ProfileFormSection({
                 value={formData.full_name}
                 onChange={(e) => onFormDataChange({ ...formData, full_name: e.target.value })}
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                  formErrors.full_name ? "border-red-300 bg-red-50" : "border-gray-200 hover:border-gray-300"
+                  formErrors.full_name 
+                    ? "border-red-300 bg-red-50" 
+                    : mode === "dark" 
+                      ? "border-gray-600 bg-gray-700 text-gray-100 hover:border-gray-500" 
+                      : "border-gray-200 hover:border-gray-300"
                 }`}
                 placeholder="Enter your full name"
               />
             ) : (
-              <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-gray-900 font-medium">{user.name}</p>
+              <div className={`px-4 py-3 rounded-xl border ${
+                mode === "dark" 
+                  ? "bg-gray-700 border-gray-600" 
+                  : "bg-gray-50 border-gray-100"
+              }`}>
+                <p className={`font-medium ${
+                  mode === "dark" ? "text-white" : "text-gray-900"
+                }`}>{user.name}</p>
               </div>
             )}
             {formErrors.full_name && (
@@ -57,7 +82,9 @@ export default function ProfileFormSection({
 
           {/* Email */}
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <label className={`block text-sm font-semibold flex items-center gap-2 ${
+              mode === "dark" ? "text-gray-300" : "text-gray-700"
+            }`}>
               <Icon icon="solar:letter-bold" className="w-4 h-4" />
               Email Address
             </label>
@@ -67,13 +94,23 @@ export default function ProfileFormSection({
                 value={formData.email}
                 onChange={(e) => onFormDataChange({ ...formData, email: e.target.value })}
                 className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                  formErrors.email ? "border-red-300 bg-red-50" : "border-gray-200 hover:border-gray-300"
+                  formErrors.email 
+                    ? "border-red-300 bg-red-50" 
+                    : mode === "dark" 
+                      ? "border-gray-600 bg-gray-700 text-gray-100 hover:border-gray-500" 
+                      : "border-gray-200 hover:border-gray-300"
                 }`}
                 placeholder="Enter your email"
               />
             ) : (
-              <div className="px-4 py-3 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-gray-900 font-medium">{user.email}</p>
+              <div className={`px-4 py-3 rounded-xl border ${
+                mode === "dark" 
+                  ? "bg-gray-700 border-gray-600" 
+                  : "bg-gray-50 border-gray-100"
+              }`}>
+                <p className={`font-medium ${
+                  mode === "dark" ? "text-white" : "text-gray-900"
+                }`}>{user.email}</p>
               </div>
             )}
             {formErrors.email && (

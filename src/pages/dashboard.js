@@ -195,21 +195,31 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
 
         {/* Low Stock Notification Box */}
         {showLowStock && (
-          <div className="flex items-center justify-between mt-4 bg-orange-100 p-2 rounded-md">
-            <p className="text-sm text-gray-500 flex gap-2">
+          <div className={`flex items-center justify-between mt-4 p-2 rounded-md ${
+            mode === "dark" 
+              ? "bg-orange-900/30 border border-orange-600/50" 
+              : "bg-orange-100"
+          }`}>
+            <p className={`text-sm flex gap-2 ${
+              mode === "dark" ? "text-gray-200" : "text-gray-500"
+            }`}>
               {stockLoading ? (
                 <span>Loading stock info...</span>
               ) : stockError ? (
-                <span className="text-red-600">{stockError}</span>
+                <span className={mode === "dark" ? "text-red-400" : "text-red-600"}>{stockError}</span>
               ) : lowStockProduct ? (
                 <>
                   Your Product{" "}
-                  <span className="font-bold text-blue-900">
+                  <span className={`font-bold ${
+                    mode === "dark" ? "text-blue-300" : "text-blue-900"
+                  }`}>
                     {lowStockProduct.name}
                   </span>{" "}
                   is running Low, already below {lowStockProduct.quantity} Pcs.
                   <button
-                    className="text-blue-900 font-bold underline"
+                    className={`font-bold underline ${
+                      mode === "dark" ? "text-blue-300 hover:text-blue-200" : "text-blue-900 hover:text-blue-700"
+                    }`}
                     onClick={() =>
                       router.push(
                         `/manage-stock?quickUpdateId=${lowStockProduct.id}`
@@ -230,7 +240,9 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
             >
               <Icon
                 icon="iconamoon:close"
-                className="text-2xl text-gray-500 hover:text-gray-700"
+                className={`text-2xl ${
+                  mode === "dark" ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"
+                }`}
               />
             </button>
           </div>

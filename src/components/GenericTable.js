@@ -178,6 +178,7 @@ export function GenericTable({
   onRefresh,
   getFieldsOrder,
   getDefaultFields,
+  mode = "light",
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
@@ -279,7 +280,9 @@ export function GenericTable({
           return (
             <td
               key={col.accessor}
-              className="px-4 py-4 text-sm text-gray-900 dark:text-white capitalize"
+              className={`px-4 py-4 text-sm capitalize ${
+                mode === "dark" ? "text-white" : "text-gray-900"
+              }`}
             >
               {col.render(row, value, index)}
             </td>
@@ -292,7 +295,9 @@ export function GenericTable({
               <Image
                 src={value}
                 alt={row.name || "Image"}
-                className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                className={`w-10 h-10 rounded-full object-cover border-2 ${
+                  mode === "dark" ? "border-gray-600" : "border-gray-200"
+                }`}
                 width={40}
                 height={40}
               />
@@ -303,7 +308,9 @@ export function GenericTable({
         return (
           <td
             key={col.accessor}
-            className="px-4 py-4 text-sm text-gray-900 dark:text-white capitalize"
+            className={`px-4 py-4 text-sm ${
+              mode === "dark" ? "text-white" : "text-gray-900"
+            }`}
           >
             {value}
           </td>
@@ -332,7 +339,7 @@ export function GenericTable({
                 icon={icon || 'mdi:help'}
                 label={tooltip || label || ''}
                 onClick={isDisabled ? undefined : () => action.onClick(row)}
-                mode="light"
+                mode={mode}
                 className={`${action.className || ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={isDisabled}
               />
@@ -344,7 +351,7 @@ export function GenericTable({
               icon="cuida:edit-outline"
               label="Edit"
               onClick={() => onEdit(row)}
-              mode="light"
+              mode={mode}
               className="bg-blue-50 text-blue-600 text-xs"
             />
           )}
@@ -353,7 +360,7 @@ export function GenericTable({
               icon="mynaui:trash"
               label="Delete"
               onClick={() => onDelete(row)}
-              mode="light"
+              mode={mode}
               className="bg-red-50 text-red-600 text-xs"
             />
           )}
@@ -376,13 +383,23 @@ export function GenericTable({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className={`rounded-xl shadow-lg border overflow-hidden ${
+      mode === "dark" 
+        ? "bg-gray-900 border-gray-700" 
+        : "bg-white border-gray-200"
+    }`}>
       {/* Header */}
       {(title || searchable || onAddNew || enableDateFilter) && (
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className={`p-6 border-b ${
+          mode === "dark" 
+            ? "border-gray-700 bg-gray-800" 
+            : "border-gray-200 bg-gray-50"
+        }`}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {title && (
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 sm:mb-0">
+              <h2 className={`text-xl font-semibold mb-2 sm:mb-0 ${
+                mode === "dark" ? "text-white" : "text-gray-900"
+              }`}>
                 {title}
               </h2>
             )}
@@ -395,14 +412,20 @@ export function GenericTable({
                     
                     <Icon
                       icon="mdi:magnify"
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                      className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
+                        mode === "dark" ? "text-gray-400" : "text-gray-400"
+                      }`}
                     />
                     <input
                       type="text"
                       placeholder="Search..."
                       value={table.searchTerm}
                       onChange={(e) => table.setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 w-56 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      className={`pl-10 pr-4 py-2 w-56 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
+                        mode === "dark" 
+                          ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                      }`}
                     />
                     {onAddNew && (
                       <button
@@ -421,7 +444,11 @@ export function GenericTable({
                     <select
                       value={table.statusFilter}
                       onChange={e => table.setStatusFilter(e.target.value)}
-                      className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className={`border rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        mode === "dark" 
+                          ? "border-gray-600 bg-gray-800 text-gray-100" 
+                          : "border-gray-300 bg-white text-gray-900"
+                      }`}
                     >
                       <option value="all">All</option>
                       {statusOptions.map(option => (
@@ -438,7 +465,11 @@ export function GenericTable({
                   <select
                     value={table.sortBy}
                     onChange={e => table.setSortBy(e.target.value)}
-                    className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className={`border rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                      mode === "dark" 
+                        ? "border-gray-600 bg-gray-800 text-gray-100" 
+                        : "border-gray-300 bg-white text-gray-900"
+                    }`}
                   >
                     <option value="recent">Recently Added</option>
                     <option value="asc">Ascending (A-Z)</option>
@@ -453,7 +484,11 @@ export function GenericTable({
                     <button
                       type="button"
                       ref={buttonRef}
-                      className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className={`flex items-center gap-2 px-3 py-2 border rounded-lg transition-colors ${
+                        mode === "dark" 
+                          ? "border-gray-600 bg-gray-800 text-gray-200 hover:bg-gray-700" 
+                          : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                      }`}
                       onClick={handleDateButtonClick}
                     >
                       <Icon icon="mdi:calendar-range" className="w-4 h-4" />
@@ -462,7 +497,11 @@ export function GenericTable({
                     {showDatePicker && ReactDOM.createPortal(
                       <div
                         ref={datePickerRef}
-                        className="z-[9999] fixed bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4"
+                        className={`z-[9999] fixed border rounded-lg shadow-lg p-4 ${
+                          mode === "dark" 
+                            ? "bg-gray-900 border-gray-700" 
+                            : "bg-white border-gray-200"
+                        }`}
                         style={{ top: popoverPosition.top, left: popoverPosition.left }}
                       >
                         <DateRange
@@ -475,7 +514,11 @@ export function GenericTable({
                         />
                         <div className="flex justify-end mt-2 gap-2">
                           <button
-                            className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
+                            className={`px-3 py-1 rounded ${
+                              mode === "dark" 
+                                ? "bg-gray-700 text-gray-100" 
+                                : "bg-gray-200 text-gray-700"
+                            }`}
                             onClick={() => {
                               setDateRange([{ startDate: null, endDate: null, key: 'selection' }]);
                               setShowDatePicker(false);
@@ -491,7 +534,9 @@ export function GenericTable({
                           </button>
                         </div>
                         {(dateRange[0].startDate && dateRange[0].endDate) && (
-                          <div className="mt-2 text-xs text-gray-600 dark:text-gray-300">
+                          <div className={`mt-2 text-xs ${
+                            mode === "dark" ? "text-gray-300" : "text-gray-600"
+                          }`}>
                             Showing from {format(dateRange[0].startDate, 'yyyy-MM-dd')} to {format(dateRange[0].endDate, 'yyyy-MM-dd')}
                           </div>
                         )}
@@ -505,7 +550,7 @@ export function GenericTable({
                   icon="mdi:refresh"
                   label="Refresh Data"
                   onClick={handleRefresh}
-                  mode="light"
+                  mode={mode}
                   className="bg-blue-50 text-blue-600 text-xs"
                 />
               </div>
@@ -543,15 +588,25 @@ export function GenericTable({
 
       {/* Bulk Actions */}
       {selectable && table.selected.length > 0 && (
-        <div className="px-6 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+        <div className={`px-6 py-3 border-b ${
+          mode === "dark" 
+            ? "bg-blue-900/20 border-blue-800" 
+            : "bg-blue-50 border-blue-200"
+        }`}>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+            <span className={`text-sm font-medium ${
+              mode === "dark" ? "text-blue-300" : "text-blue-700"
+            }`}>
               {table.selected.length} item
               {table.selected.length !== 1 ? "s" : ""} selected
             </span>
             <button
               onClick={handleBulkDelete}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                mode === "dark" 
+                  ? "bg-red-900/30 text-red-300 hover:bg-red-900/50" 
+                  : "bg-red-100 text-red-700 hover:bg-red-200"
+              }`}
             >
               <Icon icon="mdi:delete" className="w-3 h-3" />
               Delete Selected
@@ -563,7 +618,9 @@ export function GenericTable({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-800">
+          <thead className={`${
+            mode === "dark" ? "bg-gray-800" : "bg-gray-50"
+          }`}>
             <tr>
               {enableDragDrop && <th className="w-8 px-3 py-4"></th>}
               {selectable && (
@@ -584,9 +641,15 @@ export function GenericTable({
               {columns.map((col) => (
                 <th
                   key={col.accessor}
-                  className={`px-4 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 ${
+                  className={`px-4 py-4 text-left text-sm font-semibold ${
+                    mode === "dark" ? "text-gray-300" : "text-gray-600"
+                  } ${
                     col.sortable !== false
-                      ? "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 select-none"
+                      ? `cursor-pointer select-none ${
+                          mode === "dark"
+                            ? "hover:bg-gray-800"
+                            : "hover:bg-gray-100"
+                        }`
                       : ""
                   }`}
                   onClick={
@@ -628,7 +691,9 @@ export function GenericTable({
               ))}
               {/* Only render actions column if needed */}
               {(actions.length > 0 || onEdit || onDelete) && (
-                <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">
+                <th className={`px-4 py-4 text-left text-xs font-semibold ${
+                  mode === "dark" ? "text-gray-300" : "text-gray-600"
+                }`}>
                   Actions
                 </th>
               )}
@@ -642,7 +707,11 @@ export function GenericTable({
                     onReorder(paged, fromIdx, toIdx, table.page, table.pageSize)
                 : undefined
             }
-            className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700"
+            className={`${
+              mode === "dark" 
+                ? "bg-gray-900 divide-gray-700" 
+                : "bg-white divide-gray-200"
+            }`}
           >
             {enableDragDrop
               ? (item, idx) => renderRowCells(item, idx)
@@ -658,7 +727,9 @@ export function GenericTable({
                       }
                       className="px-4 py-12 text-center"
                     >
-                      <div className="text-gray-500 dark:text-gray-400">
+                      <div className={`${
+                        mode === "dark" ? "text-gray-400" : "text-gray-500"
+                      }`}>
                         <div className="flex justify-center text-4xl mb-3 ">
                           <Icon icon="mdi:table-search" className="w-10 h-10" />
                         </div>
@@ -671,7 +742,9 @@ export function GenericTable({
                     const defaultRow = (
                       <tr
                         key={row.id || index}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                        className={`transition-colors ${
+                          mode === "dark" ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                        }`}
                       >
                         {enableDragDrop && <td className="px-3 py-4"></td>}
                         {renderRowCells(row, index)}
@@ -688,9 +761,15 @@ export function GenericTable({
       </div>
 
       {/* Footer with pagination */}
-      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+      <div className={`px-6 py-4 border-t ${
+        mode === "dark" 
+          ? "bg-gray-800 border-gray-700" 
+          : "bg-gray-50 border-gray-200"
+      }`}>
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300">
+          <div className={`flex items-center gap-4 text-sm ${
+            mode === "dark" ? "text-gray-300" : "text-gray-700"
+          }`}>
             <div>
               Showing{" "}
               <span className="font-medium">
@@ -707,7 +786,11 @@ export function GenericTable({
               <select
                 value={table.pageSize}
                 onChange={(e) => table.setPageSize(Number(e.target.value))}
-                className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                className={`border rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                  mode === "dark" 
+                    ? "border-gray-600 bg-gray-800 text-gray-100" 
+                    : "border-gray-300 bg-white text-gray-900"
+                }`}
               >
                 {[5, 10, 20, 50, 100].map((size) => (
                   <option key={size} value={size}>
@@ -722,7 +805,11 @@ export function GenericTable({
             <button
               onClick={() => table.handlePage(table.page - 1)}
               disabled={table.page === 1}
-              className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`flex items-center gap-2 px-4 py-2 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                mode === "dark" 
+                  ? "border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700" 
+                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+              }`}
             >
               <Icon icon="mdi:chevron-left" className="w-4 h-4" />
               Previous
@@ -738,7 +825,11 @@ export function GenericTable({
                     className={`px-3 py-2 text-sm rounded-lg transition-colors ${
                       table.page === pageNum
                         ? "bg-blue-900 text-white shadow-sm"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        : `${
+                            mode === "dark" 
+                              ? "bg-gray-800 text-gray-300 border-gray-600 hover:bg-gray-700" 
+                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                          } border`
                     }`}
                   >
                     {pageNum}
@@ -750,7 +841,11 @@ export function GenericTable({
             <button
               onClick={() => table.handlePage(table.page + 1)}
               disabled={table.page === table.totalPages}
-              className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`flex items-center gap-2 px-4 py-2 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                mode === "dark" 
+                  ? "border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700" 
+                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+              }`}
             >
               Next
               <Icon icon="mdi:chevron-right" className="w-4 h-4" />
@@ -764,7 +859,7 @@ export function GenericTable({
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         users={filteredByDate}
-        mode="light"
+        mode={mode}
         type={exportType}
         stores={stores}
         title={exportTitle || `Export ${title || 'Data'}`}

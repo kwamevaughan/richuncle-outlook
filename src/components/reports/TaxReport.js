@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
+import ReportSummary from "./ReportSummary";
+import ReportSummaryItem from "./ReportSummaryItem";
 
 export default function TaxReport({ dateRange, selectedStore, stores, mode }) {
   const [loading, setLoading] = useState(true);
@@ -80,8 +82,12 @@ export default function TaxReport({ dateRange, selectedStore, stores, mode }) {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Tax Report</h2>
-        <p className="text-gray-600">
+        <h2 className={`text-2xl font-bold mb-2 ${
+          mode === "dark" ? "text-white" : "text-gray-900"
+        }`}>Tax Report</h2>
+        <p className={`${
+          mode === "dark" ? "text-gray-300" : "text-gray-600"
+        }`}>
           Tax calculations and reports for {dateRange.label}
         </p>
       </div>
@@ -123,90 +129,48 @@ export default function TaxReport({ dateRange, selectedStore, stores, mode }) {
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Tax Summary</h3>
-            <Icon icon="mdi:file-document-outline" className="w-6 h-6 text-gray-400" />
-          </div>
-        </div>
-        <div className="p-6">
-          {error ? (
-            <div className="text-center text-red-500 py-8">{error}</div>
-          ) : loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-500 mt-2">Loading tax data...</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Taxable Sales */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg border border-amber-200">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-amber-500 rounded-lg">
-                    <Icon icon="mdi:cash-register" className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-amber-700">Total Taxable Sales</p>
-                    <p className="text-xs text-amber-600">Sales subject to tax</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-amber-800">GHS {taxableSales.toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* Total Tax Collected */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-500 rounded-lg">
-                    <Icon icon="mdi:calculator" className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-blue-700">Total Tax Collected</p>
-                    <p className="text-xs text-blue-600">All taxes combined</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-blue-800">GHS {taxCollected.toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* VAT Collected */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-500 rounded-lg">
-                    <Icon icon="mdi:percent" className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-green-700">VAT Collected</p>
-                    <p className="text-xs text-green-600">Value Added Tax</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-green-800">GHS {vatCollected.toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* Other Taxes */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gray-500 rounded-lg">
-                    <Icon icon="mdi:receipt" className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Other Taxes</p>
-                    <p className="text-xs text-gray-600">Additional tax types</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-gray-800">GHS {otherTaxCollected.toLocaleString()}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <ReportSummary
+        title="Tax Summary"
+        icon="mdi:file-document-outline"
+        mode={mode}
+        loading={loading}
+        error={error}
+        loadingText="Loading tax data..."
+        errorText="Failed to load tax data"
+      >
+        <ReportSummaryItem
+          icon="mdi:cash-register"
+          title="Total Taxable Sales"
+          subtitle="Sales subject to tax"
+          value={`GHS ${taxableSales.toLocaleString()}`}
+          color="amber"
+          mode={mode}
+        />
+        <ReportSummaryItem
+          icon="mdi:calculator"
+          title="Total Tax Collected"
+          subtitle="All taxes combined"
+          value={`GHS ${taxCollected.toLocaleString()}`}
+          color="blue"
+          mode={mode}
+        />
+        <ReportSummaryItem
+          icon="mdi:percent"
+          title="VAT Collected"
+          subtitle="Value Added Tax"
+          value={`GHS ${vatCollected.toLocaleString()}`}
+          color="green"
+          mode={mode}
+        />
+        <ReportSummaryItem
+          icon="mdi:receipt"
+          title="Other Taxes"
+          subtitle="Additional tax types"
+          value={`GHS ${otherTaxCollected.toLocaleString()}`}
+          color="gray"
+          mode={mode}
+        />
+      </ReportSummary>
     </div>
   );
 } 

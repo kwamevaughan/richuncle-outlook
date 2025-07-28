@@ -586,12 +586,14 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
       >
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-center h-64">
-              <div className="flex items-center gap-2 text-blue-600">
-                <Icon icon="solar:loading-bold" className="animate-spin w-5 h-5" />
-                Loading profile data...
-              </div>
-            </div>
+                    <div className="flex items-center justify-center h-64">
+          <div className={`flex items-center gap-2 ${
+            mode === "dark" ? "text-blue-400" : "text-blue-600"
+          }`}>
+            <Icon icon="solar:loading-bold" className="animate-spin w-5 h-5" />
+            Loading profile data...
+          </div>
+        </div>
           </div>
         </div>
       </MainLayout>
@@ -606,7 +608,11 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex-1 bg-gradient-to-br from-gray-50 via-white to-blue-50/30 min-h-screen">
+      <div className={`flex-1 min-h-screen ${
+        mode === "dark" 
+          ? "bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900/30" 
+          : "bg-gradient-to-br from-gray-50 via-white to-blue-50/30"
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Profile Header */}
           <ProfileHeader
@@ -616,21 +622,34 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
             onEditToggle={() => setIsEditing(!isEditing)}
             onFileUpload={triggerFileUpload}
             onManageUsers={() => router.push("/users")}
+            mode={mode}
           />
 
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
             {/* Main Content */}
             <div className="xl:col-span-3 space-y-8">
               {/* Profile Information Card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-gray-50 to-blue-50/50 px-8 py-6 border-b border-gray-100">
+              <div className={`rounded-2xl shadow-sm border overflow-hidden ${
+                mode === "dark" 
+                  ? "bg-gray-800 border-gray-700" 
+                  : "bg-white border-gray-100"
+              }`}>
+                <div className={`px-8 py-6 border-b ${
+                  mode === "dark" 
+                    ? "bg-gradient-to-r from-gray-700 to-blue-900/50 border-gray-700" 
+                    : "bg-gradient-to-r from-gray-50 to-blue-50/50 border-gray-100"
+                }`}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                       <Icon icon="solar:user-id-bold" className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">Profile Information</h2>
-                      <p className="text-gray-600 text-sm">Manage your personal details</p>
+                      <h2 className={`text-xl font-bold ${
+                        mode === "dark" ? "text-white" : "text-gray-900"
+                      }`}>Profile Information</h2>
+                      <p className={`text-sm ${
+                        mode === "dark" ? "text-gray-300" : "text-gray-600"
+                      }`}>Manage your personal details</p>
                     </div>
                   </div>
                 </div>
@@ -648,6 +667,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
                     onResetCrop={handleResetCrop}
                     onRemoveImage={handleRemoveImage}
                     onImageSelect={handleImageSelect}
+                    mode={mode}
                   />
 
                   {/* Profile Form Section */}
@@ -659,6 +679,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
                     isSubmitting={isSubmitting}
                     onFormDataChange={setFormData}
                     onSave={handleUpdateProfile}
+                    mode={mode}
                   />
                 </div>
               </div>
@@ -674,6 +695,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
                 onPasswordDataChange={setPasswordData}
                 onToggleChangePassword={() => setIsChangingPassword(!isChangingPassword)}
                 onSavePassword={handleChangePassword}
+                mode={mode}
               />
             </div>
 
@@ -683,6 +705,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
               formatDate={formatDate}
               onLogout={() => setShowLogoutModal(true)}
               onDeleteAccount={() => setShowDeleteAccountModal(true)}
+              mode={mode}
             />
           </div>
         </div>
@@ -694,6 +717,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
         onClose={() => setShowDeleteAccountModal(false)}
         title="Delete Account"
         size="md"
+        mode={mode}
       >
         <div className="p-6">
           <div className="mb-4">
@@ -701,10 +725,14 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
               icon="solar:danger-triangle-bold"
               className="w-12 h-12 text-red-500 mx-auto mb-4"
             />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className={`text-lg font-medium mb-2 ${
+              mode === "dark" ? "text-white" : "text-gray-900"
+            }`}>
               Are you sure?
             </h3>
-            <p className="text-gray-600">
+            <p className={`${
+              mode === "dark" ? "text-gray-300" : "text-gray-600"
+            }`}>
               This action cannot be undone. This will permanently delete your
               account and remove all your data.
             </p>
@@ -712,7 +740,11 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
           <div className="flex justify-end space-x-3">
             <button
               onClick={() => setShowDeleteAccountModal(false)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className={`px-4 py-2 border rounded-lg transition-colors ${
+                mode === "dark" 
+                  ? "border-gray-600 text-gray-300 hover:bg-gray-700" 
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
             >
               Cancel
             </button>
@@ -733,15 +765,22 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
         onClose={() => setShowLogoutModal(false)}
         title="Sign Out"
         size="sm"
+        mode={mode}
       >
         <div className="p-6">
           <div className="mb-4">
-            <p className="text-gray-600">Are you sure you want to sign out?</p>
+            <p className={`${
+              mode === "dark" ? "text-gray-300" : "text-gray-600"
+            }`}>Are you sure you want to sign out?</p>
           </div>
           <div className="flex justify-end space-x-3">
             <button
               onClick={() => setShowLogoutModal(false)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className={`px-4 py-2 border rounded-lg transition-colors ${
+                mode === "dark" 
+                  ? "border-gray-600 text-gray-300 hover:bg-gray-700" 
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
             >
               Cancel
             </button>

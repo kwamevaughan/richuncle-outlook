@@ -14,6 +14,8 @@ import {
   Filler,
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import ReportSummary from "./ReportSummary";
+import ReportSummaryItem from "./ReportSummaryItem";
 
 // Register ChartJS components
 ChartJS.register(
@@ -187,8 +189,12 @@ export default function ProfitLossReport({ dateRange, selectedStore, stores, mod
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Profit & Loss Report</h2>
-        <p className="text-gray-600">
+        <h2 className={`text-2xl font-bold mb-2 ${
+          mode === "dark" ? "text-white" : "text-gray-900"
+        }`}>Profit & Loss Report</h2>
+        <p className={`${
+          mode === "dark" ? "text-gray-300" : "text-gray-600"
+        }`}>
           Financial performance and profitability for {dateRange.label}
         </p>
       </div>
@@ -234,9 +240,15 @@ export default function ProfitLossReport({ dateRange, selectedStore, stores, mod
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Profit Margins */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className={`rounded-xl border p-6 ${
+          mode === "dark" 
+            ? "bg-gray-800 border-gray-700" 
+            : "bg-white border-gray-200"
+        }`}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Profit Margins</h3>
+            <h3 className={`text-lg font-semibold ${
+              mode === "dark" ? "text-white" : "text-gray-900"
+            }`}>Profit Margins</h3>
             <Icon icon="mdi:pie-chart" className="w-5 h-5 text-gray-400" />
           </div>
           <div className="h-64">
@@ -263,9 +275,15 @@ export default function ProfitLossReport({ dateRange, selectedStore, stores, mod
         </div>
 
         {/* Revenue vs Expenses */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className={`rounded-xl border p-6 ${
+          mode === "dark" 
+            ? "bg-gray-800 border-gray-700" 
+            : "bg-white border-gray-200"
+        }`}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Revenue vs Expenses</h3>
+            <h3 className={`text-lg font-semibold ${
+              mode === "dark" ? "text-white" : "text-gray-900"
+            }`}>Revenue vs Expenses</h3>
             <Icon icon="mdi:chart-bar" className="w-5 h-5 text-gray-400" />
           </div>
           <div className="h-64">
@@ -302,9 +320,15 @@ export default function ProfitLossReport({ dateRange, selectedStore, stores, mod
         </div>
 
         {/* Monthly Performance */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 lg:col-span-2">
+        <div className={`rounded-xl border p-6 lg:col-span-2 ${
+          mode === "dark" 
+            ? "bg-gray-800 border-gray-700" 
+            : "bg-white border-gray-200"
+        }`}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Monthly Performance Trend</h3>
+            <h3 className={`text-lg font-semibold ${
+              mode === "dark" ? "text-white" : "text-gray-900"
+            }`}>Monthly Performance Trend</h3>
             <Icon icon="mdi:chart-line" className="w-5 h-5 text-gray-400" />
           </div>
           <div className="h-64">
@@ -341,125 +365,58 @@ export default function ProfitLossReport({ dateRange, selectedStore, stores, mod
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Profit & Loss Summary</h3>
-            <Icon icon="mdi:finance" className="w-6 h-6 text-gray-400" />
-          </div>
-        </div>
-        <div className="p-6">
-          {error ? (
-            <div className="text-center text-red-500 py-8">{error}</div>
-          ) : loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-500 mt-2">Loading financial data...</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Revenue */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-emerald-500 rounded-lg">
-                    <Icon icon="mdi:cash" className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-emerald-700">Total Revenue</p>
-                    <p className="text-xs text-emerald-600">Income from sales</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-emerald-800">GHS {revenue.toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* COGS */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border border-red-200">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-red-500 rounded-lg">
-                    <Icon icon="mdi:package-variant" className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-red-700">Cost of Goods Sold</p>
-                    <p className="text-xs text-red-600">Direct costs</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-red-800">GHS {cogs.toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* Gross Profit */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-500 rounded-lg">
-                    <Icon icon="mdi:chart-line" className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-blue-700">Gross Profit</p>
-                    <p className="text-xs text-blue-600">Revenue - COGS</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`text-lg font-bold ${grossProfit >= 0 ? 'text-blue-800' : 'text-red-600'}`}>
-                    GHS {grossProfit.toLocaleString()}
-                    {grossProfit < 0 && <Icon icon="mdi:trending-down" className="inline-block ml-1 w-4 h-4" />}
-                  </p>
-                </div>
-              </div>
-
-              {/* Expenses */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-orange-500 rounded-lg">
-                    <Icon icon="mdi:file-document-outline" className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-orange-700">Operating Expenses</p>
-                    <p className="text-xs text-orange-600">Business costs</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-orange-800">GHS {expenses.toLocaleString()}</p>
-                </div>
-              </div>
-
-              {/* Net Profit - Highlighted */}
-              <div className={`flex items-center justify-between p-6 rounded-lg border-2 ${
-                netProfit >= 0 
-                  ? 'bg-gradient-to-r from-green-50 to-green-100 border-green-300' 
-                  : 'bg-gradient-to-r from-red-50 to-red-100 border-red-300'
-              }`}>
-                <div className="flex items-center space-x-3">
-                  <div className={`p-3 rounded-lg ${netProfit >= 0 ? 'bg-green-500' : 'bg-red-500'}`}>
-                    <Icon icon="mdi:finance" className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className={`text-lg font-semibold ${netProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                      Net Profit
-                    </p>
-                    <p className={`text-sm ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {netProfit >= 0 ? 'Profit after all expenses' : 'Loss after all expenses'}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-800' : 'text-red-600'}`}>
-                    GHS {netProfit.toLocaleString()}
-                  </p>
-                  {netProfit < 0 && (
-                    <div className="flex items-center justify-end mt-1">
-                      <Icon icon="mdi:alert-circle" className="w-4 h-4 text-red-500 mr-1" />
-                      <span className="text-xs text-red-600 font-medium">Loss</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <ReportSummary
+        title="Profit & Loss Summary"
+        icon="mdi:finance"
+        mode={mode}
+        loading={loading}
+        error={error}
+        loadingText="Loading financial data..."
+        errorText="Failed to load financial data"
+      >
+        <ReportSummaryItem
+          icon="mdi:cash"
+          title="Total Revenue"
+          subtitle="Income from sales"
+          value={`GHS ${revenue.toLocaleString()}`}
+          color="green"
+          mode={mode}
+        />
+        <ReportSummaryItem
+          icon="mdi:package-variant"
+          title="Cost of Goods Sold"
+          subtitle="Direct costs"
+          value={`GHS ${cogs.toLocaleString()}`}
+          color="red"
+          mode={mode}
+        />
+        <ReportSummaryItem
+          icon="mdi:chart-line"
+          title="Gross Profit"
+          subtitle="Revenue - COGS"
+          value={`GHS ${grossProfit.toLocaleString()}`}
+          color="blue"
+          mode={mode}
+        />
+        <ReportSummaryItem
+          icon="mdi:file-document-outline"
+          title="Operating Expenses"
+          subtitle="Business costs"
+          value={`GHS ${expenses.toLocaleString()}`}
+          color="orange"
+          mode={mode}
+        />
+        <ReportSummaryItem
+          icon="mdi:finance"
+          title="Net Profit"
+          subtitle={netProfit >= 0 ? 'Profit after all expenses' : 'Loss after all expenses'}
+          value={`GHS ${netProfit.toLocaleString()}`}
+          color={netProfit >= 0 ? "green" : "red"}
+          mode={mode}
+          showAlert={netProfit < 0}
+          alertText="Loss"
+        />
+      </ReportSummary>
     </div>
   );
 } 

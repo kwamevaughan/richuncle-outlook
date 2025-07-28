@@ -74,9 +74,9 @@ const TooltipIconButton = ({
         >
           <div
             className={`
-              bg-white text-xs py-2 px-3 rounded-full shadow-lg
+              text-xs py-2 px-3 rounded-full shadow-lg
               text-center w-max
-              ${mode === "dark" ? "text-gray-200 bg-gray-900" : "text-gray-900 bg-white"}
+              ${mode === "dark" ? "text-gray-200 bg-gray-900 border border-gray-700" : "text-gray-900 bg-white border border-gray-200"}
             `}
             style={{
               opacity: 1,

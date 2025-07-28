@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import { paymentMethods } from "@/constants/paymentMethods";
 import toast from "react-hot-toast";
 
-const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayment, onPrintOrder, onResetOrder, onHoldSale, onLayaway, onRetrieveSales, onRetrieveLayaways, hasOpenSession = true, sessionCheckLoading = false, user }) => {
+const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayment, onPrintOrder, onResetOrder, onHoldSale, onLayaway, onRetrieveSales, onRetrieveLayaways, hasOpenSession = true, sessionCheckLoading = false, user, mode = "light" }) => {
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showHoldOptions, setShowHoldOptions] = useState(false);
   const [showRetrieveOptions, setShowRetrieveOptions] = useState(false);
@@ -46,7 +46,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
   };
 
   return (
-    <div className="fixed bottom-0 left-0 w-full z-50 bg-white/80 py-4 sm:py-6 flex justify-center shadow-xl border border-gray-200 border-t-2 border-white/20 backdrop-blur-sm">
+    <div className={`fixed bottom-0 left-0 w-full z-50 py-4 sm:py-6 flex justify-center shadow-xl border-t-2 backdrop-blur-sm ${mode === "dark" ? "bg-gray-900/80 border-gray-600 border-gray-700/20" : "bg-white/80 border-gray-200 border-white/20"}`}>
       <div className="relative flex flex-wrap justify-center items-center w-full px-2 sm:px-4 gap-2 sm:gap-4 md:gap-8 lg:gap-10">
         <div className="flex flex-wrap gap-2 sm:gap-3">
           <div className="relative">
@@ -62,9 +62,9 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               Retrieve
             </button>
             {showRetrieveOptions && (
-              <div ref={retrieveRef} className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[120px] sm:min-w-[160px]">
+              <div ref={retrieveRef} className={`absolute bottom-14 left-0 border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[120px] sm:min-w-[160px] ${mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-white border-gray-300"}`}>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-blue-50 rounded transition font-semibold text-sm text-gray-700"
+                  className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${mode === "dark" ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-blue-50"}`}
                   onClick={() => {
                     setShowRetrieveOptions(false);
                     onRetrieveSales && onRetrieveSales();
@@ -74,7 +74,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
                   Sales
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-green-50 rounded transition font-semibold text-sm text-gray-700"
+                  className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${mode === "dark" ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-green-50"}`}
                   onClick={() => {
                     setShowRetrieveOptions(false);
                     onRetrieveLayaways && onRetrieveLayaways();
@@ -84,7 +84,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
                   Layaways
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded transition text-xs text-gray-500"
+                  className={`flex items-center gap-2 px-4 py-2 rounded transition text-xs ${mode === "dark" ? "text-gray-400 hover:bg-gray-700" : "text-gray-500 hover:bg-gray-100"}`}
                   onClick={() => setShowRetrieveOptions(false)}
                 >
                   <Icon icon="mdi:close" className="w-5 h-5" />
@@ -107,9 +107,9 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               Hold
             </button>
             {showHoldOptions && (
-              <div ref={holdRef} className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[120px] sm:min-w-[160px]">
+              <div ref={holdRef} className={`absolute bottom-14 left-0 border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[120px] sm:min-w-[160px] ${mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-white border-gray-300"}`}>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-blue-50 rounded transition font-semibold text-sm text-gray-700"
+                  className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${mode === "dark" ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-blue-50"}`}
                   onClick={() => {
                     setShowHoldOptions(false);
                     onHoldSale && onHoldSale();
@@ -119,7 +119,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
                   Hold Sale
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-green-50 rounded transition font-semibold text-sm text-gray-700"
+                  className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${mode === "dark" ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-green-50"}`}
                   onClick={() => {
                     setShowHoldOptions(false);
                     onLayaway && onLayaway();
@@ -129,7 +129,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
                   Layaway
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded transition text-xs text-gray-500"
+                  className={`flex items-center gap-2 px-4 py-2 rounded transition text-xs ${mode === "dark" ? "text-gray-400 hover:bg-gray-700" : "text-gray-500 hover:bg-gray-100"}`}
                   onClick={() => setShowHoldOptions(false)}
                 >
                   <Icon icon="mdi:close" className="w-5 h-5" />
@@ -169,29 +169,29 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               Select Payment Method
             </button>
             {showPaymentOptions && (
-              <div className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex gap-2 sm:gap-4 z-50">
+              <div className={`absolute bottom-14 left-0 border rounded-lg shadow-lg p-4 flex gap-2 sm:gap-4 z-50 ${mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-white border-gray-300"}`}>
                 {paymentMethods.map((pm) => (
                   <button
                     key={pm.key}
-                    className="flex flex-col items-center gap-1 px-4 py-2 hover:bg-blue-50 rounded transition"
+                    className={`flex flex-col items-center gap-1 px-4 py-2 rounded transition ${mode === "dark" ? "hover:bg-gray-700" : "hover:bg-blue-50"}`}
                     onClick={() => {
                       setShowPaymentOptions(false);
                       onSelectPayment && onSelectPayment(pm.key);
                     }}
                   >
                     <Icon icon={pm.icon} className="w-7 h-7 mb-1" />
-                    <span className="font-semibold text-sm">{pm.label}</span>
+                    <span className={`font-semibold text-sm ${mode === "dark" ? "text-white" : "text-black"}`}>{pm.label}</span>
                   </button>
                 ))}
                 <button
-                  className="flex flex-col items-center gap-1 px-4 py-2 hover:bg-gray-100 rounded transition"
+                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded transition ${mode === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
                   onClick={() => setShowPaymentOptions(false)}
                 >
                   <Icon
                     icon="mdi:close"
-                    className="w-6 h-6 mb-1 text-gray-500"
+                    className={`w-6 h-6 mb-1 ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}
                   />
-                  <span className="text-xs text-gray-500">Cancel</span>
+                  <span className={`text-xs ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>Cancel</span>
                 </button>
               </div>
             )}
@@ -210,7 +210,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
           </button>
         </div>
         {hasProducts && (
-          <div className="font-bold text-lg whitespace-nowrap mt-2 sm:mt-0">
+          <div className={`font-bold text-lg whitespace-nowrap mt-2 sm:mt-0 ${mode === "dark" ? "text-white" : "text-black"}`}>
             Total Payable: GHS {totalPayable.toLocaleString()}
           </div>
         )}

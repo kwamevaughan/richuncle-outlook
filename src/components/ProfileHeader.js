@@ -6,7 +6,8 @@ export default function ProfileHeader({
   uploadingImage, 
   onEditToggle, 
   onFileUpload, 
-  onManageUsers 
+  onManageUsers,
+  mode = "light"
 }) {
   return (
     <div className="mb-8">
@@ -46,10 +47,16 @@ export default function ProfileHeader({
 
           {/* User Info */}
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+            <h1 className={`text-4xl font-bold mb-2 ${
+              mode === "dark" 
+                ? "bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent" 
+                : "bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent"
+            }`}>
               {user.name}
             </h1>
-            <p className="text-gray-600 text-lg mb-3 flex items-center gap-2">
+            <p className={`text-lg mb-3 flex items-center gap-2 ${
+              mode === "dark" ? "text-gray-300" : "text-gray-600"
+            }`}>
               <Icon icon="solar:letter-bold" className="w-4 h-4" />
               {user.email}
             </p>

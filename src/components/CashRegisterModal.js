@@ -15,7 +15,7 @@ import ZReportView from "@/components/ZReportView";
 
 const allowedRoles = ["cashier", "manager", "admin"];
 
-const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRegister, setSelectedRegister, setCurrentSessionId, registers = [], setRegisters }) => {
+const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRegister, setSelectedRegister, setCurrentSessionId, registers = [], setRegisters, mode = "light" }) => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [movements, setMovements] = useState([]);
@@ -530,10 +530,12 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
         title="Cash Register"
         width="max-w-4xl"
         disableOutsideClick={true}
+        mode={mode}
       >
         <div className="space-y-6">
           {user && user.role === "admin" && (
             <AddRegisterForm
+              mode={mode}
               onRegisterAdded={async () => {
                 try {
                   const response = await fetch("/api/registers");
@@ -559,6 +561,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
             selectedRegister={selectedRegister}
             setSelectedRegister={setSelectedRegister}
             disabled={user?.role === 'cashier' || filteredRegisters.length === 0}
+            mode={mode}
           />
           {error && <div className="text-red-600">{error}</div>}
           {loading ? (
@@ -568,7 +571,9 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                   icon="mdi:loading"
                   className="animate-spin w-12 h-12 text-blue-600 mx-auto mb-4"
                 />
-                <p className="text-gray-600">Loading...</p>
+                <p className={`${
+                  mode === "dark" ? "text-gray-300" : "text-gray-600"
+                }`}>Loading...</p>
               </div>
             </div>
           ) : zReport ? (
@@ -576,6 +581,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
               zReport={zReport} 
               onPrint={handlePrintZReport} 
               showPrintButton={true} 
+              mode={mode}
               onClose={() => {
                 setZReport(null);
                 setSession(null);
@@ -585,15 +591,23 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
           ) : session ? (
             <>
               {/* Session Overview - Always Visible */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+              <div className={`rounded-xl p-6 border ${
+                mode === "dark" 
+                  ? "bg-gradient-to-r from-gray-800 to-gray-700 border-gray-600" 
+                  : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
+              }`}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <h3 className="text-xl font-bold text-gray-800">
+                    <h3 className={`text-xl font-bold ${
+                      mode === "dark" ? "text-white" : "text-gray-800"
+                    }`}>
                       Register Open
                     </h3>
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className={`text-sm ${
+                    mode === "dark" ? "text-gray-300" : "text-gray-600"
+                  }`}>
                     Session Duration: {Math.floor(sessionDuration / 60)}h{" "}
                     {sessionDuration % 60}m {sessionDurationSeconds}s
                   </div>
@@ -601,20 +615,32 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                 
                 {/* Cash Overview Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-gray-600">Opening Cash</div>
+                  <div className={`rounded-lg p-4 shadow-sm ${
+                    mode === "dark" ? "bg-gray-800" : "bg-white"
+                  }`}>
+                    <div className={`text-sm ${
+                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    }`}>Opening Cash</div>
                     <div className="font-bold text-lg text-blue-600">
                       GHS {Number(session.opening_cash).toLocaleString()}
                     </div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-gray-600">Current Cash</div>
+                  <div className={`rounded-lg p-4 shadow-sm ${
+                    mode === "dark" ? "bg-gray-800" : "bg-white"
+                  }`}>
+                    <div className={`text-sm ${
+                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    }`}>Current Cash</div>
                     <div className="font-bold text-lg text-green-600">
                       GHS {Number(currentCash).toLocaleString()}
                     </div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-gray-600">Cash In</div>
+                  <div className={`rounded-lg p-4 shadow-sm ${
+                    mode === "dark" ? "bg-gray-800" : "bg-white"
+                  }`}>
+                    <div className={`text-sm ${
+                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    }`}>Cash In</div>
                     <div className="font-bold text-lg text-emerald-600">
                       GHS{" "}
                       {Number(
@@ -624,8 +650,12 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                       ).toLocaleString()}
                     </div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="text-sm text-gray-600">Cash Out</div>
+                  <div className={`rounded-lg p-4 shadow-sm ${
+                    mode === "dark" ? "bg-gray-800" : "bg-white"
+                  }`}>
+                    <div className={`text-sm ${
+                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    }`}>Cash Out</div>
                     <div className="font-bold text-lg text-red-600">
                       GHS{" "}
                       {Number(
@@ -668,15 +698,21 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
 
               {/* Quick Cash In Modal */}
               {showQuickCashIn && (
-                <div className="bg-white rounded-xl p-6 shadow-sm border">
+                <div className={`rounded-xl p-6 shadow-sm border ${
+                  mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
+                }`}>
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold flex items-center gap-2">
+                    <h4 className={`font-semibold flex items-center gap-2 ${
+                      mode === "dark" ? "text-white" : "text-gray-900"
+                    }`}>
                       <Icon icon="mdi:plus-circle" className="w-5 h-5 text-green-600" />
                       Quick Cash In
                     </h4>
                     <button
                       onClick={() => setShowQuickCashIn(false)}
-                      className="text-gray-500 hover:text-gray-700"
+                      className={`${
+                        mode === "dark" ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"
+                      }`}
                     >
                       <Icon icon="mdi:close" className="w-5 h-5" />
                     </button>
@@ -687,14 +723,22 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                       value={cashInAmount || ""}
                       onChange={(e) => setCashInAmount(Number(e.target.value))}
                       placeholder="Amount"
-                      className="border rounded px-3 py-2"
+                      className={`border rounded px-3 py-2 ${
+                        mode === "dark" 
+                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                      }`}
                     />
                     <input
                       type="text"
                       value={cashInReason}
                       onChange={(e) => setCashInReason(e.target.value)}
                       placeholder="Reason"
-                      className="border rounded px-3 py-2"
+                      className={`border rounded px-3 py-2 ${
+                        mode === "dark" 
+                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                      }`}
                     />
                     <button
                       onClick={handleCashIn}
@@ -709,15 +753,21 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
 
               {/* Quick Cash Out Modal */}
               {showQuickCashOut && (
-                <div className="bg-white rounded-xl p-6 shadow-sm border">
+                <div className={`rounded-xl p-6 shadow-sm border ${
+                  mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
+                }`}>
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold flex items-center gap-2">
+                    <h4 className={`font-semibold flex items-center gap-2 ${
+                      mode === "dark" ? "text-white" : "text-gray-900"
+                    }`}>
                       <Icon icon="mdi:minus-circle" className="w-5 h-5 text-red-600" />
                       Quick Cash Out
                     </h4>
                     <button
                       onClick={() => setShowQuickCashOut(false)}
-                      className="text-gray-500 hover:text-gray-700"
+                      className={`${
+                        mode === "dark" ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"
+                      }`}
                     >
                       <Icon icon="mdi:close" className="w-5 h-5" />
                     </button>
@@ -728,14 +778,22 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                       value={cashOutAmount || ""}
                       onChange={(e) => setCashOutAmount(Number(e.target.value))}
                       placeholder="Amount"
-                      className="border rounded px-3 py-2"
+                      className={`border rounded px-3 py-2 ${
+                        mode === "dark" 
+                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                      }`}
                     />
                     <input
                       type="text"
                       value={cashOutReason}
                       onChange={(e) => setCashOutReason(e.target.value)}
                       placeholder="Reason"
-                      className="border rounded px-3 py-2"
+                      className={`border rounded px-3 py-2 ${
+                        mode === "dark" 
+                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                      }`}
                     />
                     <button
                       onClick={handleCashOut}
@@ -752,17 +810,21 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
 
               {/* History Section - Collapsible */}
               {showHistory && (
-                <div className="bg-white rounded-xl p-6 shadow-sm border">
-                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                <div className={`rounded-xl p-6 shadow-sm border ${
+                  mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
+                }`}>
+                  <h4 className={`font-semibold mb-4 flex items-center gap-2 ${
+                    mode === "dark" ? "text-white" : "text-gray-900"
+                  }`}>
                     <Icon icon="mdi:history" className="w-5 h-5 text-gray-600" />
                     Movement History
                   </h4>
-                  <MovementLog movements={movements} userMap={userMap} />
+                  <MovementLog movements={movements} userMap={userMap} mode={mode} />
                 </div>
               )}
 
               {/* Sales Summary */}
-              <SalesSummary session={session} salesSummary={salesSummary} movements={movements} />
+              <SalesSummary session={session} salesSummary={salesSummary} movements={movements} mode={mode} />
 
               <CashCountSection
                 session={session}
@@ -774,24 +836,37 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                 setCloseNote={setCloseNote}
                 handleCloseRegister={handleCloseRegister}
                 actionLoading={actionLoading}
+                mode={mode}
               />
             </>
           ) : (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                mode === "dark" ? "bg-gray-700" : "bg-gray-100"
+              }`}>
                 <Icon
                   icon="material-symbols:point-of-sale"
-                  className="w-8 h-8 text-gray-400"
+                  className={`w-8 h-8 ${
+                    mode === "dark" ? "text-gray-500" : "text-gray-400"
+                  }`}
                 />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className={`text-lg font-semibold mb-2 ${
+                mode === "dark" ? "text-white" : "text-gray-900"
+              }`}>
                 Register Closed
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className={`mb-6 ${
+                mode === "dark" ? "text-gray-300" : "text-gray-600"
+              }`}>
                 Open the register to start a new session
               </p>
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
+              <div className={`rounded-xl p-6 shadow-sm border ${
+                mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
+              }`}>
+                <h4 className={`font-semibold mb-4 flex items-center gap-2 ${
+                  mode === "dark" ? "text-white" : "text-gray-900"
+                }`}>
                   <Icon
                     icon="material-symbols:open-in-new"
                     className="w-5 h-5 text-green-600"
@@ -814,7 +889,11 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
                       )
                     }
                     placeholder="Opening Cash Amount"
-                    className="border rounded px-3 py-2"
+                    className={`border rounded px-3 py-2 ${
+                      mode === "dark" 
+                        ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+                        : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                    }`}
                   />
                   <button
                     onClick={handleOpenRegister}
@@ -844,7 +923,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
           users={exportType === 'products'
             ? (zReport?.data?.productsSold || zReport?.productsSold || [])
             : Object.entries(zReport?.data?.paymentBreakdown || zReport?.paymentBreakdown || {}).map(([type, amount]) => ({ type, amount }))}
-          mode="light"
+          mode={mode}
           type="zreport"
           title="Export Z-Report Data"
           stores={[]}
@@ -875,22 +954,29 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
           title="Close Register?"
           width="max-w-md"
           disableOutsideClick={true}
+          mode={mode}
         >
           <div className="p-2">
-            <p className="text-gray-600 mb-6">
+            <p className={`mb-6 ${
+              mode === "dark" ? "text-gray-300" : "text-gray-600"
+            }`}>
               Are you sure you want to close the register? This will end the
               current session.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowCloseConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
+                className={`flex-1 px-4 py-2 border rounded-lg ${
+                  mode === "dark" 
+                    ? "border-gray-600 text-gray-200 bg-gray-700 hover:bg-gray-600" 
+                    : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                }`}
               >
                 Cancel
               </button>
               <button
                 onClick={doCloseRegister}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 Close Register
               </button>
@@ -906,22 +992,29 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
           title="Large Cash Out"
           width="max-w-md"
           disableOutsideClick={true}
+          mode={mode}
         >
           <div className="p-2">
-            <p className="text-gray-600 mb-6">
+            <p className={`mb-6 ${
+              mode === "dark" ? "text-gray-300" : "text-gray-600"
+            }`}>
               You are about to remove GHS {cashOutAmount} from the register.
               This is a large amount. Are you sure?
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLargeOutConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700"
+                className={`flex-1 px-4 py-2 border rounded ${
+                  mode === "dark" 
+                    ? "border-gray-600 text-gray-200 bg-gray-700 hover:bg-gray-600" 
+                    : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                }`}
               >
                 Cancel
               </button>
               <button
                 onClick={doCashOut}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
               >
                 Confirm Cash Out
               </button>

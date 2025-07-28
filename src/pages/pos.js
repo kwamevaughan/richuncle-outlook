@@ -46,22 +46,21 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [modernReceiptData, setModernReceiptData] = useState(null);
   const [selectedRegister, setSelectedRegister] = useState(null);
 
-  // Check for open cash register session for cashiers
+  // Check for open cash register session for all users
   const [hasOpenSession, setHasOpenSession] = useState(true);
   const [sessionCheckLoading, setSessionCheckLoading] = useState(false);
   const [autoShowRegister, setAutoShowRegister] = useState(false);
   const checkSession = async () => {
     setSessionCheckLoading(true);
-    if (user?.role === 'cashier') {
-      const res = await fetch('/api/cash-register-sessions?status=open');
-      const data = await res.json();
-      setHasOpenSession(data.success && data.data && data.data.length > 0);
-      if (!(data.success && data.data && data.data.length > 0)) {
-        import('react-hot-toast').then(({ toast }) => toast.error('You must open a cash register before making sales.'));
-        setAutoShowRegister(true);
-      } else {
-        setAutoShowRegister(false);
-      }
+    // Check for open session for all users (cashiers, managers, admins)
+    const res = await fetch('/api/cash-register-sessions?status=open');
+    const data = await res.json();
+    setHasOpenSession(data.success && data.data && data.data.length > 0);
+    if (!(data.success && data.data && data.data.length > 0)) {
+      import('react-hot-toast').then(({ toast }) => toast.error('You must open a cash register before making sales.'));
+      setAutoShowRegister(true);
+    } else {
+      setAutoShowRegister(false);
     }
     setSessionCheckLoading(false);
   };
@@ -664,6 +663,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             allUsers={allUsers}
             orderId={orderId}
             setOrderId={setOrderId}
+            mode={mode}
           />
           
           <PosProductList
@@ -677,6 +677,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             reloadProducts={reloadProducts}
             hasOpenSession={hasOpenSession}
             sessionCheckLoading={sessionCheckLoading}
+            mode={mode}
           />
         </div>
         <OrderHistoryModal
@@ -897,6 +898,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           hasOpenSession={hasOpenSession}
           sessionCheckLoading={sessionCheckLoading}
           user={user}
+          mode={mode}
         />
         {(() => {
           if (showPaymentModal) {

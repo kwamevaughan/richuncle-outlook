@@ -29,7 +29,8 @@ const PaymentForm = ({
   paymentData: propPaymentData, // Added propPaymentData to the destructuring
   layawayTotal, // Added layawayTotal prop
   products = [], // Added products prop
-  quantities = {} // Added quantities prop
+  quantities = {}, // Added quantities prop
+  mode = "light" // Added mode prop
 }) => {
   const [paymentData, setPaymentData] = useState(() => {
     // If props.paymentData has payments, use it as base
@@ -249,7 +250,9 @@ const PaymentForm = ({
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>
                 Card Type
               </label>
               <select
@@ -258,7 +261,11 @@ const PaymentForm = ({
                   ...prev,
                   cardType: e.target.value
                 }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  mode === "dark" 
+                    ? "border-gray-600 bg-gray-700 text-gray-100" 
+                    : "border-gray-300 bg-white text-gray-900"
+                }`}
               >
                 <option value="">Select Card Type</option>
                 <option value="visa">Visa</option>
@@ -268,7 +275,9 @@ const PaymentForm = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>
                 Reference Number
               </label>
               <input
@@ -278,7 +287,11 @@ const PaymentForm = ({
                   ...prev,
                   referenceNumber: e.target.value
                 }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  mode === "dark" 
+                    ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                }`}
                 placeholder="Enter transaction reference"
               />
             </div>
@@ -289,7 +302,9 @@ const PaymentForm = ({
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>
                 Bank Name
               </label>
               <input
@@ -299,12 +314,18 @@ const PaymentForm = ({
                   ...prev,
                   bankName: e.target.value
                 }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  mode === "dark" 
+                    ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                }`}
                 placeholder="Enter bank name"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>
                 Reference Number
               </label>
               <input
@@ -314,7 +335,11 @@ const PaymentForm = ({
                   ...prev,
                   referenceNumber: e.target.value
                 }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  mode === "dark" 
+                    ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                }`}
                 placeholder="Enter transfer reference"
               />
             </div>
@@ -325,28 +350,50 @@ const PaymentForm = ({
         return (
           <div className="space-y-4">
             {/* Streamlined Split Payment Summary */}
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4">
+            <div className={`border rounded-xl p-4 ${
+              mode === "dark" 
+                ? "bg-gradient-to-r from-purple-900/30 to-blue-900/30 border-purple-600" 
+                : "bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200"
+            }`}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Icon icon="mdi:call-split" className="w-6 h-6 text-purple-600" />
-                  <span className="font-bold text-lg text-purple-800">Split Payment</span>
+                  <span className={`font-bold text-lg ${
+                    mode === "dark" ? "text-purple-300" : "text-purple-800"
+                  }`}>Split Payment</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-gray-600">Total</div>
-                  <div className="text-xl font-bold text-purple-700">GHS {total.toLocaleString()}</div>
+                  <div className={`text-sm ${
+                    mode === "dark" ? "text-gray-300" : "text-gray-600"
+                  }`}>Total</div>
+                  <div className={`text-xl font-bold ${
+                    mode === "dark" ? "text-purple-300" : "text-purple-700"
+                  }`}>GHS {total.toLocaleString()}</div>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="bg-green-100 rounded-lg p-3">
-                  <div className="text-sm text-green-600">Paid</div>
-                  <div className="text-lg font-bold text-green-700">
+                <div className={`rounded-lg p-3 ${
+                  mode === "dark" ? "bg-green-900/30" : "bg-green-100"
+                }`}>
+                  <div className={`text-sm ${
+                    mode === "dark" ? "text-green-300" : "text-green-600"
+                  }`}>Paid</div>
+                  <div className={`text-lg font-bold ${
+                    mode === "dark" ? "text-green-300" : "text-green-700"
+                  }`}>
                     GHS {paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
                   </div>
                 </div>
-                <div className="bg-orange-100 rounded-lg p-3">
-                  <div className="text-sm text-orange-600">Remaining</div>
-                  <div className="text-lg font-bold text-orange-700">
+                <div className={`rounded-lg p-3 ${
+                  mode === "dark" ? "bg-orange-900/30" : "bg-orange-100"
+                }`}>
+                  <div className={`text-sm ${
+                    mode === "dark" ? "text-orange-300" : "text-orange-600"
+                  }`}>Remaining</div>
+                  <div className={`text-lg font-bold ${
+                    mode === "dark" ? "text-orange-300" : "text-orange-700"
+                  }`}>
                     GHS {(total - paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)).toLocaleString()}
                   </div>
                 </div>
@@ -356,7 +403,9 @@ const PaymentForm = ({
             {/* Quick Split Payment Options */}
             {paymentData.remainingAmount > 0 && (
               <div className="space-y-3">
-                <div className="text-sm font-medium text-gray-700">Quick Split Options:</div>
+                <div className={`text-sm font-medium ${
+                  mode === "dark" ? "text-gray-200" : "text-gray-700"
+                }`}>Quick Split Options:</div>
                 <div className="flex justify-center">
                   <button
                     type="button"
@@ -392,7 +441,11 @@ const PaymentForm = ({
                         toast.success(`Split: Cash (GHS ${half.toLocaleString()}) + MoMo (GHS ${remaining.toLocaleString()})`);
                       }
                     }}
-                    className="flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-green-100 to-blue-100 border border-green-300 rounded-xl hover:from-green-200 hover:to-blue-200 transition-all font-semibold text-gray-700 w-full max-w-md"
+                    className={`flex items-center justify-center gap-3 p-4 border rounded-xl transition-all font-semibold w-full max-w-md ${
+                      mode === "dark" 
+                        ? "bg-gradient-to-r from-green-900/30 to-blue-900/30 border-green-600 hover:from-green-900/50 hover:to-blue-900/50 text-gray-200" 
+                        : "bg-gradient-to-r from-green-100 to-blue-100 border-green-300 hover:from-green-200 hover:to-blue-200 text-gray-700"
+                    }`}
                   >
                     <Icon icon="mdi:cash" className="w-6 h-6 text-green-600" />
                     <span>Split 50/50</span>
@@ -404,10 +457,14 @@ const PaymentForm = ({
 
             {/* Custom Amount Input */}
             {paymentData.remainingAmount > 0 && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className={`border rounded-lg p-4 ${
+                mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-gray-50 border-gray-200"
+              }`}>
                 <div className="flex items-center gap-2 mb-3">
                   <Icon icon="mdi:plus-circle" className="w-5 h-5 text-blue-600" />
-                  <span className="font-semibold text-gray-800">Custom Amount</span>
+                  <span className={`font-semibold ${
+                    mode === "dark" ? "text-gray-200" : "text-gray-800"
+                  }`}>Custom Amount</span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
@@ -424,7 +481,11 @@ const PaymentForm = ({
                           newSplitAmount: e.target.value
                         }));
                       }}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        mode === "dark" 
+                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
+                      }`}
                       placeholder={`Max: GHS ${paymentData.remainingAmount.toLocaleString()}`}
                     />
                   </div>
@@ -432,8 +493,12 @@ const PaymentForm = ({
                   <div className="grid grid-cols-2 gap-3">
                     <TooltipIconButton
                       label={`Enter amount in Cash, pay remaining (GHS ${(paymentData.remainingAmount - (parseFloat(paymentData.newSplitAmount) || 0)).toLocaleString()}) in Mobile Money`}
-                      mode="light"
-                      className="flex items-center justify-center gap-2 p-3 bg-green-100 border border-green-300 rounded-lg hover:bg-green-200 transition-colors font-medium text-green-700 w-full"
+                      mode={mode}
+                      className={`flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors font-medium w-full ${
+                        mode === "dark" 
+                          ? "bg-green-900/30 border-green-600 hover:bg-green-900/50 text-green-300" 
+                          : "bg-green-100 border-green-300 hover:bg-green-200 text-green-700"
+                      }`}
                       onClick={() => {
                         if (!paymentData.newSplitAmount) {
                           toast.error("Please enter an amount");
@@ -486,8 +551,12 @@ const PaymentForm = ({
                     
                     <TooltipIconButton
                       label={`Enter amount in Mobile Money, pay remaining (GHS ${(paymentData.remainingAmount - (parseFloat(paymentData.newSplitAmount) || 0)).toLocaleString()}) in Cash`}
-                      mode="light"
-                      className="flex items-center justify-center gap-2 p-3 bg-blue-100 border border-blue-300 rounded-lg hover:bg-blue-200 transition-colors font-medium text-blue-700 w-full"
+                      mode={mode}
+                      className={`flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors font-medium w-full ${
+                        mode === "dark" 
+                          ? "bg-blue-900/30 border-blue-600 hover:bg-blue-900/50 text-blue-300" 
+                          : "bg-blue-100 border-blue-300 hover:bg-blue-200 text-blue-700"
+                      }`}
                       onClick={() => {
                         if (!paymentData.newSplitAmount) {
                           toast.error("Please enter an amount");
@@ -544,22 +613,30 @@ const PaymentForm = ({
 
             {/* Payment List - Simplified */}
             {paymentData.splitPayments.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className={`border rounded-lg p-4 ${
+                mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
+              }`}>
                 <div className="flex items-center gap-2 mb-3">
                   <Icon icon="mdi:format-list-bulleted" className="w-5 h-5 text-gray-600" />
-                  <span className="font-semibold text-gray-800">Payment Summary</span>
+                  <span className={`font-semibold ${
+                    mode === "dark" ? "text-gray-200" : "text-gray-800"
+                  }`}>Payment Summary</span>
                 </div>
                 
                 <div className="space-y-2">
                   {paymentData.splitPayments.map((payment, index) => (
-                    <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={payment.id} className={`flex items-center justify-between p-3 rounded-lg ${
+                      mode === "dark" ? "bg-gray-700" : "bg-gray-50"
+                    }`}>
                       <div className="flex items-center gap-3">
                         <Icon 
                           icon={getPaymentTypeIcon(payment.method)} 
                           className="w-5 h-5 text-blue-600" 
                         />
                         <span className="font-medium">{getPaymentTypeLabel(payment.method)}</span>
-                        <span className="text-sm text-gray-500">
+                        <span className={`text-sm ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}>
                           {new Date(payment.timestamp).toLocaleTimeString()}
                         </span>
                       </div>
@@ -591,15 +668,21 @@ const PaymentForm = ({
                   ))}
                 </div>
                 
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className={`mt-4 pt-4 border-t ${
+                  mode === "dark" ? "border-gray-600" : "border-gray-200"
+                }`}>
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold">Total Paid:</span>
+                    <span className={`font-semibold ${
+                      mode === "dark" ? "text-gray-200" : "text-gray-900"
+                    }`}>Total Paid:</span>
                     <span className="font-semibold text-green-600">
                       GHS {paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mt-1">
-                    <span className="font-semibold">Remaining:</span>
+                    <span className={`font-semibold ${
+                      mode === "dark" ? "text-gray-200" : "text-gray-900"
+                    }`}>Remaining:</span>
                     <span className={`font-semibold ${paymentData.remainingAmount > 0 ? 'text-orange-600' : 'text-green-600'}`}>
                       GHS {paymentData.remainingAmount.toLocaleString()}
                     </span>
@@ -623,9 +706,17 @@ const PaymentForm = ({
     <div className="fixed inset-0 z-[60] overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 transition-all duration-500 backdrop-blur-sm bg-gradient-to-br from-white/20 via-blue-50/30 to-blue-50/20"
+        className={`fixed inset-0 transition-all duration-500 backdrop-blur-sm ${
+          mode === "dark" 
+            ? "bg-gradient-to-br from-gray-900/80 via-gray-800/60 to-gray-900/80" 
+            : "bg-gradient-to-br from-white/20 via-blue-50/30 to-blue-50/20"
+        }`}
         style={{
-          backgroundImage: `
+          backgroundImage: mode === "dark" ? `
+            radial-gradient(circle at 20% 80%, rgba(55, 65, 81, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(31, 41, 55, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(75, 85, 99, 0.2) 0%, transparent 50%)
+          ` : `
             radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
             radial-gradient(circle at 80% 20%, rgba(0, 123, 255, 0.15) 0%, transparent 50%),
             radial-gradient(circle at 40% 40%, rgba(100, 149, 237, 0.1) 0%, transparent 50%)
@@ -635,7 +726,11 @@ const PaymentForm = ({
 
       {/* Modal Content */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-5xl rounded-3xl transform transition-all duration-500 h-full overflow-hidden shadow-2xl shadow-black/20 bg-white/20 text-gray-900 border border-white/20 backdrop-blur-xl">
+        <div className={`relative w-full max-w-5xl rounded-3xl transform transition-all duration-500 h-full overflow-hidden shadow-2xl backdrop-blur-xl ${
+          mode === "dark" 
+            ? "bg-gray-800/90 text-gray-100 border border-gray-600/50 shadow-black/40" 
+            : "bg-white/20 text-gray-900 border border-white/20 shadow-black/20"
+        }`}>
           {/* Header */}
           <div className="relative px-8 py-3 overflow-hidden bg-[#172840]">
             <div className="absolute inset-0 opacity-30">
@@ -668,7 +763,9 @@ const PaymentForm = ({
           {!isLayaway && <OrderItems products={products} quantities={quantities} />}
 
           {/* Content */}
-          <div className="p-8 overflow-y-auto max-h-[calc(85vh-120px)] bg-white/60" style={{ minHeight: '200px' }}>
+          <div className={`p-8 overflow-y-auto max-h-[calc(85vh-120px)] ${
+            mode === "dark" ? "bg-gray-700/60" : "bg-white/60"
+          }`} style={{ minHeight: '200px' }}>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Layaway Summary or Payment Summary */}
               {isLayaway ? (
@@ -694,7 +791,9 @@ const PaymentForm = ({
               {/* Payment Type Selection for Layaway Finalization */}
               {isLayaway && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${
+                    mode === "dark" ? "text-gray-200" : "text-gray-700"
+                  }`}>
                     Payment Method
                   </label>
                   <select
@@ -706,7 +805,11 @@ const PaymentForm = ({
                       }
                       // You can add more logic for other types if needed
                     }}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      mode === "dark" 
+                        ? "border-gray-600 bg-gray-700 text-gray-100" 
+                        : "border-gray-300 bg-white text-gray-900"
+                    }`}
                   >
                     <option value="cash">Cash</option>
                     <option value="momo">Mobile Money</option>
@@ -728,10 +831,16 @@ const PaymentForm = ({
               {/* Payment Type - Read Only (hide if layaway and type selector is shown) */}
               {!isLayaway && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${
+                    mode === "dark" ? "text-gray-200" : "text-gray-700"
+                  }`}>
                     Payment Type
                   </label>
-                  <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-700 font-medium flex items-center gap-2">
+                  <div className={`w-full border rounded-lg px-4 py-3 font-medium flex items-center gap-2 ${
+                    mode === "dark" 
+                      ? "border-gray-600 bg-gray-700 text-gray-200" 
+                      : "border-gray-300 bg-gray-50 text-gray-700"
+                  }`}>
                     <Icon icon={getPaymentTypeIcon(paymentType)} className="w-5 h-5 text-green-600" />
                     {getPaymentTypeLabel(paymentType)}
                   </div>
@@ -749,18 +858,29 @@ const PaymentForm = ({
                 paymentData={paymentData}
                 setPaymentData={setPaymentData}
                 currentUser={user}
+                mode={mode}
               />
 
               {/* Notes Section */}
-              <PaymentNotes paymentData={paymentData} setPaymentData={setPaymentData} />
+              <PaymentNotes paymentData={paymentData} setPaymentData={setPaymentData} mode={mode} />
 
 
               {/* Action Buttons - sticky at bottom for better accessibility */}
-              <div className="flex justify-end gap-4 pt-4 border-t  bottom-0 bg-white/80 z-10" style={{background: 'rgba(255,255,255,0.95)'}}>
+              <div className={`flex justify-end gap-4 pt-4 border-t bottom-0 z-10 ${
+                mode === "dark" 
+                  ? "bg-gray-800/95 border-gray-600" 
+                  : "bg-white/80 border-gray-200"
+              }`} style={{
+                background: mode === "dark" ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255,255,255,0.95)'
+              }}>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                    mode === "dark" 
+                      ? "text-gray-200 bg-gray-700 hover:bg-gray-600" 
+                      : "text-gray-700 bg-gray-100 hover:bg-gray-200"
+                  }`}
                 >
                   Cancel
                 </button>

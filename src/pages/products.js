@@ -218,8 +218,11 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
             )}
             {error && <div className="text-red-600 mb-4">{error}</div>}
 
-            <div className="bg-white dark:bg-gray-900 rounded-xl">
+            <div className={`rounded-xl ${
+              mode === "dark" ? "bg-gray-900" : "bg-white"
+            }`}>
               <GenericTable
+                mode={mode}
                 data={products}
                 columns={[
                   { Header: "SKU", accessor: "sku", sortable: true },

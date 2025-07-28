@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import TooltipIconButton from "@/components/TooltipIconButton";
 
-const LanguageSwitch = ({ mode }) => {
+const LanguageSwitch = ({ mode, showLabel = false }) => {
   const dropdownRef = useRef(null);
   const selectRef = useRef(null);
   const initialLoadRef = useRef(true);
@@ -269,20 +269,40 @@ const LanguageSwitch = ({ mode }) => {
         }}
       />
 
-      <TooltipIconButton
-        label={<span className="text-black">Change Language</span>}
-        mode={mode}
-        onClick={() => setIsOpen(!isOpen)}
-        className="bg-white/50 hover:-mt-1 transition-all duration-500"
-      >
-        <Icon
-          icon={
-            languages.find((lang) => lang.name === selectedLanguage)?.flag ||
-            languages[0].flag
-          }
-          className="h-6 w-6 rounded-full"
-        />
-      </TooltipIconButton>
+      {showLabel ? (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-full flex items-center gap-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+            mode === "dark"
+              ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+              : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+          }`}
+        >
+          <Icon
+            icon={
+              languages.find((lang) => lang.name === selectedLanguage)?.flag ||
+              languages[0].flag
+            }
+            className="h-5 w-5 rounded-full"
+          />
+          <span>Language</span>
+        </button>
+      ) : (
+        <TooltipIconButton
+          label={<span className={mode === "dark" ? "text-white" : "text-black"}>Change Language</span>}
+          mode={mode}
+          onClick={() => setIsOpen(!isOpen)}
+          className="bg-white/50 hover:-mt-1 transition-all duration-500"
+        >
+          <Icon
+            icon={
+              languages.find((lang) => lang.name === selectedLanguage)?.flag ||
+              languages[0].flag
+            }
+            className="h-6 w-6 rounded-full"
+          />
+        </TooltipIconButton>
+      )}
 
       {isOpen && (
         <div

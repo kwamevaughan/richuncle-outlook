@@ -433,7 +433,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                     {errorModal.message}
                   </div>
                   <button
-                    className="mt-4 px-6 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                    className="mt-4 px-6 py-2 rounded bg-blue-600 text-white bg-blue-700"
                     onClick={() =>
                       setErrorModal({ open: false, message: "" })
                     }

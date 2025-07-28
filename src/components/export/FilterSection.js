@@ -20,8 +20,8 @@ export default function FilterSection({
                 <label
                     className={`block text-sm font-medium mb-2 ${
                         mode === "dark"
-                            ? "text-gray-200 bg-gray-800"
-                            : "text-[#231812] bg-white"
+                            ? "text-gray-200"
+                            : "text-gray-900"
                     }`}
                 >
                     Filter by Status
@@ -32,7 +32,7 @@ export default function FilterSection({
                     className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f05d23] text-sm ${
                         mode === "dark"
                             ? "bg-gray-700 border-gray-600 text-white"
-                            : "bg-gray-50 border-gray-300 text-[#231812]"
+                            : "bg-white border-gray-300 text-gray-900"
                     }`}
                 >
                     {statuses.map((status) => (
@@ -46,8 +46,8 @@ export default function FilterSection({
                 <label
                     className={`block text-sm font-medium mb-2 ${
                         mode === "dark"
-                            ? "text-gray-200 bg-gray-800"
-                            : "text-[#231812] bg-white"
+                            ? "text-gray-200"
+                            : "text-gray-900"
                     }`}
                 >
                     Filter by Date Range
@@ -56,18 +56,21 @@ export default function FilterSection({
                     onClick={() => setShowDatePicker(!showDatePicker)}
                     className={`w-full p-2 rounded-lg flex items-center justify-between transition duration-200 shadow-md ${
                         mode === "dark"
-                            ? "bg-gray-700 text-white hover:bg-gray-600"
-                            : "bg-gray-200 text-[#231812] hover:bg-gray-300"
+                            ? "bg-gray-800 text-white hover:bg-gray-700"
+                            : "bg-white text-gray-700 hover:bg-gray-300 border border-gray-300"
                     }`}
+                    style={mode === "dark" ? { backgroundColor: "#1f2937" } : {}}
                 >
-                    <span>
+                    <span className={mode === "dark" ? "text-white" : "text-gray-900"}>
                         {dateRange[0].startDate && dateRange[0].endDate
                             ? `${dateRange[0].startDate.toLocaleDateString()} - ${dateRange[0].endDate.toLocaleDateString()}`
                             : "Select Date Range"}
                     </span>
                     <Icon
                         icon={showDatePicker ? "mdi:chevron-up" : "mdi:chevron-down"}
-                        className="w-5 h-5 text-[#f05d23]"
+                        className={`w-5 h-5 ${
+                            mode === "dark" ? "text-blue-400" : "text-blue-600"
+                        }`}
                     />
                 </button>
                 {showDatePicker && (

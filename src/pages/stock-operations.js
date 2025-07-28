@@ -428,27 +428,37 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-1 bg-gray-50 min-h-screen">
+      <div className={`flex flex-1 min-h-screen ${
+        mode === "dark" ? "bg-gray-900" : "bg-gray-50"
+      }`}>
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                  <h1 className={`text-3xl font-bold mb-2 flex items-center gap-3 ${
+                    mode === "dark" ? "text-white" : "text-gray-900"
+                  }`}>
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                       <Icon icon="mdi:tools" className="w-6 h-6 text-white" />
                     </div>
                     Stock Operations
                   </h1>
-                  <p className="text-gray-600">
+                  <p className={`${
+                    mode === "dark" ? "text-gray-300" : "text-gray-600"
+                  }`}>
                     Manage stock adjustments and transfers in one place
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => fetchData()}
-                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 shadow-sm"
+                    className={`px-4 py-2 border rounded-lg transition-colors flex items-center gap-2 shadow-sm ${
+                      mode === "dark" 
+                        ? "bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700" 
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
                   >
                     <Icon icon="mdi:refresh" className="w-4 h-4" />
                     Refresh
@@ -472,15 +482,25 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
             </div>
 
             {/* Tabs */}
-            <div className="bg-white rounded-lg shadow-sm border mb-6">
-              <div className="border-b border-gray-200">
+            <div className={`rounded-lg shadow-sm border mb-6 ${
+              mode === "dark" 
+                ? "bg-gray-800 border-gray-700" 
+                : "bg-white border-gray-200"
+            }`}>
+              <div className={`border-b ${
+                mode === "dark" ? "border-gray-700" : "border-gray-200"
+              }`}>
                 <nav className="flex space-x-8 px-6">
                   <button
                     onClick={() => setActiveTab("adjustments")}
                     className={`py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === "adjustments"
                         ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        : `border-transparent ${
+                            mode === "dark" 
+                              ? "text-gray-400 hover:text-gray-200 hover:border-gray-600" 
+                              : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                          }`
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -493,7 +513,11 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                     className={`py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === "transfers"
                         ? "border-blue-500 text-blue-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                        : `border-transparent ${
+                            mode === "dark" 
+                              ? "text-gray-400 hover:text-gray-200 hover:border-gray-600" 
+                              : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                          }`
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -509,9 +533,13 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                 {activeTab === "adjustments" ? (
                   <div>
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">Recent Adjustments</h3>
+                      <h3 className={`text-lg font-semibold ${
+                        mode === "dark" ? "text-white" : "text-gray-900"
+                      }`}>Recent Adjustments</h3>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">
+                        <span className={`text-sm ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}>
                           {adjustments.length} total adjustments
                         </span>
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -521,15 +549,25 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                     {loading ? (
                       <div className="text-center py-12">
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-gray-500 font-medium">Loading adjustments...</p>
+                        <p className={`font-medium ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}>Loading adjustments...</p>
                       </div>
                     ) : adjustments.length === 0 ? (
                       <div className="text-center py-12">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Icon icon="mdi:clipboard-text" className="w-8 h-8 text-gray-400" />
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                          mode === "dark" ? "bg-gray-700" : "bg-gray-100"
+                        }`}>
+                          <Icon icon="mdi:clipboard-text" className={`w-8 h-8 ${
+                            mode === "dark" ? "text-gray-500" : "text-gray-400"
+                          }`} />
                         </div>
-                        <h4 className="text-lg font-medium text-gray-900 mb-2">No adjustments yet</h4>
-                        <p className="text-gray-500 mb-4">Create your first stock adjustment to get started</p>
+                        <h4 className={`text-lg font-medium mb-2 ${
+                          mode === "dark" ? "text-white" : "text-gray-900"
+                        }`}>No adjustments yet</h4>
+                        <p className={`mb-4 ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}>Create your first stock adjustment to get started</p>
                         <button
                           onClick={handleOpenAdjustmentModal}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -541,7 +579,11 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                     ) : (
                       <div className="space-y-3">
                         {adjustments.slice(0, 10).map((adjustment) => (
-                          <div key={adjustment.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200 hover:border-gray-300">
+                          <div key={adjustment.id} className={`border rounded-xl p-5 hover:shadow-md transition-all duration-200 ${
+                            mode === "dark" 
+                              ? "bg-gray-800 border-gray-700 hover:border-gray-600" 
+                              : "bg-white border-gray-200 hover:border-gray-300"
+                          }`}>
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
@@ -562,17 +604,23 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                                     />
                                   </div>
                                   <div>
-                                    <div className="font-semibold text-gray-900 text-lg">
+                                    <div className={`font-semibold text-lg ${
+                                      mode === "dark" ? "text-white" : "text-gray-900"
+                                    }`}>
                                       {adjustment.product?.name || 'Unknown Product'}
                                     </div>
-                                    <div className="text-sm text-gray-500 flex items-center gap-2">
+                                    <div className={`text-sm flex items-center gap-2 ${
+                                      mode === "dark" ? "text-gray-400" : "text-gray-500"
+                                    }`}>
                                       <Icon icon="mdi:identifier" className="w-4 h-4" />
                                       {adjustment.reference_number}
                                     </div>
                                   </div>
                                 </div>
                                 
-                                <div className="flex items-center gap-4 text-sm text-gray-600 mt-3">
+                                <div className={`flex items-center gap-4 text-sm mt-3 ${
+                                  mode === "dark" ? "text-gray-300" : "text-gray-600"
+                                }`}>
                                   <div className="flex items-center gap-1">
                                     <Icon icon="mdi:calendar" className="w-4 h-4" />
                                     {new Date(adjustment.adjustment_date).toLocaleDateString('en-US', {
@@ -637,13 +685,19 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                             </div>
                             
                             {/* Adjustment Details */}
-                            <div className="mt-3 pt-3 border-t border-gray-100">
+                            <div className={`mt-3 pt-3 border-t ${
+                              mode === "dark" ? "border-gray-700" : "border-gray-100"
+                            }`}>
                               <div className="flex items-center justify-between text-sm">
-                                <div className="text-gray-600">
+                                <div className={`${
+                                  mode === "dark" ? "text-gray-300" : "text-gray-600"
+                                }`}>
                                   <span className="font-medium">Reason:</span> {adjustment.reason}
                                 </div>
                                 {adjustment.notes && (
-                                  <div className="text-gray-500 max-w-xs truncate">
+                                  <div className={`max-w-xs truncate ${
+                                    mode === "dark" ? "text-gray-400" : "text-gray-500"
+                                  }`}>
                                     "{adjustment.notes}"
                                   </div>
                                 )}
@@ -654,7 +708,11 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                         
                         {adjustments.length > 10 && (
                           <div className="text-center pt-4">
-                            <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                            <button className={`font-medium text-sm ${
+                              mode === "dark" 
+                                ? "text-blue-400 hover:text-blue-300" 
+                                : "text-blue-600 hover:text-blue-700"
+                            }`}>
                               View all {adjustments.length} adjustments →
                             </button>
                           </div>
@@ -665,9 +723,13 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                 ) : (
                   <div>
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">Recent Transfers</h3>
+                      <h3 className={`text-lg font-semibold ${
+                        mode === "dark" ? "text-white" : "text-gray-900"
+                      }`}>Recent Transfers</h3>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">
+                        <span className={`text-sm ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}>
                           {transfers.length} total transfers
                         </span>
                         <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -677,15 +739,25 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                     {loading ? (
                       <div className="text-center py-12">
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-gray-500 font-medium">Loading transfers...</p>
+                        <p className={`font-medium ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}>Loading transfers...</p>
                       </div>
                     ) : transfers.length === 0 ? (
                       <div className="text-center py-12">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Icon icon="mdi:truck-delivery-outline" className="w-8 h-8 text-gray-400" />
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                          mode === "dark" ? "bg-gray-700" : "bg-gray-100"
+                        }`}>
+                          <Icon icon="mdi:truck-delivery-outline" className={`w-8 h-8 ${
+                            mode === "dark" ? "text-gray-500" : "text-gray-400"
+                          }`} />
                         </div>
-                        <h4 className="text-lg font-medium text-gray-900 mb-2">No transfers yet</h4>
-                        <p className="text-gray-500 mb-4">Create your first stock transfer to get started</p>
+                        <h4 className={`text-lg font-medium mb-2 ${
+                          mode === "dark" ? "text-white" : "text-gray-900"
+                        }`}>No transfers yet</h4>
+                        <p className={`mb-4 ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}>Create your first stock transfer to get started</p>
                         <button
                           onClick={() => setShowTransferModal(true)}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -697,7 +769,11 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                     ) : (
                       <div className="space-y-3">
                         {transfers.slice(0, 10).map((transfer) => (
-                          <div key={transfer.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200 hover:border-gray-300">
+                          <div key={transfer.id} className={`border rounded-xl p-5 hover:shadow-md transition-all duration-200 ${
+                            mode === "dark" 
+                              ? "bg-gray-800 border-gray-700 hover:border-gray-600" 
+                              : "bg-white border-gray-200 hover:border-gray-300"
+                          }`}>
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
@@ -705,17 +781,23 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                                     <Icon icon="mdi:truck-delivery" className="w-5 h-5 text-white" />
                                   </div>
                                   <div>
-                                    <div className="font-semibold text-gray-900 text-lg">
+                                    <div className={`font-semibold text-lg ${
+                                      mode === "dark" ? "text-white" : "text-gray-900"
+                                    }`}>
                                       {transfer.source_name} → {transfer.destination_name}
                                     </div>
-                                    <div className="text-sm text-gray-500 flex items-center gap-2">
+                                    <div className={`text-sm flex items-center gap-2 ${
+                                      mode === "dark" ? "text-gray-400" : "text-gray-500"
+                                    }`}>
                                       <Icon icon="mdi:identifier" className="w-4 h-4" />
                                       {transfer.transfer_number}
                                     </div>
                                   </div>
                                 </div>
                                 
-                                <div className="flex items-center gap-4 text-sm text-gray-600 mt-3">
+                                <div className={`flex items-center gap-4 text-sm mt-3 ${
+                                  mode === "dark" ? "text-gray-300" : "text-gray-600"
+                                }`}>
                                   <div className="flex items-center gap-1">
                                     <Icon icon="mdi:calendar" className="w-4 h-4" />
                                     {new Date(transfer.transfer_date).toLocaleDateString('en-US', {
@@ -797,8 +879,12 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                             
                             {/* Transfer Details */}
                             {transfer.notes && (
-                              <div className="mt-3 pt-3 border-t border-gray-100">
-                                <div className="text-sm text-gray-600">
+                              <div className={`mt-3 pt-3 border-t ${
+                                mode === "dark" ? "border-gray-700" : "border-gray-100"
+                              }`}>
+                                <div className={`text-sm ${
+                                  mode === "dark" ? "text-gray-300" : "text-gray-600"
+                                }`}>
                                   <span className="font-medium">Notes:</span> {transfer.notes}
                                 </div>
                               </div>
@@ -808,7 +894,11 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                         
                         {transfers.length > 10 && (
                           <div className="text-center pt-4">
-                            <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                            <button className={`font-medium text-sm ${
+                              mode === "dark" 
+                                ? "text-blue-400 hover:text-blue-300" 
+                                : "text-blue-600 hover:text-blue-700"
+                            }`}>
                               View all {transfers.length} transfers →
                             </button>
                           </div>
@@ -844,7 +934,11 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
                 </div>
                 <button
                   onClick={() => setAdjustmentData(prev => ({ ...prev, reference_number: generateReferenceNumber() }))}
-                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                  className={`text-xs underline ${
+                    mode === "dark" 
+                      ? "text-blue-400 hover:text-blue-300" 
+                      : "text-blue-600 hover:text-blue-800"
+                  }`}
                 >
                   Generate New
                 </button>

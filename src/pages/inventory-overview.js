@@ -618,7 +618,7 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
               </div>
 
               {/* Enhanced Statistics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white rounded-lg p-4 shadow-sm border">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">

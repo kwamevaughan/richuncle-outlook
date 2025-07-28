@@ -174,6 +174,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
             </div>
 
             <div className="flex justify-center items-center w-full gap-2 sm:gap-4 flex-wrap">
+              {/* Core POS Actions - Always Visible */}
               <TooltipIconButton
                 label="Cash Register"
                 mode={mode}
@@ -204,90 +205,135 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 />
               </TooltipIconButton>
 
-              {user?.role !== "cashier" && (
+              {/* All Other Actions - Consolidated Dropdown */}
+              <div className="relative" ref={addNewDropdownRef}>
                 <TooltipIconButton
-                  label="View Orders"
+                  label="More Actions"
                   mode={mode}
                   className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px]"
-                  onClick={onOpenOrderHistory}
+                  onClick={() => setAddNewDropdownOpen(!addNewDropdownOpen)}
                 >
                   <Icon
-                    icon="material-symbols-light:order-approve-outline"
+                    icon="mdi:dots-horizontal"
                     className="h-6 w-6 sm:h-7 sm:w-7 text-gray-500"
                   />
                 </TooltipIconButton>
-              )}
 
-              <TooltipIconButton
-                label="Today's Sales"
-                mode={mode}
-                className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px]"
-                onClick={() => setShowSalesModal(true)}
-              >
-                <Icon icon="mdi:cart-sale" className="h-6 w-6 sm:h-7 sm:w-7 text-gray-500" />
-              </TooltipIconButton>
-
-              <TooltipIconButton
-                label="Sales Return"
-                mode={mode}
-                className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px]"
-                onClick={() => setShowSalesReturnModal(true)}
-              >
-                <Icon icon="prime:undo" className="h-6 w-6 sm:h-7 sm:w-7 text-gray-500" />
-              </TooltipIconButton>
-
-              {user?.role !== "cashier" && (
-                <TooltipIconButton
-                  label="Today's Profit"
-                  mode={mode}
-                  className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px]"
-                  onClick={() => setShowProfitModal(true)}
-                >
-                  <Icon
-                    icon="hugeicons:chart-increase"
-                    className="h-6 w-6 sm:h-7 sm:w-7 text-gray-500"
-                  />
-                </TooltipIconButton>
-              )}
-
-              <LanguageSwitch mode={mode} />
-
-              {user?.role !== "cashier" && (
-                <NotificationButton mode={mode} user={user} />
-              )}
-
-              <TooltipIconButton
-                label={
-                  <span
-                    className={mode === "dark" ? "text-black" : "text-black"}
+                {addNewDropdownOpen && (
+                  <div
+                    className={`absolute top-full mt-2 right-0 w-56 rounded-xl shadow-lg z-20 ${
+                      mode === "dark"
+                        ? "bg-gray-900 text-gray-100"
+                        : "bg-white/95 text-black"
+                    }`}
                   >
-                    {mode === "dark"
-                      ? "Switch to Light Mode"
-                      : "Switch to Dark Mode"}
-                  </span>
-                }
-                onClick={toggleMode}
-                mode={mode}
-                className="select-none bg-white/50 hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px] px-2 py-2 sm:px-1 sm:py-1"
-              >
-                <Icon
-                  icon={
-                    mode === "dark"
-                      ? "line-md:sunny-filled-loop-to-moon-filled-alt-loop-transition"
-                      : "line-md:moon-alt-to-sunny-outline-loop-transition"
-                  }
-                  className={`h-6 w-6 sm:h-6 sm:w-6 ${
-                    mode === "dark" ? "text-blue-900" : "text-yellow-500"
-                  }`}
-                />
-              </TooltipIconButton>
+                    <div className="p-2 space-y-1">
+                      {/* POS Actions */}
+                      <button
+                        onClick={() => {
+                          setAddNewDropdownOpen(false);
+                          setShowSalesReturnModal(true);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                          mode === "dark"
+                            ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                            : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Icon icon="prime:undo" className="h-5 w-5" />
+                        <span>Sales Return</span>
+                      </button>
 
-              <FullscreenToggle mode={mode} />
+                      {/* Admin/Manager Actions */}
+                      {user?.role !== "cashier" && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setAddNewDropdownOpen(false);
+                              onOpenOrderHistory();
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                              mode === "dark"
+                                ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                                : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                            }`}
+                          >
+                            <Icon icon="material-symbols-light:order-approve-outline" className="h-5 w-5" />
+                            <span>View Orders</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setAddNewDropdownOpen(false);
+                              setShowSalesModal(true);
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                              mode === "dark"
+                                ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                                : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                            }`}
+                          >
+                            <Icon icon="mdi:cart-sale" className="h-5 w-5" />
+                            <span>Today's Sales</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setAddNewDropdownOpen(false);
+                              setShowProfitModal(true);
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                              mode === "dark"
+                                ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                                : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                            }`}
+                          >
+                            <Icon icon="hugeicons:chart-increase" className="h-5 w-5" />
+                            <span>Today's Profit</span>
+                          </button>
+                        </>
+                      )}
+
+                      {/* System Actions */}
+                      <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                      
+                      <div className="px-3">
+                        <LanguageSwitch mode={mode} showLabel={true} />
+                      </div>
+
+                      {user?.role !== "cashier" && (
+                        <div className="px-3">
+                          <NotificationButton mode={mode} user={user} showLabel={true} />
+                        </div>
+                      )}
+
+                                                <button
+                            onClick={() => {
+                              setAddNewDropdownOpen(false);
+                              toggleMode();
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                              mode === "dark"
+                                ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                                : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                            }`}
+                          >
+                            <Icon icon={mode === "dark" ? "line-md:sunny-filled-loop-to-moon-filled-alt-loop-transition" : "line-md:moon-alt-to-sunny-outline-loop-transition"} className="h-5 w-5" />
+                            <span>{mode === "dark" ? "Light Mode" : "Dark Mode"}</span>
+                          </button>
+
+                      <div className="px-3">
+                        <FullscreenToggle mode={mode} showLabel={true} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <TooltipIconButton
                 label={
                   <span
-                    className={mode === "dark" ? "text-black" : "text-black"}
+                    className={mode === "dark" ? "text-white" : "text-black"}
                   >
                     {dropdownOpen ? "Close Profile" : "Open Profile"}
                   </span>

@@ -241,10 +241,10 @@ const HrSidebar = ({
               .map((item) => (
                 <div
                   key={item.href}
-                  className={`flex items-center gap-2 px-2 mt-4 pt-4 pb-4 mb-2 rounded-lg font-bold text-gray-500 text-sm tracking-wide cursor-pointer transition-all duration-300 hover:bg-orange-50 ${
+                  className={`flex items-center gap-2 px-2 mt-4 pt-4 pb-4 mb-2 rounded-lg font-bold text-sm tracking-wide cursor-pointer transition-all duration-300 ${
                     mode === "dark"
-                      ? "bg-white/10 text-gray-200 hover:bg-white/20"
-                      : "bg-white"
+                      ? "bg-gray-800/20 text-gray-200 hover:bg-gray-700 hover:text-white"
+                      : "bg-white text-gray-500 hover:bg-orange-50 hover:text-gray-700"
                   } ${!isOpen && !isMobile ? "justify-center" : ""}`}
                   onClick={() => handleNavigation(item.href, item.label)}
                 >
@@ -279,7 +279,11 @@ const HrSidebar = ({
                 >
                   {index !== 0 && <div className="my-2" />}
                   <div
-                    className={`flex items-center justify-between text-md tracking-wide font-medium text-gray-600 px-2 py-3 cursor-pointer transition-all duration-300 rounded-lg hover:bg-orange-50 hover:shadow-sm ${
+                    className={`flex items-center justify-between text-md tracking-wide font-medium px-2 py-3 cursor-pointer transition-all duration-300 rounded-lg hover:shadow-sm ${
+                      mode === "dark"
+                        ? "text-gray-200 hover:bg-gray-700 hover:text-white"
+                        : "text-gray-600 hover:bg-orange-50 hover:text-gray-700"
+                    } ${
                       !isOpen && !isMobile ? "justify-center" : ""
                     }`}
                     onClick={() => handleCategoryInteraction(category)}
@@ -373,12 +377,12 @@ const HrSidebar = ({
                                     handleNavigation(href, label);
                                   }
                                 }}
-                                className={`relative py-2 px-2 flex items-center justify-between font-medium text-sm w-full text-gray-700 cursor-pointer rounded-lg hover:shadow-md transition-all duration-200 group mb-1 ${isActiveItem} ${
+                                className={`relative py-2 px-2 flex items-center justify-between font-medium text-sm w-full cursor-pointer rounded-lg hover:shadow-md transition-all duration-200 group mb-1 ${isActiveItem} ${
                                   !isOpen && !isMobile ? "justify-center" : ""
                                 } ${
                                   mode === "dark"
-                                    ? "bg-white/10 text-gray-200 hover:bg-white/20"
-                                    : ""
+                                    ? "bg-gray-800/20 text-gray-200 hover:bg-gray-700 hover:text-white"
+                                    : "text-gray-700 hover:text-gray-800"
                                 }`}
                               >
                                 <div
@@ -421,7 +425,9 @@ const HrSidebar = ({
                                   }`}
                                 >
                                   <ul
-                                    className={`ml-2 pl-4 border-l-2 border-gray-300 flex flex-col`}
+                                    className={`ml-2 pl-4 border-l-2 flex flex-col ${
+                                      mode === "dark" ? "border-gray-600" : "border-gray-300"
+                                    }`}
                                   >
                                     {subItems.map(
                                       ({
@@ -441,15 +447,17 @@ const HrSidebar = ({
                                                 subLabel
                                               )
                                             }
-                                            className={`relative py-2 px-2 pl-2 flex items-center font-normal text-sm w-full cursor-pointer rounded-lg hover:shadow-sm transition-all duration-200 group mb-1 ${isSubActive} ${
-                                              !isOpen && !isMobile
-                                                ? "justify-center"
-                                                : ""
-                                            } ${
-                                              mode === "dark"
-                                                ? "bg-white/10 text-gray-200 hover:bg-white/20"
-                                                : ""
-                                            }`}
+                                            className={`relative py-2 px-2 pl-2 flex items-center font-normal text-sm w-full cursor-pointer rounded-lg hover:shadow-sm transition-all duration-200 group mb-1
+  ${isSubActive
+    ? (mode === "dark"
+        ? "bg-gray-800 text-white"
+        : "bg-orange-50 text-blue-800 shadow-sm ml-0")
+    : (mode === "dark"
+        ? "bg-gray-800/20 text-gray-200 hover:bg-blue-900/60 hover:text-white"
+        : "text-gray-600 hover:bg-orange-100 hover:text-blue-900")
+  }
+  ${!isOpen && !isMobile ? "justify-center" : ""}
+`}
                                           >
                                             <span
                                               className={`text-sm transition-all duration-300 ${
@@ -475,7 +483,9 @@ const HrSidebar = ({
                           );
                         })
                       ) : (
-                        <li className="py-3 px-2 text-gray-500 text-sm">
+                        <li className={`py-3 px-2 text-sm ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}>
                           No items available
                         </li>
                       )}
@@ -493,7 +503,11 @@ const HrSidebar = ({
             } shadow-inner`}
           >
             <div
-              className="flex items-center space-x-4 cursor-pointer rounded-lg p-2 hover:bg-gray-200"
+              className={`flex items-center space-x-4 cursor-pointer rounded-lg p-2 transition-colors ${
+                mode === "dark" 
+                  ? "hover:bg-gray-700 hover:text-white" 
+                  : "hover:bg-gray-200"
+              }`}
               onClick={() => setShowLogout((prev) => !prev)}
             >
               <div className="overflow-hidden rounded-full w-6 h-6">
@@ -509,7 +523,9 @@ const HrSidebar = ({
               </div>
               {isOpen || isMobile ? (
                 <div className="flex items-center gap-2 transition-all duration-300">
-                  <span className="text-sm font-medium text-black">
+                  <span className={`text-sm font-medium ${
+                    mode === "dark" ? "text-white" : "text-black"
+                  }`}>
                     {user && user.name ? user.name : "Guest"}
                   </span>
                   <div className="w-3 h-3 bg-green-400 rounded-full border border-green-400 flex items-center justify-center aspect-square"></div>
@@ -521,9 +537,15 @@ const HrSidebar = ({
                 showLogout ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
               }`}
             >
-              <div className="flex flex-col gap-2 text-gray-700 text-sm pt-2">
+              <div className={`flex flex-col gap-2 text-sm pt-2 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>
                 <div
-                  className="flex items-center space-x-4 cursor-pointer rounded-lg p-2 hover:bg-gray-200"
+                  className={`flex items-center space-x-4 cursor-pointer rounded-lg p-2 transition-colors ${
+                    mode === "dark" 
+                      ? "hover:bg-gray-700 hover:text-white" 
+                      : "hover:bg-gray-200"
+                  }`}
                   onClick={() => router.push("/profile")}
                 >
                   <div className="overflow-hidden rounded-full w-6 h-6">
@@ -539,7 +561,9 @@ const HrSidebar = ({
                   </div>
                   {isOpen || isMobile ? (
                     <div className="flex items-center gap-2 transition-all duration-300">
-                      <span className="text-sm font-medium text-black">
+                      <span className={`text-sm font-medium ${
+                        mode === "dark" ? "text-white" : "text-black"
+                      }`}>
                         View Profile
                       </span>
                     </div>
@@ -547,7 +571,11 @@ const HrSidebar = ({
                 </div>
 
 
-                <div className="py-2 hover:bg-gray-200 rounded-2xl p-2">
+                <div className={`py-2 rounded-2xl p-2 transition-colors ${
+                  mode === "dark" 
+                    ? "hover:bg-gray-700 hover:text-white" 
+                    : "hover:bg-gray-200"
+                }`}>
                   <button
                     onClick={toggleMode}
                     className="flex items-center gap-2 hover:opacity-80 transition-colors duration-300"
@@ -562,13 +590,19 @@ const HrSidebar = ({
                         mode === "dark" ? "text-blue-500" : "text-yellow-500"
                       }`}
                     />
-                    <span>{mode === "dark" ? "Dark Mode" : "Light Mode"}</span>
+                    <span className={mode === "dark" ? "text-white" : "text-gray-700"}>
+                      {mode === "dark" ? "Dark Mode" : "Light Mode"}
+                    </span>
                   </button>
                 </div>
                 <hr className="border-t border-gray-300" />
                 <button
                   onClick={onLogout}
-                  className="flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors hover:bg-gray-200 rounded-2xl p-2"
+                  className={`flex items-center gap-2 transition-colors rounded-2xl p-2 ${
+                    mode === "dark"
+                      ? "text-red-400 hover:text-red-300 hover:bg-gray-700"
+                      : "text-red-600 hover:text-red-700 hover:bg-gray-200"
+                  }`}
                 >
                   <Icon icon="mdi:logout" className="h-5 w-5" />
                   <span

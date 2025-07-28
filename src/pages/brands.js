@@ -177,7 +177,7 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
                   { Header: "Name", accessor: "name", sortable: true },
                   { Header: "No Of Products", accessor: "product_count", sortable: false },
                   { Header: "Status", accessor: "is_active", sortable: true, render: (row) => (
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
                       {row.is_active ? "Active" : "Inactive"}
                     </span>
                   ) },

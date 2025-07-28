@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/globals.css";
+import "../styles/dark-mode.css";
 import { sidebarNav } from "@/data/nav";
 import { Nunito } from "next/font/google";
 import { AuthProvider } from "@/context/authContext";
 import useSidebar from "@/hooks/useSidebar";
+import { DarkModeProvider } from "@/components/GlobalDarkMode";
 import "../styles/dark-mode-date-range.css";
 
 const nunito = Nunito({
@@ -25,6 +27,12 @@ function MyApp({ Component, pageProps }) {
     setMode(newMode);
     if (typeof window !== "undefined") {
       window.localStorage.setItem("mode", newMode);
+      // Toggle the dark class on the document
+      if (newMode === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     }
   };
 
@@ -34,6 +42,12 @@ function MyApp({ Component, pageProps }) {
     const savedMode = window.localStorage.getItem("mode");
     if (savedMode) {
       setMode(savedMode);
+      // Apply the saved mode to the document
+      if (savedMode === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     } else {
       const systemMode = window.matchMedia("(prefers-color-scheme: dark)")
         .matches
@@ -41,6 +55,12 @@ function MyApp({ Component, pageProps }) {
         : "light";
       setMode(systemMode);
       window.localStorage.setItem("mode", systemMode);
+      // Apply the system mode to the document
+      if (systemMode === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     }
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -191,15 +211,17 @@ function MyApp({ Component, pageProps }) {
     <div className={`${mode === "dark" ? "dark" : ""} ${nunito.variable} font-sans flex flex-col min-h-screen`}>
       <Toaster position="top-center" reverseOrder={false} />
         <AuthProvider>
-          <main className="flex-1">
-            <Component
-              {...pageProps}
-              mode={mode}
-              toggleMode={toggleMode}
-              breadcrumbs={breadcrumbs}
-              isSidebarOpen={isSidebarOpen}
-            />
-          </main>
+          <DarkModeProvider>
+            <main className="flex-1">
+              <Component
+                {...pageProps}
+                mode={mode}
+                toggleMode={toggleMode}
+                breadcrumbs={breadcrumbs}
+                isSidebarOpen={isSidebarOpen}
+              />
+            </main>
+          </DarkModeProvider>
         </AuthProvider>
     </div>
   );
