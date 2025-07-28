@@ -31,11 +31,13 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Prepare options for react-select
-  const productOptions = products.map(product => ({
-    value: product.id,
-    label: product.name,
-    product,
-  }));
+  const productOptions = React.useMemo(() => 
+    products.map(product => ({
+      value: product.id,
+      label: product.name,
+      product,
+    })), [products]
+  );
 
   // Custom option rendering for react-select
   const ProductOption = (props) => {
@@ -87,24 +89,26 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   }, [catLoading, categories, selectedCategory]);
 
   // Filter products by search and category
-  const filteredProducts = products.filter((product) => {
-    const searchLower = search.toLowerCase();
-    const cat = categories.find((c) => c.id === product.category_id);
-    
-    // Filter by category first
-    if (selectedCategory && selectedCategory !== "all") {
-      if (product.category_id !== selectedCategory) {
-        return false;
+  const filteredProducts = React.useMemo(() => {
+    return products.filter((product) => {
+      const searchLower = search.toLowerCase();
+      const cat = categories.find((c) => c.id === product.category_id);
+      
+      // Filter by category first
+      if (selectedCategory && selectedCategory !== "all") {
+        if (product.category_id !== selectedCategory) {
+          return false;
+        }
       }
-    }
-    
-    // Then filter by search
-    return (
-      product.name?.toLowerCase().includes(searchLower) ||
-      product.sku?.toLowerCase().includes(searchLower) ||
-      (cat && cat.name?.toLowerCase().includes(searchLower))
-    );
-  });
+      
+      // Then filter by search
+      return (
+        product.name?.toLowerCase().includes(searchLower) ||
+        product.sku?.toLowerCase().includes(searchLower) ||
+        (cat && cat.name?.toLowerCase().includes(searchLower))
+      );
+    });
+  }, [products, search, selectedCategory, categories]);
 
   // Update displayed products when filtered products change
   useEffect(() => {
@@ -136,7 +140,10 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
   // Category pagination logic
   const categoriesPerPage = 4;
-  const allCategories = [{ id: "all", name: "All", image_url: "https://ik.imagekit.io/164jkw2ne/CategoryImages/all_accessories.jpg?updatedAt=1751485982538" }, ...categories];
+  const allCategories = React.useMemo(() => [
+    { id: "all", name: "All", image_url: "https://ik.imagekit.io/164jkw2ne/CategoryImages/all_accessories.jpg?updatedAt=1751485982538" }, 
+    ...categories
+  ], [categories]);
   const totalPages = Math.ceil(allCategories.length / categoriesPerPage);
   const startIndex = categoryPage * categoriesPerPage;
   const endIndex = startIndex + categoriesPerPage;

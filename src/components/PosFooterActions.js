@@ -46,12 +46,12 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
   };
 
   return (
-    <div className="fixed bottom-0 left-0 w-full z-50 bg-white/80 py-6 flex justify-center shadow-xl border border-gray-200 border-t-2 border-white/20 backdrop-blur-sm">
-      <div className="relative flex justify-center items-center w-full px-4 gap-10">
-        <div className="flex gap-3">
+    <div className="fixed bottom-0 left-0 w-full z-50 bg-white/80 py-4 sm:py-6 flex justify-center shadow-xl border border-gray-200 border-t-2 border-white/20 backdrop-blur-sm">
+      <div className="relative flex flex-wrap justify-center items-center w-full px-2 sm:px-4 gap-2 sm:gap-4 md:gap-8 lg:gap-10">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <div className="relative">
             <button
-              className={`flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`select-none flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => {
                 if (isBlocked || isLoading) { blockAction(); return; }
                 setShowRetrieveOptions(true);
@@ -62,7 +62,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               Retrieve
             </button>
             {showRetrieveOptions && (
-              <div ref={retrieveRef} className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[160px]">
+              <div ref={retrieveRef} className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[120px] sm:min-w-[160px]">
                 <button
                   className="flex items-center gap-2 px-4 py-2 hover:bg-blue-50 rounded transition font-semibold text-sm text-gray-700"
                   onClick={() => {
@@ -96,7 +96,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
 
           <div className="relative">
             <button
-              className={`flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`select-none flex items-center gap-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => {
                 if (isBlocked || isLoading) { blockAction(); return; }
                 setShowHoldOptions(true);
@@ -107,7 +107,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               Hold
             </button>
             {showHoldOptions && (
-              <div ref={holdRef} className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[160px]">
+              <div ref={holdRef} className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[120px] sm:min-w-[160px]">
                 <button
                   className="flex items-center gap-2 px-4 py-2 hover:bg-blue-50 rounded transition font-semibold text-sm text-gray-700"
                   onClick={() => {
@@ -140,7 +140,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
           </div>
 
           <button
-            className={`flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`select-none flex items-center gap-2 bg-gray-600 hover:bg-gray-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => {
               if (isBlocked || isLoading) { blockAction(); return; }
               onPrintOrder();
@@ -157,7 +157,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
 
           <div className="relative">
             <button
-              className={`flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`select-none flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => {
                 if (isBlocked || isLoading) { blockAction(); return; }
                 if (hasProducts) setShowPaymentOptions(true);
@@ -169,7 +169,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               Select Payment Method
             </button>
             {showPaymentOptions && (
-              <div className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex gap-4 z-50">
+              <div className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex gap-2 sm:gap-4 z-50">
                 {paymentMethods.map((pm) => (
                   <button
                     key={pm.key}
@@ -198,7 +198,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
           </div>
 
           <button
-            className={`flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2 rounded-lg shadow transition ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`select-none flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={() => {
               if (isBlocked || isLoading) { blockAction(); return; }
               onResetOrder();
@@ -210,7 +210,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
           </button>
         </div>
         {hasProducts && (
-          <div className="font-bold text-lg whitespace-nowrap  ">
+          <div className="font-bold text-lg whitespace-nowrap mt-2 sm:mt-0">
             Total Payable: GHS {totalPayable.toLocaleString()}
           </div>
         )}

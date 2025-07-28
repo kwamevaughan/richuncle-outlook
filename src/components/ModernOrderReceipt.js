@@ -127,9 +127,24 @@ const ModernOrderReceipt = ({
                     Payment
                   </span>
                 </div>
-                <span className="text-sm text-gray-900">
+                <div className="text-sm text-gray-900 text-right">
                   {getPaymentMethodDisplay(orderData.payment_method)}
-                </span>
+                  {orderData.payment_method === "split" &&
+                    Array.isArray(orderData.payment_data?.splitPayments) &&
+                    orderData.payment_data.splitPayments.length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {orderData.payment_data.splitPayments.map((p, i) => (
+                          <div key={i}>
+                            {getPaymentMethodDisplay(p.method || p.paymentType)}: GHS{" "}
+                            {parseFloat(p.amount || 0).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                </div>
               </div>
 
               {orderData.payment_receiver_name && (

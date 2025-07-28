@@ -138,26 +138,31 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       setShowNoOrderModal(true);
       return;
     }
+    
+    console.log('Printing last receipt with data:', lastOrderData);
+    
     // Prepare data for PrintReceipt
     const printReceipt = PrintReceipt({
       orderId: lastOrderData.id,
-      selectedProducts: lastOrderData.items.map(item => item.productId),
-      quantities: lastOrderData.items.reduce((acc, item) => {
+      selectedProducts: lastOrderData.items?.map(item => item.productId) || [],
+      quantities: lastOrderData.items?.reduce((acc, item) => {
         acc[item.productId] = item.quantity;
         return acc;
-      }, {}),
-      products: lastOrderData.items.map(item => ({
+      }, {}) || {},
+      products: lastOrderData.items?.map(item => ({
         id: item.productId,
         name: item.name,
         price: item.price
-      })),
-      subtotal: lastOrderData.subtotal,
-      tax: lastOrderData.tax,
-      discount: lastOrderData.discount,
-      total: lastOrderData.total,
-      selectedCustomerId: lastOrderData.customerId,
+      })) || [],
+      subtotal: lastOrderData.subtotal || 0,
+      tax: lastOrderData.tax || 0,
+      discount: lastOrderData.discount || 0,
+      total: lastOrderData.total || 0,
+      selectedCustomerId: lastOrderData.customer_id || lastOrderData.customerId || '',
       customers: customers,
-      paymentData: lastOrderData.payment
+      paymentData: lastOrderData.payment || lastOrderData.payment_data || {},
+      order: lastOrderData,
+      originalTimestamp: lastOrderData.timestamp
     });
     printReceipt.printOrder();
   }, [lastOrderData, customers]);
@@ -199,7 +204,9 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   useEffect(() => {
     const saved = localStorage.getItem('lastOrderData');
     if (saved) {
-      setLastOrderData(JSON.parse(saved));
+      const parsedData = JSON.parse(saved);
+      console.log('Loaded lastOrderData from localStorage:', parsedData);
+      setLastOrderData(parsedData);
     }
   }, []);
 
@@ -267,14 +274,24 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         paymentResult = {
           success: true,
           method: 'split',
+          paymentType: 'split',
           totalPaid: paymentInfo.total - paymentInfo.remainingAmount,
-          payments: paymentInfo.splitPayments
+          payments: paymentInfo.splitPayments,
+          splitPayments: paymentInfo.splitPayments,
+          total: paymentInfo.total,
+          remainingAmount: paymentInfo.remainingAmount,
+          payingAmount: paymentInfo.payingAmount,
+          receivedAmount: paymentInfo.receivedAmount,
+          change: paymentInfo.change || 0
         };
       } else {
         paymentResult = {
           success: true,
           method: paymentInfo.paymentType,
+          paymentType: paymentInfo.paymentType,
           amount: parseFloat(paymentInfo.payingAmount),
+          payingAmount: paymentInfo.payingAmount,
+          receivedAmount: paymentInfo.receivedAmount,
           change: paymentInfo.change,
           reference: paymentInfo.referenceNumber || null
         };
@@ -963,6 +980,11 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                 ...paymentData,
                 paymentType: paymentData.paymentType || paymentData.method,
                 payingAmount: paymentData.payingAmount || paymentData.amount,
+                splitPayments: paymentData.splitPayments || [],
+                total: paymentData.total || modernReceiptData.total,
+                remainingAmount: paymentData.remainingAmount || 0,
+                receivedAmount: paymentData.receivedAmount || paymentData.amount || modernReceiptData.total,
+                change: paymentData.change || 0,
               };
               const printReceipt = PrintReceipt({
                 orderId: modernReceiptData.id,

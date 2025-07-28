@@ -12,17 +12,40 @@ const PrintReceipt = ({
   selectedCustomerId, 
   customers, 
   paymentData,
-  order
+  order,
+  originalTimestamp
 }) => {
   const printOrder = () => {
-    if (selectedProducts.length === 0) {
+    // Ensure all required props exist with safe defaults
+    const safeSelectedProducts = selectedProducts || [];
+    const safeQuantities = quantities || {};
+    const safeProducts = products || [];
+    const safeCustomers = customers || [];
+    const safeOrder = order || {};
+    const safeSubtotal = subtotal || 0;
+    const safeTax = tax || 0;
+    const safeDiscount = discount || 0;
+    const safeTotal = total || 0;
+    
+    if (safeSelectedProducts.length === 0) {
       return false;
     }
 
+    // Ensure paymentData exists and has safe defaults
+    const safePaymentData = paymentData || {
+      paymentType: "cash",
+      payingAmount: safeTotal,
+      receivedAmount: safeTotal,
+      change: 0,
+      total: safeTotal,
+      remainingAmount: 0,
+      splitPayments: []
+    };
+
     // Extract possible cashier fields from paymentData
-    const paymentDataReceiver = paymentData?.paymentReceiverName || paymentData?.payment_receiver_name || paymentData?.paymentReceiver || paymentData?.payment_receiver;
+    const paymentDataReceiver = safePaymentData?.paymentReceiverName || safePaymentData?.payment_receiver_name || safePaymentData?.paymentReceiver || safePaymentData?.payment_receiver;
     // Extract possible cashier fields from order prop
-    const orderReceiver = order?.payment_receiver_name || order?.payment_receiver || order?.paymentReceiverName || order?.paymentReceiver;
+    const orderReceiver = safeOrder?.payment_receiver_name || safeOrder?.payment_receiver || safeOrder?.paymentReceiverName || safeOrder?.paymentReceiver;
     const cashierName = paymentDataReceiver || orderReceiver || 'Unknown';
 
     // Create print content
@@ -89,8 +112,8 @@ const PrintReceipt = ({
           
           <div class="order-info">
             <div class="order-id">Order ID: ${orderId}</div>
-            <div>Date: ${new Date().toLocaleDateString("en-GH")}</div>
-            <div>Time: ${new Date().toLocaleTimeString("en-GH")}</div>
+            <div>Date: ${originalTimestamp ? new Date(originalTimestamp).toLocaleDateString("en-GH") : new Date().toLocaleDateString("en-GH")}</div>
+            <div>Time: ${originalTimestamp ? new Date(originalTimestamp).toLocaleTimeString("en-GH") : new Date().toLocaleTimeString("en-GH")}</div>
           </div>
           
           <div class="customer-info">
@@ -139,52 +162,58 @@ const PrintReceipt = ({
           <div class="summary">
             <div class="summary-row">
               <span>Subtotal:</span>
-              <span>GHS ${subtotal.toLocaleString()}</span>
+              <span>GHS ${safeSubtotal.toLocaleString()}</span>
             </div>
             ${
-              discount > 0
+              safeDiscount > 0
                 ? `
               <div class="summary-row">
                 <span>Discount:</span>
-                <span>-GHS ${discount.toLocaleString()}</span>
+                <span>-GHS ${safeDiscount.toLocaleString()}</span>
               </div>
             `
                 : ""
             }
             <div class="summary-row total">
               <span>Total:</span>
-              <span>GHS ${total.toLocaleString()}</span>
+              <span>GHS ${safeTotal.toLocaleString()}</span>
             </div>
           </div>
           
           ${
-            paymentData
+            safePaymentData
               ? `
             <div class="payment-info">
               <div><strong>Payment Method:</strong> ${
-                paymentData.paymentType === "momo"
+                safePaymentData?.paymentType === "momo"
                   ? "Mobile Money"
-                  : paymentData.paymentType === "cash"
+                  : safePaymentData?.paymentType === "cash"
                   ? "Cash"
-                  : paymentData.paymentType === "split"
+                  : safePaymentData?.paymentType === "split"
                   ? "Split Payment"
-                  : paymentData.paymentType
+                  : safePaymentData?.paymentType || "Unknown"
               }</div>
               ${
-                paymentData.paymentType === "split"
+                safePaymentData?.paymentType === "split"
                   ? `
                 <div>Total Paid: GHS ${(
-                  paymentData.total - paymentData.remainingAmount
+                  (safePaymentData?.total || 0) - (safePaymentData?.remainingAmount || 0)
                 ).toLocaleString()}</div>
-                <div>Payment Methods: ${paymentData.splitPayments.length}</div>
+                ${
+                  safePaymentData?.splitPayments && safePaymentData.splitPayments.length > 0
+                    ? safePaymentData.splitPayments.map((payment, index) => `
+                      <div>${payment.method || payment.paymentType || 'Payment'}: GHS ${parseFloat(payment.amount || 0).toLocaleString()}</div>
+                    `).join('')
+                    : '<div>Payment Methods: Split Payment</div>'
+                }
               `
                   : `
                 <div>Amount Paid: GHS ${parseFloat(
-                  paymentData.payingAmount
+                  safePaymentData?.payingAmount || 0
                 ).toLocaleString()}</div>
                 ${
-                  paymentData.change > 0
-                    ? `<div>Change: GHS ${paymentData.change.toFixed(2)}</div>`
+                  (safePaymentData?.change || 0) > 0
+                    ? `<div>Change: GHS ${(safePaymentData?.change || 0).toFixed(2)}</div>`
                     : ""
                 }
               `
@@ -202,9 +231,7 @@ const PrintReceipt = ({
           <div class="footer">
             <div class="thank-you">Thank You!</div>
             <div>Please come again</div>
-            <div class="timestamp">Printed: ${new Date().toLocaleString(
-              "en-GH"
-            )}</div>
+            <div class="timestamp">Printed: ${originalTimestamp ? new Date(originalTimestamp).toLocaleString("en-GH") : new Date().toLocaleString("en-GH")}</div>
           </div>
         </div>
       </body>

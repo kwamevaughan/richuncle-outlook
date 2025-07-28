@@ -151,9 +151,13 @@ const ReceiptPreviewModal = ({
                   receiptData.paymentData.total -
                   receiptData.paymentData.remainingAmount
                 ).toLocaleString()}</div>
-                <div>Payment Methods: ${
-                  receiptData.paymentData.splitPayments.length
-                }</div>
+                ${
+                  receiptData.paymentData.splitPayments && receiptData.paymentData.splitPayments.length > 0
+                    ? receiptData.paymentData.splitPayments.map((payment, index) => `
+                      <div>${payment.method || payment.paymentType || 'Payment'}: GHS ${parseFloat(payment.amount || 0).toLocaleString()}</div>
+                    `).join('')
+                    : '<div>Payment Methods: Split Payment</div>'
+                }
               `
                   : `
                 <div>Amount Paid: GHS ${parseFloat(
