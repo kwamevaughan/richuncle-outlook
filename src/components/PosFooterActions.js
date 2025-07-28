@@ -46,7 +46,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
   };
 
   return (
-    <div className="fixed bottom-0 left-0 w-full z-50 bg-white/80 py-3 flex justify-center shadow-xl border border-gray-200 border-t-2 border-white/20 backdrop-blur-sm">
+    <div className="fixed bottom-0 left-0 w-full z-50 bg-white/80 py-6 flex justify-center shadow-xl border border-gray-200 border-t-2 border-white/20 backdrop-blur-sm">
       <div className="relative flex justify-center items-center w-full px-4 gap-10">
         <div className="flex gap-3">
           <div className="relative">

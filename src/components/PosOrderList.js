@@ -46,6 +46,7 @@ const PosOrderList = ({
   setSelectedProducts, 
   setQuantities, 
   discounts = [],
+  setDiscounts,
   selectedDiscountId,
   setSelectedDiscountId,
   roundoffEnabled,
@@ -79,6 +80,7 @@ const PosOrderList = ({
   setOnlineOrderRef,
   allUsers,
   orderId,
+  className = "",
 }) => {
 
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -90,10 +92,7 @@ const PosOrderList = ({
   const [barcodeQty, setBarcodeQty] = useState(1);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showAddDiscountModal, setShowAddDiscountModal] = useState(false);
-  const [newDiscountName, setNewDiscountName] = useState("");
-  const [newDiscountValue, setNewDiscountValue] = useState("");
-  const [newDiscountType, setNewDiscountType] = useState("percent");
-  const [addDiscountLoading, setAddDiscountLoading] = useState(false);
+  const [discountPlans, setDiscountPlans] = useState([]);
   
   // Detect if user is on Chrome
   const isChrome = typeof window !== 'undefined' && /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
@@ -105,6 +104,20 @@ const PosOrderList = ({
     // setOrderId(`RUO${timestamp}${random.toString().padStart(2, '0')}`); // This line is removed as orderId is now a prop
   }, []);
 
+  // Fetch discount plans
+  useEffect(() => {
+    fetch('/api/discount-plans')
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          setDiscountPlans(result.data || []);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch discount plans:", err);
+      });
+  }, []);
+
   const handleQty = (id, delta) => {
     if (!products.length) return;
     const product = products.find(p => p.id === id);
@@ -112,7 +125,7 @@ const PosOrderList = ({
     
     // Validate against stock
     if (product && qty > product.quantity) {
-      toast.error(`Cannot exceed available stock of ${product.quantity} units.`);
+      toast.error(user?.role === "cashier" ? "Cannot exceed available stock." : `Cannot exceed available stock of ${product.quantity} units.`);
       return;
     }
     
@@ -203,8 +216,8 @@ const PosOrderList = ({
     const discountObj = discounts.find(d => d.id === selectedDiscountId);
     if (discountObj) {
       discountLabel = discountObj.name || discountObj.label || "Discount";
-      discountType = discountObj.type || "percent";
-      if (discountType === "percent") {
+      discountType = discountObj.discount_type || discountObj.type || "percentage";
+      if (discountType === "percentage") {
         discount = Math.round(subtotal * (Number(discountObj.value) / 100));
       } else {
         discount = Number(discountObj.value);
@@ -220,7 +233,7 @@ const PosOrderList = ({
     : null;
 
   return (
-    <div className="w-full md:w-full lg:w-5/12 xl:w-6/12 p-4 gap-6 flex flex-col bg-gray-200 rounded-lg h-screen overflow-auto">
+    <div className={`p-4 gap-6 flex flex-col bg-gray-200 rounded-lg h-screen overflow-auto ${className}`}>
       <div className="bg-white rounded-lg p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
@@ -313,10 +326,10 @@ const PosOrderList = ({
             </div>
           </div>
           <div className="border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
-            <div className="grid grid-cols-3 bg-gray-50 text-xs font-bold text-gray-600 px-4 py-2">
+            <div className="grid grid-cols-3 bg-gray-50 text-sm font-bold text-gray-600 px-4 py-2">
               <div>Item</div>
-              <div className="text-center">QTY</div>
-              <div className="text-right">Cost</div>
+              <div className="text-center">Quantity</div>
+              <div className="text-right">Sub Total</div>
             </div>
             {selectedProducts.length === 0 && (
               <div className="text-gray-400 text-center py-6">
@@ -358,9 +371,14 @@ const PosOrderList = ({
                   <div className="text-right font-semibold">
                     GHS {(product.price * qty).toLocaleString()}
                   </div>
-                  <div className="text-xs text-gray-500 text-right mt-1">
-                    Stock: {product.quantity} | Ordered: {qty}
-                    {qty > product.quantity && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {user?.role !== "cashier" && (
+                      <>
+                        Stock: {product.quantity} | 
+                      </>
+                    )}
+                    {/* Ordered: {qty} */}
+                    {qty > product.quantity && user?.role !== "cashier" && (
                       <span className="text-red-500 ml-1">
                         ⚠️ Exceeds stock
                       </span>
@@ -372,149 +390,101 @@ const PosOrderList = ({
           </div>
           {/* Discount Selector */}
           <div className="mt-4 mb-2">
-            <label className="block text-xs font-semibold text-blue-800 mb-1 ml-1">
+            <label className="block text-sm font-semibold text-blue-800 mb-2">
               Select Discount
             </label>
-            <div className="flex items-center bg-blue-100 border border-blue-300 rounded-xl px-4 py-3 gap-3 relative">
-              <div className="flex items-center gap-2">
-                <span className="bg-white rounded-full p-2">
-                  <Icon
-                    icon="mdi:brightness-percent"
-                    className="w-6 h-6 text-blue-800"
-                  />
-                </span>
-                <div>
-                  <div className="font-bold text-blue-800 flex items-center gap-2">
-                    <select
-                      className="bg-transparent font-bold text-blue-800 outline-none"
-                      value={selectedDiscountId}
-                      onChange={(e) => setSelectedDiscountId(e.target.value)}
-                    >
-                      <option value="">Select Discount</option>
-                      {discounts.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name || d.label} (
-                          {d.type === "percent"
-                            ? `${d.value}%`
-                            : `GHS ${d.value}`}
-                          )
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="ml-2 p-1 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center"
-                      title="Add Discount"
-                      onClick={() => setShowAddDiscountModal(true)}
-                    >
-                      <Icon icon="mdi:plus" className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="text-xs text-gray-700">{discountLabel}</div>
-                </div>
+            <div className={`flex flex-col sm:flex-row gap-3 ${user?.role === "cashier" ? "" : ""}`}>
+              {/* Discount Dropdown */}
+              <div className={user?.role === "cashier" ? "w-full" : "flex-1 min-w-0"}>
+                <select
+                  className="w-full px-4 py-3 bg-white border border-blue-300 rounded-lg text-blue-800 font-medium text-base focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                  value={selectedDiscountId}
+                  onChange={(e) => setSelectedDiscountId(e.target.value)}
+                >
+                  <option value="">Select Discount</option>
+                  {discounts.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name || d.label} (
+                      {d.type === "percent"
+                        ? `${d.value}%`
+                        : `GHS ${d.value}`}
+                      )
+                    </option>
+                  ))}
+                </select>
+                {discountLabel !== "No discount" && (
+                  <div className="text-xs text-gray-600 mt-1 ml-1">{discountLabel}</div>
+                )}
               </div>
+              
+              {/* Add Discount Button - Only for non-cashiers */}
+              {user?.role !== "cashier" && (
+                <button
+                  type="button"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors min-w-[120px]"
+                  onClick={() => setShowAddDiscountModal(true)}
+                >
+                  <Icon icon="mdi:plus" className="w-5 h-5" />
+                  <span className="text-sm">Add</span>
+                </button>
+              )}
             </div>
+          </div>
             {/* Add Discount Modal */}
             {showAddDiscountModal && (
-              <SimpleModal
-                isOpen={showAddDiscountModal}
+              <AddEditModal
+                type="discounts"
+                categories={discountPlans}
+                item={{
+                  store_id: user?.store_id || null,
+                  discount_type: "percentage"
+                }}
                 onClose={() => setShowAddDiscountModal(false)}
-                title="Add Discount"
-                width="max-w-md"
-              >
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    setAddDiscountLoading(true);
-                    try {
-                      const response = await fetch("/api/discounts", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          name: newDiscountName,
-                          value: newDiscountValue,
-                          type: newDiscountType,
-                          is_active: true,
-                        }),
-                      });
-                      const result = await response.json();
-                      if (result.success && result.data && result.data[0]) {
-                        setShowAddDiscountModal(false);
-                        setNewDiscountName("");
-                        setNewDiscountValue("");
-                        setNewDiscountType("percent");
-                        // Add to discounts list
-                        if (typeof setDiscounts === "function") setDiscounts((prev) => [result.data[0], ...prev]);
-                        if (typeof setSelectedDiscountId === "function") setSelectedDiscountId(result.data[0].id);
-                        toast.success("Discount added!");
-                      } else {
-                        toast.error(result.error || "Failed to add discount");
+                onSave={async (discountData) => {
+                  try {
+                    // For cashiers, always use their assigned store
+                    const finalDiscountData = {
+                      ...discountData,
+                      store_id: user?.store_id || null
+                    };
+                    
+                    const response = await fetch("/api/discounts", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(finalDiscountData),
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                      setShowAddDiscountModal(false);
+                      
+                      // Add to discounts list
+                      if (typeof setDiscounts === "function") {
+                        setDiscounts((prev) => [result.data, ...prev]);
                       }
-                    } catch (err) {
-                      toast.error(err.message || "Failed to add discount");
+                      
+                      if (typeof setSelectedDiscountId === "function") {
+                        setSelectedDiscountId(result.data.id);
+                      }
+                      
+                      toast.success("Discount added!");
+                    } else {
+                      toast.error(result.error || "Failed to add discount");
                     }
-                    setAddDiscountLoading(false);
-                  }}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label className="block font-semibold mb-1">Name</label>
-                    <input
-                      className="w-full border rounded px-3 py-2"
-                      value={newDiscountName}
-                      onChange={e => setNewDiscountName(e.target.value)}
-                      required
-                      placeholder="Discount name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1">Value</label>
-                    <input
-                      className="w-full border rounded px-3 py-2"
-                      type="number"
-                      min="0"
-                      value={newDiscountValue}
-                      onChange={e => setNewDiscountValue(e.target.value)}
-                      required
-                      placeholder="Discount value"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1">Type</label>
-                    <select
-                      className="w-full border rounded px-3 py-2"
-                      value={newDiscountType}
-                      onChange={e => setNewDiscountType(e.target.value)}
-                    >
-                      <option value="percent">Percent (%)</option>
-                      <option value="amount">Amount (GHS)</option>
-                    </select>
-                  </div>
-                  <div className="flex justify-end gap-2 mt-6">
-                    <button
-                      type="button"
-                      className="px-4 py-2 rounded bg-gray-200 text-gray-700"
-                      onClick={() => setShowAddDiscountModal(false)}
-                      disabled={addDiscountLoading}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 rounded bg-blue-700 text-white font-semibold"
-                      disabled={addDiscountLoading}
-                    >
-                      {addDiscountLoading ? "Adding..." : "Add Discount"}
-                    </button>
-                  </div>
-                </form>
-              </SimpleModal>
+                  } catch (err) {
+                    toast.error(err.message || "Failed to add discount");
+                  }
+                }}
+              />
             )}
           </div>
-        </div>
         {/* Payment Summary */}
         <div className="mb-2">
           <div className="font-bold mb-2">Payment Summary</div>
+          <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+            <span>Items: {selectedProducts.length}</span>
+            <span>Total Items: {selectedProducts.reduce((sum, productId) => sum + (quantities[productId] || 1), 0)}</span>
+          </div>
           <div className="flex flex-col gap-1 text-sm">
             <div className="flex justify-between items-center">
               <span>Discount</span>
@@ -523,7 +493,7 @@ const PosOrderList = ({
               </span>
             </div>
 
-            {totalProfit > 0 && (
+            {totalProfit > 0 && user?.role !== "cashier" && (
               <div className="flex justify-between items-center">
                 <span className="text-green-600 font-medium">
                   Estimated Profit
@@ -533,10 +503,7 @@ const PosOrderList = ({
                 </span>
               </div>
             )}
-            <div className="flex justify-between items-center font-bold mt-2">
-              <span>Sub Total</span>
-              <span>GHS {subtotal.toLocaleString()}</span>
-            </div>
+
           </div>
         </div>
         <div className="border-t my-2"></div>
@@ -548,98 +515,42 @@ const PosOrderList = ({
 
       {/* Payment Section */}
 
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <button
-            onClick={() => {
-              if (selectedProducts.length > 0) {
-                setShowPaymentOptions(true);
-              }
-            }}
-            disabled={selectedProducts.length === 0}
-            className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-semibold transition ${
-              selectedProducts.length > 0
-                ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            <Icon icon="mdi:printer-outline" className="w-5 h-5" />
-            Select Payment Method
-          </button>
-          {showPaymentOptions && (
-            <div className="absolute bottom-14 left-0 bg-white border rounded-lg shadow-lg p-4 flex gap-4 z-50">
-              {paymentMethods.map((pm) => (
-                <button
-                  key={pm.key}
-                  className="flex flex-col items-center gap-1 px-4 py-2 hover:bg-blue-50 rounded transition"
-                  onClick={() => {
-                    setShowPaymentOptions(false);
-                    setSelectedPaymentType(pm.key);
-                    setShowPaymentModal(true);
-                  }}
-                >
-                  <Icon icon={pm.icon} className="w-7 h-7 mb-1" />
-                  <span className="font-semibold text-sm">{pm.label}</span>
-                </button>
-              ))}
-              <button
-                className="flex flex-col items-center gap-1 px-4 py-2 hover:bg-gray-100 rounded transition"
-                onClick={() => setShowPaymentOptions(false)}
-              >
-                <Icon icon="mdi:close" className="w-6 h-6 mb-1 text-gray-500" />
-                <span className="text-xs text-gray-500">Cancel</span>
-              </button>
-            </div>
-          )}
-        </div>
-        <button
-          onClick={() => {
-            // Get receipt data and show preview modal
-            const printReceipt = PrintReceipt({
-              orderId: orderId,
-              selectedProducts: selectedProducts.map((id) => id),
-              quantities: quantities,
-              products: products.map((p) => ({
-                id: p.id,
-                name: p.name,
-                price: p.price,
-              })),
-              subtotal: subtotal,
-              tax: tax,
-              discount: discount,
-              total: total,
-              selectedCustomerId: selectedCustomerId,
-              customers: customers,
-              paymentData: {
-                paymentType: paymentData.paymentType,
-                payingAmount: paymentData.payingAmount || total,
-                change: paymentData.change || 0,
-                paymentReceiver: paymentData.paymentReceiver,
-                paymentReceiverName: paymentData.paymentReceiverName,
-                total: total,
-                remainingAmount: paymentData.remainingAmount || 0,
-                splitPayments: paymentData.splitPayments || [],
-              },
-            });
-
-            const receiptContent = printReceipt.getReceiptContent();
-            if (receiptContent) {
-              setReceiptData(receiptContent);
-              setShowReceiptModal(true);
-            } else {
-              toast.error("Failed to generate receipt");
+      <div className="grid grid-cols-3 gap-3">
+        {paymentMethods.map((pm) => {
+          const getButtonStyle = () => {
+            if (selectedProducts.length === 0) {
+              return "bg-gray-300 text-gray-500 cursor-not-allowed";
             }
-          }}
-          disabled={!paymentData || selectedProducts.length === 0}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-3 font-semibold transition ${
-            paymentData && selectedProducts.length > 0
-              ? "bg-blue-900 text-white hover:bg-blue-800"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
-        >
-          <Icon icon="mdi:pause" className="w-5 h-5" />
-          {paymentData ? "Finalize Order" : "Hold Order"}
-        </button>
+            
+            switch (pm.key) {
+              case "cash":
+                return "bg-green-500 border border-green-600 text-white hover:bg-green-600";
+              case "momo":
+                return "bg-blue-500 border border-blue-600 text-white hover:bg-blue-600";
+              case "split":
+                return "bg-orange-400 border border-orange-600 text-white hover:bg-orange-500";
+              default:
+                return "bg-blue-500 border border-blue-600 text-white hover:bg-blue-600";
+            }
+          };
+
+          return (
+            <button
+              key={pm.key}
+              onClick={() => {
+                if (selectedProducts.length > 0) {
+                  setSelectedPaymentType(pm.key);
+                  setShowPaymentModal(true);
+                }
+              }}
+              disabled={selectedProducts.length === 0}
+              className={`flex flex-col items-center justify-center gap-2 rounded-lg py-4 font-semibold transition ${getButtonStyle()}`}
+            >
+              <Icon icon={pm.icon} className="w-8 h-8" />
+              <span className="text-sm font-bold">{pm.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Customer Modal */}
@@ -713,7 +624,9 @@ const PosOrderList = ({
                   const qty = quantities[found.id] || 1;
                   if (qty > found.quantity) {
                     toast.error(
-                      `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`
+                      user?.role === "cashier" 
+                        ? "Cannot add items. Insufficient stock." 
+                        : `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`
                     );
                     return;
                   }
@@ -726,7 +639,9 @@ const PosOrderList = ({
                       const newQty = (currentQuantities[found.id] || 1) + qty;
                       if (newQty > found.quantity) {
                         toast.error(
-                          `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`
+                          user?.role === "cashier" 
+                            ? "Cannot add more items. Insufficient stock." 
+                            : `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`
                         );
                         return currentQuantities; // Return unchanged quantities
                       }
@@ -758,7 +673,9 @@ const PosOrderList = ({
               <div className="mb-2">
                 Price: GHS {barcodeProduct.price?.toLocaleString()}
               </div>
-              <div className="mb-2">Stock: {barcodeProduct.quantity}</div>
+              {user?.role !== "cashier" && (
+                <div className="mb-2">Stock: {barcodeProduct.quantity}</div>
+              )}
               <div className="mb-2 flex items-center gap-2">
                 <span>Quantity:</span>
                 <button
@@ -793,7 +710,9 @@ const PosOrderList = ({
                 onClick={() => {
                   if (barcodeQty > barcodeProduct.quantity) {
                     toast.error(
-                      `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
+                      user?.role === "cashier" 
+                        ? "Cannot add items. Insufficient stock." 
+                        : `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
                     );
                     return;
                   }

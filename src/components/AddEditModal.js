@@ -71,6 +71,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   const [newCategoryName, setNewCategoryName] = useState("");
   const [variantAttributes, setVariantAttributes] = useState([]);
   const [selectedVariantAttributes, setSelectedVariantAttributes] = useState(item?.variant_attributes || {});
+  const [showVariantAttributes, setShowVariantAttributes] = useState(false);
+  const [showBarcode, setShowBarcode] = useState(false);
   const [sellingType, setSellingType] = useState(() => {
     let val = item?.selling_type;
     if (Array.isArray(val) && val.length === 1 && typeof val[0] === "string" && val[0].startsWith("[")) {
@@ -239,6 +241,71 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
       setBarcode('BC' + Math.floor(100000000 + Math.random() * 900000000));
     }
   }, [productName, type, skuManuallyEdited]);
+
+  // Auto-select single options in dropdowns for products
+  useEffect(() => {
+    if (type === "products" && !item) {
+      // Auto-select store if only one available
+      if (stores.length === 1 && !storeId) {
+        setStoreId(stores[0].id);
+      }
+      
+      // Auto-select warehouse if only one available
+      if (warehouses.length === 1 && !warehouseId) {
+        setWarehouseId(warehouses[0].id);
+      }
+      
+      // Auto-select unit - default to "Pieces" if available, otherwise auto-select if only one available
+      if (!unitId) {
+        const piecesUnit = units.find(unit => unit.name.toLowerCase() === 'pieces' || unit.name.toLowerCase() === 'piece');
+        if (piecesUnit) {
+          setUnitId(piecesUnit.id);
+        } else if (units.length === 1) {
+          setUnitId(units[0].id);
+        }
+      }
+      
+      // Auto-select category if only one available
+      if (localCategories.length === 1 && !categoryId) {
+        setCategoryId(localCategories[0].id);
+      }
+      
+      // Auto-select brand if only one available
+      if (brands.length === 1 && !brandId) {
+        setBrandId(brands[0].id);
+      }
+      
+      // Auto-select variant attributes if only one option available
+      variantAttributes.forEach(attr => {
+        if (attr.values) {
+          const values = attr.values.split(',').map(v => v.trim()).filter(Boolean);
+          if (values.length === 1 && !selectedVariantAttributes[attr.id]) {
+            setSelectedVariantAttributes(prev => ({
+              ...prev,
+              [attr.id]: values[0]
+            }));
+          }
+        }
+      });
+    }
+    
+    // Auto-select for other modal types
+    if (type === "warehouses" && !item && usersList.length === 1 && !contactPerson) {
+      setContactPerson(usersList[0].id);
+    }
+    
+    if (type === "discounts" && !item && localCategories.length === 1 && !planId) {
+      setPlanId(localCategories[0].id);
+    }
+    
+    if (type === "expenses" && !item && expenseCategories.length === 1 && !expenseCategoryId) {
+      setExpenseCategoryId(expenseCategories[0].id);
+    }
+    
+    if (type === "subcategories" && !item && localCategories.length === 1 && !categoryId) {
+      setCategoryId(localCategories[0].id);
+    }
+  }, [type, item, stores, warehouses, units, localCategories, brands, variantAttributes, usersList, expenseCategories, storeId, warehouseId, unitId, categoryId, brandId, selectedVariantAttributes, contactPerson, planId, expenseCategoryId]);
 
   // Handle Add New Category
   const handleAddCategory = async () => {
@@ -775,21 +842,30 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     <Icon icon="mdi:store" className="w-4 h-4 text-blue-600" />
                     Apply to Store
                   </label>
-                  <select
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                    value={storeId}
-                    onChange={(e) => setStoreId(e.target.value)}
-                    disabled={loading}
-                  >
-                    <option value="all">All Stores</option>
-                    {stores.map((store) => (
-                      <option key={store.id} value={store.id}>
-                        {store.name}
-                      </option>
-                    ))}
-                  </select>
+                  {item?.store_id ? (
+                    <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100 text-gray-700">
+                      {stores.find(store => store.id === item.store_id)?.name || "Assigned Store"}
+                    </div>
+                  ) : (
+                    <select
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      value={storeId}
+                      onChange={(e) => setStoreId(e.target.value)}
+                      disabled={loading}
+                    >
+                      <option value="all">All Stores</option>
+                      {stores.map((store) => (
+                        <option key={store.id} value={store.id}>
+                          {store.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">
-                    Select specific store or apply to all stores
+                    {item?.store_id 
+                      ? "Store is pre-assigned and cannot be changed"
+                      : "Select specific store or apply to all stores"
+                    }
                   </p>
                 </div>
               </div>
@@ -1442,7 +1518,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="mb-6">
                 <div>
                   <label className="block mb-1 font-medium">SKU</label>
                   <input
@@ -1451,16 +1527,6 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     onChange={(e) => setSku(e.target.value)}
                     disabled={loading}
                     placeholder="SKU"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Barcode</label>
-                  <input
-                    className="w-full border rounded px-3 py-2"
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value)}
-                    disabled={loading}
-                    placeholder="Barcode"
                   />
                 </div>
               </div>
@@ -1520,26 +1586,6 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   )}
                 </div>
                 <div>
-                  <label className="block mb-1 font-medium">Sub Category</label>
-                  <select
-                    className="w-full border rounded px-3 py-2"
-                    value={subcategoryId}
-                    onChange={(e) => setSubcategoryId(e.target.value)}
-                    disabled={loading || !categoryId}
-                  >
-                    <option value="">Select a subcategory</option>
-                    {subcategories
-                      .filter((sc) => sc.category_id === categoryId)
-                      .map((sc) => (
-                        <option key={sc.id} value={sc.id}>
-                          {sc.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div>
                   <label className="block mb-1 font-medium">Brand</label>
                   <select
                     className="w-full border rounded px-3 py-2"
@@ -1556,11 +1602,36 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </select>
                 </div>
               </div>
-              {/* Variant Attributes Section */}
+
+              {/* Variant Attributes Toggle */}
               {variantAttributes.length > 0 && (
+                <div className="mb-6 flex items-center gap-3">
+                  <span className="font-medium">Add Product Specifications?</span>
+                  <button
+                    type="button"
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                      showVariantAttributes ? "bg-blue-600" : "bg-gray-300"
+                    }`}
+                    onClick={() => setShowVariantAttributes((v) => !v)}
+                    aria-pressed={showVariantAttributes}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                        showVariantAttributes ? "translate-x-5" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-sm text-gray-500">
+                    {showVariantAttributes ? "Yes" : "No"}
+                  </span>
+                </div>
+              )}
+
+              {/* Variant Attributes Section */}
+              {variantAttributes.length > 0 && showVariantAttributes && (
                 <div className="mb-6">
                   <label className="block mb-2 font-medium">
-                    Product Specifications (Optional)
+                    Product Specifications
                   </label>
                   <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
                     {variantAttributes.map((attr) => (
@@ -1598,26 +1669,52 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </p>
                 </div>
               )}
-              <div className="mb-6">
-                <label className="block mb-1 font-medium">Item Barcode</label>
-                <div className="flex gap-2">
-                  <input
-                    className="w-full border rounded px-3 py-2"
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value)}
-                    disabled={loading}
-                    placeholder="Barcode"
+
+              {/* Barcode Toggle */}
+              <div className="mb-6 flex items-center gap-3">
+                <span className="font-medium">View Barcode</span>
+                <button
+                  type="button"
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                    showBarcode ? "bg-blue-600" : "bg-gray-300"
+                  }`}
+                  onClick={() => setShowBarcode((v) => !v)}
+                  aria-pressed={showBarcode}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                      showBarcode ? "translate-x-5" : "translate-x-1"
+                    }`}
                   />
-                </div>
+                </button>
+                <span className="text-sm text-gray-500">
+                  {showBarcode ? "Show" : "Hide"}
+                </span>
               </div>
-              {barcode && (
-                <div className="mt-2 flex justify-center">
-                  <Barcode
-                    value={barcode}
-                    height={60}
-                    width={2}
-                    displayValue={false}
-                  />
+
+              {/* Barcode Section */}
+              {showBarcode && (
+                <div className="mb-6">
+                  <label className="block mb-1 font-medium">Item Barcode</label>
+                  <div className="flex gap-2">
+                    <input
+                      className="w-full border rounded px-3 py-2"
+                      value={barcode}
+                      onChange={(e) => setBarcode(e.target.value)}
+                      disabled={loading}
+                      placeholder="Barcode"
+                    />
+                  </div>
+                  {barcode && (
+                    <div className="mt-2 flex justify-center">
+                      <Barcode
+                        value={barcode}
+                        height={60}
+                        width={2}
+                        displayValue={false}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
               <div className="mb-6">

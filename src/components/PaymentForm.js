@@ -10,6 +10,7 @@ import MomoPayment from "./payment/types/MomoPayment";
 import { getPaymentTypeLabel, getPaymentTypeIcon, validatePaymentData } from "./payment/utils/paymentHelpers";
 import LayawaySummary from "./payment/LayawaySummary";
 import OrderItems from "./OrderItems";
+import TooltipIconButton from "./TooltipIconButton";
 
 const PaymentForm = ({ 
   isOpen, 
@@ -323,374 +324,241 @@ const PaymentForm = ({
       case "split":
         return (
           <div className="space-y-4">
-            {/* Split Payment Summary */}
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon icon="mdi:call-split" className="w-5 h-5 text-purple-600" />
-                <span className="font-semibold text-purple-800">Split Payment Summary</span>
+            {/* Streamlined Split Payment Summary */}
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Icon icon="mdi:call-split" className="w-6 h-6 text-purple-600" />
+                  <span className="font-bold text-lg text-purple-800">Split Payment</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-600">Total</div>
+                  <div className="text-xl font-bold text-purple-700">GHS {total.toLocaleString()}</div>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Total Amount:</span>
-                  <span className="font-semibold ml-2 text-lg text-purple-700">GHS {total.toLocaleString()}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Paid Amount:</span>
-                  <span className="font-semibold ml-2 text-lg text-green-600">
+              
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="bg-green-100 rounded-lg p-3">
+                  <div className="text-sm text-green-600">Paid</div>
+                  <div className="text-lg font-bold text-green-700">
                     GHS {paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
-                  </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-600">Remaining:</span>
-                  <span className="font-semibold ml-2 text-lg text-orange-600">
+                <div className="bg-orange-100 rounded-lg p-3">
+                  <div className="text-sm text-orange-600">Remaining</div>
+                  <div className="text-lg font-bold text-orange-700">
                     GHS {(total - paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)).toLocaleString()}
-                  </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Add Payment Method */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon icon="mdi:plus-circle" className="w-5 h-5 text-blue-600" />
-                <span className="font-semibold text-gray-800">Add Payment Method</span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Method <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={paymentData.newSplitMethod || ""}
-                    onChange={(e) => setPaymentData(prev => ({
-                      ...prev,
-                      newSplitMethod: e.target.value
-                    }))}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select Method</option>
-                    <option value="cash">Cash</option>
-                    <option value="momo">Mobile Money</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Amount <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    max={paymentData.remainingAmount}
-                    value={paymentData.newSplitAmount || ""}
-                    onChange={(e) => {
-                      const amount = parseFloat(e.target.value) || 0;
-                      const remaining = paymentData.remainingAmount - amount;
-                      setPaymentData(prev => ({
-                        ...prev,
-                        newSplitAmount: e.target.value,
-                        newSplitRemaining: Math.max(0, remaining)
-                      }));
-                    }}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder={`Max: GHS ${paymentData.remainingAmount.toLocaleString()}`}
-                  />
-                </div>
-                
-                                 <div className="flex items-end gap-2">
-                   {paymentData.editingPayment && (
-                     <button
-                       type="button"
-                       onClick={() => {
-                         setPaymentData(prev => ({
-                           ...prev,
-                           editingPayment: null,
-                           newSplitMethod: "",
-                           newSplitAmount: "",
-                           newSplitRemaining: 0,
-                           momoProvider: "",
-                           customerPhone: "",
-                           referenceNumber: "",
-                           bankName: "",
-                           chequeDate: ""
-                         }));
-                       }}
-                       className="w-full bg-gray-500 text-white rounded-lg px-4 py-3 font-medium hover:bg-gray-600 transition-colors"
-                     >
-                       Cancel Edit
-                     </button>
-                   )}
-                   <button
+            {/* Quick Split Payment Options */}
+            {paymentData.remainingAmount > 0 && (
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-gray-700">Quick Split Options:</div>
+                <div className="flex justify-center">
+                  <button
                     type="button"
-                                         onClick={() => {
-                       if (!paymentData.newSplitMethod || !paymentData.newSplitAmount) {
-                         toast.error("Please select payment method and enter amount");
-                         return;
-                       }
-                       const amount = parseFloat(paymentData.newSplitAmount) || 0;
-                       // Calculate paid/remaining excluding the payment being edited (if any)
-                       let paid = 0;
-                       if (paymentData.editingPayment) {
-                         paid = paymentData.splitPayments
-                           .filter(p => p.id !== paymentData.editingPayment)
-                           .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                       } else {
-                         paid = paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                       }
-                       const remaining = total - paid;
-                       if (amount <= 0) {
-                         toast.error("Amount must be greater than zero");
-                         return;
-                       }
-                       if (amount > remaining) {
-                         toast.error("Amount cannot exceed remaining balance");
-                         return;
-                       }
-                       if (paymentData.editingPayment) {
-                         // Update existing payment
-                         const updatedPayments = paymentData.splitPayments.map(p =>
-                           p.id === paymentData.editingPayment
-                             ? {
-                                 ...p,
-                                 method: paymentData.newSplitMethod,
-                                 amount: amount,
-                                 momoProvider: paymentData.momoProvider,
-                                 customerPhone: paymentData.customerPhone,
-                                 referenceNumber: paymentData.referenceNumber,
-                                 bankName: paymentData.bankName,
-                                 chequeDate: paymentData.chequeDate
-                               }
-                             : p
-                         );
-                         const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                         setPaymentData(prev => ({
-                           ...prev,
-                           splitPayments: updatedPayments,
-                           remainingAmount: total - updatedPaid,
-                           editingPayment: null,
-                           newSplitMethod: "",
-                           newSplitAmount: "",
-                           newSplitRemaining: 0,
-                           momoProvider: "",
-                           customerPhone: "",
-                           referenceNumber: "",
-                           bankName: "",
-                           chequeDate: ""
-                         }));
-                         toast.success(`Payment updated to ${getPaymentTypeLabel(paymentData.newSplitMethod)} - GHS ${amount.toLocaleString()}`);
-                       } else {
-                         // Add new payment
-                         const newPayment = {
-                           id: Date.now(),
-                           method: paymentData.newSplitMethod,
-                           amount: amount,
-                           status: 'pending',
-                           timestamp: new Date().toISOString(),
-                           momoProvider: paymentData.momoProvider,
-                           customerPhone: paymentData.customerPhone,
-                           referenceNumber: paymentData.referenceNumber,
-                           bankName: paymentData.bankName,
-                           chequeDate: paymentData.chequeDate
-                         };
-                         const updatedPayments = [...paymentData.splitPayments, newPayment];
-                         const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                         setPaymentData(prev => ({
-                           ...prev,
-                           splitPayments: updatedPayments,
-                           remainingAmount: total - updatedPaid,
-                           newSplitMethod: "",
-                           newSplitAmount: "",
-                           newSplitRemaining: 0,
-                           momoProvider: "",
-                           customerPhone: "",
-                           referenceNumber: "",
-                           bankName: "",
-                           chequeDate: ""
-                         }));
-                         toast.success(`${getPaymentTypeLabel(paymentData.newSplitMethod)} payment of GHS ${amount.toLocaleString()} added`);
-                       }
-                     }}
-                    className="w-full bg-blue-600 text-white rounded-lg px-4 py-3 font-medium hover:bg-blue-700 transition-colors"
+                    onClick={() => {
+                      const half = Math.ceil(paymentData.remainingAmount / 2);
+                      const remaining = paymentData.remainingAmount - half;
+                      if (half > 0) {
+                        // Add half in cash
+                        const cashPayment = {
+                          id: Date.now(),
+                          method: "cash",
+                          amount: half,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        
+                        // Add remaining in momo
+                        const momoPayment = {
+                          id: Date.now() + 1,
+                          method: "momo",
+                          amount: remaining,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        
+                        const updatedPayments = [...paymentData.splitPayments, cashPayment, momoPayment];
+                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                        setPaymentData(prev => ({
+                          ...prev,
+                          splitPayments: updatedPayments,
+                          remainingAmount: total - updatedPaid,
+                        }));
+                        toast.success(`Split: Cash (GHS ${half.toLocaleString()}) + MoMo (GHS ${remaining.toLocaleString()})`);
+                      }
+                    }}
+                    className="flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-green-100 to-blue-100 border border-green-300 rounded-xl hover:from-green-200 hover:to-blue-200 transition-all font-semibold text-gray-700 w-full max-w-md"
                   >
-                                         {paymentData.editingPayment ? "Update Payment" : "Add Payment"}
+                    <Icon icon="mdi:cash" className="w-6 h-6 text-green-600" />
+                    <span>Split 50/50</span>
+                    <Icon icon="mdi:cellphone" className="w-6 h-6 text-blue-600" />
                   </button>
                 </div>
               </div>
-              
-              {/* Dynamic Fields for Selected Payment Method */}
-              {paymentData.newSplitMethod && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Icon icon={getPaymentTypeIcon(paymentData.newSplitMethod)} className="w-5 h-5 text-blue-600" />
-                    <span className="font-semibold text-blue-800">
-                      {getPaymentTypeLabel(paymentData.newSplitMethod)} Details
-                    </span>
+            )}
+
+            {/* Custom Amount Input */}
+            {paymentData.remainingAmount > 0 && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon icon="mdi:plus-circle" className="w-5 h-5 text-blue-600" />
+                  <span className="font-semibold text-gray-800">Custom Amount</span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-1">
+                    <input
+                      type="number"
+                      step="0.01"
+                      max={paymentData.remainingAmount}
+                      value={paymentData.newSplitAmount || ""}
+                      onChange={(e) => {
+                        const amount = parseFloat(e.target.value) || 0;
+                        setPaymentData(prev => ({
+                          ...prev,
+                          newSplitAmount: e.target.value
+                        }));
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={`Max: GHS ${paymentData.remainingAmount.toLocaleString()}`}
+                    />
                   </div>
                   
-                  {paymentData.newSplitMethod === "momo" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mobile Money Provider
-                        </label>
-                        <select
-                          value={paymentData.momoProvider}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            momoProvider: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select Provider</option>
-                          <option value="mtn">MTN Mobile Money</option>
-                          <option value="vodafone">Vodafone Cash</option>
-                          <option value="airtel">Airtel Money</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Customer Phone <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="tel"
-                          value={paymentData.customerPhone}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            customerPhone: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="e.g., 0241234567"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Transaction Reference <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={paymentData.referenceNumber}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            referenceNumber: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter transaction reference"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {paymentData.newSplitMethod === "card" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Card Type
-                        </label>
-                        <select
-                          value={paymentData.cardType}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            cardType: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select Card Type</option>
-                          <option value="visa">Visa</option>
-                          <option value="mastercard">Mastercard</option>
-                          <option value="amex">American Express</option>
-                          <option value="local">Local Card</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Reference Number
-                        </label>
-                        <input
-                          type="text"
-                          value={paymentData.referenceNumber}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            referenceNumber: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter transaction reference"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {paymentData.newSplitMethod === "bank_transfer" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Bank Name
-                        </label>
-                        <select
-                          value={paymentData.bankName}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            bankName: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="">Select Bank</option>
-                          <option value="gcb">GCB Bank</option>
-                          <option value="ecobank">Ecobank Ghana</option>
-                          <option value="zenith">Zenith Bank Ghana</option>
-                          <option value="access">Access Bank Ghana</option>
-                          <option value="cal">CAL Bank</option>
-                          <option value="fidelity">Fidelity Bank Ghana</option>
-                          <option value="stanbic">Stanbic Bank Ghana</option>
-                          <option value="barclays">Barclays Bank Ghana</option>
-                          <option value="sgssb">SG-SSB</option>
-                          <option value="republic">Republic Bank Ghana</option>
-                          <option value="prudential">Prudential Bank</option>
-                          <option value="uniBank">UniBank Ghana</option>
-                          <option value="agric">Agricultural Development Bank</option>
-                          <option value="national">National Investment Bank</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Reference Number
-                        </label>
-                        <input
-                          type="text"
-                          value={paymentData.referenceNumber}
-                          onChange={(e) => setPaymentData(prev => ({
-                            ...prev,
-                            referenceNumber: e.target.value
-                          }))}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Enter transfer reference"
-                        />
-                      </div>
-                    </div>
-                  )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <TooltipIconButton
+                      label={`Enter amount in Cash, pay remaining (GHS ${(paymentData.remainingAmount - (parseFloat(paymentData.newSplitAmount) || 0)).toLocaleString()}) in Mobile Money`}
+                      mode="light"
+                      className="flex items-center justify-center gap-2 p-3 bg-green-100 border border-green-300 rounded-lg hover:bg-green-200 transition-colors font-medium text-green-700 w-full"
+                      onClick={() => {
+                        if (!paymentData.newSplitAmount) {
+                          toast.error("Please enter an amount");
+                          return;
+                        }
+                        const amount = parseFloat(paymentData.newSplitAmount) || 0;
+                        if (amount <= 0) {
+                          toast.error("Amount must be greater than zero");
+                          return;
+                        }
+                        if (amount > paymentData.remainingAmount) {
+                          toast.error("Amount cannot exceed remaining balance");
+                          return;
+                        }
+                        
+                        const remaining = paymentData.remainingAmount - amount;
+                        
+                        // Add the entered amount in cash
+                        const cashPayment = {
+                          id: Date.now(),
+                          method: "cash",
+                          amount: amount,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        
+                        // Add remaining balance in momo
+                        const momoPayment = {
+                          id: Date.now() + 1,
+                          method: "momo",
+                          amount: remaining,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        
+                        const updatedPayments = [...paymentData.splitPayments, cashPayment, momoPayment];
+                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                        setPaymentData(prev => ({
+                          ...prev,
+                          splitPayments: updatedPayments,
+                          remainingAmount: total - updatedPaid,
+                          newSplitAmount: "",
+                        }));
+                        toast.success(`Cash: GHS ${amount.toLocaleString()} + MoMo: GHS ${remaining.toLocaleString()}`);
+                      }}
+                    >
+                      <Icon icon="mdi:cash" className="w-5 h-5" />
+                      <span>Cash + Balance MoMo</span>
+                    </TooltipIconButton>
+                    
+                    <TooltipIconButton
+                      label={`Enter amount in Mobile Money, pay remaining (GHS ${(paymentData.remainingAmount - (parseFloat(paymentData.newSplitAmount) || 0)).toLocaleString()}) in Cash`}
+                      mode="light"
+                      className="flex items-center justify-center gap-2 p-3 bg-blue-100 border border-blue-300 rounded-lg hover:bg-blue-200 transition-colors font-medium text-blue-700 w-full"
+                      onClick={() => {
+                        if (!paymentData.newSplitAmount) {
+                          toast.error("Please enter an amount");
+                          return;
+                        }
+                        const amount = parseFloat(paymentData.newSplitAmount) || 0;
+                        if (amount <= 0) {
+                          toast.error("Amount must be greater than zero");
+                          return;
+                        }
+                        if (amount > paymentData.remainingAmount) {
+                          toast.error("Amount cannot exceed remaining balance");
+                          return;
+                        }
+                        
+                        const remaining = paymentData.remainingAmount - amount;
+                        
+                        // Add the entered amount in momo
+                        const momoPayment = {
+                          id: Date.now(),
+                          method: "momo",
+                          amount: amount,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        
+                        // Add remaining balance in cash
+                        const cashPayment = {
+                          id: Date.now() + 1,
+                          method: "cash",
+                          amount: remaining,
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                        };
+                        
+                        const updatedPayments = [...paymentData.splitPayments, momoPayment, cashPayment];
+                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                        setPaymentData(prev => ({
+                          ...prev,
+                          splitPayments: updatedPayments,
+                          remainingAmount: total - updatedPaid,
+                          newSplitAmount: "",
+                        }));
+                        toast.success(`MoMo: GHS ${amount.toLocaleString()} + Cash: GHS ${remaining.toLocaleString()}`);
+                      }}
+                    >
+                      <Icon icon="mdi:cellphone" className="w-5 h-5" />
+                      <span>MoMo + Balance Cash</span>
+                    </TooltipIconButton>
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Split Payments List */}
+            {/* Payment List - Simplified */}
             {paymentData.splitPayments.length > 0 && (
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Icon icon="mdi:format-list-bulleted" className="w-5 h-5 text-gray-600" />
-                  <span className="font-semibold text-gray-800">Payment Breakdown</span>
+                  <span className="font-semibold text-gray-800">Payment Summary</span>
                 </div>
                 
                 <div className="space-y-2">
                   {paymentData.splitPayments.map((payment, index) => (
                     <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <Icon 
-                            icon={getPaymentTypeIcon(payment.method)} 
-                            className="w-5 h-5 text-blue-600" 
-                          />
-                          <span className="font-medium">{getPaymentTypeLabel(payment.method)}</span>
-                        </div>
+                        <Icon 
+                          icon={getPaymentTypeIcon(payment.method)} 
+                          className="w-5 h-5 text-blue-600" 
+                        />
+                        <span className="font-medium">{getPaymentTypeLabel(payment.method)}</span>
                         <span className="text-sm text-gray-500">
                           {new Date(payment.timestamp).toLocaleTimeString()}
                         </span>
@@ -700,47 +568,24 @@ const PaymentForm = ({
                         <span className="font-semibold text-green-600">
                           GHS {payment.amount.toLocaleString()}
                         </span>
-                                               <div className="flex items-center gap-2">
-                         <button
-                           type="button"
-                           onClick={() => {
-                             // Edit payment details
-                             setPaymentData(prev => ({
-                               ...prev,
-                               editingPayment: payment.id,
-                               newSplitMethod: payment.method,
-                               newSplitAmount: payment.amount.toString(),
-                               // Copy payment-specific fields
-                               momoProvider: payment.momoProvider || "",
-                               customerPhone: payment.customerPhone || "",
-                               referenceNumber: payment.referenceNumber || "",
-                               bankName: payment.bankName || "",
-                               chequeDate: payment.chequeDate || ""
-                             }));
-                           }}
-                           className="text-blue-500 hover:text-blue-700"
-                         >
-                           <Icon icon="mdi:pencil" className="w-4 h-4" />
-                         </button>
-                         <button
-                           type="button"
-                           onClick={() => {
-                             setPaymentData(prev => {
-                               const updatedPayments = prev.splitPayments.filter(p => p.id !== payment.id);
-                               const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                               return {
-                                 ...prev,
-                                 splitPayments: updatedPayments,
-                                 remainingAmount: total - updatedPaid
-                               };
-                             });
-                             toast.success("Payment removed from split");
-                           }}
-                           className="text-red-500 hover:text-red-700"
-                         >
-                           <Icon icon="mdi:delete" className="w-4 h-4" />
-                         </button>
-                       </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentData(prev => {
+                              const updatedPayments = prev.splitPayments.filter(p => p.id !== payment.id);
+                              const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                              return {
+                                ...prev,
+                                splitPayments: updatedPayments,
+                                remainingAmount: total - updatedPaid
+                              };
+                            });
+                            toast.success("Payment removed");
+                          }}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <Icon icon="mdi:delete" className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -762,134 +607,6 @@ const PaymentForm = ({
                 </div>
               </div>
             )}
-
-            {/* Quick Payment Options */}
-            {paymentData.remainingAmount > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Icon icon="mdi:lightning-bolt" className="w-5 h-5 text-blue-600" />
-                  <span className="font-semibold text-blue-800">Quick Payment Options</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const amount = paymentData.remainingAmount;
-                      if (amount > 0) {
-                        const newPayment = {
-                          id: Date.now(),
-                          method: "cash",
-                          amount: amount,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        const updatedPayments = [...paymentData.splitPayments, newPayment];
-                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                        setPaymentData(prev => ({
-                          ...prev,
-                          splitPayments: updatedPayments,
-                          remainingAmount: total - updatedPaid,
-                          newSplitMethod: "",
-                          newSplitAmount: "",
-                          newSplitRemaining: 0,
-                        }));
-                        toast.success(`Cash payment of GHS ${amount.toLocaleString()} added`);
-                      }
-                    }}
-                    className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    Pay Remaining in Cash
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const amount = paymentData.remainingAmount;
-                      if (amount > 0) {
-                        const newPayment = {
-                          id: Date.now(),
-                          method: "momo",
-                          amount: amount,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        const updatedPayments = [...paymentData.splitPayments, newPayment];
-                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                        setPaymentData(prev => ({
-                          ...prev,
-                          splitPayments: updatedPayments,
-                          remainingAmount: total - updatedPaid,
-                          newSplitMethod: "",
-                          newSplitAmount: "",
-                          newSplitRemaining: 0,
-                        }));
-                        toast.success(`Mobile Money payment of GHS ${amount.toLocaleString()} added`);
-                      }
-                    }}
-                    className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    Pay Remaining in MoMo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const half = Math.ceil(paymentData.remainingAmount / 2);
-                      if (half > 0) {
-                        const newPayment = {
-                          id: Date.now(),
-                          method: "cash",
-                          amount: half,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        const updatedPayments = [...paymentData.splitPayments, newPayment];
-                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                        setPaymentData(prev => ({
-                          ...prev,
-                          splitPayments: updatedPayments,
-                          remainingAmount: total - updatedPaid,
-                          newSplitMethod: "",
-                          newSplitAmount: "",
-                          newSplitRemaining: 0,
-                        }));
-                        toast.success(`Half payment of GHS ${half.toLocaleString()} added`);
-                      }
-                    }}
-                    className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    Half in Cash
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const half = Math.ceil(paymentData.remainingAmount / 2);
-                      if (half > 0) {
-                        const newPayment = {
-                          id: Date.now(),
-                          method: "momo",
-                          amount: half,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        const updatedPayments = [...paymentData.splitPayments, newPayment];
-                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                        setPaymentData(prev => ({
-                          ...prev,
-                          splitPayments: updatedPayments,
-                          remainingAmount: total - updatedPaid,
-                          newSplitMethod: "",
-                          newSplitAmount: "",
-                          newSplitRemaining: 0,
-                        }));
-                        toast.success(`Half payment of GHS ${half.toLocaleString()} added`);
-                      }
-                    }}
-                    className="p-2 text-sm bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    Half in MoMo
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         );
 
@@ -907,7 +624,6 @@ const PaymentForm = ({
       {/* Backdrop */}
       <div
         className="fixed inset-0 transition-all duration-500 backdrop-blur-sm bg-gradient-to-br from-white/20 via-blue-50/30 to-blue-50/20"
-        onClick={onClose}
         style={{
           backgroundImage: `
             radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),

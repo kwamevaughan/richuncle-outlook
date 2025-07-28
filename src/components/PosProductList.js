@@ -8,7 +8,7 @@ import SimpleModal from "./SimpleModal";
 import TooltipIconButton from "@/components/TooltipIconButton";
 import Select, { components } from 'react-select';
 
-const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts, hasOpenSession = true, sessionCheckLoading = false }) => {
+const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts, hasOpenSession = true, sessionCheckLoading = false, className = "" }) => {
   const { categories, loading: catLoading, error: catError } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, _setProducts] = useState([]);
@@ -20,7 +20,16 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   const [barcodeProduct, setBarcodeProduct] = useState(null);
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeQty, setBarcodeQty] = useState(1);
-    const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [showBarcodeModal, setShowBarcodeModal] = useState(false);
+  const [categoryPage, setCategoryPage] = useState(0);
+  
+  // Product pagination state
+  const [displayedProducts, setDisplayedProducts] = useState([]);
+  const [productsPerPage, setProductsPerPage] = useState(20); // Start with 20 products
+  const [currentProductPage, setCurrentProductPage] = useState(1);
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   // Prepare options for react-select
   const productOptions = products.map(product => ({
     value: product.id,
@@ -43,12 +52,13 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
             <div className="font-semibold text-sm truncate">{product.name}</div>
             <div className="text-xs text-gray-500">GHS {product.price}</div>
           </div>
-          <div className="text-xs text-gray-400">Stock: {product.quantity}</div>
+          {user?.role !== "cashier" && (
+            <div className="text-xs text-gray-400">Stock: {product.quantity}</div>
+          )}
         </div>
       </components.Option>
     );
   };
-
 
   // Fetch products when selectedCategory changes or reloadFlag changes
   useEffect(() => {
@@ -76,16 +86,69 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     }
   }, [catLoading, categories, selectedCategory]);
 
-  // Filter products by search
+  // Filter products by search and category
   const filteredProducts = products.filter((product) => {
     const searchLower = search.toLowerCase();
     const cat = categories.find((c) => c.id === product.category_id);
+    
+    // Filter by category first
+    if (selectedCategory && selectedCategory !== "all") {
+      if (product.category_id !== selectedCategory) {
+        return false;
+      }
+    }
+    
+    // Then filter by search
     return (
       product.name?.toLowerCase().includes(searchLower) ||
       product.sku?.toLowerCase().includes(searchLower) ||
       (cat && cat.name?.toLowerCase().includes(searchLower))
     );
   });
+
+  // Update displayed products when filtered products change
+  useEffect(() => {
+    setCurrentProductPage(1);
+    const initialProducts = filteredProducts.slice(0, productsPerPage);
+    setDisplayedProducts(initialProducts);
+    setHasMoreProducts(filteredProducts.length > productsPerPage);
+  }, [filteredProducts, productsPerPage]);
+
+  // Load more products function
+  const loadMoreProducts = () => {
+    if (loadingMore || !hasMoreProducts) return;
+    
+    setLoadingMore(true);
+    
+    // Simulate loading delay for better UX
+    setTimeout(() => {
+      const nextPage = currentProductPage + 1;
+      const startIndex = (nextPage - 1) * productsPerPage;
+      const endIndex = startIndex + productsPerPage;
+      const newProducts = filteredProducts.slice(startIndex, endIndex);
+      
+      setDisplayedProducts(prev => [...prev, ...newProducts]);
+      setCurrentProductPage(nextPage);
+      setHasMoreProducts(endIndex < filteredProducts.length);
+      setLoadingMore(false);
+    }, 300);
+  };
+
+  // Category pagination logic
+  const categoriesPerPage = 4;
+  const allCategories = [{ id: "all", name: "All", image_url: "https://ik.imagekit.io/164jkw2ne/CategoryImages/all_accessories.jpg?updatedAt=1751485982538" }, ...categories];
+  const totalPages = Math.ceil(allCategories.length / categoriesPerPage);
+  const startIndex = categoryPage * categoriesPerPage;
+  const endIndex = startIndex + categoriesPerPage;
+  const visibleCategories = allCategories.slice(startIndex, endIndex);
+
+  const nextPage = () => {
+    setCategoryPage(prev => Math.min(prev + 1, totalPages - 1));
+  };
+
+  const prevPage = () => {
+    setCategoryPage(prev => Math.max(prev - 1, 0));
+  };
 
   // Dismiss toast when products finish loading
   useEffect(() => {
@@ -110,7 +173,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     
     // Validate against stock
     if (product && val > product.quantity) {
-      toast.error(`Cannot exceed available stock of ${product.quantity} units.`);
+      toast.error(user?.role === "cashier" ? "Cannot exceed available stock." : `Cannot exceed available stock of ${product.quantity} units.`);
       return;
     }
     
@@ -123,7 +186,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     
     // Validate against stock
     if (product && currentQty >= product.quantity) {
-      toast.error(`Cannot exceed available stock of ${product.quantity} units.`);
+      toast.error(user?.role === "cashier" ? "Cannot exceed available stock." : `Cannot exceed available stock of ${product.quantity} units.`);
       return;
     }
     
@@ -155,7 +218,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     
     // Validate stock before adding
     if (product && currentQty > product.quantity) {
-      toast.error(`Insufficient stock! Only ${product.quantity} units available.`);
+      toast.error(user?.role === "cashier" ? "Insufficient stock!" : `Insufficient stock! Only ${product.quantity} units available.`);
       return;
     }
     
@@ -171,90 +234,13 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   };
 
   return (
-    <div className="flex-1">
-      <div className="flex rounded-lg overflow-hidden h-screen">
-        {/* Vertical Tabs: Categories */}
-        <div className="flex flex-col border-r w-30 bg-gray-50 py-2 gap-2 min-h-0 overflow-auto">
-          {/* All tab */}
-          <button
-            type="button"
-            key="all"
-            className={`flex flex-col items-center justify-center px-2 py-4 text-center text-sm font-medium rounded-lg border transition-colors duration-150 focus:outline-none bg-white  hover:bg-blue-100 gap-2 ${
-              selectedCategory === "all"
-                ? "bg-blue-100 text-blue-700 border-blue-400"
-                : "text-gray-700 border-transparent"
-            }`}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setSelectedCategory("all");
-            }}
-          >
-            <Image
-              src="https://ik.imagekit.io/164jkw2ne/CategoryImages/all_accessories.jpg?updatedAt=1751485982538"
-              alt="All"
-              width={40}
-              height={40}
-              className="w-8 h-8 object-cover rounded-full mb-1 border"
-            />
-            <span className="whitespace-normal break-words font-semibold">
-              All
-            </span>
-          </button>
-          {/* Category tabs */}
-          {catLoading && <div className="p-4 text-blue-600">Loading...</div>}
-          {catError && <div className="p-4 text-red-600">{catError}</div>}
-          {!catLoading && !catError && categories.length === 0 && (
-            <div className="p-4 text-gray-400">No categories</div>
-          )}
-          {categories.map((cat) => (
-            <button
-              type="button"
-              key={cat.id}
-              className={`flex flex-col items-center justify-center px-2 py-4 text-center text-sm font-semibold rounded-lg border transition-colors duration-150 focus:outline-none hover:bg-blue-100 bg-white gap-2 ${
-                selectedCategory === cat.id
-                  ? "bg-blue-100 text-blue-700 border-blue-400"
-                  : "text-gray-700 border-transparent"
-              }`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setSelectedCategory(cat.id);
-              }}
-            >
-              {cat.image_url && (
-                <Image
-                  src={cat.image_url}
-                  alt={cat.name}
-                  width={40}
-                  height={40}
-                  className="w-8 h-8 object-cover rounded-full mb-1 border"
-                />
-              )}
-              <span className="whitespace-normal break-words">{cat.name}</span>
-            </button>
-          ))}
-        </div>
+    <div className={className}>
+      <div className="flex rounded-lg overflow-hidden h-screen bg-white">
         {/* Tab Content: Products Grid */}
-        <div className="flex-1 px-6 py-0 flex flex-col">
+        <div className="w-full px-6 py-0 flex flex-col">
           <div className="flex justify-between items-center gap-4 mb-4">
-            <h1 className="text-lg font-bold flex items-center gap-2">
-              Welcome,
-              <span>{user.name}</span>
-            </h1>
             <div className="flex items-center gap-2">
-              <TooltipIconButton
-                label="Open Barcode Scanner"
-                mode="light"
-                className="ml-2 p-2 rounded-2xl border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
-                onClick={() => setShowBarcodeModal(true)}
-              >
-                <Icon icon="mdi:fullscreen" className="w-5 h-5" />
-              </TooltipIconButton>
-              <div
-                className="relative flex-1"
-                style={{ width: "100%", maxWidth: "900px", minWidth: "400px" }}
-              >
+              <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon
                     icon="material-symbols:search-rounded"
@@ -272,7 +258,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     onFocus={() => {
                       /* Optionally, you can set a local state to control open if needed */
                     }}
-                    onChange={option => {
+                    onChange={(option) => {
                       if (option && option.product) {
                         toggleProductSelect(option.product.id);
                       }
@@ -280,12 +266,12 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     styles={{
                       control: (base) => ({
                         ...base,
-                        borderRadius: '1rem',
-                        minHeight: '40px',
-                        paddingLeft: '2.5rem',
-                        fontSize: '0.95rem',
-                        boxShadow: 'none',
-                        borderColor: '#cbd5e1',
+                        borderRadius: "1rem",
+                        minHeight: "48px",
+                        paddingLeft: "2.5rem",
+                        fontSize: "1rem",
+                        boxShadow: "none",
+                        borderColor: "#cbd5e1",
                       }),
                       menu: (base) => ({
                         ...base,
@@ -294,22 +280,36 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       }),
                       option: (base, state) => ({
                         ...base,
-                        backgroundColor: state.isFocused ? '#e0f2fe' : '#fff',
-                        color: '#222',
-                        cursor: 'pointer',
-                        padding: '8px 12px',
+                        backgroundColor: state.isFocused ? "#e0f2fe" : "#fff",
+                        color: "#222",
+                        cursor: "pointer",
+                        padding: "12px 16px",
+                        fontSize: "1rem",
                       }),
                     }}
                   />
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    <Icon icon="material-symbols:search-rounded" className="w-5 h-5" />
+                    <Icon
+                      icon="material-symbols:search-rounded"
+                      className="w-5 h-5"
+                    />
                   </span>
                 </div>
               </div>
+
+              <TooltipIconButton
+                label="Open Barcode Scanner"
+                mode="light"
+                className="ml-2 p-3 rounded-2xl border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95"
+                onClick={() => setShowBarcodeModal(true)}
+              >
+                <Icon icon="tabler:barcode" className="w-6 h-6" />
+              </TooltipIconButton>
+
               <TooltipIconButton
                 label="Refresh Product List"
                 mode="light"
-                className="ml-2 p-2 rounded-2xl border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="ml-2 p-3 rounded-2xl border bg-white hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -321,157 +321,267 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               >
                 <Icon
                   icon="material-symbols:refresh"
-                  className="w-5 h-5 text-blue-800"
+                  className="w-6 h-6 text-blue-800"
                 />
               </TooltipIconButton>
             </div>
+          </div>
+          <div className="flex items-center gap-2  mb-4">
+            {/* Left Arrow */}
+            <button
+              type="button"
+              onClick={prevPage}
+              disabled={categoryPage === 0}
+              className={`p-3 rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
+                categoryPage === 0
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-blue-50 active:scale-95"
+              }`}
+            >
+              <Icon icon="mdi:chevron-left" className="w-6 h-6" />
+            </button>
+
+            {/* Categories Container */}
+            <div className="flex gap-4 flex-1 justify-center items-center">
+              {catLoading && (
+                <div className="p-4 text-blue-600">Loading...</div>
+              )}
+              {catError && <div className="p-4 text-red-600">{catError}</div>}
+              {!catLoading && !catError && visibleCategories.length === 0 && (
+                <div className="p-4 text-gray-400">No categories</div>
+              )}
+              {visibleCategories.map((cat) => (
+                <button
+                  type="button"
+                  key={cat.id}
+                  className={`flex flex-col items-center justify-center px-3 py-3 text-center text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none hover:bg-blue-100 bg-white gap-2 min-w-[80px] min-h-[70px] touch-manipulation active:scale-95 ${
+                    selectedCategory === cat.id
+                      ? "bg-blue-100 text-blue-700 border-blue-400 scale-105"
+                      : "text-gray-700 border-transparent"
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedCategory(cat.id);
+                  }}
+                >
+                  {cat.image_url && (
+                    <Image
+                      src={cat.image_url}
+                      alt={cat.name}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 object-cover rounded-full border"
+                    />
+                  )}
+                  <span className="whitespace-normal break-words text-xs">
+                    {cat.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Right Arrow */}
+            <button
+              type="button"
+              onClick={nextPage}
+              disabled={categoryPage >= totalPages - 1}
+              className={`p-3 rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
+                categoryPage >= totalPages - 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                  : "bg-white text-gray-700 hover:bg-blue-50 active:scale-95"
+              }`}
+            >
+              <Icon icon="mdi:chevron-right" className="w-6 h-6" />
+            </button>
           </div>
 
           {prodLoading && (
             <div className="text-blue-600">Loading products...</div>
           )}
           {prodError && <div className="text-red-600">{prodError}</div>}
-          {!prodLoading && !prodError && filteredProducts.length === 0 && (
+          {!prodLoading && !prodError && displayedProducts.length === 0 && (
             <div className="text-gray-400">No products found.</div>
           )}
-          <div className="overflow-y-auto pr-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                className={`group relative border-2 rounded-lg p-3 flex flex-col items-center bg-gray-50 hover:shadow-lg transition cursor-pointer
-                  ${
-                    selectedProducts.includes(product.id)
-                      ? "border-green-500 shadow-green-100"
-                      : "border-gray-200"
+          
+          {/* Products Grid with Load More */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-1">
+              {displayedProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className={`group relative border-2 rounded-xl p-4 flex flex-col items-center bg-white hover:shadow-lg transition-all duration-200 cursor-pointer min-h-[220px] touch-manipulation m-0.5
+                    ${
+                      selectedProducts.includes(product.id)
+                        ? "border-green-500 shadow-green-100 scale-105"
+                        : "border-gray-200"
+                    }
+                    group-hover:border-green-500 group-hover:shadow-green-100
+                    active:scale-95
+                  `}
+                  style={{
+                    boxShadow: selectedProducts.includes(product.id)
+                      ? "0 0 0 0 #22c55e"
+                      : undefined,
+                  }}
+                  onMouseEnter={(e) =>
+                    e.currentTarget.classList.add(
+                      "border-green-500",
+                      "shadow-green-100"
+                    )
                   }
-                  group-hover:border-green-500 group-hover:shadow-green-100
-                `}
-                style={{
-                  boxShadow: selectedProducts.includes(product.id)
-                    ? "0 0 0 0 #22c55e"
-                    : undefined,
-                }}
-                onMouseEnter={(e) =>
-                  e.currentTarget.classList.add(
-                    "border-green-500",
-                    "shadow-green-100"
-                  )
-                }
-                onMouseLeave={(e) =>
-                  !selectedProducts.includes(product.id) &&
-                  e.currentTarget.classList.remove(
-                    "border-green-500",
-                    "shadow-green-100"
-                  )
-                }
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (user?.role === "cashier" && !hasOpenSession) {
-                    toast.error(
-                      "You must open a cash register before making sales."
-                    );
-                    return;
+                  onMouseLeave={(e) =>
+                    !selectedProducts.includes(product.id) &&
+                    e.currentTarget.classList.remove(
+                      "border-green-500",
+                      "shadow-green-100"
+                    )
                   }
-                  toggleProductSelect(product.id);
-                }}
-              >
-                {(selectedProducts.includes(product.id) ||
-                  true) /* always show on hover */ && (
-                  <span
-                    className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-500 ${
-                      selectedProducts.includes(product.id) ? "opacity-100" : ""
-                    }`}
-                  >
-                    <Icon icon="mdi:check" className="w-2 h-2 text-white" />
-                  </span>
-                )}
-                {product.image_url ? (
-                  <div className="w-full flex items-center justify-center mb-2 bg-gray-100 rounded p-2 ">
-                    <Image
-                      src={product.image_url}
-                      alt={product.name}
-                      width={112}
-                      height={112}
-                      className="object-cover rounded w-28 h-28 transition-transform duration-500 group-hover:scale-110"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-full flex items-center justify-center mb-2 bg-gray-100 rounded p-2 ">
-                    <Icon
-                      icon="mdi:image-off-outline"
-                      className="rounded border w-28 h-28 text-gray-400 bg-gray-100 object-cover"
-                    />
-                  </div>
-                )}
-                <div className="text-xs text-gray-500 mb-1 self-start">
-                  {(() => {
-                    const cat = categories.find(
-                      (c) => c.id === product.category_id
-                    );
-                    return cat ? cat.name : "";
-                  })()}
-                </div>
-                <div className="font-semibold mb-1 self-start truncate max-w-[120px] overflow-hidden">
-                  {product.name}
-                </div>
-
-                {/* Stock Status */}
-                <div className="self-start mb-1">
-                  {(() => {
-                    const stockStatus = getStockStatus(product.quantity);
-                    return (
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full font-medium ${stockStatus.bg} ${stockStatus.color}`}
-                      >
-                        {stockStatus.status === "out"
-                          ? "Out of Stock"
-                          : stockStatus.status === "low"
-                          ? `Low Stock (${product.quantity})`
-                          : `In Stock (${product.quantity})`}
-                      </span>
-                    );
-                  })()}
-                </div>
-
-                <span className="border-t w-full py-1"></span>
-
-                <div className="flex flex-col gap-1 self-start mt-1 w-full">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-sm font-bold text-blue-700">
-                      GHS {product.price}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (user?.role === "cashier" && !hasOpenSession) {
+                      toast.error(
+                        "You must open a cash register before making sales."
+                      );
+                      return;
+                    }
+                    toggleProductSelect(product.id);
+                  }}
+                >
+                  {(selectedProducts.includes(product.id) ||
+                    true) /* always show on hover */ && (
+                    <span
+                      className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-500 ${
+                        selectedProducts.includes(product.id) ? "opacity-100" : ""
+                      }`}
+                    >
+                      <Icon icon="mdi:check" className="w-2 h-2 text-white" />
                     </span>
-                    {user?.role !== "cashier" && (
-                      <span className="text-xs text-gray-500">
-                        Cost: GHS {product.cost_price || 0}
-                      </span>
-                    )}
+                  )}
+                  {product.image_url ? (
+                    <div className="w-full flex items-center justify-center mb-3 bg-gray-100 rounded-lg p-2 min-h-[80px]">
+                      <Image
+                        src={product.image_url}
+                        alt={product.name}
+                        width={80}
+                        height={80}
+                        className="object-cover rounded-lg w-20 h-20 transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full flex items-center justify-center mb-3 bg-gray-50 rounded-lg p-2 min-h-[60px]">
+                      <Icon
+                        icon="carbon:no-image"
+                        className="w-12 h-12 text-gray-400"
+                      />
+                    </div>
+                  )}
+                  <div className="text-sm text-gray-500 mb-2 self-start">
+                    {(() => {
+                      const cat = categories.find(
+                        (c) => c.id === product.category_id
+                      );
+                      return cat ? cat.name : "";
+                    })()}
                   </div>
-                  {product.cost_price &&
-                    product.cost_price > 0 &&
-                    user?.role !== "cashier" && (
-                      <div className="text-xs text-green-600 font-medium">
-                        Profit: GHS{" "}
-                        {(
-                          (product.price - product.cost_price) *
-                          (quantities[product.id] || 1)
-                        ).toFixed(2)}
-                      </div>
-                    )}
-                  {product.tax_percentage &&
-                    product.tax_percentage > 0 &&
-                    user?.role !== "cashier" && (
-                      <div className="text-xs text-orange-600 font-medium">
-                        Tax: {product.tax_percentage}% (
-                        {product.tax_type === "inclusive"
-                          ? "Included"
-                          : "Added"}
-                        )
-                      </div>
-                    )}
+                  <div className="font-semibold mb-2 self-start truncate max-w-full overflow-hidden text-base">
+                    {product.name}
+                  </div>
+
+                  {/* Stock Status */}
+                  {user?.role !== "cashier" && (
+                    <div className="self-start mb-1">
+                      {(() => {
+                        const stockStatus = getStockStatus(product.quantity);
+                        return (
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full font-medium ${stockStatus.bg} ${stockStatus.color}`}
+                          >
+                            {stockStatus.status === "out"
+                              ? "Out of Stock"
+                              : stockStatus.status === "low"
+                              ? `Low Stock (${product.quantity})`
+                              : `In Stock (${product.quantity})`}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  <span className="border-t w-full py-1"></span>
+
+                  <div className="flex flex-col gap-2 self-start mt-2 w-full">
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-lg font-bold text-blue-700">
+                        GHS {product.price}
+                      </span>
+                      {user?.role !== "cashier" && (
+                        <span className="text-sm text-gray-500">
+                          Cost: GHS {product.cost_price || 0}
+                        </span>
+                      )}
+                    </div>
+                    {product.cost_price &&
+                      product.cost_price > 0 &&
+                      user?.role !== "cashier" && (
+                        <div className="text-xs text-green-600 font-medium">
+                          Profit: GHS{" "}
+                          {(
+                            (product.price - product.cost_price) *
+                            (quantities[product.id] || 1)
+                          ).toFixed(2)}
+                        </div>
+                      )}
+                    {product.tax_percentage &&
+                      product.tax_percentage > 0 &&
+                      user?.role !== "cashier" && (
+                        <div className="text-xs text-orange-600 font-medium">
+                          Tax: {product.tax_percentage}% (
+                          {product.tax_type === "inclusive"
+                            ? "Included"
+                            : "Added"}
+                          )
+                        </div>
+                      )}
+                  </div>
                 </div>
+              ))}
+            </div>
+            
+            {/* Load More Button */}
+            {hasMoreProducts && !prodLoading && (
+              <div className="flex justify-center py-6">
+                <button
+                  onClick={loadMoreProducts}
+                  disabled={loadingMore}
+                  className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
+                    loadingMore
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+                  }`}
+                >
+                  {loadingMore ? (
+                    <div className="flex items-center gap-2">
+                      <Icon icon="mdi:loading" className="w-5 h-5 animate-spin" />
+                      Loading...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Icon icon="mdi:chevron-down" className="w-5 h-5" />
+                      Load More Products
+                    </div>
+                  )}
+                </button>
               </div>
-            ))}
+            )}
+            
+            {/* Products Count Info */}
+            {!prodLoading && displayedProducts.length > 0 && (
+              <div className="text-center py-2 text-sm text-gray-500">
+                Showing {displayedProducts.length} of {filteredProducts.length} products
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -492,7 +602,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
           <div className="space-y-4">
             <label className="block font-semibold">Enter Barcode</label>
             <input
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded-lg px-4 py-3 text-lg"
               value={barcodeInput}
               onChange={(e) => {
                 const value = e.target.value;
@@ -518,7 +628,9 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   // Add product immediately on Enter
                   if (barcodeQty > barcodeProduct.quantity) {
                     toast.error(
-                      `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
+                      user?.role === "cashier" 
+                        ? "Cannot add items. Insufficient stock." 
+                        : `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
                     );
                     return;
                   }
@@ -567,12 +679,14 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               <div className="mb-2">
                 Price: GHS {barcodeProduct.price?.toLocaleString()}
               </div>
-              <div className="mb-2">Stock: {barcodeProduct.quantity}</div>
+              {user?.role !== "cashier" && (
+                <div className="mb-2">Stock: {barcodeProduct.quantity}</div>
+              )}
               <div className="mb-2 flex items-center gap-2">
                 <span>Quantity:</span>
                 <button
                   type="button"
-                  className="px-2 py-1 bg-gray-200 rounded"
+                  className="px-4 py-2 bg-gray-200 rounded-lg text-lg font-bold touch-manipulation active:scale-95"
                   onClick={() => setBarcodeQty((q) => Math.max(1, q - 1))}
                 >
                   -
@@ -583,11 +697,11 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   max={barcodeProduct.quantity}
                   value={barcodeQty}
                   onChange={(e) => setBarcodeQty(Number(e.target.value))}
-                  className="w-16 border rounded px-2 py-1"
+                  className="w-20 border rounded-lg px-3 py-2 text-center text-sm"
                 />
                 <button
                   type="button"
-                  className="px-2 py-1 bg-gray-200 rounded"
+                  className="px-4 py-2 bg-gray-200 rounded-lg text-lg font-bold touch-manipulation active:scale-95"
                   onClick={() =>
                     setBarcodeQty((q) =>
                       Math.min(barcodeProduct.quantity, q + 1)
@@ -598,11 +712,13 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 </button>
               </div>
               <button
-                className="w-full bg-green-600 text-white rounded py-2 font-semibold mt-2"
+                className="w-full bg-green-600 text-white rounded-lg py-4 font-semibold mt-4 text-lg touch-manipulation active:scale-95"
                 onClick={() => {
                   if (barcodeQty > barcodeProduct.quantity) {
                     toast.error(
-                      `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
+                      user?.role === "cashier" 
+                        ? "Cannot add items. Insufficient stock." 
+                        : `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
                     );
                     return;
                   }

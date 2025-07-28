@@ -130,19 +130,22 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
     });
     const { data, error } = await response.json();
     if (error) throw error;
-    // Fetch the full product row with joins
-    const selectString = "*, category:categories!products_category_id_fkey(name), brand:brands!brand_id(name), unit:units!unit_id(name)";
-    const selectResponse = await fetch(`/api/products/${data.id}?select=${selectString}`);
+    
+    // Fetch the full product row with joins using the correct select string
+    const selectResponse = await fetch(`/api/products/${data.id}`);
     const { data: fullData, error: fetchError } = await selectResponse.json();
     if (fetchError) throw fetchError;
+    
     // Add the new product with joined fields to the state
+    const newProductWithJoins = {
+      ...fullData,
+      category_name: fullData.category_name || "",
+      brand_name: fullData.brand_name || "",
+      unit_name: fullData.unit_name || "",
+    };
+    
     setProducts((prev) => [
-      {
-        ...fullData,
-        category_name: fullData.category?.name || "",
-        brand_name: fullData.brand?.name || "",
-        unit_name: fullData.unit?.name || "",
-      },
+      newProductWithJoins,
       ...prev,
     ]);
   };
@@ -158,8 +161,21 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
     });
     const { data, error } = await response.json();
     if (error) throw error;
+    
+    // Fetch the full product row with joins to get updated category, unit, brand names
+    const selectResponse = await fetch(`/api/products/${id}`);
+    const { data: fullData, error: fetchError } = await selectResponse.json();
+    if (fetchError) throw fetchError;
+    
+    // Update the product with joined fields
     setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p))
+      prev.map((p) => (p.id === id ? {
+        ...p,
+        ...updatedFields,
+        category_name: fullData.category_name || "",
+        brand_name: fullData.brand_name || "",
+        unit_name: fullData.unit_name || "",
+      } : p))
     );
   };
 
@@ -250,12 +266,26 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                     accessor: "variant_attributes", 
                     sortable: false, 
                     render: (row) => {
-                      if (!row.variant_attributes || Object.keys(row.variant_attributes).length === 0) {
+                      // Handle variant_attributes that might be stored as string or object
+                      let variantData = row.variant_attributes;
+                      
+                      // If it's a string, try to parse it as JSON
+                      if (typeof variantData === 'string') {
+                        try {
+                          variantData = JSON.parse(variantData);
+                        } catch (e) {
+                          console.error('Failed to parse variant_attributes:', e);
+                          variantData = null;
+                        }
+                      }
+                      
+                      if (!variantData || Object.keys(variantData).length === 0) {
                         return <span className="text-gray-400">-</span>;
                       }
+                      
                       return (
                         <div className="flex flex-wrap gap-1">
-                          {Object.entries(row.variant_attributes).map(([attrId, value]) => (
+                          {Object.entries(variantData).map(([attrId, value]) => (
                             <span key={attrId} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                               {value}
                             </span>
@@ -268,6 +298,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                 onEdit={openEditModal}
                 onDelete={openConfirm}
                 onAddNew={openAddModal}
+                onRefresh={fetchProducts}
                 addNewLabel="Add New Product"
                 actions={[
                   {

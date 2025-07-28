@@ -601,7 +601,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         showSidebar={false}
         {...props}
       >
-        <div className='h-[72px]' aria-hidden='true'></div>
+        <div className="h-[72px]" aria-hidden="true"></div>
         <CashRegisterModal
           isOpen={showCashRegister || autoShowRegister}
           onClose={() => {
@@ -617,27 +617,16 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           registers={registers}
           setRegisters={setRegisters}
         />
-        <div className="flex gap-8 flex-1 min-h-0 overflow-hidden">
-          <PosProductList
-            user={user}
-            className="flex-1 min-h-0 overflow-auto"
-            selectedProducts={selectedProducts}
-            setSelectedProducts={setSelectedProducts}
-            quantities={quantities}
-            setQuantities={setQuantities}
-            setProducts={setProducts}
-            reloadProducts={reloadProducts}
-            hasOpenSession={hasOpenSession}
-            sessionCheckLoading={sessionCheckLoading}
-          />
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 flex-1 min-h-0 overflow-hidden">
           <PosOrderList
-            className="flex-1 min-h-0 overflow-auto"
+            className="w-full lg:w-3/5 min-h-0 overflow-auto order-2 lg:order-1"
             selectedProducts={selectedProducts}
             quantities={quantities}
             products={products}
             setSelectedProducts={setSelectedProducts}
             setQuantities={setQuantities}
             discounts={discounts}
+            setDiscounts={setDiscounts}
             selectedDiscountId={selectedDiscountId}
             setSelectedDiscountId={setSelectedDiscountId}
             roundoffEnabled={roundoffEnabled}
@@ -659,6 +648,19 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             orderId={orderId}
             setOrderId={setOrderId}
           />
+          
+          <PosProductList
+            user={user}
+            className="w-full lg:w-2/5 min-h-0 overflow-auto order-1 lg:order-2"
+            selectedProducts={selectedProducts}
+            setSelectedProducts={setSelectedProducts}
+            quantities={quantities}
+            setQuantities={setQuantities}
+            setProducts={setProducts}
+            reloadProducts={reloadProducts}
+            hasOpenSession={hasOpenSession}
+            sessionCheckLoading={sessionCheckLoading}
+          />
         </div>
         <OrderHistoryModal
           isOpen={showOrderHistory}
@@ -669,15 +671,20 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           isOpen={showRetrieveSales}
           onClose={() => setShowRetrieveSales(false)}
           customers={customers}
-          statusFilter={['Hold']}
+          statusFilter={["Hold"]}
           onResume={async (order) => {
             // Fetch order items
             const res = await fetch(`/api/order-items?order_id=${order.id}`);
             const result = await res.json();
             if (!result.success) return;
             const items = result.data || [];
-            setSelectedProducts(items.map(item => item.product_id));
-            setQuantities(items.reduce((acc, item) => { acc[item.product_id] = item.quantity; return acc; }, {}));
+            setSelectedProducts(items.map((item) => item.product_id));
+            setQuantities(
+              items.reduce((acc, item) => {
+                acc[item.product_id] = item.quantity;
+                return acc;
+              }, {})
+            );
             setOrderId(order.id);
             setSelectedCustomerId(order.customer_id || "");
             setSelectedDiscountId(order.discount_id || "");
@@ -690,11 +697,11 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           isOpen={showRetrieveLayaways}
           onClose={() => setShowRetrieveLayaways(false)}
           customers={customers}
-          statusFilter={['Layaway']}
+          statusFilter={["Layaway"]}
           onResume={async (order) => {
-            if (order.status === 'Completed') {
-              const { toast } = await import('react-hot-toast');
-              toast.error('This layaway has already been finalized.');
+            if (order.status === "Completed") {
+              const { toast } = await import("react-hot-toast");
+              toast.error("This layaway has already been finalized.");
               return;
             }
             // Fetch order items
@@ -702,106 +709,139 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             const result = await res.json();
             if (!result.success) return;
             const items = result.data || [];
-            setSelectedProducts(items.map(item => item.product_id));
-            setQuantities(items.reduce((acc, item) => { acc[item.product_id] = item.quantity; return acc; }, {}));
+            setSelectedProducts(items.map((item) => item.product_id));
+            setQuantities(
+              items.reduce((acc, item) => {
+                acc[item.product_id] = item.quantity;
+                return acc;
+              }, {})
+            );
             setOrderId(order.id);
             setSelectedCustomerId(order.customer_id || "");
             setSelectedDiscountId(order.discount_id || "");
             setSaleNote(order.sale_note || "");
             // Normalize payment_data to always have payments array
             let paymentData = order.payment_data || {};
-            if (paymentData && !Array.isArray(paymentData.payments) && paymentData.amount) {
+            if (
+              paymentData &&
+              !Array.isArray(paymentData.payments) &&
+              paymentData.amount
+            ) {
               paymentData = {
                 payments: [
                   {
                     amount: paymentData.amount,
                     method: paymentData.method,
                     reference: paymentData.reference,
-                    date: paymentData.date || paymentData.timestamp || order.timestamp || new Date().toISOString(),
-                    user: paymentData.user || order.payment_receiver || null
-                  }
-                ]
+                    date:
+                      paymentData.date ||
+                      paymentData.timestamp ||
+                      order.timestamp ||
+                      new Date().toISOString(),
+                    user: paymentData.user || order.payment_receiver || null,
+                  },
+                ],
               };
             }
             setPaymentData(paymentData);
             // Build filtered product list for this order
-            const layawayOrderProducts = items.map(item => {
+            const layawayOrderProducts = items.map((item) => {
               // Try to find full product details from the catalog
-              const fullProduct = products.find(p => p.id === item.product_id) || {};
+              const fullProduct =
+                products.find((p) => p.id === item.product_id) || {};
               return {
                 id: item.product_id,
-                name: item.name || fullProduct.name || '',
+                name: item.name || fullProduct.name || "",
                 price: item.price || fullProduct.price || 0,
-                ...fullProduct
+                ...fullProduct,
               };
             });
             // Open PaymentForm directly for outstanding balance
-            const outstanding = Number(order.total) - (
-              Array.isArray(paymentData?.payments)
-                ? paymentData.payments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
-                : Number(paymentData?.amount || 0)
-            );
+            const outstanding =
+              Number(order.total) -
+              (Array.isArray(paymentData?.payments)
+                ? paymentData.payments.reduce(
+                    (sum, p) => sum + Number(p.amount || 0),
+                    0
+                  )
+                : Number(paymentData?.amount || 0));
             setLayawayOutstanding(outstanding);
-            setLayawayOrder({ ...order, payment_data: paymentData, layawayOrderProducts });
+            setLayawayOrder({
+              ...order,
+              payment_data: paymentData,
+              layawayOrderProducts,
+            });
             setShowLayawayPaymentForm(true);
             setShowRetrieveLayaways(false);
           }}
         />
         {(() => {
           if (showLayawayPaymentForm && layawayOrder) {
-            console.log('PaymentForm layawayOrderProducts:', layawayOrder.layawayOrderProducts);
+            console.log(
+              "PaymentForm layawayOrderProducts:",
+              layawayOrder.layawayOrderProducts
+            );
           }
           return null;
         })()}
         {showLayawayPaymentForm && layawayOrder && (
           <PaymentForm
             isOpen={showLayawayPaymentForm}
-            onClose={() => { setShowLayawayPaymentForm(false); setLayawayOrder(null); setLayawayOutstanding(0); }}
+            onClose={() => {
+              setShowLayawayPaymentForm(false);
+              setLayawayOrder(null);
+              setLayawayOutstanding(0);
+            }}
             paymentType={"cash"}
             total={layawayOutstanding}
             layawayTotal={layawayOrder.total}
             orderId={layawayOrder.id}
             onPaymentComplete={async (paymentInfo) => {
               // Add payment to payment_data.payments
-              const prevPayments = Array.isArray(layawayOrder.payment_data?.payments)
+              const prevPayments = Array.isArray(
+                layawayOrder.payment_data?.payments
+              )
                 ? layawayOrder.payment_data.payments
                 : layawayOrder.payment_data && layawayOrder.payment_data.amount
-                  ? [layawayOrder.payment_data]
-                  : [];
-              const newPayments = [...prevPayments, {
-                amount: paymentInfo.payingAmount,
-                method: paymentInfo.paymentType,
-                reference: paymentInfo.referenceNumber,
-                date: new Date().toISOString(),
-                user: user?.id
-              }];
+                ? [layawayOrder.payment_data]
+                : [];
+              const newPayments = [
+                ...prevPayments,
+                {
+                  amount: paymentInfo.payingAmount,
+                  method: paymentInfo.paymentType,
+                  reference: paymentInfo.referenceNumber,
+                  date: new Date().toISOString(),
+                  user: user?.id,
+                },
+              ];
               // Update order in DB
-              await fetch('/api/orders', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+              await fetch("/api/orders", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   id: layawayOrder.id,
                   payment_data: { payments: newPayments },
-                  status: 'Completed',
+                  status: "Completed",
                   finalized_by: user?.id,
                   finalized_at: new Date().toISOString(),
                 }),
               });
-              const { toast } = await import('react-hot-toast');
-              toast.success('Layaway finalized!');
+              const { toast } = await import("react-hot-toast");
+              toast.success("Layaway finalized!");
               setShowLayawayPaymentForm(false);
               setLayawayOrder(null);
               setLayawayOutstanding(0);
               // Set lastOrderData for Print Last Receipt
               const finalizedOrderData = {
                 ...layawayOrder,
-                status: 'Completed',
+                status: "Completed",
                 payment_data: { payments: newPayments },
-                items: layawayOrder.layawayOrderProducts.map(p => ({
+                items: layawayOrder.layawayOrderProducts.map((p) => ({
                   productId: p.id,
                   name: p.name,
                   quantity: quantities[p.id] || 1,
-                  price: p.price
+                  price: p.price,
                 })),
                 total: layawayOrder.total,
                 customerId: layawayOrder.customer_id,
@@ -811,7 +851,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
               handleOrderComplete(finalizedOrderData);
               // Optionally reset POS state
             }}
-            customer={customers.find(c => c.id === layawayOrder.customer_id)}
+            customer={customers.find((c) => c.id === layawayOrder.customer_id)}
             customers={customers}
             user={user}
             allUsers={allUsers}
@@ -828,11 +868,11 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           onPrintOrder={handlePrintOrder}
           onResetOrder={handleResetOrder}
           onHoldSale={() => {
-            setHoldLayawayType('hold');
+            setHoldLayawayType("hold");
             setShowHoldLayawayModal(true);
           }}
           onLayaway={() => {
-            setHoldLayawayType('layaway');
+            setHoldLayawayType("layaway");
             setShowHoldLayawayModal(true);
           }}
           onRetrieveSales={() => setShowRetrieveSales(true)}
@@ -843,10 +883,13 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         />
         {(() => {
           if (showPaymentModal) {
-            console.log('PaymentForm products (full):', products);
-            console.log('PaymentForm selectedProducts:', selectedProducts);
-            console.log('PaymentForm filtered products:', products.filter(p => selectedProducts.includes(p.id)));
-            console.log('PaymentForm quantities:', quantities);
+            console.log("PaymentForm products (full):", products);
+            console.log("PaymentForm selectedProducts:", selectedProducts);
+            console.log(
+              "PaymentForm filtered products:",
+              products.filter((p) => selectedProducts.includes(p.id))
+            );
+            console.log("PaymentForm quantities:", quantities);
           }
           return null;
         })()}
@@ -869,7 +912,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           user={user}
           allUsers={allUsers}
           processCompleteTransaction={processCompleteTransaction}
-          products={products.filter(p => selectedProducts.includes(p.id))}
+          products={products.filter((p) => selectedProducts.includes(p.id))}
           quantities={quantities}
         />
         <SimpleModal
@@ -901,13 +944,19 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           onPrint={() => {
             if (modernReceiptData) {
               const items = modernReceiptData.items || [];
-              const selectedProducts = items.map(item => item.productId);
+              const selectedProducts = items.map((item) => item.productId);
               const quantities = {};
-              items.forEach(item => {
+              items.forEach((item) => {
                 quantities[item.productId] = item.quantity;
               });
               // Calculate subtotal from items if not present
-              const subtotal = modernReceiptData.subtotal !== undefined ? modernReceiptData.subtotal : items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+              const subtotal =
+                modernReceiptData.subtotal !== undefined
+                  ? modernReceiptData.subtotal
+                  : items.reduce(
+                      (sum, item) => sum + item.price * item.quantity,
+                      0
+                    );
               const paymentData = modernReceiptData.payment_data || {};
               // Map method/amount to paymentType/payingAmount for PrintReceipt compatibility
               const mappedPaymentData = {
@@ -944,22 +993,47 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         <SimpleModal
           isOpen={showHoldLayawayModal}
           onClose={() => setShowHoldLayawayModal(false)}
-          title={holdLayawayType === 'layaway' ? 'Layaway Details' : 'Hold Sale Details'}
+          title={
+            holdLayawayType === "layaway"
+              ? "Layaway Details"
+              : "Hold Sale Details"
+          }
           width="max-w-lg"
         >
           <div className="space-y-6">
             <div>
-              <label className="block font-semibold mb-1">Customer {holdLayawayType === 'layaway' && <span className="text-red-500">*</span>}</label>
+              <label className="block font-semibold mb-1">
+                Customer{" "}
+                {holdLayawayType === "layaway" && (
+                  <span className="text-red-500">*</span>
+                )}
+              </label>
               <Select
-                options={customers.map(c => ({ value: c.id, label: `${c.name} - ${c.phone}` }))}
-                value={holdLayawayCustomer ? customers.filter(c => c.id === holdLayawayCustomer).map(c => ({ value: c.id, label: `${c.name} - ${c.phone}` }))[0] : null}
-                onChange={option => setHoldLayawayCustomer(option ? option.value : null)}
+                options={customers.map((c) => ({
+                  value: c.id,
+                  label: `${c.name} - ${c.phone}`,
+                }))}
+                value={
+                  holdLayawayCustomer
+                    ? customers
+                        .filter((c) => c.id === holdLayawayCustomer)
+                        .map((c) => ({
+                          value: c.id,
+                          label: `${c.name} - ${c.phone}`,
+                        }))[0]
+                    : null
+                }
+                onChange={(option) =>
+                  setHoldLayawayCustomer(option ? option.value : null)
+                }
                 isClearable
                 placeholder="Search customer..."
                 classNamePrefix="react-select"
               />
-              {holdLayawayType === 'layaway' && !holdLayawayCustomer && (
-                <div className="text-red-500 text-xs mt-1">Customer is required for layaway.</div>
+              {holdLayawayType === "layaway" && !holdLayawayCustomer && (
+                <div className="text-red-500 text-xs mt-1">
+                  Customer is required for layaway.
+                </div>
               )}
             </div>
             <div>
@@ -968,29 +1042,35 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                 className="w-full border rounded px-3 py-2"
                 rows={2}
                 value={holdLayawayNote}
-                onChange={e => setHoldLayawayNote(e.target.value)}
+                onChange={(e) => setHoldLayawayNote(e.target.value)}
                 placeholder="Type your message"
               />
             </div>
-            {holdLayawayType === 'layaway' && (
+            {holdLayawayType === "layaway" && (
               <>
                 <div>
-                  <label className="block font-semibold mb-1">Deposit Amount <span className="text-gray-400">(optional)</span></label>
+                  <label className="block font-semibold mb-1">
+                    Deposit Amount{" "}
+                    <span className="text-gray-400">(optional)</span>
+                  </label>
                   <input
                     type="number"
                     min="0"
                     className="w-full border rounded px-3 py-2"
                     value={layawayDeposit}
-                    onChange={e => setLayawayDeposit(e.target.value)}
+                    onChange={(e) => setLayawayDeposit(e.target.value)}
                     placeholder="Enter deposit amount"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Payment Method <span className="text-gray-400">(optional)</span></label>
+                  <label className="block font-semibold mb-1">
+                    Payment Method{" "}
+                    <span className="text-gray-400">(optional)</span>
+                  </label>
                   <select
                     className="w-full border rounded px-3 py-2"
                     value={layawayPaymentMethod}
-                    onChange={e => setLayawayPaymentMethod(e.target.value)}
+                    onChange={(e) => setLayawayPaymentMethod(e.target.value)}
                   >
                     <option value="">Select method</option>
                     <option value="cash">Cash</option>
@@ -999,11 +1079,13 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-semibold mb-1">Reference <span className="text-gray-400">(optional)</span></label>
+                  <label className="block font-semibold mb-1">
+                    Reference <span className="text-gray-400">(optional)</span>
+                  </label>
                   <input
                     className="w-full border rounded px-3 py-2"
                     value={layawayReference}
-                    onChange={e => setLayawayReference(e.target.value)}
+                    onChange={(e) => setLayawayReference(e.target.value)}
                     placeholder="Enter transaction reference"
                   />
                 </div>
@@ -1019,14 +1101,15 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
               <button
                 className="px-6 py-2 rounded bg-blue-700 text-white font-semibold"
                 onClick={async () => {
-                  if (holdLayawayType === 'layaway' && !holdLayawayCustomer) return;
+                  if (holdLayawayType === "layaway" && !holdLayawayCustomer)
+                    return;
                   if (selectedProducts.length === 0) {
-                    const { toast } = await import('react-hot-toast');
-                    toast.error('Add products before continuing.');
+                    const { toast } = await import("react-hot-toast");
+                    toast.error("Add products before continuing.");
                     return;
                   }
-                  const items = selectedProducts.map(id => {
-                    const product = products.find(p => p.id === id);
+                  const items = selectedProducts.map((id) => {
+                    const product = products.find((p) => p.id === id);
                     const qty = quantities[id] || 1;
                     return {
                       productId: id,
@@ -1034,49 +1117,63 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                       quantity: qty,
                       price: product.price,
                       costPrice: product.cost_price || 0,
-                      total: product.price * qty
+                      total: product.price * qty,
                     };
                   });
                   // Find the selected register's store_id
-                  const selectedRegisterObj = registers.find(r => r.id === selectedRegister);
-                  const storeId = selectedRegisterObj ? selectedRegisterObj.store_id : undefined;
+                  const selectedRegisterObj = registers.find(
+                    (r) => r.id === selectedRegister
+                  );
+                  const storeId = selectedRegisterObj
+                    ? selectedRegisterObj.store_id
+                    : undefined;
                   const orderData = {
                     id: orderId,
-                    customer_id: holdLayawayCustomer || '',
-                    customer_name: holdLayawayCustomer ? (customers.find(c => c.id === holdLayawayCustomer)?.name || '') : 'Walk In Customer',
+                    customer_id: holdLayawayCustomer || "",
+                    customer_name: holdLayawayCustomer
+                      ? customers.find((c) => c.id === holdLayawayCustomer)
+                          ?.name || ""
+                      : "Walk In Customer",
                     subtotal: 0,
                     tax: 0,
                     discount: 0,
                     total: totalPayable,
-                    payment_method: holdLayawayType === 'layaway' && layawayDeposit ? layawayPaymentMethod : '',
-                    payment_data: holdLayawayType === 'layaway' && layawayDeposit ? {
-                      amount: layawayDeposit,
-                      method: layawayPaymentMethod,
-                      reference: layawayReference
-                    } : {},
+                    payment_method:
+                      holdLayawayType === "layaway" && layawayDeposit
+                        ? layawayPaymentMethod
+                        : "",
+                    payment_data:
+                      holdLayawayType === "layaway" && layawayDeposit
+                        ? {
+                            amount: layawayDeposit,
+                            method: layawayPaymentMethod,
+                            reference: layawayReference,
+                          }
+                        : {},
                     payment_receiver: user?.id,
-                    payment_note: '',
+                    payment_note: "",
                     sale_note: holdLayawayNote,
-                    staff_note: '',
+                    staff_note: "",
                     timestamp: new Date().toISOString(),
-                    payment_receiver_name: user?.full_name || user?.email || 'Unknown',
+                    payment_receiver_name:
+                      user?.full_name || user?.email || "Unknown",
                     order_type: holdLayawayType,
-                    status: holdLayawayType === 'layaway' ? 'Layaway' : 'Hold',
+                    status: holdLayawayType === "layaway" ? "Layaway" : "Hold",
                     register_id: selectedRegister,
                     session_id: currentSessionId,
                     store_id: storeId,
                   };
                   try {
-                    const { toast } = await import('react-hot-toast');
-                    const res = await fetch('/api/orders', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                    const { toast } = await import("react-hot-toast");
+                    const res = await fetch("/api/orders", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
                       body: JSON.stringify(orderData),
                     });
                     const orderResJson = await res.json();
                     if (orderResJson.error) throw orderResJson.error;
                     // Insert order items
-                    const itemsToInsert = items.map(item => ({
+                    const itemsToInsert = items.map((item) => ({
                       order_id: orderData.id,
                       product_id: item.productId,
                       name: item.name,
@@ -1084,30 +1181,40 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                       price: item.price,
                       unit_price: item.price, // ensure unit_price is set
                       cost_price: item.costPrice,
-                      total: item.total
+                      total: item.total,
                     }));
-                    await fetch('/api/order-items', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                    await fetch("/api/order-items", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
                       body: JSON.stringify(itemsToInsert),
                     });
-                    toast.success(holdLayawayType === 'layaway' ? 'Layaway created successfully!' : 'Sale held successfully!');
+                    toast.success(
+                      holdLayawayType === "layaway"
+                        ? "Layaway created successfully!"
+                        : "Sale held successfully!"
+                    );
                     setSelectedProducts([]);
                     setQuantities({});
                     setSelectedDiscountId("");
                     const timestamp = Date.now().toString().slice(-6);
                     const random = Math.floor(Math.random() * 100);
-                    setOrderId(`RUO${timestamp}${random.toString().padStart(2, '0')}`);
+                    setOrderId(
+                      `RUO${timestamp}${random.toString().padStart(2, "0")}`
+                    );
                   } catch (error) {
                     if (toast) {
                       toast.dismiss(processingToast);
                     }
-                    import('react-hot-toast').then(({ toast }) => toast.error('Transaction failed. Please try again.'));
-                    console.error('Transaction failed:', error);
+                    import("react-hot-toast").then(({ toast }) =>
+                      toast.error("Transaction failed. Please try again.")
+                    );
+                    console.error("Transaction failed:", error);
                   }
                 }}
               >
-                {holdLayawayType === 'layaway' ? 'Finalize Layaway' : 'Hold Sale'}
+                {holdLayawayType === "layaway"
+                  ? "Finalize Layaway"
+                  : "Hold Sale"}
               </button>
             </div>
           </div>
@@ -1118,7 +1225,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           onClose={() => setShowSalesReturnModal(false)}
           onSave={async (values, items) => {
             try {
-              const { toast } = await import('react-hot-toast');
+              const { toast } = await import("react-hot-toast");
               // Clean up values: convert "" to null for UUID fields
               const cleanedValues = {
                 ...values,
@@ -1127,40 +1234,49 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                 reference: values.reference || null,
               };
               // 1. Save the sales return main record
-              const res = await fetch('/api/sales-returns', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+              const res = await fetch("/api/sales-returns", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(cleanedValues),
               });
               const result = await res.json();
-              if (!result.success || !result.data) throw new Error(result.error || 'Failed to save sales return');
+              if (!result.success || !result.data)
+                throw new Error(result.error || "Failed to save sales return");
               const salesReturnId = result.data.id;
 
               // 2. Save the line items
-              const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-              const lineItemsToSend = (items || []).filter(item => uuidRegex.test(item.product_id)).map(item => ({
-                ...item,
-                sales_return_id: salesReturnId,
-                total: (Number(item.quantity) || 0) * (Number(item.unit_price) || 0),
-              }));
-              console.log('Line items to send:', lineItemsToSend);
+              const uuidRegex =
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+              const lineItemsToSend = (items || [])
+                .filter((item) => uuidRegex.test(item.product_id))
+                .map((item) => ({
+                  ...item,
+                  sales_return_id: salesReturnId,
+                  total:
+                    (Number(item.quantity) || 0) *
+                    (Number(item.unit_price) || 0),
+                }));
+              console.log("Line items to send:", lineItemsToSend);
 
-              const lineItemsRes = await fetch('/api/sales-return-items', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+              const lineItemsRes = await fetch("/api/sales-return-items", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(lineItemsToSend),
               });
               const lineItemsResult = await lineItemsRes.json();
-              if (!lineItemsResult.success) throw new Error(lineItemsResult.error || 'Failed to save sales return items');
+              if (!lineItemsResult.success)
+                throw new Error(
+                  lineItemsResult.error || "Failed to save sales return items"
+                );
 
-              toast.success('Sales return added successfully!');
+              toast.success("Sales return added successfully!");
               setShowSalesReturnModal(false);
               setSalesReturnLineItems([]);
-              setSalesReturnReference('');
+              setSalesReturnReference("");
               // Optionally refresh sales returns list here
             } catch (err) {
-              const { toast } = await import('react-hot-toast');
-              toast.error(err.message || 'Failed to save sales return');
+              const { toast } = await import("react-hot-toast");
+              toast.error(err.message || "Failed to save sales return");
             }
           }}
           onDelete={() => setShowSalesReturnModal(false)}

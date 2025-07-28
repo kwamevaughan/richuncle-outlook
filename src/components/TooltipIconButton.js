@@ -40,7 +40,7 @@ const TooltipIconButton = ({
       <div
         ref={btnRef}
         onClick={disabled ? undefined : onClick}
-        className={`relative group inline-block z-20 p-2 rounded-full focus:outline-none ${
+        className={`relative group inline-block z-2 p-2 rounded-full focus:outline-none ${
           disabled ? 'cursor-not-allowed' : 'cursor-pointer'
         } ${
           mode === "dark" ? "hover:bg-gray-700" : "hover:bg-sky-50"

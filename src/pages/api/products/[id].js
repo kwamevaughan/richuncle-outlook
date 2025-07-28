@@ -31,6 +31,7 @@ export default async function handler(req, res) {
           image_url,
           tax_type,
           tax_percentage,
+          variant_attributes,
           is_active,
           created_at,
           updated_at,
