@@ -54,7 +54,7 @@ export default function LowStockProductsCard({ selectedStore }) {
         {loading ? (
           <div className="py-8 text-center text-gray-400">Loading...</div>
         ) : error ? (
-          <div className="py-8 text-center text-red-500">{error}</div>
+          <div className="py-8 text-center text-blue-500">{error}</div>
         ) : products.length === 0 ? (
           <div className="py-8 text-center text-gray-400">
             No low stock products.

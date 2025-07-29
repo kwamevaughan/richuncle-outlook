@@ -219,7 +219,7 @@ export default function SalesStaticsCard({ selectedStore }) {
               <Bar
                 dataKey="expense"
                 stackId="a"
-                fill="#fb923c"
+                fill="#ef4444"
                 radius={[0, 0, 6, 6]}
               />
             </BarChart>

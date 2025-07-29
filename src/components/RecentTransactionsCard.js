@@ -56,8 +56,8 @@ export default function RecentTransactionsCard({ selectedStore }) {
     <div className="bg-white rounded-xl shadow p-0 w-full">
       <div className="flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2">
-          <span className="bg-orange-50 p-2 rounded-full">
-            <Icon icon="ph:flag-duotone" className="text-orange-500 text-lg" />
+          <span className="bg-blue-50 p-2 rounded-full">
+            <Icon icon="ph:flag-duotone" className="text-blue-500 text-lg" />
           </span>
           <span className="font-bold text-lg">Recent Transactions</span>
         </div>
@@ -67,8 +67,8 @@ export default function RecentTransactionsCard({ selectedStore }) {
         <button
           className={`flex-1 py-2 text-center font-semibold text-md border-b-2 transition-colors duration-150 ${
             tab === "Purchase"
-              ? "border-orange-500 text-orange-600"
-              : "border-transparent text-gray-500 hover:text-orange-500"
+              ? "border-blue-500 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-blue-500"
           }`}
           onClick={() => setTab("Purchase")}
         >
@@ -77,8 +77,8 @@ export default function RecentTransactionsCard({ selectedStore }) {
         <button
           className={`flex-1 py-2 text-center font-semibold text-md border-b-2 transition-colors duration-150 ${
             tab === "Expenses"
-              ? "border-orange-500 text-orange-600"
-              : "border-transparent text-gray-500 hover:text-orange-500"
+              ? "border-blue-500 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-blue-500"
           }`}
           onClick={() => setTab("Expenses")}
         >
