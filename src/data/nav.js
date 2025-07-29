@@ -140,16 +140,16 @@ export const sidebarNav = [
     icon: "mdi:currency-usd",
     items: [
       {
-            href: "/expenses",
-            icon: "jam:document",
-            label: "Expenses",
-          },
-          {
-            href: "/expense-category",
-            icon: "mdi:folder-outline",
-            label: "Expense Category",
-          },
-        ],
+        href: "/expenses",
+        icon: "jam:document",
+        label: "Expenses",
+      },
+      {
+        href: "/expense-category",
+        icon: "mdi:folder-outline",
+        label: "Expense Category",
+      },
+    ],
   },
   {
     category: "Contacts",
@@ -249,14 +249,14 @@ export const sidebarNav = [
     icon: "solar:settings-linear",
     items: [
       {
-        href: "/profile",
-        icon: "mdi:account-outline",
-        label: "Profile",
-      },
-      {
         href: "/business-locations",
         icon: "mdi:map-marker-multiple",
         label: "Business Locations",
+      },
+      {
+        href: "/profile",
+        icon: "mdi:account-outline",
+        label: "Profile",
       },
     ],
   },

@@ -237,13 +237,24 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:format-list-bulleted" className="w-7 h-7 text-blue-900" />
-              Category Management
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                <Icon
+                  icon="mdi:folder-outline"
+                  className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                />
+              </div>
+              Categories
             </h1>
 
             <p className="text-sm text-gray-500 mb-6">
@@ -284,23 +295,52 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                 <GenericTable
                   data={filteredCategories}
                   columns={[
-                    { Header: "Name", accessor: "name", sortable: true, render: (row) => (
-                      <span className="flex items-center gap-2">
-                        {row.image_url && (
-                          <img src={row.image_url} alt={row.name} width={32} height={32} className="rounded object-cover border w-8 h-8" />
-                        )}
-                        <span>{row.name}</span>
-                      </span>
-                    )},
-                    { Header: "Category Code", accessor: "code", sortable: true },
-                    { Header: "Description", accessor: "description", sortable: true },
-                    { Header: "No Of Products", accessor: "product_count", sortable: false },
+                    {
+                      Header: "Name",
+                      accessor: "name",
+                      sortable: true,
+                      render: (row) => (
+                        <span className="flex items-center gap-2">
+                          {row.image_url && (
+                            <img
+                              src={row.image_url}
+                              alt={row.name}
+                              width={32}
+                              height={32}
+                              className="rounded object-cover border w-8 h-8"
+                            />
+                          )}
+                          <span>{row.name}</span>
+                        </span>
+                      ),
+                    },
+                    {
+                      Header: "Category Code",
+                      accessor: "code",
+                      sortable: true,
+                    },
+                    {
+                      Header: "Description",
+                      accessor: "description",
+                      sortable: true,
+                    },
+                    {
+                      Header: "No Of Products",
+                      accessor: "product_count",
+                      sortable: false,
+                    },
                     {
                       Header: "Status",
                       accessor: "is_active",
                       sortable: true,
                       render: (row) => (
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                            row.is_active
+                              ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                              : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
+                          }`}
+                        >
                           {row.is_active ? "Active" : "Inactive"}
                         </span>
                       ),
@@ -322,15 +362,27 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                       Header: "Category",
                       accessor: "category_id",
                       sortable: false,
-                      render: (row) => categories.find((c) => c.id === row.category_id)?.name || "-",
+                      render: (row) =>
+                        categories.find((c) => c.id === row.category_id)
+                          ?.name || "-",
                     },
-                    { Header: "Description", accessor: "description", sortable: true },
+                    {
+                      Header: "Description",
+                      accessor: "description",
+                      sortable: true,
+                    },
                     {
                       Header: "Status",
                       accessor: "is_active",
                       sortable: true,
                       render: (row) => (
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                            row.is_active
+                              ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                              : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
+                          }`}
+                        >
                           {row.is_active ? "Active" : "Inactive"}
                         </span>
                       ),
@@ -367,8 +419,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                       ) {
                         setErrorModal({
                           open: true,
-                          message:
-                            "A category with this name already exists.",
+                          message: "A category with this name already exists.",
                         });
                       } else {
                         alert(err.message || "Failed to add category");
@@ -387,8 +438,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                       ) {
                         setErrorModal({
                           open: true,
-                          message:
-                            "A category with this name already exists.",
+                          message: "A category with this name already exists.",
                         });
                       } else {
                         alert(err.message || "Failed to update category");
@@ -434,9 +484,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                   </div>
                   <button
                     className="mt-4 px-6 py-2 rounded bg-blue-600 text-white bg-blue-700"
-                    onClick={() =>
-                      setErrorModal({ open: false, message: "" })
-                    }
+                    onClick={() => setErrorModal({ open: false, message: "" })}
                   >
                     Close
                   </button>

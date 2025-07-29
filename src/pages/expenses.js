@@ -208,19 +208,28 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
               />
               <ExpenseStatsCard
                 title="Total Amount"
-                value={`GHS ${stats.totalAmount.toFixed(2)}`}
+                value={`GHS ${stats.totalAmount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`}
                 icon="mdi:currency-usd"
                 color="green"
               />
               <ExpenseStatsCard
                 title="Average Amount"
-                value={`GHS ${stats.averageAmount.toFixed(2)}`}
+                value={`GHS ${stats.averageAmount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`}
                 icon="mdi:chart-line"
                 color="purple"
               />
               <ExpenseStatsCard
                 title="This Month"
-                value={`GHS ${stats.thisMonth.toFixed(2)}`}
+                value={`GHS ${stats.thisMonth.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`}
                 icon="mdi:calendar-month"
                 color="orange"
               />
@@ -299,7 +308,10 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
                     accessor: "amount",
                     sortable: true,
                     render: (row) =>
-                      `GHS ${parseFloat(row.amount || 0).toFixed(2)}`,
+                      `GHS ${parseFloat(row.amount || 0).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`,
                   },
                   {
                     Header: "Date",

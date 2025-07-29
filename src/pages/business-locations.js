@@ -249,15 +249,24 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
   if (!user) return null;
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">
-                    <Icon icon="mdi:map-marker-multiple" className="w-6 h-6 text-white" />
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                    <Icon
+                      icon="mdi:map-marker-multiple"
+                      className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                    />
                   </div>
                   Business Locations
                 </h1>
@@ -314,20 +323,26 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
                   { Header: "Address", accessor: "address", sortable: true },
                   { Header: "Phone", accessor: "phone", sortable: true },
                   { Header: "Email", accessor: "email", sortable: true },
-                  { Header: "Total Products", accessor: "product_count", sortable: false },
-                  { 
-                    Header: "Status", 
-                    accessor: "is_active", 
-                    sortable: true, 
+                  {
+                    Header: "Total Products",
+                    accessor: "product_count",
+                    sortable: false,
+                  },
+                  {
+                    Header: "Status",
+                    accessor: "is_active",
+                    sortable: true,
                     render: (row) => (
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        row.is_active 
-                          ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" 
-                          : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-semibold ${
+                          row.is_active
+                            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                            : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
+                        }`}
+                      >
                         {row.is_active ? "Active" : "Inactive"}
                       </span>
-                    ) 
+                    ),
                   },
                 ]}
                 onEdit={openEditModal}
@@ -345,31 +360,41 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
                 data={warehouses}
                 columns={[
                   { Header: "Warehouse", accessor: "name", sortable: true },
-                  { 
-                    Header: "Contact Person", 
-                    accessor: "contact_person", 
-                    sortable: true, 
+                  {
+                    Header: "Contact Person",
+                    accessor: "contact_person",
+                    sortable: true,
                     render: (row) => {
-                      const user = users.find(u => u.id === row.contact_person);
-                      return user ? user.full_name : row.contact_person || "Not assigned";
-                    }
+                      const user = users.find(
+                        (u) => u.id === row.contact_person
+                      );
+                      return user
+                        ? user.full_name
+                        : row.contact_person || "Not assigned";
+                    },
                   },
                   { Header: "Address", accessor: "address", sortable: true },
                   { Header: "Phone", accessor: "phone", sortable: true },
-                  { Header: "Total Products", accessor: "product_count", sortable: false },
-                  { 
-                    Header: "Status", 
-                    accessor: "is_active", 
-                    sortable: true, 
+                  {
+                    Header: "Total Products",
+                    accessor: "product_count",
+                    sortable: false,
+                  },
+                  {
+                    Header: "Status",
+                    accessor: "is_active",
+                    sortable: true,
                     render: (row) => (
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        row.is_active !== false
-                          ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" 
-                          : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-semibold ${
+                          row.is_active !== false
+                            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                            : "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
+                        }`}
+                      >
                         {row.is_active !== false ? "Active" : "Inactive"}
                       </span>
-                    ) 
+                    ),
                   },
                 ]}
                 onEdit={openEditModal}
@@ -397,7 +422,10 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
             <SimpleModal
               isOpen={true}
               onClose={() => setErrorModal({ open: false, message: "" })}
-              title={`Duplicate ${activeTab.slice(0, -1).charAt(0).toUpperCase() + activeTab.slice(0, -1).slice(1)}`}
+              title={`Duplicate ${
+                activeTab.slice(0, -1).charAt(0).toUpperCase() +
+                activeTab.slice(0, -1).slice(1)
+              }`}
               mode={mode}
               width="max-w-md"
             >

@@ -229,11 +229,13 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
       <div className="flex flex-col flex-1">
         <div className="py-2">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Icon
-                icon="mdi:cash-register"
-                className="w-7 h-7 text-blue-900"
-              />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                <Icon
+                  icon="mdi:cash-register"
+                  className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                />
+              </div>
               Registers
             </h1>
             <div className="text-sm text-gray-500 mb-6 flex items-center gap-2 justify-between">
@@ -277,13 +279,22 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
             {lastClosedTime && (
               <TooltipIconButton
                 icon="mdi:clock-outline"
-                label={`Last Closed: ${lastClosedTime}${lastClosedSession && userMap[lastClosedSession.user_id] ? `\nBy: ${userMap[lastClosedSession.user_id]}` : ''}`}
+                label={`Last Closed: ${lastClosedTime}${
+                  lastClosedSession && userMap[lastClosedSession.user_id]
+                    ? `\nBy: ${userMap[lastClosedSession.user_id]}`
+                    : ""
+                }`}
                 mode={mode}
                 className="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded shadow-sm text-yellow-900 font-semibold"
                 style={{ minWidth: 0 }}
               >
-                <Icon icon="mdi:clock-outline" className="w-5 h-5 text-yellow-700" />
-                <span className="font-semibold text-yellow-900">Last Closed: {lastClosedTime}</span>
+                <Icon
+                  icon="mdi:clock-outline"
+                  className="w-5 h-5 text-yellow-700"
+                />
+                <span className="font-semibold text-yellow-900">
+                  Last Closed: {lastClosedTime}
+                </span>
               </TooltipIconButton>
             )}
           </div>
@@ -673,8 +684,10 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                                       ...json.data,
                                       session: {
                                         ...json.data.session,
-                                        register_name: selectedRegister.name || selectedRegister.id
-                                      }
+                                        register_name:
+                                          selectedRegister.name ||
+                                          selectedRegister.id,
+                                      },
                                     };
                                     setZReportData(zReportWithRegister);
                                   } else

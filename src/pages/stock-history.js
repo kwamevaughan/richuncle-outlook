@@ -259,11 +259,11 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
                       <Icon
                         icon="mdi:history"
-                        className="w-6 h-6 text-white"
+                        className="w-4 h-4 sm:w-6 sm:h-6 text-white"
                       />
                     </div>
                     Stock History
@@ -272,7 +272,6 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                     Complete audit trail of all stock changes and movements
                   </p>
                 </div>
-                
               </div>
 
               {/* Statistics */}
@@ -280,11 +279,14 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 <div className="bg-white rounded-lg p-4 shadow-sm border">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <Icon icon="mdi:adjust" className="w-5 h-5 text-purple-600" />
+                      <Icon
+                        icon="mdi:adjust"
+                        className="w-5 h-5 text-purple-600"
+                      />
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-900">
-                        {history.filter(h => h.type === 'adjustment').length}
+                        {history.filter((h) => h.type === "adjustment").length}
                       </div>
                       <div className="text-sm text-gray-500">Adjustments</div>
                     </div>
@@ -294,11 +296,14 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 <div className="bg-white rounded-lg p-4 shadow-sm border">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Icon icon="mdi:truck-delivery" className="w-5 h-5 text-blue-600" />
+                      <Icon
+                        icon="mdi:truck-delivery"
+                        className="w-5 h-5 text-blue-600"
+                      />
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-900">
-                        {history.filter(h => h.type === 'transfer').length}
+                        {history.filter((h) => h.type === "transfer").length}
                       </div>
                       <div className="text-sm text-gray-500">Transfers</div>
                     </div>
@@ -308,11 +313,14 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 <div className="bg-white rounded-lg p-4 shadow-sm border">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                      <Icon icon="mdi:cart" className="w-5 h-5 text-green-600" />
+                      <Icon
+                        icon="mdi:cart"
+                        className="w-5 h-5 text-green-600"
+                      />
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-900">
-                        {history.filter(h => h.type === 'sale').length}
+                        {history.filter((h) => h.type === "sale").length}
                       </div>
                       <div className="text-sm text-gray-500">Sales</div>
                     </div>
@@ -322,7 +330,10 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 <div className="bg-white rounded-lg p-4 shadow-sm border">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                      <Icon icon="mdi:calendar" className="w-5 h-5 text-indigo-600" />
+                      <Icon
+                        icon="mdi:calendar"
+                        className="w-5 h-5 text-indigo-600"
+                      />
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-900">
@@ -406,19 +417,44 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
       <SimpleModal
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
-        title={selectedRecord ? `${selectedRecord.type.charAt(0).toUpperCase() + selectedRecord.type.slice(1)} Details` : 'History Details'}
+        title={
+          selectedRecord
+            ? `${
+                selectedRecord.type.charAt(0).toUpperCase() +
+                selectedRecord.type.slice(1)
+              } Details`
+            : "History Details"
+        }
         width="max-w-4xl"
       >
         {selectedRecord && (
           <div className="space-y-8">
             {/* Header Section */}
-            <div className={`rounded-xl p-6 flex flex-col md:flex-row md:items-center gap-6 shadow-sm border ${getTypeStyle(selectedRecord.type).bg}`}>
+            <div
+              className={`rounded-xl p-6 flex flex-col md:flex-row md:items-center gap-6 shadow-sm border ${
+                getTypeStyle(selectedRecord.type).bg
+              }`}
+            >
               <div className="flex flex-col items-center md:items-start gap-3 min-w-[100px]">
-                <div className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-lg ${getTypeStyle(selectedRecord.type).bg}`}>
-                  <Icon icon={getTypeStyle(selectedRecord.type).icon} className={`w-8 h-8 ${getTypeStyle(selectedRecord.type).color}`} />
+                <div
+                  className={`w-16 h-16 rounded-xl flex items-center justify-center shadow-lg ${
+                    getTypeStyle(selectedRecord.type).bg
+                  }`}
+                >
+                  <Icon
+                    icon={getTypeStyle(selectedRecord.type).icon}
+                    className={`w-8 h-8 ${
+                      getTypeStyle(selectedRecord.type).color
+                    }`}
+                  />
                 </div>
-                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${getTypeStyle(selectedRecord.type).bg} ${getTypeStyle(selectedRecord.type).color}`}>
-                  {selectedRecord.type.charAt(0).toUpperCase() + selectedRecord.type.slice(1)}
+                <div
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${
+                    getTypeStyle(selectedRecord.type).bg
+                  } ${getTypeStyle(selectedRecord.type).color}`}
+                >
+                  {selectedRecord.type.charAt(0).toUpperCase() +
+                    selectedRecord.type.slice(1)}
                 </div>
               </div>
               <div className="flex-1 flex flex-col gap-3">
@@ -434,15 +470,19 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                     {new Date(selectedRecord.date).toLocaleString()}
                   </div>
                   {selectedRecord.status && (
-                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-semibold ${
-                      selectedRecord.status === 'void' || selectedRecord.status === 'cancelled'
-                        ? 'bg-red-100 text-red-700'
-                        : selectedRecord.status === 'completed'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
+                    <div
+                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-semibold ${
+                        selectedRecord.status === "void" ||
+                        selectedRecord.status === "cancelled"
+                          ? "bg-red-100 text-red-700"
+                          : selectedRecord.status === "completed"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
                       <Icon icon="mdi:information" className="w-4 h-4" />
-                      {selectedRecord.status.charAt(0).toUpperCase() + selectedRecord.status.slice(1)}
+                      {selectedRecord.status.charAt(0).toUpperCase() +
+                        selectedRecord.status.slice(1)}
                     </div>
                   )}
                 </div>
@@ -460,16 +500,23 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 {selectedRecord.product_name && (
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Icon icon="mdi:package-variant" className="w-5 h-5 text-blue-600" />
+                      <Icon
+                        icon="mdi:package-variant"
+                        className="w-5 h-5 text-blue-600"
+                      />
                       Product Information
                     </h3>
                     <div className="flex items-center gap-4">
                       {/* Assuming product_image is not directly available in the row data,
                           but if it were, you would use selectedRecord.product_image */}
                       <div className="flex-1">
-                        <div className="font-semibold text-gray-900 text-lg">{selectedRecord.product_name}</div>
+                        <div className="font-semibold text-gray-900 text-lg">
+                          {selectedRecord.product_name}
+                        </div>
                         {selectedRecord.product_sku && (
-                          <div className="text-sm text-gray-500 mt-1">SKU: {selectedRecord.product_sku}</div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            SKU: {selectedRecord.product_sku}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -479,58 +526,108 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 {/* Quantity/Stock Card */}
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Icon icon="mdi:counter" className="w-5 h-5 text-green-600" />
+                    <Icon
+                      icon="mdi:counter"
+                      className="w-5 h-5 text-green-600"
+                    />
                     Stock Information
                   </h3>
-                  {selectedRecord.type === 'adjustment' && (
+                  {selectedRecord.type === "adjustment" && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <Icon icon={selectedRecord.quantity > 0 ? 'mdi:plus-circle' : 'mdi:minus-circle'} className={selectedRecord.quantity > 0 ? 'text-green-600 w-6 h-6' : 'text-red-600 w-6 h-6'} />
+                        <Icon
+                          icon={
+                            selectedRecord.quantity > 0
+                              ? "mdi:plus-circle"
+                              : "mdi:minus-circle"
+                          }
+                          className={
+                            selectedRecord.quantity > 0
+                              ? "text-green-600 w-6 h-6"
+                              : "text-red-600 w-6 h-6"
+                          }
+                        />
                         <div>
                           <div className="text-2xl font-bold text-gray-900">
-                            {selectedRecord.quantity > 0 ? '+' : ''}{selectedRecord.quantity} units
+                            {selectedRecord.quantity > 0 ? "+" : ""}
+                            {selectedRecord.quantity} units
                           </div>
-                          <div className="text-sm text-gray-500">Stock Change</div>
+                          <div className="text-sm text-gray-500">
+                            Stock Change
+                          </div>
                         </div>
                       </div>
-                      {selectedRecord.quantity_before !== undefined && selectedRecord.quantity_after !== undefined && (
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <div className="text-sm text-gray-600 mb-1">Stock Levels</div>
-                          <div className="flex items-center gap-2 text-lg font-semibold">
-                            <span className="text-gray-900">{selectedRecord.quantity_before}</span>
-                            <Icon icon="mdi:arrow-right" className="text-gray-400 w-5 h-5" />
-                            <span className="text-gray-900">{selectedRecord.quantity_after}</span>
-                            <span className="text-gray-500 text-sm">units</span>
+                      {selectedRecord.quantity_before !== undefined &&
+                        selectedRecord.quantity_after !== undefined && (
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <div className="text-sm text-gray-600 mb-1">
+                              Stock Levels
+                            </div>
+                            <div className="flex items-center gap-2 text-lg font-semibold">
+                              <span className="text-gray-900">
+                                {selectedRecord.quantity_before}
+                              </span>
+                              <Icon
+                                icon="mdi:arrow-right"
+                                className="text-gray-400 w-5 h-5"
+                              />
+                              <span className="text-gray-900">
+                                {selectedRecord.quantity_after}
+                              </span>
+                              <span className="text-gray-500 text-sm">
+                                units
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   )}
-                  {selectedRecord.type === 'transfer' && (
+                  {selectedRecord.type === "transfer" && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <Icon icon="mdi:truck-delivery" className="text-blue-600 w-6 h-6" />
+                        <Icon
+                          icon="mdi:truck-delivery"
+                          className="text-blue-600 w-6 h-6"
+                        />
                         <div>
-                          <div className="text-lg font-semibold text-gray-900">{selectedRecord.quantity} items</div>
-                          <div className="text-sm text-gray-500">Transferred</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            {selectedRecord.quantity} items
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Transferred
+                          </div>
                         </div>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="text-sm text-gray-600 mb-2">Transfer Route</div>
+                        <div className="text-sm text-gray-600 mb-2">
+                          Transfer Route
+                        </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-900">{selectedRecord.source_name}</span>
-                          <Icon icon="mdi:arrow-right" className="text-gray-400 w-4 h-4" />
-                          <span className="font-semibold text-gray-900">{selectedRecord.destination_name}</span>
+                          <span className="font-semibold text-gray-900">
+                            {selectedRecord.source_name}
+                          </span>
+                          <Icon
+                            icon="mdi:arrow-right"
+                            className="text-gray-400 w-4 h-4"
+                          />
+                          <span className="font-semibold text-gray-900">
+                            {selectedRecord.destination_name}
+                          </span>
                         </div>
                       </div>
                     </div>
                   )}
-                  {selectedRecord.type === 'sale' && (
+                  {selectedRecord.type === "sale" && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <Icon icon="mdi:cart" className="text-green-600 w-6 h-6" />
+                        <Icon
+                          icon="mdi:cart"
+                          className="text-green-600 w-6 h-6"
+                        />
                         <div>
-                          <div className="text-lg font-semibold text-gray-900">{selectedRecord.quantity} items</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            {selectedRecord.quantity} items
+                          </div>
                           <div className="text-sm text-gray-500">Sold</div>
                         </div>
                       </div>
@@ -542,16 +639,26 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 {selectedRecord.user && (
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Icon icon="mdi:account" className="w-5 h-5 text-indigo-600" />
+                      <Icon
+                        icon="mdi:account"
+                        className="w-5 h-5 text-indigo-600"
+                      />
                       User Information
                     </h3>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <Icon icon="mdi:account" className="w-5 h-5 text-indigo-600" />
+                        <Icon
+                          icon="mdi:account"
+                          className="w-5 h-5 text-indigo-600"
+                        />
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">{selectedRecord.user}</div>
-                        <div className="text-sm text-gray-500">Performed this action</div>
+                        <div className="font-semibold text-gray-900">
+                          {selectedRecord.user}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Performed this action
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -562,36 +669,65 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
               <div className="space-y-6">
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Icon icon="mdi:currency-ghs" className="w-5 h-5 text-green-600" />
+                    <Icon
+                      icon="mdi:currency-ghs"
+                      className="w-5 h-5 text-green-600"
+                    />
                     Financial Details
                   </h3>
                   <div className="space-y-4">
                     {selectedRecord.unit_price && (
                       <div className="flex justify-between items-center py-2 border-b border-gray-100">
                         <span className="text-gray-600">Unit Price</span>
-                        <span className="font-semibold text-gray-900">GHS {parseFloat(selectedRecord.unit_price).toFixed(2)}</span>
+                        <span className="font-semibold text-gray-900">
+                          GHS {parseFloat(selectedRecord.unit_price).toFixed(2)}
+                        </span>
                       </div>
                     )}
                     {selectedRecord.cost_price && (
                       <div className="flex justify-between items-center py-2 border-b border-gray-100">
                         <span className="text-gray-600">Cost Price</span>
-                        <span className="font-semibold text-gray-900">GHS {parseFloat(selectedRecord.cost_price).toFixed(2)}</span>
+                        <span className="font-semibold text-gray-900">
+                          GHS {parseFloat(selectedRecord.cost_price).toFixed(2)}
+                        </span>
                       </div>
                     )}
                     {selectedRecord.unit_price && selectedRecord.quantity && (
                       <div className="flex justify-between items-center py-2 border-b border-gray-100">
                         <span className="text-gray-600">Total Value</span>
-                        <span className="font-semibold text-gray-900">GHS {(parseFloat(selectedRecord.unit_price) * parseFloat(selectedRecord.quantity)).toFixed(2)}</span>
-                      </div>
-                    )}
-                    {selectedRecord.unit_price && selectedRecord.cost_price && selectedRecord.quantity && (
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-gray-600">Profit Impact</span>
-                        <span className={`font-semibold ${((parseFloat(selectedRecord.unit_price) - parseFloat(selectedRecord.cost_price)) * parseFloat(selectedRecord.quantity)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          GHS {((parseFloat(selectedRecord.unit_price) - parseFloat(selectedRecord.cost_price)) * parseFloat(selectedRecord.quantity)).toFixed(2)}
+                        <span className="font-semibold text-gray-900">
+                          GHS{" "}
+                          {(
+                            parseFloat(selectedRecord.unit_price) *
+                            parseFloat(selectedRecord.quantity)
+                          ).toFixed(2)}
                         </span>
                       </div>
                     )}
+                    {selectedRecord.unit_price &&
+                      selectedRecord.cost_price &&
+                      selectedRecord.quantity && (
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-gray-600">Profit Impact</span>
+                          <span
+                            className={`font-semibold ${
+                              (parseFloat(selectedRecord.unit_price) -
+                                parseFloat(selectedRecord.cost_price)) *
+                                parseFloat(selectedRecord.quantity) >=
+                              0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            GHS{" "}
+                            {(
+                              (parseFloat(selectedRecord.unit_price) -
+                                parseFloat(selectedRecord.cost_price)) *
+                              parseFloat(selectedRecord.quantity)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
@@ -602,14 +738,20 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 {(selectedRecord.reason || selectedRecord.notes) && (
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Icon icon="mdi:note-text" className="w-5 h-5 text-purple-600" />
+                      <Icon
+                        icon="mdi:note-text"
+                        className="w-5 h-5 text-purple-600"
+                      />
                       Additional Information
                     </h3>
                     <div className="space-y-4">
                       {selectedRecord.reason && (
                         <div>
                           <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                            <Icon icon="mdi:information" className="w-4 h-4 text-blue-500" />
+                            <Icon
+                              icon="mdi:information"
+                              className="w-4 h-4 text-blue-500"
+                            />
                             Reason
                           </div>
                           <div className="text-gray-900 bg-gray-50 p-3 rounded-lg">
@@ -620,7 +762,10 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                       {selectedRecord.notes && (
                         <div>
                           <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                            <Icon icon="mdi:note-text" className="w-4 h-4 text-indigo-500" />
+                            <Icon
+                              icon="mdi:note-text"
+                              className="w-4 h-4 text-indigo-500"
+                            />
                             Notes
                           </div>
                           <div className="text-gray-900 bg-gray-50 p-3 rounded-lg">
@@ -633,29 +778,47 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 )}
 
                 {/* Audit Trail */}
-                {(selectedRecord.reversed_from || selectedRecord.status === 'void') && (
+                {(selectedRecord.reversed_from ||
+                  selectedRecord.status === "void") && (
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Icon icon="mdi:history" className="w-5 h-5 text-orange-600" />
+                      <Icon
+                        icon="mdi:history"
+                        className="w-5 h-5 text-orange-600"
+                      />
                       Audit Trail
                     </h3>
                     <div className="space-y-3">
                       {selectedRecord.reversed_from && (
                         <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
                           <div className="flex items-center gap-2 mb-2">
-                            <Icon icon="mdi:undo-variant" className="w-4 h-4 text-yellow-600" />
-                            <span className="text-sm font-medium text-yellow-800">Reversed From</span>
+                            <Icon
+                              icon="mdi:undo-variant"
+                              className="w-4 h-4 text-yellow-600"
+                            />
+                            <span className="text-sm font-medium text-yellow-800">
+                              Reversed From
+                            </span>
                           </div>
-                          <div className="text-sm text-yellow-700 font-mono">{selectedRecord.reversed_from}</div>
+                          <div className="text-sm text-yellow-700 font-mono">
+                            {selectedRecord.reversed_from}
+                          </div>
                         </div>
                       )}
-                      {selectedRecord.status === 'void' && (
+                      {selectedRecord.status === "void" && (
                         <div className="bg-red-50 rounded-lg p-3 border border-red-200">
                           <div className="flex items-center gap-2 mb-2">
-                            <Icon icon="mdi:close-octagon" className="w-4 h-4 text-red-600" />
-                            <span className="text-sm font-medium text-red-800">Voided</span>
+                            <Icon
+                              icon="mdi:close-octagon"
+                              className="w-4 h-4 text-red-600"
+                            />
+                            <span className="text-sm font-medium text-red-800">
+                              Voided
+                            </span>
                           </div>
-                          <div className="text-sm text-red-700">This transfer was voided.</div>
+                          <div className="text-sm text-red-700">
+                            This transfer was voided.
+                          </div>
                         </div>
                       )}
                     </div>
@@ -666,25 +829,46 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                 {(selectedRecord.created_at || selectedRecord.updated_at) && (
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Icon icon="mdi:clock-outline" className="w-5 h-5 text-gray-600" />
+                      <Icon
+                        icon="mdi:clock-outline"
+                        className="w-5 h-5 text-gray-600"
+                      />
                       Timestamps
                     </h3>
                     <div className="space-y-3">
                       {selectedRecord.created_at && (
                         <div className="flex items-center gap-3">
-                          <Icon icon="mdi:clock-outline" className="w-4 h-4 text-gray-400" />
+                          <Icon
+                            icon="mdi:clock-outline"
+                            className="w-4 h-4 text-gray-400"
+                          />
                           <div>
-                            <div className="text-sm font-medium text-gray-700">Created</div>
-                            <div className="text-sm text-gray-500">{new Date(selectedRecord.created_at).toLocaleString()}</div>
+                            <div className="text-sm font-medium text-gray-700">
+                              Created
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {new Date(
+                                selectedRecord.created_at
+                              ).toLocaleString()}
+                            </div>
                           </div>
                         </div>
                       )}
                       {selectedRecord.updated_at && (
                         <div className="flex items-center gap-3">
-                          <Icon icon="mdi:clock-edit-outline" className="w-4 h-4 text-gray-400" />
+                          <Icon
+                            icon="mdi:clock-edit-outline"
+                            className="w-4 h-4 text-gray-400"
+                          />
                           <div>
-                            <div className="text-sm font-medium text-gray-700">Updated</div>
-                            <div className="text-sm text-gray-500">{new Date(selectedRecord.updated_at).toLocaleString()}</div>
+                            <div className="text-sm font-medium text-gray-700">
+                              Updated
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {new Date(
+                                selectedRecord.updated_at
+                              ).toLocaleString()}
+                            </div>
                           </div>
                         </div>
                       )}

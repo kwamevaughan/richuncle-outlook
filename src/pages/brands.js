@@ -150,13 +150,24 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:tag" className="w-7 h-7 text-blue-900" />
-              Brand Management
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                <Icon
+                  icon="mdi:tag"
+                  className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                />
+              </div>
+              Brands
             </h1>
             <p className="text-sm text-gray-500 mb-6">
               Manage your shop brands here.
@@ -175,12 +186,27 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
                 data={brands}
                 columns={[
                   { Header: "Name", accessor: "name", sortable: true },
-                  { Header: "No Of Products", accessor: "product_count", sortable: false },
-                  { Header: "Status", accessor: "is_active", sortable: true, render: (row) => (
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${row.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}>
-                      {row.is_active ? "Active" : "Inactive"}
-                    </span>
-                  ) },
+                  {
+                    Header: "No Of Products",
+                    accessor: "product_count",
+                    sortable: false,
+                  },
+                  {
+                    Header: "Status",
+                    accessor: "is_active",
+                    sortable: true,
+                    render: (row) => (
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-semibold ${
+                          row.is_active
+                            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                            : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {row.is_active ? "Active" : "Inactive"}
+                      </span>
+                    ),
+                  },
                 ]}
                 onEdit={openEditModal}
                 onDelete={openConfirm}
@@ -252,7 +278,7 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
                     className="w-12 h-12 text-red-500 mx-auto mb-4"
                   />
                   <div className="text-lg font-semibold mb-2">
-                    Are you sure you want to delete {" "}
+                    Are you sure you want to delete{" "}
                     <span className="font-semibold">{deleteItem?.name}</span>?
                   </div>
                   <div className="flex justify-center gap-4 mt-6">

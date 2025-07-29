@@ -84,21 +84,26 @@ export default function SalesPage({ mode = "light", toggleMode, ...props }) {
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
-              <Icon
-                icon="mdi:bullhorn-outline"
-                className="w-5 h-5 sm:w-7 sm:h-7 text-blue-900"
-              />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                <Icon
+                  icon="mdi:bullhorn-outline"
+                  className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                />
+              </div>
               Sales
             </h1>
             <div className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:justify-between">
-              <span>View and manage all sales here. Use the POS to create a new sale.</span>
+              <span>
+                View and manage all sales here. Use the POS to create a new
+                sale.
+              </span>
               <button
                 className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs sm:text-sm w-full sm:w-auto"
                 onClick={() => router.push("/pos")}
               >
-                <Icon icon="mdi:plus" className="inline-block mr-1 sm:mr-2" /> New Sale
-                (POS)
+                <Icon icon="mdi:plus" className="inline-block mr-1 sm:mr-2" />{" "}
+                New Sale (POS)
               </button>
             </div>
 

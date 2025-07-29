@@ -198,13 +198,24 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   };
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:package-variant" className="w-7 h-7 text-blue-900" />
-              Product Management
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">
+                <Icon
+                  icon="mdi:package-variant"
+                  className="w-6 h-6 text-white"
+                />
+              </div>
+              Products
             </h1>
             <p className="text-sm text-gray-500 mb-6">
               Manage your shop products here.
@@ -218,84 +229,142 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
             )}
             {error && <div className="text-red-600 mb-4">{error}</div>}
 
-            <div className={`rounded-xl ${
-              mode === "dark" ? "bg-gray-900" : "bg-white"
-            }`}>
+            <div
+              className={`rounded-xl ${
+                mode === "dark" ? "bg-gray-900" : "bg-white"
+              }`}
+            >
               <GenericTable
                 mode={mode}
                 data={products}
                 columns={[
                   { Header: "SKU", accessor: "sku", sortable: true },
-                  { Header: "Product Name", accessor: "name", sortable: true, render: (row) => (
-                    <span className="flex items-center gap-2">
-                      {row.image_url ? (
-                        <Image src={row.image_url} alt={row.name} width={32} height={32} className="rounded object-cover border w-8 h-8" />
-                      ) : (
-                        <Icon icon="mdi:image-off-outline" className="rounded border w-8 h-8 text-gray-400 bg-gray-100 object-cover" />
-                      )}
-                      <span>{row.name}</span>
-                    </span>
-                  )},
-                  { Header: "Category", accessor: "category_id", sortable: false, render: (row) => row.category_name || "-" },
-                  { Header: "Brand", accessor: "brand_id", sortable: false, render: (row) => row.brand_name || "-" },
-                  { Header: "Selling Price", accessor: "price", sortable: true, render: (row) => `GHS ${row.price}` },
-                  { Header: "Cost Price", accessor: "cost_price", sortable: true, render: (row) => `GHS ${row.cost_price || 0}` },
-                  { 
-                    Header: "Tax", 
-                    accessor: "tax_type", 
-                    sortable: true, 
+                  {
+                    Header: "Product Name",
+                    accessor: "name",
+                    sortable: true,
+                    render: (row) => (
+                      <span className="flex items-center gap-2">
+                        {row.image_url ? (
+                          <Image
+                            src={row.image_url}
+                            alt={row.name}
+                            width={32}
+                            height={32}
+                            className="rounded object-cover border w-8 h-8"
+                          />
+                        ) : (
+                          <Icon
+                            icon="mdi:image-off-outline"
+                            className="rounded border w-8 h-8 text-gray-400 bg-gray-100 object-cover"
+                          />
+                        )}
+                        <span>{row.name}</span>
+                      </span>
+                    ),
+                  },
+                  {
+                    Header: "Category",
+                    accessor: "category_id",
+                    sortable: false,
+                    render: (row) => row.category_name || "-",
+                  },
+                  {
+                    Header: "Brand",
+                    accessor: "brand_id",
+                    sortable: false,
+                    render: (row) => row.brand_name || "-",
+                  },
+                  {
+                    Header: "Selling Price",
+                    accessor: "price",
+                    sortable: true,
+                    render: (row) => `GHS ${row.price}`,
+                  },
+                  {
+                    Header: "Cost Price",
+                    accessor: "cost_price",
+                    sortable: true,
+                    render: (row) => `GHS ${row.cost_price || 0}`,
+                  },
+                  {
+                    Header: "Tax",
+                    accessor: "tax_type",
+                    sortable: true,
                     render: (row) => {
                       if (!row.tax_type || !row.tax_percentage) {
                         return <span className="text-gray-400">No Tax</span>;
                       }
                       return (
                         <div className="flex flex-col gap-1">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            row.tax_type === 'inclusive' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                          }`}>
-                            {row.tax_type === 'inclusive' ? 'Inclusive' : 'Exclusive'}
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              row.tax_type === "inclusive"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
+                          >
+                            {row.tax_type === "inclusive"
+                              ? "Inclusive"
+                              : "Exclusive"}
                           </span>
                           <span className="text-xs text-gray-600">
                             {row.tax_percentage}%
                           </span>
                         </div>
                       );
-                    }
+                    },
                   },
-                  { Header: "Unit", accessor: "unit_id", sortable: false, render: (row) => row.unit_name || "-" },
+                  {
+                    Header: "Unit",
+                    accessor: "unit_id",
+                    sortable: false,
+                    render: (row) => row.unit_name || "-",
+                  },
                   { Header: "Qty", accessor: "quantity", sortable: true },
-                  { 
-                    Header: "Specs", 
-                    accessor: "variant_attributes", 
-                    sortable: false, 
+                  {
+                    Header: "Specs",
+                    accessor: "variant_attributes",
+                    sortable: false,
                     render: (row) => {
                       // Handle variant_attributes that might be stored as string or object
                       let variantData = row.variant_attributes;
-                      
+
                       // If it's a string, try to parse it as JSON
-                      if (typeof variantData === 'string') {
+                      if (typeof variantData === "string") {
                         try {
                           variantData = JSON.parse(variantData);
                         } catch (e) {
-                          console.error('Failed to parse variant_attributes:', e);
+                          console.error(
+                            "Failed to parse variant_attributes:",
+                            e
+                          );
                           variantData = null;
                         }
                       }
-                      
-                      if (!variantData || Object.keys(variantData).length === 0) {
+
+                      if (
+                        !variantData ||
+                        Object.keys(variantData).length === 0
+                      ) {
                         return <span className="text-gray-400">-</span>;
                       }
-                      
+
                       return (
                         <div className="flex flex-wrap gap-1">
-                          {Object.entries(variantData).map(([attrId, value]) => (
-                            <span key={attrId} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                              {value}
-                            </span>
-                          ))}
+                          {Object.entries(variantData).map(
+                            ([attrId, value]) => (
+                              <span
+                                key={attrId}
+                                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                              >
+                                {value}
+                              </span>
+                            )
+                          )}
                         </div>
                       );
-                    }
+                    },
                   },
                 ]}
                 onEdit={openEditModal}
@@ -305,10 +374,10 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                 addNewLabel="Add New Product"
                 actions={[
                   {
-                    label: 'View',
-                    icon: 'mdi:eye-outline',
-                    onClick: (item) => setViewItem(item)
-                  }
+                    label: "View",
+                    icon: "mdi:eye-outline",
+                    onClick: (item) => setViewItem(item),
+                  },
                 ]}
               />
             </div>
@@ -376,7 +445,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                     className="w-12 h-12 text-red-500 mx-auto mb-4"
                   />
                   <div className="text-lg font-semibold mb-2">
-                    Are you sure you want to delete {" "}
+                    Are you sure you want to delete{" "}
                     <span className="font-semibold">{deleteItem?.name}</span>?
                   </div>
                   <div className="flex justify-center gap-4 mt-6">

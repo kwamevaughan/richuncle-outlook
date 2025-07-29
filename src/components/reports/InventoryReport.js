@@ -278,7 +278,11 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
       Cell: ({ row }) => {
         const quantity = parseInt(row.original.quantity) || 0;
         const price = parseFloat(row.original.price) || 0;
-        return `GHS ${(quantity * price).toFixed(2)}`;
+        const totalValue = quantity * price;
+        return `GHS ${totalValue.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`;
       }},
     { Header: "Status", accessor: "stock_status", 
       Cell: ({ row }) => {
@@ -351,7 +355,10 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
     category_name: String(product.category_name || 'Uncategorized'),
     quantity: String(product.quantity || '0'),
     price: String(product.price || '0'),
-    total_value: String((parseInt(product.quantity || 0) * parseFloat(product.price || 0)).toFixed(2)),
+    total_value: String((parseInt(product.quantity || 0) * parseFloat(product.price || 0)).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })),
     stock_status: parseInt(product.quantity || 0) <= 0 ? 'Out of Stock' :
                   parseInt(product.quantity || 0) <= stats.stockThreshold ? 'Low Stock' : 'In Stock',
     store_name: stores.find(s => s.id === product.store_id)?.name || 'N/A'

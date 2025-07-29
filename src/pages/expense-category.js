@@ -143,11 +143,11 @@ export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...pro
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
                     <Icon
                       icon="mdi:folder-outline"
-                      className="w-7 h-7 text-white"
+                      className="w-4 h-4 sm:w-6 sm:h-6 text-white"
                     />
                   </div>
                   Expense Categories

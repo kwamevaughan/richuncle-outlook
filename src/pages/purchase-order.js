@@ -211,7 +211,13 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1 bg-gray-50 min-h-screen">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
@@ -219,11 +225,11 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
                       <Icon
                         icon="mdi:clipboard-text"
-                        className="w-6 h-6 text-white"
+                        className="w-4 h-4 sm:w-6 sm:h-6 text-white"
                       />
                     </div>
                     Purchase Orders
@@ -264,9 +270,7 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                       <div className="text-2xl font-bold text-gray-900">
                         {stats.total}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Total Orders
-                      </div>
+                      <div className="text-sm text-gray-500">Total Orders</div>
                     </div>
                   </div>
                 </div>
@@ -436,34 +440,70 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                         <button
                           onClick={() => handleExpandRow(row.id)}
                           className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                          title={expandedRows.includes(row.id) ? "Collapse" : "Expand"}
+                          title={
+                            expandedRows.includes(row.id)
+                              ? "Collapse"
+                              : "Expand"
+                          }
                         >
-                          <Icon icon={expandedRows.includes(row.id) ? "mdi:chevron-up" : "mdi:chevron-down"} className="w-5 h-5" />
+                          <Icon
+                            icon={
+                              expandedRows.includes(row.id)
+                                ? "mdi:chevron-up"
+                                : "mdi:chevron-down"
+                            }
+                            className="w-5 h-5"
+                          />
                         </button>
                       ),
                     },
-                    { Header: "Order Number", accessor: "order_number", sortable: true },
-                    { Header: "Supplier", accessor: "supplier_name", sortable: true },
-                    { Header: "Warehouse", accessor: "warehouse_name", sortable: true },
-                    { Header: "Date", accessor: "date", sortable: true, render: (row) => 
-                      new Date(row.date).toLocaleDateString() 
+                    {
+                      Header: "Order Number",
+                      accessor: "order_number",
+                      sortable: true,
                     },
-                    { 
-                      Header: "Status", 
-                      accessor: "status", 
-                      sortable: true, 
+                    {
+                      Header: "Supplier",
+                      accessor: "supplier_name",
+                      sortable: true,
+                    },
+                    {
+                      Header: "Warehouse",
+                      accessor: "warehouse_name",
+                      sortable: true,
+                    },
+                    {
+                      Header: "Date",
+                      accessor: "date",
+                      sortable: true,
+                      render: (row) => new Date(row.date).toLocaleDateString(),
+                    },
+                    {
+                      Header: "Status",
+                      accessor: "status",
+                      sortable: true,
                       render: (row) => {
                         const style = getStatusStyle(row.status);
                         return (
-                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${style.bg} ${style.color}`}>
+                          <div
+                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${style.bg} ${style.color}`}
+                          >
                             <Icon icon={style.icon} className="w-3 h-3" />
-                            {row.status.replace('_', ' ').charAt(0).toUpperCase() + row.status.slice(1).replace('_', ' ')}
+                            {row.status
+                              .replace("_", " ")
+                              .charAt(0)
+                              .toUpperCase() +
+                              row.status.slice(1).replace("_", " ")}
                           </div>
                         );
-                      }
+                      },
                     },
-                    { Header: "Total", accessor: "total", sortable: true, render: (row) => 
-                      `GHS ${(row.total || 0).toLocaleString()}` 
+                    {
+                      Header: "Total",
+                      accessor: "total",
+                      sortable: true,
+                      render: (row) =>
+                        `GHS ${(row.total || 0).toLocaleString()}`,
                     },
                   ]}
                   onEdit={openEditModal}
@@ -477,7 +517,7 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                     { value: "approved", label: "Approved" },
                     { value: "in_transit", label: "In Transit" },
                     { value: "completed", label: "Completed" },
-                    { value: "cancelled", label: "Cancelled" }
+                    { value: "cancelled", label: "Cancelled" },
                   ]}
                   onImport={null}
                   importType="purchase-orders"
@@ -488,7 +528,10 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                         <tr className="bg-gray-50 dark:bg-gray-800">
                           <td colSpan={8} className="p-4">
                             <div className="font-semibold mb-2">Line Items</div>
-                            <PurchaseOrderItemsEditor items={rowLineItems[row.id] || []} disabled={true} />
+                            <PurchaseOrderItemsEditor
+                              items={rowLineItems[row.id] || []}
+                              disabled={true}
+                            />
                           </td>
                         </tr>
                       )}
@@ -497,7 +540,7 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                 />
               </div>
             )}
-            
+
             <PurchaseOrderModals
               show={showModal}
               onClose={closeModal}

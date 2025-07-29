@@ -106,29 +106,29 @@ export default function AnnualReport({ dateRange, selectedStore, stores, mode })
     },
     { 
       Header: "Sales", 
-      accessor: "sales",
+      accessor: "sales_formatted",
       sortable: true,
-      Cell: ({ value }) => `GHS ${value.toLocaleString()}`
+      Cell: ({ value }) => value
     },
     { 
       Header: "Purchases", 
-      accessor: "purchases",
+      accessor: "purchases_formatted",
       sortable: true,
-      Cell: ({ value }) => `GHS ${value.toLocaleString()}`
+      Cell: ({ value }) => value
     },
     { 
       Header: "Expenses", 
-      accessor: "expenses",
+      accessor: "expenses_formatted",
       sortable: true,
-      Cell: ({ value }) => `GHS ${value.toLocaleString()}`
+      Cell: ({ value }) => value
     },
     { 
       Header: "Net Profit", 
-      accessor: "netProfit",
+      accessor: "netProfit_formatted",
       sortable: true,
-      Cell: ({ value }) => (
-        <span className={`font-bold ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-          GHS {value.toLocaleString()}
+      Cell: ({ value, row }) => (
+        <span className={`font-bold ${row.original.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {value}
         </span>
       )
     },
@@ -169,16 +169,48 @@ export default function AnnualReport({ dateRange, selectedStore, stores, mode })
   // Flatten data for export
   const flattenedData = yearlyData.map(month => ({
     month: month.label,
-    sales: month.sales.toLocaleString(),
-    purchases: month.purchases.toLocaleString(),
-    expenses: month.expenses.toLocaleString(),
-    net_profit: month.netProfit.toLocaleString(),
+    sales: month.sales.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    purchases: month.purchases.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    expenses: month.expenses.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+    net_profit: month.netProfit.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
     status: month.netProfit >= 0 ? 'Profit' : 'Loss'
   }));
 
-  // Add status property to each month for table display
+  // Add status property to each month for table display with formatted values
   const tableData = yearlyData.map(month => ({
     ...month,
+    sales: month.sales,
+    purchases: month.purchases,
+    expenses: month.expenses,
+    netProfit: month.netProfit,
+    sales_formatted: `GHS ${month.sales.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`,
+    purchases_formatted: `GHS ${month.purchases.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`,
+    expenses_formatted: `GHS ${month.expenses.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`,
+    netProfit_formatted: `GHS ${month.netProfit.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`,
     status: month.netProfit >= 0 ? 'Profit' : 'Loss'
   }));
 
@@ -209,7 +241,10 @@ export default function AnnualReport({ dateRange, selectedStore, stores, mode })
           <div className="flex items-center justify-between">
             <div>
               <p className="text-cyan-100 text-sm font-medium">Total Sales</p>
-              <p className="text-3xl font-bold">{loading ? '...' : `GHS ${totalSales.toLocaleString()}`}</p>
+              <p className="text-3xl font-bold">{loading ? '...' : `GHS ${totalSales.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}</p>
             </div>
             <Icon icon="mdi:calendar-year" className="w-8 h-8 text-cyan-200" />
           </div>
@@ -218,7 +253,10 @@ export default function AnnualReport({ dateRange, selectedStore, stores, mode })
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Total Purchases</p>
-              <p className="text-3xl font-bold">{loading ? '...' : `GHS ${totalPurchases.toLocaleString()}`}</p>
+              <p className="text-3xl font-bold">{loading ? '...' : `GHS ${totalPurchases.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}</p>
             </div>
             <Icon icon="mdi:cart-outline" className="w-8 h-8 text-green-200" />
           </div>
@@ -227,7 +265,10 @@ export default function AnnualReport({ dateRange, selectedStore, stores, mode })
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium">Total Expenses</p>
-              <p className="text-3xl font-bold">{loading ? '...' : `GHS ${totalExpenses.toLocaleString()}`}</p>
+              <p className="text-3xl font-bold">{loading ? '...' : `GHS ${totalExpenses.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}</p>
             </div>
             <Icon icon="mdi:file-document-outline" className="w-8 h-8 text-blue-200" />
           </div>
@@ -236,7 +277,10 @@ export default function AnnualReport({ dateRange, selectedStore, stores, mode })
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium">Net Profit</p>
-              <p className="text-3xl font-bold">{loading ? '...' : `GHS ${totalNetProfit.toLocaleString()}`}</p>
+              <p className="text-3xl font-bold">{loading ? '...' : `GHS ${totalNetProfit.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`}</p>
             </div>
             <Icon icon="mdi:finance" className="w-8 h-8 text-purple-200" />
           </div>

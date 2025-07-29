@@ -269,10 +269,10 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-4 sm:mb-6">
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
                     <Icon
                       icon="mdi:account-group"
-                      className="w-4 h-4 sm:w-5 sm:h-5 lg:w-7 lg:h-7 text-white"
+                      className="w-4 h-4 sm:w-6 sm:h-6 text-white"
                     />
                   </div>
                   User Management Hub
@@ -286,9 +286,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
                   onClick={() => {
                     const fetchAllData = async () => {
                       try {
-                        await Promise.all([
-                          fetchUsers(),
-                        ]);
+                        await Promise.all([fetchUsers()]);
                         toast.success("Users refreshed successfully");
                       } catch (error) {
                         toast.error("Failed to refresh users");

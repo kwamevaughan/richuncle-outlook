@@ -200,8 +200,11 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-4 sm:mb-6">
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <Icon icon="mdi:chart-bar" className="w-4 h-4 sm:w-5 sm:h-5 lg:w-7 lg:h-7 text-white" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                    <Icon
+                      icon="mdi:chart-bar"
+                      className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                    />
                   </div>
                   Reports Hub
                 </h1>
@@ -215,7 +218,9 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
                   className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
                   <Icon icon="mdi:menu" className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{showMenu ? "Hide Menu" : "Show Menu"}</span>
+                  <span className="hidden sm:inline">
+                    {showMenu ? "Hide Menu" : "Show Menu"}
+                  </span>
                 </button>
 
                 <button
@@ -223,7 +228,9 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
                   className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
                 >
                   <Icon icon="mdi:filter" className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{showFilters ? "Hide Filters" : "Show Filters"}</span>
+                  <span className="hidden sm:inline">
+                    {showFilters ? "Hide Filters" : "Show Filters"}
+                  </span>
                 </button>
               </div>
             </div>
@@ -233,7 +240,10 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
                 <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4">
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Icon icon="mdi:calendar" className="text-gray-500 w-4 h-4" />
+                    <Icon
+                      icon="mdi:calendar"
+                      className="text-gray-500 w-4 h-4"
+                    />
                     <span className="text-xs sm:text-sm font-medium text-gray-700">
                       Date Range:
                     </span>
@@ -389,7 +399,9 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
                     <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                       {getActiveTab()?.label}
                     </h2>
-                    <span className="hidden sm:inline text-sm text-gray-500">•</span>
+                    <span className="hidden sm:inline text-sm text-gray-500">
+                      •
+                    </span>
                     <p className="text-xs sm:text-sm text-gray-600">
                       {getActiveTab()?.description}
                     </p>

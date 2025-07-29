@@ -131,9 +131,12 @@ export default function PurchaseReturnPage({ mode = "light", toggleMode, ...prop
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <Icon icon="mdi:undo-variant" className="w-6 h-6 text-white" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                <Icon
+                  icon="mdi:undo-variant"
+                  className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                />
               </div>
               Purchase Returns
             </h1>

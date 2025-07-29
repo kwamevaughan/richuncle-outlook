@@ -95,12 +95,23 @@ export default function SuppliersPage({ mode = "light", toggleMode, ...props }) 
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="mdi:truck-outline" className="w-7 h-7 text-blue-900" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                <Icon
+                  icon="mdi:account-group"
+                  className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                />
+              </div>
               Suppliers
             </h1>
             <p className="text-sm text-gray-500 mb-6">
@@ -108,7 +119,8 @@ export default function SuppliersPage({ mode = "light", toggleMode, ...props }) 
             </p>
             {loading && (
               <div className="flex items-center gap-2 text-blue-600 mb-4">
-                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" /> Loading...
+                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" />{" "}
+                Loading...
               </div>
             )}
             {error && <div className="text-red-600 mb-4">{error}</div>}
@@ -120,14 +132,34 @@ export default function SuppliersPage({ mode = "light", toggleMode, ...props }) 
                   { Header: "Email", accessor: "email", sortable: true },
                   { Header: "Phone", accessor: "phone", sortable: true },
                   { Header: "Company", accessor: "company", sortable: true },
-                  { Header: "Status", accessor: "is_active", sortable: true, render: (row) => (
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                      {row.is_active ? "Active" : "Inactive"}
-                    </span>
-                  ) },
-                  { Header: "Created", accessor: "created_at", sortable: true, render: (row) => (
-                    <span>{row.created_at ? new Date(row.created_at).toLocaleDateString() : "-"}</span>
-                  ) },
+                  {
+                    Header: "Status",
+                    accessor: "is_active",
+                    sortable: true,
+                    render: (row) => (
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          row.is_active
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {row.is_active ? "Active" : "Inactive"}
+                      </span>
+                    ),
+                  },
+                  {
+                    Header: "Created",
+                    accessor: "created_at",
+                    sortable: true,
+                    render: (row) => (
+                      <span>
+                        {row.created_at
+                          ? new Date(row.created_at).toLocaleDateString()
+                          : "-"}
+                      </span>
+                    ),
+                  },
                 ]}
                 onEdit={openEditModal}
                 onAddNew={openAddModal}

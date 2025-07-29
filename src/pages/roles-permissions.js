@@ -392,11 +392,11 @@ export default function RolesPermissionsPage({
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
                     <Icon
                       icon="mdi:shield-account-outline"
-                      className="w-6 h-6 text-white"
+                      className="w-4 h-4 sm:w-6 sm:h-6 text-white"
                     />
                   </div>
                   Roles & Permissions

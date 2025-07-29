@@ -263,11 +263,14 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                      <Icon icon="mdi:percent-outline" className="w-7 h-7 text-white" />
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                      <Icon
+                        icon="mdi:percent"
+                        className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                      />
                     </div>
-                    Discount Management
+                    Discounts
                   </h1>
                   <p className="text-gray-600">
                     Manage discounts and discount plans for your business
@@ -318,9 +321,11 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-900">
-                        {discounts.filter(d => d.is_active).length}
+                        {discounts.filter((d) => d.is_active).length}
                       </div>
-                      <div className="text-sm text-gray-500">Active Discounts</div>
+                      <div className="text-sm text-gray-500">
+                        Active Discounts
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -337,7 +342,9 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                       <div className="text-2xl font-bold text-gray-900">
                         {plans.length}
                       </div>
-                      <div className="text-sm text-gray-500">Discount Plans</div>
+                      <div className="text-sm text-gray-500">
+                        Discount Plans
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -352,7 +359,7 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-900">
-                        {plans.filter(p => p.is_active).length}
+                        {plans.filter((p) => p.is_active).length}
                       </div>
                       <div className="text-sm text-gray-500">Active Plans</div>
                     </div>
@@ -365,7 +372,10 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
             <div className="bg-white rounded-lg p-4 shadow-sm border mb-6">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
-                  <Icon icon="mdi:magnify" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Icon
+                    icon="mdi:magnify"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                  />
                   <input
                     type="text"
                     placeholder="Search discounts and plans..."
@@ -388,10 +398,14 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                   }`}
                   onClick={() => {
                     setTab("discounts");
-                    router.replace({
-                      pathname: router.pathname,
-                      query: { ...router.query, tab: "discounts" },
-                    }, undefined, { shallow: true });
+                    router.replace(
+                      {
+                        pathname: router.pathname,
+                        query: { ...router.query, tab: "discounts" },
+                      },
+                      undefined,
+                      { shallow: true }
+                    );
                   }}
                 >
                   <div className="flex items-center gap-2">
@@ -407,10 +421,14 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                   }`}
                   onClick={() => {
                     setTab("plans");
-                    router.replace({
-                      pathname: router.pathname,
-                      query: { ...router.query, tab: "plans" },
-                    }, undefined, { shallow: true });
+                    router.replace(
+                      {
+                        pathname: router.pathname,
+                        query: { ...router.query, tab: "plans" },
+                      },
+                      undefined,
+                      { shallow: true }
+                    );
                   }}
                 >
                   <div className="flex items-center gap-2">
@@ -424,32 +442,47 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
             {/* Content Area */}
             {loading && (
               <div className="flex items-center gap-2 text-blue-600 mb-4">
-                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" /> Loading...
+                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" />{" "}
+                Loading...
               </div>
             )}
             {error && <div className="text-red-600 mb-4">{error}</div>}
-            
+
             <div className="bg-white rounded-b-xl shadow-sm border border-gray-200">
               {tab === "discounts" ? (
                 <GenericTable
                   data={filteredDiscounts}
                   columns={[
                     { Header: "Name", accessor: "name", sortable: true },
-                    { Header: "Code", accessor: "discount_code", sortable: true, render: (row) => (
-                      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded text-gray-700">
-                        {row.discount_code || "N/A"}
-                      </span>
-                    )},
-                    { Header: "Value", accessor: "value", sortable: true, render: (row) => (
-                      <div>
-                        <span className="font-semibold text-blue-600">
-                          {row.discount_type === "fixed" ? `GHS ${row.value}` : `${row.value}%`}
+                    {
+                      Header: "Code",
+                      accessor: "discount_code",
+                      sortable: true,
+                      render: (row) => (
+                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded text-gray-700">
+                          {row.discount_code || "N/A"}
                         </span>
-                        <div className="text-xs text-gray-500">
-                          {row.discount_type === "fixed" ? "Fixed Amount" : "Percentage"}
+                      ),
+                    },
+                    {
+                      Header: "Value",
+                      accessor: "value",
+                      sortable: true,
+                      render: (row) => (
+                        <div>
+                          <span className="font-semibold text-blue-600">
+                            {row.discount_type === "fixed"
+                              ? `GHS ${row.value}`
+                              : `${row.value}%`}
+                          </span>
+                          <div className="text-xs text-gray-500">
+                            {row.discount_type === "fixed"
+                              ? "Fixed Amount"
+                              : "Percentage"}
+                          </div>
                         </div>
-                      </div>
-                    )},
+                      ),
+                    },
                     {
                       Header: "Discount Plan",
                       accessor: "plan_id",
@@ -468,14 +501,18 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                       sortable: true,
                       render: (row) => {
                         if (!row.validity) return "-";
-                        const [start, end] = row.validity.split(' to ');
+                        const [start, end] = row.validity.split(" to ");
                         return (
                           <div className="text-xs">
-                            <div className="text-gray-600">From: {new Date(start).toLocaleDateString()}</div>
-                            <div className="text-gray-600">To: {new Date(end).toLocaleDateString()}</div>
+                            <div className="text-gray-600">
+                              From: {new Date(start).toLocaleDateString()}
+                            </div>
+                            <div className="text-gray-600">
+                              To: {new Date(end).toLocaleDateString()}
+                            </div>
                           </div>
                         );
-                      }
+                      },
                     },
                     {
                       Header: "Status",
@@ -511,13 +548,18 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                   data={filteredPlans}
                   columns={[
                     { Header: "Plan Name", accessor: "name", sortable: true },
-                    { Header: "Description", accessor: "description", sortable: false, render: (row) => (
-                      <div className="max-w-xs">
-                        <span className="text-sm text-gray-600">
-                          {row.description || "No description"}
-                        </span>
-                      </div>
-                    )},
+                    {
+                      Header: "Description",
+                      accessor: "description",
+                      sortable: false,
+                      render: (row) => (
+                        <div className="max-w-xs">
+                          <span className="text-sm text-gray-600">
+                            {row.description || "No description"}
+                          </span>
+                        </div>
+                      ),
+                    },
                     {
                       Header: "Status",
                       accessor: "is_active",
@@ -542,7 +584,10 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                   onExport={() => setShowExportModal(true)}
                   emptyMessage={
                     <div className="flex flex-col items-center py-12 text-gray-400">
-                      <Icon icon="mdi:package-variant-off" className="w-12 h-12 mb-2" />
+                      <Icon
+                        icon="mdi:package-variant-off"
+                        className="w-12 h-12 mb-2"
+                      />
                       <div>No discount plans found</div>
                     </div>
                   }
@@ -651,7 +696,9 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
               users={tab === "discounts" ? flattenedDiscounts : flattenedPlans}
               mode={mode}
               type={tab === "discounts" ? "discounts" : "discount-plans"}
-              title={`Export ${tab === "discounts" ? "Discounts" : "Discount Plans"} Data`}
+              title={`Export ${
+                tab === "discounts" ? "Discounts" : "Discount Plans"
+              } Data`}
             />
           </div>
         </div>

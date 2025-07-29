@@ -125,7 +125,9 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Customers Report</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Customers Report
+        </h2>
         <p className="text-gray-600">
           Customer analytics and due balances for {dateRange.label}
         </p>
@@ -136,17 +138,24 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
         <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-indigo-100 text-sm font-medium">Total Customers</p>
+              <p className="text-indigo-100 text-sm font-medium">
+                Total Customers
+              </p>
               <p className="text-3xl font-bold">{stats.totalCustomers}</p>
             </div>
-            <Icon icon="mdi:account-group" className="w-8 h-8 text-indigo-200" />
+            <Icon
+              icon="mdi:account-group"
+              className="w-8 h-8 text-indigo-200"
+            />
           </div>
         </div>
 
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Active Customers</p>
+              <p className="text-green-100 text-sm font-medium">
+                Active Customers
+              </p>
               <p className="text-3xl font-bold">{stats.activeCustomers}</p>
             </div>
             <Icon icon="mdi:account-check" className="w-8 h-8 text-green-200" />
@@ -157,9 +166,14 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium">Total Sales</p>
-              <p className="text-3xl font-bold">GHS {stats.totalSales.toFixed(2)}</p>
+              <p className="text-3xl font-bold">
+                GHS {stats.totalSales.toFixed(2)}
+              </p>
             </div>
-            <Icon icon="mdi:currency-usd" className="w-8 h-8 text-blue-200" />
+            <Icon
+              icon="fa6-solid:cedi-sign"
+              className="w-8 h-8 text-blue-200"
+            />
           </div>
         </div>
 
@@ -167,7 +181,9 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-100 text-sm font-medium">Due Balances</p>
-              <p className="text-3xl font-bold">GHS {stats.dueBalances.toFixed(2)}</p>
+              <p className="text-3xl font-bold">
+                GHS {stats.dueBalances.toFixed(2)}
+              </p>
             </div>
             <Icon icon="mdi:alert-circle" className="w-8 h-8 text-red-200" />
           </div>
@@ -178,23 +194,33 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Average Order Value</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Average Order Value
+            </h3>
             <Icon icon="mdi:chart-line" className="w-6 h-6 text-blue-600" />
           </div>
-          <p className="text-3xl font-bold text-blue-600">GHS {stats.averageOrderValue.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-blue-600">
+            GHS {stats.averageOrderValue.toFixed(2)}
+          </p>
           <p className="text-sm text-gray-500 mt-2">Per customer average</p>
         </div>
 
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Top Customer</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Top Customer
+            </h3>
             <Icon icon="mdi:trophy" className="w-6 h-6 text-yellow-600" />
           </div>
           <p className="text-xl font-bold text-gray-900">
             {stats.topCustomer ? stats.topCustomer.name : "No data"}
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            {stats.topCustomer ? `GHS ${parseFloat(stats.topCustomer.total_sales || 0).toFixed(2)}` : "No sales data"}
+            {stats.topCustomer
+              ? `GHS ${parseFloat(stats.topCustomer.total_sales || 0).toFixed(
+                  2
+                )}`
+              : "No sales data"}
           </p>
         </div>
       </div>
@@ -203,11 +229,13 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Customer List</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Customer List
+            </h3>
             {/* Removed custom Export Data button */}
           </div>
         </div>
-        
+
         <GenericTable
           data={flattenedCustomers}
           columns={columns}
@@ -220,8 +248,16 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
             { label: "Customer Name", key: "name", icon: "mdi:account" },
             { label: "Email", key: "email", icon: "mdi:email" },
             { label: "Phone", key: "phone", icon: "mdi:phone" },
-            { label: "Total Orders", key: "total_orders", icon: "mdi:shopping" },
-            { label: "Total Spent", key: "total_sales", icon: "mdi:currency-usd" },
+            {
+              label: "Total Orders",
+              key: "total_orders",
+              icon: "mdi:shopping",
+            },
+            {
+              label: "Total Spent",
+              key: "total_sales",
+              icon: "mdi:currency-usd",
+            },
             { label: "Due Balance", key: "due_balance", icon: "mdi:alert" },
             { label: "Status", key: "status", icon: "mdi:check-circle" },
           ]}
@@ -236,14 +272,18 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
           })}
           emptyMessage={
             <div className="text-center py-12">
-              <Icon icon="mdi:account-group" className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <Icon
+                icon="mdi:account-group"
+                className="w-12 h-12 mx-auto mb-4 text-gray-300"
+              />
               <p className="text-gray-500">No customers found</p>
-              <p className="text-sm text-gray-400 mt-2">Customer management feature may not be implemented yet</p>
+              <p className="text-sm text-gray-400 mt-2">
+                Customer management feature may not be implemented yet
+              </p>
             </div>
           }
         />
       </div>
-
     </div>
   );
 } 

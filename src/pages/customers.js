@@ -139,8 +139,10 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
     <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
       <div className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            <Icon icon="mdi:account-group" className="w-7 h-7 text-blue-900" />
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">
+              <Icon icon="mdi:account-group" className="w-6 h-6 text-white" />
+            </div>
             Customer Management
           </h1>
           <p className="text-sm text-gray-500 mb-6">

@@ -117,7 +117,9 @@ export default function SuppliersReport({ dateRange, selectedStore, stores, mode
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Suppliers Report</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Suppliers Report
+        </h2>
         <p className="text-gray-600">
           Supplier performance and due balances for {dateRange.label}
         </p>
@@ -128,17 +130,24 @@ export default function SuppliersReport({ dateRange, selectedStore, stores, mode
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-orange-100 text-sm font-medium">Total Suppliers</p>
+              <p className="text-orange-100 text-sm font-medium">
+                Total Suppliers
+              </p>
               <p className="text-3xl font-bold">{stats.totalSuppliers}</p>
             </div>
-            <Icon icon="mdi:truck-delivery" className="w-8 h-8 text-orange-200" />
+            <Icon
+              icon="mdi:truck-delivery"
+              className="w-8 h-8 text-orange-200"
+            />
           </div>
         </div>
 
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Active Suppliers</p>
+              <p className="text-green-100 text-sm font-medium">
+                Active Suppliers
+              </p>
               <p className="text-3xl font-bold">{stats.activeSuppliers}</p>
             </div>
             <Icon icon="mdi:check-circle" className="w-8 h-8 text-green-200" />
@@ -148,10 +157,17 @@ export default function SuppliersReport({ dateRange, selectedStore, stores, mode
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Total Purchases</p>
-              <p className="text-3xl font-bold">GHS {stats.totalPurchases.toFixed(2)}</p>
+              <p className="text-blue-100 text-sm font-medium">
+                Total Purchases
+              </p>
+              <p className="text-3xl font-bold">
+                GHS {stats.totalPurchases.toFixed(2)}
+              </p>
             </div>
-            <Icon icon="mdi:currency-usd" className="w-8 h-8 text-blue-200" />
+            <Icon
+              icon="fa6-solid:cedi-sign"
+              className="w-8 h-8 text-blue-200"
+            />
           </div>
         </div>
 
@@ -159,7 +175,9 @@ export default function SuppliersReport({ dateRange, selectedStore, stores, mode
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-100 text-sm font-medium">Total Due</p>
-              <p className="text-3xl font-bold">GHS {stats.totalDue.toFixed(2)}</p>
+              <p className="text-3xl font-bold">
+                GHS {stats.totalDue.toFixed(2)}
+              </p>
             </div>
             <Icon icon="mdi:alert-circle" className="w-8 h-8 text-red-200" />
           </div>
@@ -170,11 +188,13 @@ export default function SuppliersReport({ dateRange, selectedStore, stores, mode
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Supplier List</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Supplier List
+            </h3>
             {/* Removed custom Export Data button */}
           </div>
         </div>
-        
+
         <GenericTable
           data={flattenedSuppliers}
           columns={columns}
@@ -185,10 +205,18 @@ export default function SuppliersReport({ dateRange, selectedStore, stores, mode
           exportTitle="Export Supplier List"
           getFieldsOrder={() => [
             { label: "Supplier Name", key: "name", icon: "mdi:account" },
-            { label: "Contact Person", key: "contact_person", icon: "mdi:account-tie" },
+            {
+              label: "Contact Person",
+              key: "contact_person",
+              icon: "mdi:account-tie",
+            },
             { label: "Phone", key: "phone", icon: "mdi:phone" },
             { label: "Email", key: "email", icon: "mdi:email" },
-            { label: "Total Purchases", key: "total_purchases", icon: "mdi:currency-usd" },
+            {
+              label: "Total Purchases",
+              key: "total_purchases",
+              icon: "mdi:currency-usd",
+            },
             { label: "Due Balance", key: "due_balance", icon: "mdi:alert" },
             { label: "Status", key: "status", icon: "mdi:check-circle" },
           ]}
@@ -203,14 +231,18 @@ export default function SuppliersReport({ dateRange, selectedStore, stores, mode
           })}
           emptyMessage={
             <div className="text-center py-12">
-              <Icon icon="mdi:truck-delivery" className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <Icon
+                icon="mdi:truck-delivery"
+                className="w-12 h-12 mx-auto mb-4 text-gray-300"
+              />
               <p className="text-gray-500">No suppliers found</p>
-              <p className="text-sm text-gray-400 mt-2">Supplier management feature may not be implemented yet</p>
+              <p className="text-sm text-gray-400 mt-2">
+                Supplier management feature may not be implemented yet
+              </p>
             </div>
           }
         />
       </div>
-
     </div>
   );
 } 

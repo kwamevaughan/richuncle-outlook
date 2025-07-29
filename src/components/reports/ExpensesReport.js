@@ -163,7 +163,10 @@ export default function ExpensesReport({ dateRange, selectedStore, stores, mode 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium">Average Amount</p>
-              <p className="text-3xl font-bold">GHS {stats.averageAmount.toLocaleString()}</p>
+              <p className="text-3xl font-bold">GHS {stats.averageAmount.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}</p>
             </div>
             <Icon icon="mdi:chart-line" className="w-8 h-8 text-purple-200" />
           </div>

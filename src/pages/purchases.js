@@ -331,7 +331,13 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
   }
 
   return (
-    <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
+    <MainLayout
+      mode={mode}
+      user={user}
+      toggleMode={toggleMode}
+      onLogout={handleLogout}
+      {...props}
+    >
       <div className="flex flex-1 bg-gray-50 min-h-screen">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
@@ -339,14 +345,14 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
                       <Icon
-                        icon="mdi:cart-check"
-                        className="w-6 h-6 text-white"
+                        icon="mdi:cart-outline"
+                        className="w-4 h-4 sm:w-6 sm:h-6 text-white"
                       />
                     </div>
-                    Direct Purchases
+                    Purchases
                   </h1>
                   <p className="text-gray-600">
                     Quick purchases for immediate inventory needs
@@ -481,11 +487,12 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
             {/* Content Area */}
             {loading && (
               <div className="flex items-center gap-2 text-blue-600 mb-4">
-                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" /> Loading...
+                <Icon icon="mdi:loading" className="animate-spin w-5 h-5" />{" "}
+                Loading...
               </div>
             )}
             {error && <div className="text-red-600 mb-4">{error}</div>}
-            
+
             {!loading && !error && filteredPurchases.length === 0 ? (
               <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
                 <Icon
@@ -511,32 +518,73 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                         <button
                           onClick={() => handleExpandRow(row.id)}
                           className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                          title={expandedRows.includes(row.id) ? "Collapse" : "Expand"}
+                          title={
+                            expandedRows.includes(row.id)
+                              ? "Collapse"
+                              : "Expand"
+                          }
                         >
-                          <Icon icon={expandedRows.includes(row.id) ? "mdi:chevron-up" : "mdi:chevron-down"} className="w-5 h-5" />
+                          <Icon
+                            icon={
+                              expandedRows.includes(row.id)
+                                ? "mdi:chevron-up"
+                                : "mdi:chevron-down"
+                            }
+                            className="w-5 h-5"
+                          />
                         </button>
                       ),
                     },
-                    { Header: "Purchase Number", accessor: "purchase_number", sortable: true },
-                    { Header: "Supplier", accessor: "supplier_name", sortable: true },
-                    { Header: "Warehouse", accessor: "warehouse_name", sortable: true },
-                    { Header: "Date", accessor: "date", sortable: true, render: (row) => 
-                      new Date(row.date).toLocaleDateString() 
+                    {
+                      Header: "Purchase Number",
+                      accessor: "purchase_number",
+                      sortable: true,
                     },
-                    { Header: "Status", accessor: "status", sortable: true, render: (row) => {
-                      const statusColors = {
-                        pending: "bg-yellow-100 text-yellow-800",
-                        completed: "bg-green-100 text-green-800",
-                        cancelled: "bg-red-100 text-red-800"
-                      };
-                      return (
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[row.status] || 'bg-gray-100 text-gray-800'}`}>
-                          {row.status?.charAt(0).toUpperCase() + row.status?.slice(1)}
-                        </span>
-                      );
-                    }},
-                    { Header: "Total", accessor: "total", sortable: true, render: (row) => 
-                      `GHS ${(row.total || 0).toLocaleString()}` 
+                    {
+                      Header: "Supplier",
+                      accessor: "supplier_name",
+                      sortable: true,
+                    },
+                    {
+                      Header: "Warehouse",
+                      accessor: "warehouse_name",
+                      sortable: true,
+                    },
+                    {
+                      Header: "Date",
+                      accessor: "date",
+                      sortable: true,
+                      render: (row) => new Date(row.date).toLocaleDateString(),
+                    },
+                    {
+                      Header: "Status",
+                      accessor: "status",
+                      sortable: true,
+                      render: (row) => {
+                        const statusColors = {
+                          pending: "bg-yellow-100 text-yellow-800",
+                          completed: "bg-green-100 text-green-800",
+                          cancelled: "bg-red-100 text-red-800",
+                        };
+                        return (
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              statusColors[row.status] ||
+                              "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {row.status?.charAt(0).toUpperCase() +
+                              row.status?.slice(1)}
+                          </span>
+                        );
+                      },
+                    },
+                    {
+                      Header: "Total",
+                      accessor: "total",
+                      sortable: true,
+                      render: (row) =>
+                        `GHS ${(row.total || 0).toLocaleString()}`,
                     },
                     {
                       Header: "Line Items",
@@ -545,12 +593,23 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                         <button
                           onClick={async () => {
                             if (!rowLineItems[row.id]) {
-                              const res = await fetch(`/api/purchase-items?purchase_id=${row.id}`);
+                              const res = await fetch(
+                                `/api/purchase-items?purchase_id=${row.id}`
+                              );
                               const { data } = await res.json();
-                              setRowLineItems((prev) => ({ ...prev, [row.id]: data || [] }));
-                              setViewItemsModal({ open: true, items: data || [] });
+                              setRowLineItems((prev) => ({
+                                ...prev,
+                                [row.id]: data || [],
+                              }));
+                              setViewItemsModal({
+                                open: true,
+                                items: data || [],
+                              });
                             } else {
-                              setViewItemsModal({ open: true, items: rowLineItems[row.id] });
+                              setViewItemsModal({
+                                open: true,
+                                items: rowLineItems[row.id],
+                              });
                             }
                           }}
                           className="p-1 text-blue-600 hover:bg-blue-50 rounded"
@@ -570,7 +629,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                   statusOptions={[
                     { value: "pending", label: "Pending" },
                     { value: "completed", label: "Completed" },
-                    { value: "cancelled", label: "Cancelled" }
+                    { value: "cancelled", label: "Cancelled" },
                   ]}
                   onImport={handleImportPurchases}
                   mode={mode}
@@ -582,7 +641,10 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                         <tr className="bg-gray-50 dark:bg-gray-800">
                           <td colSpan={9} className="p-4">
                             <div className="font-semibold mb-2">Line Items</div>
-                            <PurchaseItemsEditor items={rowLineItems[row.id] || []} disabled={true} />
+                            <PurchaseItemsEditor
+                              items={rowLineItems[row.id] || []}
+                              disabled={true}
+                            />
                           </td>
                         </tr>
                       )}
@@ -591,7 +653,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                 />
               </div>
             )}
-            
+
             <PurchaseModals
               show={showModal}
               onClose={closeModal}
@@ -600,7 +662,12 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
               mode={mode}
               loading={modalLoading}
               error={modalError}
-              calculatedTotal={lineItems.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unit_cost) || 0), 0)}
+              calculatedTotal={lineItems.reduce(
+                (sum, item) =>
+                  sum +
+                  (Number(item.quantity) || 0) * (Number(item.unit_cost) || 0),
+                0
+              )}
             >
               <PurchaseItemsEditor
                 items={lineItems}
@@ -622,7 +689,8 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                     className="w-12 h-12 text-red-500 mx-auto mb-4"
                   />
                   <div className="text-lg font-semibold mb-2">
-                    Are you sure you want to delete purchase {deleteItem?.purchase_number}?
+                    Are you sure you want to delete purchase{" "}
+                    {deleteItem?.purchase_number}?
                   </div>
                   <div className="flex justify-center gap-4 mt-6">
                     <button
@@ -655,17 +723,28 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Icon icon="mdi:format-list-bulleted" className="w-6 h-6 text-blue-600" />
+                      <Icon
+                        icon="mdi:format-list-bulleted"
+                        className="w-6 h-6 text-blue-600"
+                      />
                     </div>
                     <div>
-                      <div className="text-lg font-bold text-gray-900">Line Items</div>
-                      <div className="text-sm text-gray-500">Details of all products in this purchase</div>
+                      <div className="text-lg font-bold text-gray-900">
+                        Line Items
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Details of all products in this purchase
+                      </div>
                     </div>
                   </div>
                   {/* Items Table/Card */}
-                  {(!viewItemsModal.items || viewItemsModal.items.length === 0) ? (
+                  {!viewItemsModal.items ||
+                  viewItemsModal.items.length === 0 ? (
                     <div className="flex flex-col items-center py-12 text-gray-400">
-                      <Icon icon="mdi:package-variant" className="w-12 h-12 mb-2" />
+                      <Icon
+                        icon="mdi:package-variant"
+                        className="w-12 h-12 mb-2"
+                      />
                       <div>No line items found</div>
                     </div>
                   ) : (
@@ -673,30 +752,64 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
                       <table className="min-w-full text-sm rounded-xl overflow-hidden">
                         <thead>
                           <tr className="bg-blue-50 text-blue-900">
-                            <th className="px-4 py-3 text-left font-semibold">Product</th>
-                            <th className="px-4 py-3 text-left font-semibold">Quantity</th>
-                            <th className="px-4 py-3 text-left font-semibold">Unit Cost</th>
-                            <th className="px-4 py-3 text-left font-semibold">Total</th>
+                            <th className="px-4 py-3 text-left font-semibold">
+                              Product
+                            </th>
+                            <th className="px-4 py-3 text-left font-semibold">
+                              Quantity
+                            </th>
+                            <th className="px-4 py-3 text-left font-semibold">
+                              Unit Cost
+                            </th>
+                            <th className="px-4 py-3 text-left font-semibold">
+                              Total
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-100">
                           {viewItemsModal.items.map((item, idx) => {
-                            const product = products.find((p) => p.id === item.product_id);
+                            const product = products.find(
+                              (p) => p.id === item.product_id
+                            );
                             return (
-                              <tr key={idx} className="hover:bg-green-50 transition-all">
+                              <tr
+                                key={idx}
+                                className="hover:bg-green-50 transition-all"
+                              >
                                 <td className="px-4 py-3">
                                   <div>
                                     <div className="font-medium text-gray-900">
-                                      {product?.name || item.product_name || item.name || 'Unknown Product'}
+                                      {product?.name ||
+                                        item.product_name ||
+                                        item.name ||
+                                        "Unknown Product"}
                                     </div>
                                     {(product?.sku || item.product_sku) && (
-                                      <div className="text-xs text-gray-500">SKU: {product?.sku || item.product_sku}</div>
+                                      <div className="text-xs text-gray-500">
+                                        SKU: {product?.sku || item.product_sku}
+                                      </div>
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 text-gray-700">{item.quantity}</td>
-                                <td className="px-4 py-3 text-gray-700">GHS {Number(item.unit_cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                <td className="px-4 py-3 font-semibold text-green-700">GHS {((Number(item.quantity) || 0) * (Number(item.unit_cost) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                <td className="px-4 py-3 text-gray-700">
+                                  {item.quantity}
+                                </td>
+                                <td className="px-4 py-3 text-gray-700">
+                                  GHS{" "}
+                                  {Number(item.unit_cost).toLocaleString(
+                                    undefined,
+                                    { minimumFractionDigits: 2 }
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 font-semibold text-green-700">
+                                  GHS{" "}
+                                  {(
+                                    (Number(item.quantity) || 0) *
+                                    (Number(item.unit_cost) || 0)
+                                  ).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                  })}
+                                </td>
                               </tr>
                             );
                           })}

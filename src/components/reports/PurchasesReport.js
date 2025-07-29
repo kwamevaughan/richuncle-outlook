@@ -216,7 +216,9 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Purchases Report</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Purchases Report
+        </h2>
         <p className="text-gray-600">
           Purchase orders, direct purchases, and returns for {dateRange.label}
         </p>
@@ -227,7 +229,9 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Direct Purchases</p>
+              <p className="text-purple-100 text-sm font-medium">
+                Direct Purchases
+              </p>
               <p className="text-3xl font-bold">{stats.totalPurchases}</p>
             </div>
             <Icon icon="mdi:cart-outline" className="w-8 h-8 text-purple-200" />
@@ -237,10 +241,15 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Purchase Orders</p>
+              <p className="text-blue-100 text-sm font-medium">
+                Purchase Orders
+              </p>
               <p className="text-3xl font-bold">{stats.totalOrders}</p>
             </div>
-            <Icon icon="mdi:file-document-outline" className="w-8 h-8 text-blue-200" />
+            <Icon
+              icon="mdi:file-document-outline"
+              className="w-8 h-8 text-blue-200"
+            />
           </div>
         </div>
 
@@ -258,9 +267,14 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Total Spent</p>
-              <p className="text-3xl font-bold">GHS {stats.totalSpent.toFixed(2)}</p>
+              <p className="text-3xl font-bold">
+                GHS {stats.totalSpent.toFixed(2)}
+              </p>
             </div>
-            <Icon icon="mdi:currency-usd" className="w-8 h-8 text-green-200" />
+            <Icon
+              icon="fa6-solid:cedi-sign"
+              className="w-8 h-8 text-green-200"
+            />
           </div>
         </div>
       </div>
@@ -272,26 +286,40 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
             <h3 className="text-lg font-semibold text-gray-900">Order Value</h3>
             <Icon icon="mdi:file-document" className="w-6 h-6 text-blue-600" />
           </div>
-          <p className="text-3xl font-bold text-blue-600">GHS {stats.totalOrderValue.toFixed(2)}</p>
-          <p className="text-sm text-gray-500 mt-2">Total value of purchase orders</p>
+          <p className="text-3xl font-bold text-blue-600">
+            GHS {stats.totalOrderValue.toFixed(2)}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Total value of purchase orders
+          </p>
         </div>
 
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Return Value</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Return Value
+            </h3>
             <Icon icon="mdi:undo" className="w-6 h-6 text-orange-600" />
           </div>
-          <p className="text-3xl font-bold text-orange-600">GHS {stats.totalReturnValue.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-orange-600">
+            GHS {stats.totalReturnValue.toFixed(2)}
+          </p>
           <p className="text-sm text-gray-500 mt-2">Total value of returns</p>
         </div>
 
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Pending Orders</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Pending Orders
+            </h3>
             <Icon icon="mdi:clock" className="w-6 h-6 text-yellow-600" />
           </div>
-          <p className="text-3xl font-bold text-yellow-600">{stats.pendingOrders}</p>
-          <p className="text-sm text-gray-500 mt-2">Orders awaiting completion</p>
+          <p className="text-3xl font-bold text-yellow-600">
+            {stats.pendingOrders}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Orders awaiting completion
+          </p>
         </div>
       </div>
 
@@ -299,11 +327,13 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
       <div className="bg-white rounded-xl border border-gray-200 mb-8">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Direct Purchases</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Direct Purchases
+            </h3>
             {/* Removed custom Export Data button */}
           </div>
         </div>
-        
+
         <GenericTable
           data={flattenedPurchases}
           columns={purchaseColumns}
@@ -313,10 +343,18 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
           exportType="purchases"
           exportTitle="Export Direct Purchases"
           getFieldsOrder={() => [
-            { label: "Purchase #", key: "purchase_number", icon: "mdi:identifier" },
+            {
+              label: "Purchase #",
+              key: "purchase_number",
+              icon: "mdi:identifier",
+            },
             { label: "Date", key: "date", icon: "mdi:calendar" },
             { label: "Supplier", key: "supplier_name", icon: "mdi:truck" },
-            { label: "Warehouse", key: "warehouse_name", icon: "mdi:warehouse" },
+            {
+              label: "Warehouse",
+              key: "warehouse_name",
+              icon: "mdi:warehouse",
+            },
             { label: "Total", key: "total", icon: "mdi:currency-usd" },
             { label: "Status", key: "status", icon: "mdi:check-circle" },
           ]}
@@ -330,8 +368,13 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
           })}
           emptyMessage={
             <div className="text-center py-12">
-              <Icon icon="mdi:cart-outline" className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500">No direct purchases found for the selected period</p>
+              <Icon
+                icon="mdi:cart-outline"
+                className="w-12 h-12 mx-auto mb-4 text-gray-300"
+              />
+              <p className="text-gray-500">
+                No direct purchases found for the selected period
+              </p>
             </div>
           }
         />
@@ -340,9 +383,11 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
       {/* Purchase Orders Table */}
       <div className="bg-white rounded-xl border border-gray-200 mb-8">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Purchase Orders</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Purchase Orders
+          </h3>
         </div>
-        
+
         <GenericTable
           data={flattenedOrders}
           columns={orderColumns}
@@ -355,7 +400,11 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
             { label: "Order #", key: "order_number", icon: "mdi:identifier" },
             { label: "Date", key: "date", icon: "mdi:calendar" },
             { label: "Supplier", key: "supplier_name", icon: "mdi:truck" },
-            { label: "Warehouse", key: "warehouse_name", icon: "mdi:warehouse" },
+            {
+              label: "Warehouse",
+              key: "warehouse_name",
+              icon: "mdi:warehouse",
+            },
             { label: "Total", key: "total", icon: "mdi:currency-usd" },
             { label: "Status", key: "status", icon: "mdi:check-circle" },
           ]}
@@ -369,8 +418,13 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
           })}
           emptyMessage={
             <div className="text-center py-12">
-              <Icon icon="mdi:file-document-outline" className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500">No purchase orders found for the selected period</p>
+              <Icon
+                icon="mdi:file-document-outline"
+                className="w-12 h-12 mx-auto mb-4 text-gray-300"
+              />
+              <p className="text-gray-500">
+                No purchase orders found for the selected period
+              </p>
             </div>
           }
         />
@@ -379,9 +433,11 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
       {/* Purchase Returns Table */}
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Purchase Returns</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Purchase Returns
+          </h3>
         </div>
-        
+
         <GenericTable
           data={flattenedReturns}
           columns={returnColumns}
@@ -394,7 +450,11 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
             { label: "Return #", key: "return_number", icon: "mdi:identifier" },
             { label: "Date", key: "return_date", icon: "mdi:calendar" },
             { label: "Supplier", key: "supplier_name", icon: "mdi:truck" },
-            { label: "Warehouse", key: "warehouse_name", icon: "mdi:warehouse" },
+            {
+              label: "Warehouse",
+              key: "warehouse_name",
+              icon: "mdi:warehouse",
+            },
             { label: "Total", key: "total", icon: "mdi:currency-usd" },
             { label: "Status", key: "status", icon: "mdi:check-circle" },
           ]}
@@ -408,13 +468,17 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
           })}
           emptyMessage={
             <div className="text-center py-12">
-              <Icon icon="mdi:undo" className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500">No purchase returns found for the selected period</p>
+              <Icon
+                icon="mdi:undo"
+                className="w-12 h-12 mx-auto mb-4 text-gray-300"
+              />
+              <p className="text-gray-500">
+                No purchase returns found for the selected period
+              </p>
             </div>
           }
         />
       </div>
-
     </div>
   );
 } 

@@ -223,12 +223,22 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Icon icon="prime:undo" className="w-7 h-7 text-blue-900" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                <Icon
+                  icon="mdi:undo-variant"
+                  className="w-4 h-4 sm:w-6 sm:h-6 text-white"
+                />
+              </div>
               Sales Returns
             </h1>
             <p className="text-sm text-gray-500 mb-6">
-              Manage your sales returns here. The data below is filtered for: <span className="font-bold">{selectedStore ? stores.find(s => s.id === selectedStore)?.name : "All Stores"}</span>
+              Manage your sales returns here. The data below is filtered for:{" "}
+              <span className="font-bold">
+                {selectedStore
+                  ? stores.find((s) => s.id === selectedStore)?.name
+                  : "All Stores"}
+              </span>
             </p>
             {loading && (
               <div className="flex items-center gap-2 text-blue-600 mb-4">
@@ -273,7 +283,7 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                   Header: "Customer",
                   accessor: "customer_name",
                   sortable: true,
-                  render: row => row.customer_name || "Walk In Customer"
+                  render: (row) => row.customer_name || "Walk In Customer",
                 },
                 { Header: "Date", accessor: "date", sortable: true },
                 { Header: "Status", accessor: "status", sortable: true },
@@ -287,25 +297,25 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
               ]}
               actions={[
                 {
-                  label: 'Approve',
-                  icon: 'mdi:check',
-                  className: 'bg-green-600 text-white',
-                  onClick: row => handleApprove(row),
-                  show: row => row.status === 'Pending'
+                  label: "Approve",
+                  icon: "mdi:check",
+                  className: "bg-green-600 text-white",
+                  onClick: (row) => handleApprove(row),
+                  show: (row) => row.status === "Pending",
                 },
                 {
-                  label: 'Cancel',
-                  icon: 'mdi:close',
-                  className: 'bg-red-600 text-white',
-                  onClick: row => handleCancel(row),
-                  show: row => row.status === 'Pending'
+                  label: "Cancel",
+                  icon: "mdi:close",
+                  className: "bg-red-600 text-white",
+                  onClick: (row) => handleCancel(row),
+                  show: (row) => row.status === "Pending",
                 },
                 {
-                  label: 'View',
-                  icon: 'mdi:eye',
-                  className: 'bg-blue-500/10 text-blue-500',
-                  onClick: row => handleView(row)
-                }
+                  label: "View",
+                  icon: "mdi:eye",
+                  className: "bg-blue-500/10 text-blue-500",
+                  onClick: (row) => handleView(row),
+                },
               ]}
               // Remove onEdit, onAddNew, addNewLabel, title, emptyMessage, customRowRender for add/edit
               customRowRender={(row, index, defaultRow) => (
@@ -324,7 +334,9 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                             }))
                           }
                           products={products}
-                          referenceOrderProducts={rowReferenceOrderProducts[row.id] || []}
+                          referenceOrderProducts={
+                            rowReferenceOrderProducts[row.id] || []
+                          }
                           reference={row.reference}
                         />
                       </td>
@@ -336,7 +348,7 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
                 { value: "Pending", label: "Pending" },
                 { value: "Returned", label: "Returned" },
                 { value: "Cancelled", label: "Cancelled" },
-                { value: "Refunded", label: "Refunded" }
+                { value: "Refunded", label: "Refunded" },
               ]}
             />
             {showViewModal && viewItem && (
