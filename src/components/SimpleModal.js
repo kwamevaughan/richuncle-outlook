@@ -124,11 +124,11 @@ const SimpleModal = ({
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="group p-3 rounded-2xl transition-all duration-300 hover:bg-white/20 hover:scale-110 active:scale-95"
-                    style={{
-                      backdropFilter: "blur(4px)",
-                      background: "rgba(255, 255, 255, 0.1)",
-                    }}
+                    className="group p-3 bg-red-500 rounded-2xl transition-all duration-300 hover:bg-white/20 hover:scale-110 active:scale-95"
+                    // style={{
+                    //   backdropFilter: "blur(4px)",
+                    //   background: "rgba(255, 255, 255, 0.1)",
+                    // }}
                   >
                     <Icon
                       icon="heroicons:x-mark"
