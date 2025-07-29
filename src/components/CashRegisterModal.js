@@ -529,7 +529,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
         onClose={onClose}
         title="Cash Register"
         width="max-w-4xl"
-        disableOutsideClick={true}
+        disableOutsideClick={false}
         mode={mode}
       >
         <div className="space-y-6">
@@ -953,7 +953,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
           onClose={() => setShowCloseConfirm(false)}
           title="Close Register?"
           width="max-w-md"
-          disableOutsideClick={true}
+          disableOutsideClick={false}
           mode={mode}
         >
           <div className="p-2">
@@ -991,7 +991,7 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
           onClose={() => setShowLargeOutConfirm(false)}
           title="Large Cash Out"
           width="max-w-md"
-          disableOutsideClick={true}
+          disableOutsideClick={false}
           mode={mode}
         >
           <div className="p-2">

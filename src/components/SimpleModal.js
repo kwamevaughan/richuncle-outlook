@@ -16,15 +16,15 @@ const SimpleModal = ({
 
   // Handle escape key
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        if (hasUnsavedChanges) {
-          setShowConfirmDialog(true);
-        } else {
-          onClose();
-        }
+      const handleEscape = (e) => {
+    if (e.key === 'Escape' && isOpen) {
+      if (hasUnsavedChanges) {
+        setShowConfirmDialog(true);
+      } else {
+        onClose();
       }
-    };
+    }
+  };
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
@@ -46,6 +46,16 @@ const SimpleModal = ({
     }
   };
 
+  const handleOutsideClick = (e) => {
+    if (!disableOutsideClick) {
+      if (hasUnsavedChanges) {
+        setShowConfirmDialog(true);
+      } else {
+        onClose();
+      }
+    }
+  };
+
   const handleConfirmClose = () => {
     setShowConfirmDialog(false);
     onClose();
@@ -55,12 +65,14 @@ const SimpleModal = ({
     setShowConfirmDialog(false);
   };
 
+  if (!isOpen) return null;
+
   return (
     <>
       <div
-        className="fixed inset-0 z-50 overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-        style={{ display: isOpen ? 'block' : 'none' }}
+        className="fixed inset-0 overflow-y-auto"
+        style={{ zIndex: 99999 }}
+        onClick={handleOutsideClick}
       >
         {/* Enhanced Glassmorphic Background */}
         <div
@@ -70,7 +82,7 @@ const SimpleModal = ({
                 ? "bg-gradient-to-br from-slate-900/20 via-blue-900/10 to-blue-900/20"
                 : "bg-gradient-to-br from-white/20 via-blue-50/30 to-blue-50/20"
             }`}
-          onClick={(e) => e.stopPropagation()}
+          onClick={handleOutsideClick}
           style={{
             backgroundImage: `
               radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
@@ -83,7 +95,7 @@ const SimpleModal = ({
         {/* Modal Content */}
         <div
           className="flex min-h-full items-center justify-center p-4"
-          onClick={(e) => e.stopPropagation()}
+          onClick={handleOutsideClick}
         >
           <div
             className={`relative w-full ${width} rounded-3xl transform transition-all duration-500 max-h-[85vh] overflow-hidden
@@ -187,7 +199,8 @@ const SimpleModal = ({
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto"
+          className="fixed inset-0 overflow-y-auto"
+          style={{ zIndex: 100000 }}
           onClick={(e) => e.stopPropagation()}
         >
           <div
