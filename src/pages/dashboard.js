@@ -224,7 +224,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
                     }`}
                     onClick={() =>
                       router.push(
-                        `/manage-stock?quickUpdateId=${lowStockProduct.id}`
+                        `/stock-operations?productId=${lowStockProduct.id}&openAdjustment=true`
                       )
                     }
                   >

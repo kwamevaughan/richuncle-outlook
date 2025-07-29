@@ -7,10 +7,12 @@ import SimpleModal from "@/components/SimpleModal";
 import { GenericTable } from "@/components/GenericTable";
 import toast from "react-hot-toast";
 import Select from 'react-select';
+import { useRouter } from "next/router";
 
 export default function StockOperationsPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
+  const router = useRouter();
   
   // State
   const [activeTab, setActiveTab] = useState("adjustments");
@@ -106,6 +108,36 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Handle URL parameters for auto-opening adjustment modal
+  useEffect(() => {
+    if (router.isReady && products.length > 0) {
+      const { productId, openAdjustment } = router.query;
+      
+      if (productId && openAdjustment === 'true') {
+        const product = products.find(p => p.id === productId);
+        if (product) {
+          setSelectedProduct(product);
+          setAdjustmentData({
+            product_id: product.id,
+            adjustment_type: "increase",
+            quantity_adjusted: "",
+            reason: "",
+            reference_number: generateReferenceNumber(),
+            notes: "",
+            adjustment_date: new Date().toISOString().split('T')[0],
+            location_id: "",
+            cost_price: parseFloat(product.cost_price || 0),
+            unit_price: parseFloat(product.price || 0)
+          });
+          setShowAdjustmentModal(true);
+          
+          // Clean up the URL parameters
+          router.replace('/stock-operations', undefined, { shallow: true });
+        }
+      }
+    }
+  }, [router.isReady, router.query, products]);
 
   const fetchData = async () => {
     setLoading(true);
