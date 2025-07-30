@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { Icon } from "@iconify/react";
 import { sidebarNav } from "@/data/nav";
 
-const HrSidebar = ({
+const Sidebar = ({
   mode,
   toggleMode,
   onLogout,
@@ -154,7 +154,7 @@ const HrSidebar = ({
   const handleNavigation = async (href, label) => {
     if (!router) return;
     try {
-      console.log("[HrSidebar] Navigation started:", { href, label, isMobile, isOpen });
+      console.log("[Sidebar] Navigation started:", { href, label, isMobile, isOpen });
       
       // Check if we're navigating to the same pathname but different query params
       const [pathname, queryString] = href.split('?');
@@ -184,12 +184,12 @@ const HrSidebar = ({
       
       // Close sidebar on mobile after navigation
       if (isMobile && isOpen) {
-        console.log("[HrSidebar] Closing sidebar on mobile navigation");
+        console.log("[Sidebar] Closing sidebar on mobile navigation");
         // Close immediately for better UX
         toggleSidebar();
       }
     } catch (error) {
-      console.error("[HrSidebar] Navigation error:", error);
+      console.error("[Sidebar] Navigation error:", error);
     }
   };
 
@@ -206,7 +206,7 @@ const HrSidebar = ({
 
   if (windowWidth === null) return null;
 
-  console.log("[HrSidebar] Rendering sidebar:", { isMobile, isOpen, windowWidth });
+  console.log("[Sidebar] Rendering sidebar:", { isMobile, isOpen, windowWidth });
 
   return (
     <div className="relative z-[20]">
@@ -410,7 +410,7 @@ const HrSidebar = ({
                                     );
                                     // Close sidebar on mobile for special events
                                     if (isMobile && isOpen) {
-                                      console.log("[HrSidebar] Closing sidebar on mobile for layaways event");
+                                      console.log("[Sidebar] Closing sidebar on mobile for layaways event");
                                       // Close immediately for better UX
                                       toggleSidebar();
                                     }
@@ -424,7 +424,7 @@ const HrSidebar = ({
                                     );
                                     // Close sidebar on mobile for special events
                                     if (isMobile && isOpen) {
-                                      console.log("[HrSidebar] Closing sidebar on mobile for orders event");
+                                      console.log("[Sidebar] Closing sidebar on mobile for orders event");
                                       // Close immediately for better UX
                                       toggleSidebar();
                                     }
@@ -683,4 +683,4 @@ const HrSidebar = ({
   );
 };
 
-export default HrSidebar;
+export default Sidebar;

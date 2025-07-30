@@ -1,10 +1,10 @@
-import SimpleFooter from "@/layouts/simpleFooter";
-import HrSidebar from "@/layouts/hrSidebar";
-import HrHeader from "@/layouts/hrHeader";
+import Footer from "@/layouts/footer";
+import Sidebar from "@/layouts/sidebar";
+import Header from "@/layouts/header";
 import useSidebar from "@/hooks/useSidebar";
 import { useState } from "react";
 
-export default function MainLayout({ children, mode, HeaderComponent = HrHeader, showSidebar = true, user, onLogout, ...props }) {
+export default function MainLayout({ children, mode, HeaderComponent = Header, showSidebar = true, user, onLogout, ...props }) {
   const { isSidebarOpen, toggleSidebar, isMobile } = useSidebar();
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
@@ -20,7 +20,7 @@ export default function MainLayout({ children, mode, HeaderComponent = HrHeader,
       <HeaderComponent {...props} isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} mode={mode} user={user} onLogout={onLogout} isHeaderVisible={isHeaderVisible} toggleHeader={toggleHeader} />
       <div className="flex flex-1">
         {showSidebar && (
-          <HrSidebar isOpen={isSidebarOpen} mode={mode} toggleSidebar={toggleSidebar} user={user} onLogout={onLogout} isHeaderVisible={isHeaderVisible} toggleHeader={toggleHeader} isMobile={isMobile} />
+          <Sidebar isOpen={isSidebarOpen} mode={mode} toggleSidebar={toggleSidebar} user={user} onLogout={onLogout} isHeaderVisible={isHeaderVisible} toggleHeader={toggleHeader} isMobile={isMobile} />
         )}
         <div className={`flex-1 flex flex-col transition-all ${contentMargin}`}>
           <div className="flex flex-col flex-1">
@@ -28,7 +28,7 @@ export default function MainLayout({ children, mode, HeaderComponent = HrHeader,
               {children}
             </div>
             <div className="p-4 md:p-6 lg:p-8">
-              <SimpleFooter mode={mode} isSidebarOpen={isSidebarOpen} />
+              <Footer mode={mode} isSidebarOpen={isSidebarOpen} />
             </div>
           </div>
         </div>

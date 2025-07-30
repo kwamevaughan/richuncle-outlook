@@ -8,7 +8,6 @@ import { Icon } from "@iconify/react";
 import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
-import ErrorBoundary from "../components/ErrorBoundary";
 import Link from "next/link";
 
 export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...props }) {

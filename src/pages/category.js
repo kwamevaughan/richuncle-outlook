@@ -11,7 +11,6 @@ import { AddEditModal } from "../components/AddEditModal";
 import { reorderFullList } from "../utils/categoryUtils";
 import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
-import ErrorBoundary from "../components/ErrorBoundary";
 
 export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
   const [tab, setTab] = useState("categories");

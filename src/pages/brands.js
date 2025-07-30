@@ -9,7 +9,6 @@ import { Icon } from "@iconify/react";
 import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
-import ErrorBoundary from "../components/ErrorBoundary";
 
 export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);

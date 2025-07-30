@@ -9,7 +9,7 @@ import NotificationButton from "@/components/NotificationButton";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
-const HrHeader = ({
+const Header = ({
   mode,
   toggleMode,
   isSidebarOpen,
@@ -228,7 +228,7 @@ const HrHeader = ({
                         setSelectedStore("");
                         localStorage.setItem('selected_store_id', "");
                         setStoreDropdownOpen(false);
-                        console.log('hrHeader: All Stores selected');
+                        console.log('Header: All Stores selected');
                       }}
                     >
                       All Stores
@@ -246,7 +246,7 @@ const HrHeader = ({
                           onClick={() => {
                             setSelectedStore(store.id);
                             setStoreDropdownOpen(false);
-                            console.log('hrHeader: Store selected:', store.name, store.id);
+                            console.log('Header: Store selected:', store.name, store.id);
                           }}
                         >
                           {store.name}
@@ -494,4 +494,4 @@ const HrHeader = ({
   );
 };
 
-export default HrHeader;
+export default Header;

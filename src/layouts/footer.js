@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const SimpleFooter = ({ mode, isSidebarOpen }) => {
+const Footer = ({ mode, isSidebarOpen }) => {
   const [sidebarHidden, setSidebarHidden] = useState(false);
   const currentYear = new Date().getFullYear();
 
@@ -85,4 +85,4 @@ const SimpleFooter = ({ mode, isSidebarOpen }) => {
   );
 };
 
-export default SimpleFooter;
+export default Footer;

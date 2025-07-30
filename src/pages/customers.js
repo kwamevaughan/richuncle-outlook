@@ -2,18 +2,17 @@ import React, { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
 import toast from "react-hot-toast";
-import HrHeader from "../layouts/hrHeader";
-import HrSidebar from "../layouts/hrSidebar";
+import Header from "../layouts/header";
+import Sidebar from "../layouts/sidebar";
 import useSidebar from "../hooks/useSidebar";
 import { useRouter } from "next/router";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
-import SimpleFooter from "../layouts/simpleFooter";
+import Footer from "../layouts/footer";
 import { Icon } from "@iconify/react";
 import { AddEditModal } from "../components/AddEditModal";
 import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
-import ErrorBoundary from "../components/ErrorBoundary";
 import Image from "next/image";
 
 export default function CustomersPage({ mode = "light", toggleMode, ...props }) {

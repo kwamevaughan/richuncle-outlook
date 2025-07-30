@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Icon } from "@iconify/react";
-import HrHeader from "../layouts/hrHeader";
-import HrSidebar from "../layouts/hrSidebar";
-import SimpleFooter from "../layouts/simpleFooter";
+import Header from "../layouts/header";
+import Sidebar from "../layouts/sidebar";
+import Footer from "../layouts/footer";
 
 export default function Custom404() {
   return (
@@ -10,7 +10,7 @@ export default function Custom404() {
       {/* Sidebar Container */}
       <div className="relative">
         <div className="pointer-events-none opacity-60 blur-[1px]">
-          <HrSidebar
+          <Sidebar
             mode="light"
             toggleMode={() => {}}
             onLogout={() => {}}
@@ -23,7 +23,7 @@ export default function Custom404() {
       </div>
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <HrHeader mode="light" isSidebarOpen={true} toggleSidebar={() => {}} user={{ name: "Guest", role: "guest" }} onSearchModalToggle={() => {}} />
+        <Header mode="light" isSidebarOpen={true} toggleSidebar={() => {}} user={{ name: "Guest", role: "guest" }} onSearchModalToggle={() => {}} />
         <main className="flex flex-1 flex-col items-center justify-center p-6 relative overflow-hidden">
           <div className="relative mb-8">
             <div className="absolute inset-0 bg-orange-200 rounded-full blur-xl opacity-50 scale-110 animate-pulse" />
@@ -67,7 +67,7 @@ export default function Custom404() {
             </p>
           </div>
         </main>
-        <SimpleFooter mode="light" isSidebarOpen={true} />
+        <Footer mode="light" isSidebarOpen={true} />
       </div>
     </div>
   );
