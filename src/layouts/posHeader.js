@@ -116,7 +116,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
           `}
         >
           <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2 sm:gap-4">
-            <div className="flex items-center w-full min-w-0">
+            <div className="flex items-center w-full ">
               {user?.role !== "cashier" && (
                 <TooltipIconButton
                   label="Back to Dashboard"
