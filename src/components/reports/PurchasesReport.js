@@ -272,7 +272,7 @@ export default function PurchasesReport({ dateRange, selectedStore, stores, mode
               </p>
             </div>
             <Icon
-              icon="fa6-solid:cedi-sign"
+              icon="fa7-solid:cedi-sign"
               className="w-8 h-8 text-green-200"
             />
           </div>

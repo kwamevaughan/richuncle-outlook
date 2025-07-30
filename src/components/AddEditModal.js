@@ -689,24 +689,30 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           {type === "discounts" ? (
             <div className="space-y-6">
               {/* Header Card */}
-              <div className={`rounded-xl p-6 shadow-sm border ${
-                mode === "dark" 
-                  ? "bg-gradient-to-r from-gray-800 to-gray-700 border-gray-600" 
-                  : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
-              }`}>
+              <div
+                className={`rounded-xl p-6 shadow-sm border ${
+                  mode === "dark"
+                    ? "bg-gradient-to-r from-gray-800 to-gray-700 border-gray-600"
+                    : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+                }`}
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                     <Icon icon="mdi:percent" className="w-7 h-7 text-white" />
                   </div>
                   <div>
-                    <h3 className={`text-lg font-bold ${
-                      mode === "dark" ? "text-white" : "text-blue-900"
-                    }`}>
+                    <h3
+                      className={`text-lg font-bold ${
+                        mode === "dark" ? "text-white" : "text-blue-900"
+                      }`}
+                    >
                       Discount Details
                     </h3>
-                    <p className={`text-sm ${
-                      mode === "dark" ? "text-gray-300" : "text-blue-700"
-                    }`}>
+                    <p
+                      className={`text-sm ${
+                        mode === "dark" ? "text-gray-300" : "text-blue-700"
+                      }`}
+                    >
                       Configure your discount settings
                     </p>
                   </div>
@@ -716,9 +722,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className={`block mb-2 font-semibold flex items-center gap-2 ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-700"
-                  }`}>
+                  <label
+                    className={`block mb-2 font-semibold flex items-center gap-2 ${
+                      mode === "dark" ? "text-gray-200" : "text-gray-700"
+                    }`}
+                  >
                     <Icon
                       icon="mdi:tag-text"
                       className="w-4 h-4 text-blue-600"
@@ -727,8 +735,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </label>
                   <input
                     className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                         : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                     }`}
                     value={name}
@@ -738,9 +746,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   />
                 </div>
                 <div>
-                  <label className={`block mb-2 font-semibold flex items-center gap-2 ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-700"
-                  }`}>
+                  <label
+                    className={`block mb-2 font-semibold flex items-center gap-2 ${
+                      mode === "dark" ? "text-gray-200" : "text-gray-700"
+                    }`}
+                  >
                     <Icon
                       icon="mdi:barcode"
                       className="w-4 h-4 text-blue-600"
@@ -749,8 +759,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </label>
                   <input
                     className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                         : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                     }`}
                     value={discountCode}
@@ -760,9 +770,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     disabled={loading}
                     placeholder="e.g., SUMMER20, BLACKFRIDAY"
                   />
-                  <p className={`text-xs mt-1 ${
-                    mode === "dark" ? "text-gray-400" : "text-gray-500"
-                  }`}>
+                  <p
+                    className={`text-xs mt-1 ${
+                      mode === "dark" ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
                     Customers will use this code to apply the discount
                   </p>
                 </div>
@@ -771,9 +783,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               {/* Value and Plan */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className={`block mb-2 font-semibold flex items-center gap-2 ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-700"
-                  }`}>
+                  <label
+                    className={`block mb-2 font-semibold flex items-center gap-2 ${
+                      mode === "dark" ? "text-gray-200" : "text-gray-700"
+                    }`}
+                  >
                     <Icon
                       icon="fa7-solid:cedi-sign"
                       className="w-4 h-4 text-blue-600"
@@ -786,8 +800,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                       min="0"
                       step="0.01"
                       className={`w-full border rounded-lg px-4 py-3 pl-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
-                        mode === "dark" 
-                          ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                        mode === "dark"
+                          ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                           : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                       }`}
                       value={value}
@@ -808,18 +822,22 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                       }`}
                     />
                   </div>
-                  <p className={`text-xs mt-1 ${
-                    mode === "dark" ? "text-gray-400" : "text-gray-500"
-                  }`}>
+                  <p
+                    className={`text-xs mt-1 ${
+                      mode === "dark" ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
                     {discountType === "percentage"
                       ? "Enter the discount percentage (e.g., 10 for 10%)"
                       : "Enter the fixed discount amount in GHS (e.g., 5 for GHS 5.00)"}
                   </p>
                 </div>
                 <div>
-                  <label className={`block mb-2 font-semibold flex items-center gap-2 ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-700"
-                  }`}>
+                  <label
+                    className={`block mb-2 font-semibold flex items-center gap-2 ${
+                      mode === "dark" ? "text-gray-200" : "text-gray-700"
+                    }`}
+                  >
                     <Icon
                       icon="mdi:package-variant"
                       className="w-4 h-4 text-blue-600"
@@ -828,8 +846,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </label>
                   <select
                     className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100"
                         : "border-gray-300 bg-white text-gray-900"
                     }`}
                     value={planId}
@@ -855,9 +873,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               {/* Discount Type and Store Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className={`block mb-2 font-semibold flex items-center gap-2 ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-700"
-                  }`}>
+                  <label
+                    className={`block mb-2 font-semibold flex items-center gap-2 ${
+                      mode === "dark" ? "text-gray-200" : "text-gray-700"
+                    }`}
+                  >
                     <Icon
                       icon="mdi:format-list-bulleted"
                       className="w-4 h-4 text-blue-600"
@@ -866,8 +886,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </label>
                   <select
                     className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100"
                         : "border-gray-300 bg-white text-gray-900"
                     }`}
                     value={discountType}
@@ -877,32 +897,39 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     <option value="percentage">Percentage (%)</option>
                     <option value="fixed">Fixed Amount (GHS)</option>
                   </select>
-                  <p className={`text-xs mt-1 ${
-                    mode === "dark" ? "text-gray-400" : "text-gray-500"
-                  }`}>
+                  <p
+                    className={`text-xs mt-1 ${
+                      mode === "dark" ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
                     Choose whether this is a percentage or fixed amount discount
                   </p>
                 </div>
                 <div>
-                  <label className={`block mb-2 font-semibold flex items-center gap-2 ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-700"
-                  }`}>
+                  <label
+                    className={`block mb-2 font-semibold flex items-center gap-2 ${
+                      mode === "dark" ? "text-gray-200" : "text-gray-700"
+                    }`}
+                  >
                     <Icon icon="mdi:store" className="w-4 h-4 text-blue-600" />
                     Apply to Store
                   </label>
                   {item?.store_id ? (
-                    <div className={`w-full border rounded-lg px-4 py-3 ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-700 text-gray-200" 
-                        : "border-gray-300 bg-gray-100 text-gray-700"
-                    }`}>
-                      {stores.find(store => store.id === item.store_id)?.name || "Assigned Store"}
+                    <div
+                      className={`w-full border rounded-lg px-4 py-3 ${
+                        mode === "dark"
+                          ? "border-gray-600 bg-gray-700 text-gray-200"
+                          : "border-gray-300 bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {stores.find((store) => store.id === item.store_id)
+                        ?.name || "Assigned Store"}
                     </div>
                   ) : (
                     <select
                       className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
-                        mode === "dark" 
-                          ? "border-gray-600 bg-gray-800 text-gray-100" 
+                        mode === "dark"
+                          ? "border-gray-600 bg-gray-800 text-gray-100"
                           : "border-gray-300 bg-white text-gray-900"
                       }`}
                       value={storeId}
@@ -917,33 +944,38 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                       ))}
                     </select>
                   )}
-                  <p className={`text-xs mt-1 ${
-                    mode === "dark" ? "text-gray-400" : "text-gray-500"
-                  }`}>
-                    {item?.store_id 
+                  <p
+                    className={`text-xs mt-1 ${
+                      mode === "dark" ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
+                    {item?.store_id
                       ? "Store is pre-assigned and cannot be changed"
-                      : "Select specific store or apply to all stores"
-                    }
+                      : "Select specific store or apply to all stores"}
                   </p>
                 </div>
               </div>
 
               {/* Validity Period */}
               <div>
-                <label className={`block mb-2 font-semibold flex items-center gap-2 ${
-                  mode === "dark" ? "text-gray-200" : "text-gray-700"
-                }`}>
+                <label
+                  className={`block mb-2 font-semibold flex items-center gap-2 ${
+                    mode === "dark" ? "text-gray-200" : "text-gray-700"
+                  }`}
+                >
                   <Icon
                     icon="mdi:calendar-range"
                     className="w-4 h-4 text-blue-600"
                   />
                   Validity Period<span className="text-red-500">*</span>
                 </label>
-                <div className={`border rounded-lg p-4 ${
-                  mode === "dark" 
-                    ? "border-gray-600 bg-gray-800" 
-                    : "border-gray-300 bg-gray-50"
-                }`}>
+                <div
+                  className={`border rounded-lg p-4 ${
+                    mode === "dark"
+                      ? "border-gray-600 bg-gray-800"
+                      : "border-gray-300 bg-gray-50"
+                  }`}
+                >
                   <DateRange
                     editableDateInputs={true}
                     onChange={(item) => setDateRange([item.selection])}
@@ -953,11 +985,13 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     rangeColors={["#3b82f6"]}
                     disabled={loading}
                   />
-                  <div className={`text-sm mt-3 p-3 rounded-lg border ${
-                    mode === "dark" 
-                      ? "text-gray-300 bg-gray-700 border-gray-600" 
-                      : "text-gray-600 bg-white border-gray-300"
-                  }`}>
+                  <div
+                    className={`text-sm mt-3 p-3 rounded-lg border ${
+                      mode === "dark"
+                        ? "text-gray-300 bg-gray-700 border-gray-600"
+                        : "text-gray-600 bg-white border-gray-300"
+                    }`}
+                  >
                     <div className="flex items-center gap-2">
                       <Icon
                         icon="mdi:calendar-check"
@@ -977,9 +1011,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               </div>
 
               {/* Status Toggle */}
-              <div className={`flex items-center gap-3 p-4 rounded-lg ${
-                mode === "dark" ? "bg-gray-800" : "bg-gray-50"
-              }`}>
+              <div
+                className={`flex items-center gap-3 p-4 rounded-lg ${
+                  mode === "dark" ? "bg-gray-800" : "bg-gray-50"
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -993,14 +1029,20 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                       icon="mdi:check-circle"
                       className="w-5 h-5 text-green-600"
                     />
-                    <span className={`font-semibold ${
-                      mode === "dark" ? "text-gray-200" : "text-gray-700"
-                    }`}>Active</span>
+                    <span
+                      className={`font-semibold ${
+                        mode === "dark" ? "text-gray-200" : "text-gray-700"
+                      }`}
+                    >
+                      Active
+                    </span>
                   </div>
                 </div>
-                <p className={`text-sm ${
-                  mode === "dark" ? "text-gray-400" : "text-gray-500"
-                }`}>
+                <p
+                  className={`text-sm ${
+                    mode === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Enable this discount for customers to use
                 </p>
               </div>
@@ -1008,11 +1050,13 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           ) : type === "plans" ? (
             <div className="space-y-6">
               {/* Header Card */}
-              <div className={`rounded-xl p-6 shadow-sm border ${
-                mode === "dark" 
-                  ? "bg-gradient-to-r from-gray-800 to-gray-700 border-gray-600" 
-                  : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
-              }`}>
+              <div
+                className={`rounded-xl p-6 shadow-sm border ${
+                  mode === "dark"
+                    ? "bg-gradient-to-r from-gray-800 to-gray-700 border-gray-600"
+                    : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200"
+                }`}
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                     <Icon
@@ -1021,14 +1065,18 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     />
                   </div>
                   <div>
-                    <h3 className={`text-lg font-bold ${
-                      mode === "dark" ? "text-white" : "text-blue-900"
-                    }`}>
+                    <h3
+                      className={`text-lg font-bold ${
+                        mode === "dark" ? "text-white" : "text-blue-900"
+                      }`}
+                    >
                       Discount Plan Details
                     </h3>
-                    <p className={`text-sm ${
-                      mode === "dark" ? "text-gray-300" : "text-blue-700"
-                    }`}>
+                    <p
+                      className={`text-sm ${
+                        mode === "dark" ? "text-gray-300" : "text-blue-700"
+                      }`}
+                    >
                       Create a plan to organize your discounts
                     </p>
                   </div>
@@ -1037,16 +1085,18 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
 
               {/* Plan Information */}
               <div>
-                <label className={`block mb-2 font-semibold flex items-center gap-2 ${
-                  mode === "dark" ? "text-gray-200" : "text-gray-700"
-                }`}>
+                <label
+                  className={`block mb-2 font-semibold flex items-center gap-2 ${
+                    mode === "dark" ? "text-gray-200" : "text-gray-700"
+                  }`}
+                >
                   <Icon icon="mdi:tag-text" className="w-4 h-4 text-blue-600" />
                   Plan Name<span className="text-red-500">*</span>
                 </label>
                 <input
                   className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all ${
-                    mode === "dark" 
-                      ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                    mode === "dark"
+                      ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                       : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                   }`}
                   value={name}
@@ -1054,25 +1104,29 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   disabled={loading}
                   placeholder="e.g., Seasonal Sales, Holiday Promotions, VIP Discounts"
                 />
-                <p className={`text-xs mt-1 ${
-                  mode === "dark" ? "text-gray-400" : "text-gray-500"
-                }`}>
+                <p
+                  className={`text-xs mt-1 ${
+                    mode === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Give your discount plan a descriptive name
                 </p>
               </div>
 
               {/* Description Field */}
               <div>
-                <label className={`block mb-2 font-semibold flex items-center gap-2 ${
-                  mode === "dark" ? "text-gray-200" : "text-gray-700"
-                }`}>
+                <label
+                  className={`block mb-2 font-semibold flex items-center gap-2 ${
+                    mode === "dark" ? "text-gray-200" : "text-gray-700"
+                  }`}
+                >
                   <Icon icon="mdi:text" className="w-4 h-4 text-blue-600" />
                   Description
                 </label>
                 <textarea
                   className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none ${
-                    mode === "dark" 
-                      ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                    mode === "dark"
+                      ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                       : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                   }`}
                   rows="3"
@@ -1081,17 +1135,21 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   disabled={loading}
                   placeholder="Describe the purpose and scope of this discount plan..."
                 />
-                <p className={`text-xs mt-1 ${
-                  mode === "dark" ? "text-gray-400" : "text-gray-500"
-                }`}>
+                <p
+                  className={`text-xs mt-1 ${
+                    mode === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Optional description to help organize your discounts
                 </p>
               </div>
 
               {/* Status Toggle */}
-              <div className={`flex items-center gap-3 p-4 rounded-lg ${
-                mode === "dark" ? "bg-gray-800" : "bg-gray-50"
-              }`}>
+              <div
+                className={`flex items-center gap-3 p-4 rounded-lg ${
+                  mode === "dark" ? "bg-gray-800" : "bg-gray-50"
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -1105,14 +1163,20 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                       icon="mdi:check-circle"
                       className="w-5 h-5 text-green-600"
                     />
-                    <span className={`font-semibold ${
-                      mode === "dark" ? "text-gray-200" : "text-gray-700"
-                    }`}>Active</span>
+                    <span
+                      className={`font-semibold ${
+                        mode === "dark" ? "text-gray-200" : "text-gray-700"
+                      }`}
+                    >
+                      Active
+                    </span>
                   </div>
                 </div>
-                <p className={`text-sm ${
-                  mode === "dark" ? "text-gray-400" : "text-gray-500"
-                }`}>
+                <p
+                  className={`text-sm ${
+                    mode === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Enable this plan to be used for creating discounts
                 </p>
               </div>
@@ -1403,8 +1467,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 </label>
                 <input
                   className={`w-full border rounded px-3 py-2 ${
-                    mode === "dark" 
-                      ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                    mode === "dark"
+                      ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                       : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                   }`}
                   value={productName}
@@ -1423,8 +1487,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </label>
                   <select
                     className={`w-full border rounded px-3 py-2 ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100"
                         : "border-gray-300 bg-white text-gray-900"
                     }`}
                     value={storeId}
@@ -1445,8 +1509,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   </label>
                   <select
                     className={`w-full border rounded px-3 py-2 ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100"
                         : "border-gray-300 bg-white text-gray-900"
                     }`}
                     value={warehouseId}
@@ -1470,8 +1534,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   <input
                     type="number"
                     className={`w-full border rounded px-3 py-2 ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                         : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                     }`}
                     value={quantity}
@@ -1484,8 +1548,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   <label className="block mb-1 font-medium">Unit</label>
                   <select
                     className={`w-full border rounded px-3 py-2 ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100"
                         : "border-gray-300 bg-white text-gray-900"
                     }`}
                     value={unitId}
@@ -1510,8 +1574,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   <input
                     type="number"
                     className={`w-full border rounded px-3 py-2 ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                         : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                     }`}
                     value={price}
@@ -1527,8 +1591,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   <input
                     type="number"
                     className={`w-full border rounded px-3 py-2 ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                      mode === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                         : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                     }`}
                     value={costPrice}
@@ -1555,9 +1619,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     }`}
                   />
                 </button>
-                <span className={`text-sm ${
-                  mode === "dark" ? "text-gray-400" : "text-gray-500"
-                }`}>
+                <span
+                  className={`text-sm ${
+                    mode === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   {chargeTax ? "Yes" : "No"}
                 </span>
               </div>
@@ -1570,8 +1636,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                     </label>
                     <select
                       className={`w-full border rounded px-3 py-2 ${
-                        mode === "dark" 
-                          ? "border-gray-600 bg-gray-800 text-gray-100" 
+                        mode === "dark"
+                          ? "border-gray-600 bg-gray-800 text-gray-100"
                           : "border-gray-300 bg-white text-gray-900"
                       }`}
                       value={taxType}
@@ -1596,8 +1662,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                       max="100"
                       step="0.01"
                       className={`w-full border rounded px-3 py-2 ${
-                        mode === "dark" 
-                          ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400" 
+                        mode === "dark"
+                          ? "border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-400"
                           : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
                       }`}
                       value={taxPercentage}
@@ -1605,9 +1671,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                       disabled={loading}
                       placeholder="0.00"
                     />
-                    <div className={`text-xs mt-1 ${
-                      mode === "dark" ? "text-gray-400" : "text-gray-500"
-                    }`}>
+                    <div
+                      className={`text-xs mt-1 ${
+                        mode === "dark" ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
                       {taxType === "exclusive"
                         ? "Tax will be added on top of the selling price (e.g., GHS 100 + 15% = GHS 115)"
                         : "Tax is included in the selling price (e.g., GHS 115 includes 15% tax = GHS 100 + GHS 15)"}
@@ -1750,7 +1818,9 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               {/* Variant Attributes Toggle */}
               {variantAttributes.length > 0 && (
                 <div className="mb-6 flex items-center gap-3">
-                  <span className="font-medium">Add Product Specifications?</span>
+                  <span className="font-medium">
+                    Add Product Specifications?
+                  </span>
                   <button
                     type="button"
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
@@ -1761,7 +1831,9 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                        showVariantAttributes ? "translate-x-5" : "translate-x-1"
+                        showVariantAttributes
+                          ? "translate-x-5"
+                          : "translate-x-1"
                       }`}
                     />
                   </button>
@@ -1888,8 +1960,8 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                 <button
                   type="button"
                   className={`px-4 py-2 rounded-lg ${
-                    mode === "dark" 
-                      ? "bg-gray-700 text-gray-100 hover:bg-gray-600" 
+                    mode === "dark"
+                      ? "bg-gray-700 text-gray-100 hover:bg-gray-600"
                       : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                   }`}
                   onClick={onClose}

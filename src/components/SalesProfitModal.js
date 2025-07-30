@@ -144,7 +144,7 @@ const SalesProfitModal = ({ isOpen, onClose, mode, type }) => {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center">
                       <Icon
-                        icon="fa6-solid:cedi-sign"
+                        icon="fa7-solid:cedi-sign"
                         className="w-8 h-8 text-blue-600 mr-3"
                       />
                       <div>
@@ -213,7 +213,7 @@ const SalesProfitModal = ({ isOpen, onClose, mode, type }) => {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center">
                       <Icon
-                        icon="fa6-solid:cedi-sign"
+                        icon="fa7-solid:cedi-sign"
                         className="w-8 h-8 text-blue-600 mr-3"
                       />
                       <div>
@@ -229,7 +229,7 @@ const SalesProfitModal = ({ isOpen, onClose, mode, type }) => {
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <div className="flex items-center">
                       <Icon
-                        icon="fa6-solid:cedi-sign"
+                        icon="fa7-solid:cedi-sign"
                         className="w-8 h-8 text-red-600 mr-3"
                       />
                       <div>

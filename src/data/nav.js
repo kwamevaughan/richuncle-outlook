@@ -137,7 +137,7 @@ export const sidebarNav = [
   },
   {
     category: "Finance & Accounts",
-    icon: "mdi:currency-usd",
+    icon: "fa7-solid:cedi-sign",
     items: [
       {
         href: "/expenses",
@@ -245,28 +245,23 @@ export const sidebarNav = [
     ],
   },
   {
-    category: "Messages",
-    icon: "mdi:message-outline",
+    category: "Communication",
+    icon: "tabler:message-up",
     items: [
       {
-        href: "/messages/compose",
+        href: "/messages",
         icon: "mdi:email-outline",
-        label: "Compose",
+        label: "Messages",
       },
       {
-        href: "/messages/inbox",
-        icon: "mdi:inbox-outline",
-        label: "Inbox",
+        href: "/chat",
+        icon: "mdi:chat-outline",
+        label: "Chat",
       },
       {
-        href: "/messages/sent",
-        icon: "mdi:send-outline",
-        label: "Sent",
-      },
-      {
-        href: "/messages/drafts",
-        icon: "mdi:drafts-outline",
-        label: "Drafts",
+        href: "/push-updates",
+        icon: "mdi:bell-outline",
+        label: "Push Updates",
       },
     ],
   },
