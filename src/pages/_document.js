@@ -25,6 +25,7 @@ class MyDocument extends Document {
           />
 
           {/* Favicon Links */}
+          <link rel="icon" href="/favicon.ico" />
           <link rel="icon" href="/favicon.png" />
           <link
             rel="apple-touch-icon"
