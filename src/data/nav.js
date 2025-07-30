@@ -245,6 +245,32 @@ export const sidebarNav = [
     ],
   },
   {
+    category: "Messages",
+    icon: "mdi:message-outline",
+    items: [
+      {
+        href: "/messages/compose",
+        icon: "mdi:email-outline",
+        label: "Compose",
+      },
+      {
+        href: "/messages/inbox",
+        icon: "mdi:inbox-outline",
+        label: "Inbox",
+      },
+      {
+        href: "/messages/sent",
+        icon: "mdi:send-outline",
+        label: "Sent",
+      },
+      {
+        href: "/messages/drafts",
+        icon: "mdi:drafts-outline",
+        label: "Drafts",
+      },
+    ],
+  },
+  {
     category: "Settings",
     icon: "solar:settings-linear",
     items: [
