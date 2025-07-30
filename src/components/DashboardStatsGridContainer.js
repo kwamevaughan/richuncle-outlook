@@ -91,7 +91,7 @@ export default function DashboardStatsGridContainer({ dateRange, selectedStore }
           color: "sales",
           change: `${salesChange > 0 ? "+" : ""}${salesChange.toFixed(1)}%`,
           changeType: salesChange > 0 ? "up" : "down",
-          link: "/orders",
+          link: "/sales",
         },
         {
           label: "Total Sales Return",
@@ -100,7 +100,7 @@ export default function DashboardStatsGridContainer({ dateRange, selectedStore }
           color: "salesReturn",
           change: `${salesReturnChange > 0 ? "+" : ""}${salesReturnChange.toFixed(1)}%`,
           changeType: salesReturnChange > 0 ? "up" : "down",
-          link: "/sales-returns",
+          link: "/sales-return",
         },
         {
           label: "Total Purchase",
@@ -118,7 +118,7 @@ export default function DashboardStatsGridContainer({ dateRange, selectedStore }
           color: "purchaseReturn",
           change: `${purchaseReturnChange > 0 ? "+" : ""}${purchaseReturnChange.toFixed(1)}%`,
           changeType: purchaseReturnChange > 0 ? "up" : "down",
-          link: "/purchase-returns",
+          link: "/purchase-return",
         },
       ]);
     }
