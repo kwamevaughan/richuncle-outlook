@@ -211,7 +211,7 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}`}
-                icon="mdi:currency-usd"
+                icon="fa7-solid:cedi-sign"
                 color="green"
               />
               <ExpenseStatsCard
@@ -307,10 +307,13 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
                     accessor: "amount",
                     sortable: true,
                     render: (row) =>
-                      `GHS ${parseFloat(row.amount || 0).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}`,
+                      `GHS ${parseFloat(row.amount || 0).toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}`,
                   },
                   {
                     Header: "Date",
