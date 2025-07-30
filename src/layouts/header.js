@@ -282,17 +282,24 @@ const Header = ({
                 >
                   <div className={`grid ${isMobile ? "grid-cols-3" : "grid-cols-6"} gap-2 p-3`}>
                     {[
+                      // Setup & Configuration (Most used for initial setup)
+                      { label: "Store", icon: "mdi:store-outline", href: "/business-locations" },
                       { label: "Category", icon: "mdi:folder-outline", href: "/category" },
                       { label: "Product", icon: "mdi:package-variant", href: "/products" },
-                      { label: "Purchase", icon: "mdi:cart-arrow-down", href: "/purchases" },
-                      { label: "Sale", icon: "mdi:cart-arrow-up", href: "/sales" },
-                      { label: "Expense", icon: "mdi:cash-minus", href: "/expenses" },
-                      { label: "Return", icon: "mdi:undo-variant", href: "/sales-return" },
+                      
+                      // People & Relationships
                       { label: "User", icon: "mdi:account-outline", href: "/users" },
                       { label: "Customer", icon: "mdi:account-group-outline", href: "/customers" },
                       { label: "Supplier", icon: "mdi:truck-outline", href: "/suppliers" },
+                      
+                      // Core Business Operations (Most frequently used)
+                      { label: "Sale", icon: "mdi:cart-arrow-up", href: "/sales" },
+                      { label: "Purchase", icon: "mdi:cart-arrow-down", href: "/purchases" },
+                      { label: "Expense", icon: "mdi:cash-minus", href: "/expenses" },
+                      
+                      // Inventory Management
                       { label: "Transfer", icon: "mdi:bank-transfer", href: "/stock-operations" },
-                      { label: "Store", icon: "mdi:store-outline", href: "/business-locations" },
+                      { label: "Return", icon: "mdi:undo-variant", href: "/sales-return" },
                     ].map((item) => (
                       <Link key={item.label} href={item.href} legacyBehavior passHref>
                         <a
