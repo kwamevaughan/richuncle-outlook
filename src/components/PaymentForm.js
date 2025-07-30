@@ -629,16 +629,23 @@ const PaymentForm = ({
                       mode === "dark" ? "bg-gray-700" : "bg-gray-50"
                     }`}>
                       <div className="flex items-center gap-3">
-                        <Icon 
-                          icon={getPaymentTypeIcon(payment.method)} 
-                          className="w-5 h-5 text-blue-600" 
-                        />
-                        <span className="font-medium">{getPaymentTypeLabel(payment.method)}</span>
-                        <span className={`text-sm ${
-                          mode === "dark" ? "text-gray-400" : "text-gray-500"
-                        }`}>
-                          {new Date(payment.timestamp).toLocaleTimeString()}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <Icon 
+                            icon={getPaymentTypeIcon(payment.method)} 
+                            className="w-5 h-5 text-blue-600" 
+                          />
+                          <span className="font-medium">{getPaymentTypeLabel(payment.method)}</span>
+                          <TooltipIconButton
+                            label={`Added at ${new Date(payment.timestamp).toLocaleTimeString()}`}
+                            mode={mode}
+                            className="p-1"
+                          >
+                            <Icon 
+                              icon="mdi:clock-outline" 
+                              className="w-4 h-4 text-gray-400" 
+                            />
+                          </TooltipIconButton>
+                        </div>
                       </div>
                       
                       <div className="flex items-center gap-3">
