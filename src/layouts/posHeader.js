@@ -116,12 +116,12 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
           `}
         >
           <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2 sm:gap-4">
-            <div className="flex items-center w-full">
+            <div className="flex items-center w-full min-w-0">
               {user?.role !== "cashier" && (
                 <TooltipIconButton
                   label="Back to Dashboard"
                   mode={mode}
-                  className="select-none px-2 py-2 sm:px-1 sm:py-1 mr-2 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px]"
+                  className="select-none px-2 py-2 sm:px-1 sm:py-1 mr-2 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px] flex-shrink-0"
                   onClick={() => {
                     router.push("/dashboard");
                   }}
@@ -133,11 +133,13 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 </TooltipIconButton>
               )}
 
-              <SessionDuration
-                mode={mode}
-                user={user}
-                sessionRefreshKey={sessionRefreshKey}
-              />
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <SessionDuration
+                  mode={mode}
+                  user={user}
+                  sessionRefreshKey={sessionRefreshKey}
+                />
+              </div>
             </div>
 
             <div className="flex items-center w-full gap-2 sm:gap-4">

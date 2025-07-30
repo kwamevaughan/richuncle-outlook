@@ -138,8 +138,21 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     }, 300);
   };
 
-  // Category pagination logic
-  const categoriesPerPage = 4;
+  // Category pagination logic - responsive
+  const [categoriesPerPage, setCategoriesPerPage] = useState(4);
+  
+  // Update categories per page based on screen size
+  useEffect(() => {
+    const updateCategoriesPerPage = () => {
+      setCategoriesPerPage(window.innerWidth < 640 ? 3 : 4);
+    };
+    
+    updateCategoriesPerPage();
+    window.addEventListener('resize', updateCategoriesPerPage);
+    
+    return () => window.removeEventListener('resize', updateCategoriesPerPage);
+  }, []);
+  
   const allCategories = React.useMemo(() => [
     { id: "all", name: "All", image_url: "https://ik.imagekit.io/164jkw2ne/CategoryImages/all_accessories.jpg?updatedAt=1751485982538" }, 
     ...categories
@@ -244,7 +257,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     <div className={className}>
       <div className={`flex rounded-lg overflow-hidden h-screen ${mode === "dark" ? "bg-gray-900" : "bg-white"}`}>
         {/* Tab Content: Products Grid */}
-        <div className="w-full px-6 py-0 flex flex-col">
+        <div className="w-full px-6 py-0 flex flex-col pt-28 sm:pt-24">
           <div className="flex justify-between items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -349,7 +362,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
             </button>
 
             {/* Categories Container */}
-            <div className="flex gap-4 flex-1 justify-center items-center">
+            <div className="flex gap-1 sm:gap-2 md:gap-4 flex-1 justify-center items-center overflow-x-auto scrollbar-hide">
               {catLoading && (
                 <div className={`p-4 ${mode === "dark" ? "text-blue-400" : "text-blue-600"}`}>Loading...</div>
               )}
@@ -361,7 +374,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 <button
                   type="button"
                   key={cat.id}
-                  className={`flex flex-col items-center justify-center px-3 py-3 text-center text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none gap-2 min-w-[80px] min-h-[70px] touch-manipulation active:scale-95 ${
+                  className={`flex flex-col items-center justify-center px-2 sm:px-3 py-2 sm:py-3 text-center text-xs sm:text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none gap-1 sm:gap-2 min-w-[60px] sm:min-w-[70px] md:min-w-[80px] min-h-[60px] sm:min-h-[65px] md:min-h-[70px] touch-manipulation active:scale-95 flex-shrink-0 ${
                     selectedCategory === cat.id
                       ? `${mode === "dark" ? "bg-blue-600 text-white border-blue-500" : "bg-blue-100 text-blue-700 border-blue-400"} scale-105`
                       : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-600" : "bg-white text-gray-700 hover:bg-blue-100 border-transparent"}`
@@ -378,10 +391,10 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       alt={cat.name}
                       width={32}
                       height={32}
-                      className="w-8 h-8 object-cover rounded-full border"
+                      className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 object-cover rounded-full border"
                     />
                   )}
-                  <span className="whitespace-normal break-words text-xs">
+                  <span className="whitespace-normal break-words text-xs leading-tight">
                     {cat.name}
                   </span>
                 </button>
