@@ -24,6 +24,19 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      // More aggressive mobile breakpoint - switch to mobile at 1024px instead of 768px
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Filtering
   const filteredData = useMemo(() => {
@@ -149,6 +162,7 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
     setStatusFilter,
     sortBy,
     setSortBy,
+    isMobile,
   };
 }
 
@@ -179,9 +193,39 @@ export function GenericTable({
   getFieldsOrder,
   getDefaultFields,
   mode = "light",
+  hideEmptyColumns = true,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data) ? data.filter(item => item != null) : [];
+
+  // Function to check if a column has any non-empty data
+  const hasColumnData = (accessor, render) => {
+    if (!safeData || safeData.length === 0) return true; // Show all columns if no data
+    
+    return safeData.some(row => {
+      if (render) {
+        // For columns with custom render functions, check the rendered value
+        const renderedValue = render(row);
+        if (React.isValidElement(renderedValue)) {
+          // For React elements, check if it's not just a dash or empty
+          return renderedValue.props.children !== "-" && 
+                 renderedValue.props.children !== "" &&
+                 !renderedValue.props.className?.includes("text-gray-400");
+        }
+        return renderedValue !== "-" && renderedValue !== "";
+      }
+      
+      // For regular columns, check the actual value
+      const value = row[accessor];
+      return value !== null && value !== undefined && value !== "" && value !== 0;
+    });
+  };
+
+  // Filter columns based on data if hideEmptyColumns is enabled
+  const filteredColumns = useMemo(() => {
+    if (!hideEmptyColumns) return columns;
+    return columns.filter(column => hasColumnData(column.accessor, column.render));
+  }, [columns, safeData, hideEmptyColumns]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState([
     {
@@ -272,7 +316,7 @@ export function GenericTable({
           />
         </td>
       )}
-      {columns.map((col) => {
+      {filteredColumns.map((col) => {
         let value = row[col.accessor];
 
         // Use custom render function if provided
@@ -372,6 +416,132 @@ export function GenericTable({
     );
   };
 
+  // Mobile card view renderer
+  const renderMobileCard = (row, index) => {
+    return (
+      <div
+        key={row.id || index}
+        className={`p-4 border-b ${
+          mode === "dark" 
+            ? "border-gray-700 bg-gray-800" 
+            : "border-gray-200 bg-white"
+        }`}
+      >
+        <div className="flex items-start justify-between mb-3">
+          {selectable && (
+            <input
+              type="checkbox"
+              checked={table.selected.includes(row.id)}
+              onChange={() => table.toggleSelect(row.id)}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-1"
+            />
+          )}
+          <div className="flex-1 ml-3">
+            {filteredColumns.slice(0, 2).map((col) => {
+              let value = row[col.accessor];
+              return (
+                <div key={col.accessor} className="mb-2">
+                  <span className={`text-xs font-medium ${
+                    mode === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}>
+                    {col.Header || col.accessor}:
+                  </span>
+                  <div className={`text-sm ${
+                    mode === "dark" ? "text-white" : "text-gray-900"
+                  }`}>
+                    {col.type === "image" ? (
+                      <Image
+                        src={value}
+                        alt={row.name || "Image"}
+                        className={`w-8 h-8 rounded-full object-cover border-2 ${
+                          mode === "dark" ? "border-gray-600" : "border-gray-200"
+                        }`}
+                        width={32}
+                        height={32}
+                      />
+                    ) : (
+                      <span className="truncate">{value}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-1">
+            {onEdit && (
+              <TooltipIconButton
+                icon="cuida:edit-outline"
+                label="Edit"
+                onClick={() => onEdit(row)}
+                mode={mode}
+                className="bg-blue-50 text-blue-600 text-xs"
+              />
+            )}
+            {onDelete && (
+              <TooltipIconButton
+                icon="mynaui:trash"
+                label="Delete"
+                onClick={() => onDelete(row)}
+                mode={mode}
+                className="bg-red-50 text-red-600 text-xs"
+              />
+            )}
+          </div>
+        </div>
+        
+        {/* Additional columns in mobile view */}
+        {filteredColumns.slice(2).map((col) => {
+          let value = row[col.accessor];
+          return (
+            <div key={col.accessor} className="mb-2">
+              <span className={`text-xs font-medium ${
+                mode === "dark" ? "text-gray-400" : "text-gray-500"
+              }`}>
+                {col.Header || col.accessor}:
+              </span>
+              <div className={`text-sm ${
+                mode === "dark" ? "text-white" : "text-gray-900"
+              }`}>
+                {typeof col.render === "function" ? (
+                  col.render(row, value, index)
+                ) : (
+                  <span className="truncate">{value}</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        
+        {/* Custom actions in mobile view */}
+        {actions.length > 0 && (
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            {actions.map((action, i) => {
+              if (!action) return null;
+              if (typeof action.show === 'function' && !action.show(row)) return null;
+              if (typeof action.onClick !== 'function') return null;
+              
+              const label = typeof action.label === 'function' ? action.label(row) : action.label;
+              const icon = typeof action.icon === 'function' ? action.icon(row) : action.icon;
+              const isDisabled = typeof action.disabled === 'function' ? action.disabled(row) : action.disabled;
+              
+              return (
+                <TooltipIconButton
+                  key={label || i}
+                  icon={icon || 'mdi:help'}
+                  label={label || ''}
+                  onClick={isDisabled ? undefined : () => action.onClick(row)}
+                  mode={mode}
+                  className={`${action.className || ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={isDisabled}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Open popover and set position
   const handleDateButtonClick = () => {
     if (buttonRef.current) {
@@ -465,7 +635,6 @@ export function GenericTable({
                 )}
                 {/* Sort By Filter */}
                 <div className="w-full sm:w-auto">
-                  {/* <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Sort By</label> */}
                   <select
                     value={table.sortBy}
                     onChange={e => table.setSortBy(e.target.value)}
@@ -572,21 +741,6 @@ export function GenericTable({
                   <span className="text-xs sm:text-sm">Export Data</span>
                 </button>
               </div>
-              
-              {/* Export button for non-searchable tables */}
-              {/* {!searchable && (
-                <div className="flex items-center gap-2">
-                  {onAddNew && (
-                    <button
-                      onClick={onAddNew}
-                      className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    >
-                      <Icon icon="mdi:plus" className="w-4 h-4" />
-                      {addNewLabel}
-                    </button>
-                  )}
-                </div>
-              )} */}
             </div>
           </div>
         </div>
@@ -621,152 +775,176 @@ export function GenericTable({
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className={`${
-            mode === "dark" ? "bg-gray-800" : "bg-gray-50"
-          }`}>
-            <tr>
-              {enableDragDrop && <th className="w-6 sm:w-8 px-2 sm:px-3 py-3 sm:py-4"></th>}
-              {selectable && (
-                <th className="w-10 sm:w-12 px-2 sm:px-4 py-3 sm:py-4">
-                  <input
-                    type="checkbox"
-                    checked={
-                      table.paged.length > 0 &&
-                      table.paged.every((row) =>
-                        table.selected.includes(row.id)
-                      )
-                    }
-                    onChange={table.selectAll}
-                    className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </th>
-              )}
-              {columns.map((col) => (
-                <th
-                  key={col.accessor}
-                  className={`px-2 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold ${
-                    mode === "dark" ? "text-gray-300" : "text-gray-600"
-                  } ${
-                    col.sortable !== false
-                      ? `cursor-pointer select-none ${
-                          mode === "dark"
-                            ? "hover:bg-gray-800"
-                            : "hover:bg-gray-100"
-                        }`
-                      : ""
-                  }`}
-                  onClick={
-                    col.sortable !== false
-                      ? () => table.handleSort(col.accessor)
-                      : undefined
-                  }
-                >
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <span className="truncate">
-                      {col.Header
-                        ? col.Header.split(" ")
-                            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                            .join(" ")
-                        : ""}
-                    </span>
-                    {col.sortable !== false && (
-                      <div className="flex flex-col flex-shrink-0">
-                        <Icon
-                          icon="mdi:chevron-up"
-                          className={`w-2 h-2 sm:w-3 sm:h-3 ${
-                            table.sortKey === col.accessor &&
-                            table.sortDir === "asc"
-                              ? "text-blue-600"
-                              : "text-gray-300"
-                          }`}
-                        />
-                        <Icon
-                          icon="mdi:chevron-down"
-                          className={`w-2 h-2 sm:w-3 sm:h-3 -mt-0.5 sm:-mt-1 ${
-                            table.sortKey === col.accessor &&
-                            table.sortDir === "desc"
-                              ? "text-blue-600"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </th>
-              ))}
-              {/* Only render actions column if needed */}
-              {(actions.length > 0 || onEdit || onDelete) && (
-                <th className={`px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold ${
-                  mode === "dark" ? "text-gray-300" : "text-gray-600"
-                }`}>
-                  Actions
-                </th>
-              )}
-            </tr>
-          </thead>
-          <TableBody
-            items={enableDragDrop ? table.paged : undefined}
-            onReorder={
-              enableDragDrop
-                ? (paged, fromIdx, toIdx) =>
-                    onReorder(paged, fromIdx, toIdx, table.page, table.pageSize)
-                : undefined
-            }
-            className={`${
-              mode === "dark" 
-                ? "bg-gray-900 divide-gray-700" 
-                : "bg-white divide-gray-200"
-            }`}
-          >
-            {enableDragDrop
-              ? (item, idx) => renderRowCells(item, idx)
-              : table.paged.length === 0
-                ? (
-                  <tr>
-                    <td
-                      colSpan={
-                        columns.length +
-                        (selectable ? 1 : 0) +
-                        (enableDragDrop ? 1 : 0) +
-                        ((actions.length > 0 || onEdit || onDelete) ? 1 : 0)
+      {/* Mobile Card View */}
+      {table.isMobile ? (
+        <div className={`${
+          mode === "dark" 
+            ? "bg-gray-900" 
+            : "bg-white"
+        }`}>
+          {table.paged.length === 0 ? (
+            <div className="px-4 py-12 text-center">
+              <div className={`${
+                mode === "dark" ? "text-gray-400" : "text-gray-500"
+              }`}>
+                <div className="flex justify-center text-4xl mb-3">
+                  <Icon icon="mdi:table-search" className="w-10 h-10" />
+                </div>
+                <div className="text-sm font-medium">{emptyMessage}</div>
+              </div>
+            </div>
+          ) : (
+            table.paged.map((row, index) => renderMobileCard(row, index))
+          )}
+        </div>
+      ) : (
+        /* Desktop Table View */
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className={`${
+              mode === "dark" ? "bg-gray-800" : "bg-gray-50"
+            }`}>
+              <tr>
+                {enableDragDrop && <th className="w-6 sm:w-8 px-2 sm:px-3 py-3 sm:py-4"></th>}
+                {selectable && (
+                  <th className="w-10 sm:w-12 px-2 sm:px-4 py-3 sm:py-4">
+                    <input
+                      type="checkbox"
+                      checked={
+                        table.paged.length > 0 &&
+                        table.paged.every((row) =>
+                          table.selected.includes(row.id)
+                        )
                       }
-                      className="px-4 py-12 text-center"
-                    >
-                      <div className={`${
-                        mode === "dark" ? "text-gray-400" : "text-gray-500"
-                      }`}>
-                        <div className="flex justify-center text-4xl mb-3 ">
-                          <Icon icon="mdi:table-search" className="w-10 h-10" />
+                      onChange={table.selectAll}
+                      className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </th>
+                )}
+                {filteredColumns.map((col) => (
+                  <th
+                    key={col.accessor}
+                    className={`px-2 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold ${
+                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    } ${
+                      col.sortable !== false
+                        ? `cursor-pointer select-none ${
+                            mode === "dark"
+                              ? "hover:bg-gray-800"
+                              : "hover:bg-gray-100"
+                          }`
+                        : ""
+                    }`}
+                    onClick={
+                      col.sortable !== false
+                        ? () => table.handleSort(col.accessor)
+                        : undefined
+                    }
+                  >
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <span className="truncate">
+                        {col.Header
+                          ? col.Header.split(" ")
+                              .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                              .join(" ")
+                          : ""}
+                      </span>
+                      {col.sortable !== false && (
+                        <div className="flex flex-col flex-shrink-0">
+                          <Icon
+                            icon="mdi:chevron-up"
+                            className={`w-2 h-2 sm:w-3 sm:h-3 ${
+                              table.sortKey === col.accessor &&
+                              table.sortDir === "asc"
+                                ? "text-blue-600"
+                                : "text-gray-300"
+                            }`}
+                          />
+                          <Icon
+                            icon="mdi:chevron-down"
+                            className={`w-2 h-2 sm:w-3 sm:h-3 -mt-0.5 sm:-mt-1 ${
+                              table.sortKey === col.accessor &&
+                              table.sortDir === "desc"
+                                ? "text-blue-600"
+                                : "text-gray-300"
+                            }`}
+                          />
                         </div>
-                        <div className="text-sm font-medium">{emptyMessage}</div>
-                      </div>
-                    </td>
-                  </tr>
-                )
-                : table.paged.map((row, index) => {
-                    const defaultRow = (
-                      <tr
-                        key={row.id || index}
-                        className={`transition-colors ${
-                          mode === "dark" ? "hover:bg-gray-800" : "hover:bg-gray-50"
-                        }`}
+                      )}
+                    </div>
+                  </th>
+                ))}
+                {/* Only render actions column if needed */}
+                {(actions.length > 0 || onEdit || onDelete) && (
+                  <th className={`px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold ${
+                    mode === "dark" ? "text-gray-300" : "text-gray-600"
+                  }`}>
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <TableBody
+              items={enableDragDrop ? table.paged : undefined}
+              onReorder={
+                enableDragDrop
+                  ? (paged, fromIdx, toIdx) =>
+                      onReorder(paged, fromIdx, toIdx, table.page, table.pageSize)
+                  : undefined
+              }
+              className={`${
+                mode === "dark" 
+                  ? "bg-gray-900 divide-gray-700" 
+                  : "bg-white divide-gray-200"
+              }`}
+            >
+              {enableDragDrop
+                ? (item, idx) => renderRowCells(item, idx)
+                : table.paged.length === 0
+                  ? (
+                    <tr>
+                      <td
+                        colSpan={
+                          filteredColumns.length +
+                          (selectable ? 1 : 0) +
+                          (enableDragDrop ? 1 : 0) +
+                          ((actions.length > 0 || onEdit || onDelete) ? 1 : 0)
+                        }
+                        className="px-4 py-12 text-center"
                       >
-                        {enableDragDrop && <td className="px-3 py-4"></td>}
-                        {renderRowCells(row, index)}
-                      </tr>
-                    );
-                    // If customRowRender is provided, use it to render extra content (e.g. expanded row)
-                    return customRowRender
-                      ? customRowRender(row, index, defaultRow)
-                      : defaultRow;
-                  })
-            }
-          </TableBody>
-        </table>
-      </div>
+                        <div className={`${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}>
+                          <div className="flex justify-center text-4xl mb-3 ">
+                            <Icon icon="mdi:table-search" className="w-10 h-10" />
+                          </div>
+                          <div className="text-sm font-medium">{emptyMessage}</div>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                  : table.paged.map((row, index) => {
+                      const defaultRow = (
+                        <tr
+                          key={row.id || index}
+                          className={`transition-colors ${
+                            mode === "dark" ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                          }`}
+                        >
+                          {enableDragDrop && <td className="px-3 py-4"></td>}
+                          {renderRowCells(row, index)}
+                        </tr>
+                      );
+                      // If customRowRender is provided, use it to render extra content (e.g. expanded row)
+                      return customRowRender
+                        ? customRowRender(row, index, defaultRow)
+                        : defaultRow;
+                    })
+              }
+            </TableBody>
+          </table>
+        </div>
+      )}
 
       {/* Footer with pagination */}
       <div className={`px-3 sm:px-6 py-4 border-t ${
@@ -876,4 +1054,4 @@ export function GenericTable({
       />
     </div>
   );
-}
+} 

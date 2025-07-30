@@ -261,20 +261,6 @@ const Sidebar = ({
               </button>
             )}
             
-            {/* Mobile header toggle button */}
-            {isMobile && toggleHeader && (
-              <button
-                onClick={toggleHeader}
-                className="text-white hover:scale-110 transition-transform p-1 rounded"
-                title={isHeaderVisible ? "Hide Header" : "Show Header"}
-                aria-label={isHeaderVisible ? "Hide Header" : "Show Header"}
-              >
-                <Icon 
-                  icon={isHeaderVisible ? "mdi:chevron-up" : "mdi:chevron-down"} 
-                  className="w-5 h-5" 
-                />
-              </button>
-            )}
           </div>
 
           <div

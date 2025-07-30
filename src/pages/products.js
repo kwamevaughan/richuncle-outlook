@@ -30,6 +30,138 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   // View modal state
   const [viewItem, setViewItem] = useState(null);
 
+  // Define columns for the products table
+  const columns = [
+    { Header: "SKU", accessor: "sku", sortable: true },
+    {
+      Header: "Product Name",
+      accessor: "name",
+      sortable: true,
+      render: (row) => (
+        <span className="flex items-center gap-2">
+          {row.image_url ? (
+            <Image
+              src={row.image_url}
+              alt={row.name}
+              width={32}
+              height={32}
+              className="rounded object-cover border w-8 h-8"
+            />
+          ) : (
+            <Icon
+              icon="mdi:image-off-outline"
+              className="rounded border w-8 h-8 text-gray-400 bg-gray-100 object-cover"
+            />
+          )}
+          <span>{row.name}</span>
+        </span>
+      ),
+    },
+    {
+      Header: "Category",
+      accessor: "category_id",
+      sortable: false,
+      render: (row) => row.category_name || "-",
+    },
+    {
+      Header: "Brand",
+      accessor: "brand_id",
+      sortable: false,
+      render: (row) => row.brand_name || "-",
+    },
+    {
+      Header: "Selling Price",
+      accessor: "price",
+      sortable: true,
+      render: (row) => `GHS ${row.price}`,
+    },
+    {
+      Header: "Cost Price",
+      accessor: "cost_price",
+      sortable: true,
+      render: (row) => `GHS ${row.cost_price || 0}`,
+    },
+    {
+      Header: "Tax",
+      accessor: "tax_type",
+      sortable: true,
+      render: (row) => {
+        if (!row.tax_type || !row.tax_percentage) {
+          return <span className="text-gray-400">No Tax</span>;
+        }
+        return (
+          <div className="flex flex-col gap-1">
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                row.tax_type === "inclusive"
+                  ? "bg-blue-100 text-blue-800"
+                  : "bg-green-100 text-green-800"
+              }`}
+            >
+              {row.tax_type === "inclusive"
+                ? "Inclusive"
+                : "Exclusive"}
+            </span>
+            <span className="text-xs text-gray-600">
+              {row.tax_percentage}%
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      Header: "Unit",
+      accessor: "unit_id",
+      sortable: false,
+      render: (row) => row.unit_name || "-",
+    },
+    { Header: "Qty", accessor: "quantity", sortable: true },
+    {
+      Header: "Specs",
+      accessor: "variant_attributes",
+      sortable: false,
+      render: (row) => {
+        // Handle variant_attributes that might be stored as string or object
+        let variantData = row.variant_attributes;
+
+        // If it's a string, try to parse it as JSON
+        if (typeof variantData === "string") {
+          try {
+            variantData = JSON.parse(variantData);
+          } catch (e) {
+            console.error(
+              "Failed to parse variant_attributes:",
+              e
+            );
+            variantData = null;
+          }
+        }
+
+        if (
+          !variantData ||
+          Object.keys(variantData).length === 0
+        ) {
+          return <span className="text-gray-400">-</span>;
+        }
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(variantData).map(
+              ([attrId, value]) => (
+                <span
+                  key={attrId}
+                  className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                >
+                  {value}
+                </span>
+              )
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
   // Fetch products
   const fetchProducts = async () => {
     setLoading(true);
@@ -236,136 +368,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
               <GenericTable
                 mode={mode}
                 data={products}
-                columns={[
-                  { Header: "SKU", accessor: "sku", sortable: true },
-                  {
-                    Header: "Product Name",
-                    accessor: "name",
-                    sortable: true,
-                    render: (row) => (
-                      <span className="flex items-center gap-2">
-                        {row.image_url ? (
-                          <Image
-                            src={row.image_url}
-                            alt={row.name}
-                            width={32}
-                            height={32}
-                            className="rounded object-cover border w-8 h-8"
-                          />
-                        ) : (
-                          <Icon
-                            icon="mdi:image-off-outline"
-                            className="rounded border w-8 h-8 text-gray-400 bg-gray-100 object-cover"
-                          />
-                        )}
-                        <span>{row.name}</span>
-                      </span>
-                    ),
-                  },
-                  {
-                    Header: "Category",
-                    accessor: "category_id",
-                    sortable: false,
-                    render: (row) => row.category_name || "-",
-                  },
-                  {
-                    Header: "Brand",
-                    accessor: "brand_id",
-                    sortable: false,
-                    render: (row) => row.brand_name || "-",
-                  },
-                  {
-                    Header: "Selling Price",
-                    accessor: "price",
-                    sortable: true,
-                    render: (row) => `GHS ${row.price}`,
-                  },
-                  {
-                    Header: "Cost Price",
-                    accessor: "cost_price",
-                    sortable: true,
-                    render: (row) => `GHS ${row.cost_price || 0}`,
-                  },
-                  {
-                    Header: "Tax",
-                    accessor: "tax_type",
-                    sortable: true,
-                    render: (row) => {
-                      if (!row.tax_type || !row.tax_percentage) {
-                        return <span className="text-gray-400">No Tax</span>;
-                      }
-                      return (
-                        <div className="flex flex-col gap-1">
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              row.tax_type === "inclusive"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-green-100 text-green-800"
-                            }`}
-                          >
-                            {row.tax_type === "inclusive"
-                              ? "Inclusive"
-                              : "Exclusive"}
-                          </span>
-                          <span className="text-xs text-gray-600">
-                            {row.tax_percentage}%
-                          </span>
-                        </div>
-                      );
-                    },
-                  },
-                  {
-                    Header: "Unit",
-                    accessor: "unit_id",
-                    sortable: false,
-                    render: (row) => row.unit_name || "-",
-                  },
-                  { Header: "Qty", accessor: "quantity", sortable: true },
-                  {
-                    Header: "Specs",
-                    accessor: "variant_attributes",
-                    sortable: false,
-                    render: (row) => {
-                      // Handle variant_attributes that might be stored as string or object
-                      let variantData = row.variant_attributes;
-
-                      // If it's a string, try to parse it as JSON
-                      if (typeof variantData === "string") {
-                        try {
-                          variantData = JSON.parse(variantData);
-                        } catch (e) {
-                          console.error(
-                            "Failed to parse variant_attributes:",
-                            e
-                          );
-                          variantData = null;
-                        }
-                      }
-
-                      if (
-                        !variantData ||
-                        Object.keys(variantData).length === 0
-                      ) {
-                        return <span className="text-gray-400">-</span>;
-                      }
-
-                      return (
-                        <div className="flex flex-wrap gap-1">
-                          {Object.entries(variantData).map(
-                            ([attrId, value]) => (
-                              <span
-                                key={attrId}
-                                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                              >
-                                {value}
-                              </span>
-                            )
-                          )}
-                        </div>
-                      );
-                    },
-                  },
-                ]}
+                columns={columns}
                 onEdit={openEditModal}
                 onDelete={openConfirm}
                 onAddNew={openAddModal}
