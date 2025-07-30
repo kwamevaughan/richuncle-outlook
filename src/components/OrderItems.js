@@ -4,7 +4,7 @@ const OrderItems = ({ products, quantities }) => {
   return (
     <div>
 
-      <div className="bg-blue-50 gap-4 text-sm mb-4 p-4 rounded-lg">
+      <div className="bg-blue-50 dark:bg-slate-800/50 gap-4 text-sm mb-4 p-4 rounded-lg border border-blue-200 dark:border-slate-600">
         {Array.isArray(products) && products.length > 0 && quantities ? (
           (() => {
             const items = products

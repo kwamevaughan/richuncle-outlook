@@ -257,7 +257,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     <div className={className}>
       <div className={`flex rounded-lg overflow-hidden h-screen ${mode === "dark" ? "bg-gray-900" : "bg-white"}`}>
         {/* Tab Content: Products Grid */}
-        <div className="w-full px-6 py-0 flex flex-col pt-28 sm:pt-24">
+        <div className="w-full px-6 py-0 flex flex-col pt-28 sm:pt-2">
           <div className="flex justify-between items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -291,20 +291,38 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                         paddingLeft: "2.5rem",
                         fontSize: "1rem",
                         boxShadow: "none",
-                        borderColor: "#cbd5e1",
+                        borderColor: mode === "dark" ? "#4b5563" : "#cbd5e1",
+                        backgroundColor: mode === "dark" ? "transparent" : "#fff",
+                        color: mode === "dark" ? "#f9fafb" : "#222",
                       }),
                       menu: (base) => ({
                         ...base,
                         zIndex: 100,
                         maxHeight: 320,
+                        backgroundColor: mode === "dark" ? "#374151" : "#fff",
+                        border: mode === "dark" ? "1px solid #4b5563" : "1px solid #e5e7eb",
                       }),
                       option: (base, state) => ({
                         ...base,
-                        backgroundColor: state.isFocused ? "#e0f2fe" : "#fff",
-                        color: "#222",
+                        backgroundColor: state.isFocused 
+                          ? (mode === "dark" ? "#4b5563" : "#e0f2fe") 
+                          : (mode === "dark" ? "#374151" : "#fff"),
+                        color: mode === "dark" ? "#f9fafb" : "#222",
                         cursor: "pointer",
                         padding: "12px 16px",
                         fontSize: "1rem",
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        color: mode === "dark" ? "#f9fafb" : "#222",
+                      }),
+                      input: (base) => ({
+                        ...base,
+                        color: mode === "dark" ? "#f9fafb" : "#222",
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: mode === "dark" ? "#9ca3af" : "#6b7280",
                       }),
                     }}
                   />

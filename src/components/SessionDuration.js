@@ -85,7 +85,7 @@ const SessionDuration = ({ mode, user, sessionRefreshKey }) => {
         }`}
         value={selectedRegister || ""}
         onChange={(e) => setSelectedRegister(e.target.value)}
-        style={{ minWidth: '300px', maxWidth: '280px' }}
+        style={{ minWidth: '200px', maxWidth: '250px' }}
         disabled={user?.role === 'cashier'}
       >
         {registers.map((r) => (
@@ -97,17 +97,16 @@ const SessionDuration = ({ mode, user, sessionRefreshKey }) => {
 
       <div
         className={
-          `flex items-center w-full gap-2 px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg ` +
+          `flex items-center gap-2 px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg ` +
           (mode === "dark"
             ? "bg-gray-800/80 text-white hover:bg-gray-700/80"
             : "bg-white/80 text-gray-700 hover:bg-white/95") +
-          " backdrop-blur-sm border border-white/20 min-w-0"
+          " backdrop-blur-sm border border-white/20 flex-shrink-0"
         }
         disabled
       >
-        <span className="font-semibold text-xs sm:text-sm truncate">
-          <span className="hidden sm:inline">Session Duration: </span>
-          <span className="sm:hidden">Duration: </span>
+        <span className="font-semibold text-xs sm:text-sm whitespace-nowrap">
+          <span className="inline">Session Duration: </span>
           <Icon
             icon="mdi:clock-outline"
             className={`h-3 w-3 sm:h-4 sm:w-4 inline ${

@@ -790,9 +790,10 @@ const PaymentForm = ({
                   paymentType={paymentType}
                   paymentData={paymentData}
                   users={allUsers}
+                  mode={mode}
                 />
               ) : (
-                <PaymentSummary orderId={orderId} customer={customer} total={total} paymentType={paymentType} paymentData={paymentData} users={allUsers} />
+                <PaymentSummary orderId={orderId} customer={customer} total={total} paymentType={paymentType} paymentData={paymentData} users={allUsers} mode={mode} />
               )}
 
               {/* Payment Type Selection for Layaway Finalization */}
@@ -831,7 +832,8 @@ const PaymentForm = ({
                 <PaymentAmounts 
                   paymentData={paymentData} 
                   setPaymentData={setPaymentData} 
-                  handleReceivedAmountChange={handleReceivedAmountChange} 
+                  handleReceivedAmountChange={handleReceivedAmountChange}
+                  mode={mode}
                 />
               )}
 
@@ -873,21 +875,11 @@ const PaymentForm = ({
 
 
               {/* Action Buttons - sticky at bottom for better accessibility */}
-              <div className={`flex justify-end gap-4 pt-4 border-t bottom-0 z-10 ${
-                mode === "dark" 
-                  ? "bg-gray-800/95 border-gray-600" 
-                  : "bg-white/80 border-gray-200"
-              }`} style={{
-                background: mode === "dark" ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255,255,255,0.95)'
-              }}>
+              <div className="flex justify-end gap-4 pt-4 border-t bottom-0 z-10 bg-white/80 dark:bg-gray-800/95 border-gray-200 dark:border-gray-600">
                 <button
                   type="button"
                   onClick={onClose}
-                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                    mode === "dark" 
-                      ? "text-gray-200 bg-gray-700 hover:bg-gray-600" 
-                      : "text-gray-700 bg-gray-100 hover:bg-gray-200"
-                  }`}
+                  className="px-6 py-3 rounded-lg font-medium transition-colors text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
                 >
                   Cancel
                 </button>

@@ -7,6 +7,7 @@ const PaymentSummary = ({
   paymentType,
   paymentData,
   users = [],
+  mode = "light",
 }) => {
   const getPaymentTypeLabel = (method) => {
     // Implement your logic to get a label based on the payment method
@@ -17,16 +18,16 @@ const PaymentSummary = ({
   const paymentReceiverUser = users.find(u => u.id === paymentData?.paymentReceiver);
 
   return (
-    <div className="bg-blue-50 rounded-lg p-4 mb-6">
+    <div className="rounded-lg p-4 mb-6 bg-blue-50 dark:bg-slate-800/50 border border-blue-200 dark:border-slate-600">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <div className="space-y-2">
           <div>
-            <span className="text-gray-600">Order ID:</span>
-            <span className="font-semibold ml-2">#{orderId}</span>
+            <span className="text-gray-600 dark:text-gray-300">Order ID:</span>
+            <span className="font-semibold ml-2 text-gray-900 dark:text-white">#{orderId}</span>
           </div>
           <div>
-            <span className="text-gray-600">Customer:</span>
-            <span className="font-semibold ml-2">
+            <span className="text-gray-600 dark:text-gray-300">Customer:</span>
+            <span className="font-semibold ml-2 text-gray-900 dark:text-white">
               {customer
                 ? customer.id === "__online__"
                   ? "Online Purchase"
@@ -36,14 +37,14 @@ const PaymentSummary = ({
           </div>
           {customer && customer.id !== "__online__" && (
             <div>
-              <span className="text-gray-600">Phone:</span>
-              <span className="font-semibold ml-2">{customer.phone}</span>
+              <span className="text-gray-600 dark:text-gray-300">Phone:</span>
+              <span className="font-semibold ml-2 text-gray-900 dark:text-white">{customer.phone}</span>
             </div>
           )}
           {paymentData && paymentData.paymentReceiver && users && (
             <div>
-              <span className="text-gray-600">Cashier:</span>
-              <span className="font-semibold ml-2">
+              <span className="text-gray-600 dark:text-gray-300">Cashier:</span>
+              <span className="font-semibold ml-2 text-gray-900 dark:text-white">
                 {(() => {
                   const receiver = users.find(u => u.id === paymentData.paymentReceiver);
                   return receiver?.full_name || receiver?.name || receiver?.email || paymentData.paymentReceiver;
@@ -54,15 +55,15 @@ const PaymentSummary = ({
         </div>
         <div className="space-y-2">
           <div>
-            <span className="text-gray-600">Total Amount:</span>
-            <span className="font-semibold ml-2 text-lg text-blue-700">
+            <span className="text-gray-600 dark:text-gray-300">Total Amount:</span>
+            <span className="font-semibold ml-2 text-lg text-blue-700 dark:text-blue-300">
               GHS {total.toLocaleString()}
             </span>
           </div>
           {customer && customer.id !== "__online__" && (
             <div>
-              <span className="text-gray-600">Email:</span>
-              <span className="font-semibold ml-2">{customer.email}</span>
+              <span className="text-gray-600 dark:text-gray-300">Email:</span>
+              <span className="font-semibold ml-2 text-gray-900 dark:text-white">{customer.email}</span>
             </div>
           )}
         </div>
@@ -71,7 +72,7 @@ const PaymentSummary = ({
         paymentData &&
         paymentData.splitPayments &&
         paymentData.splitPayments.length > 0 && (
-          <div className="text-sm text-gray-700 mt-1">
+          <div className="text-sm mt-1 text-gray-700 dark:text-gray-300">
             Payments:{" "}
             {paymentData.splitPayments
               .map(

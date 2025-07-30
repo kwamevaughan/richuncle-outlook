@@ -133,7 +133,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 </TooltipIconButton>
               )}
 
-              <div className="flex-1 min-w-0 overflow-hidden">
+              <div className="flex-1 min-w-0 overflow-visible">
                 <SessionDuration
                   mode={mode}
                   user={user}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentData, setPaymentData, currentUser }) => {
+const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentData, setPaymentData, currentUser, mode = "light" }) => {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
@@ -37,7 +37,9 @@ const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentDat
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className={`block text-sm font-medium mb-2 ${
+          mode === "dark" ? "text-gray-200" : "text-gray-700"
+        }`}>
           Customer
         </label>
         <select
@@ -53,7 +55,11 @@ const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentDat
               onCustomerChange(selectedCustomer);
             }
           }}
-          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            mode === "dark" 
+              ? "border-gray-600 bg-gray-700 text-gray-100" 
+              : "border-gray-300 bg-white text-gray-900"
+          }`}
         >
           <option value="">Walk In Customer</option>
           <option value="__online__">Online Purchase</option>
@@ -66,18 +72,28 @@ const PaymentCustomerInfo = ({ customer, customers, onCustomerChange, paymentDat
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className={`block text-sm font-medium mb-2 ${
+          mode === "dark" ? "text-gray-200" : "text-gray-700"
+        }`}>
           Cashier <span className="text-red-500">*</span>
         </label>
         {loadingUsers ? (
-          <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-500">
+          <div className={`w-full border rounded-lg px-4 py-3 ${
+            mode === "dark" 
+              ? "border-gray-600 bg-gray-700 text-gray-300" 
+              : "border-gray-300 bg-gray-50 text-gray-500"
+          }`}>
             Loading users...
           </div>
         ) : (
           <input
             type="text"
             value={currentUser?.full_name || currentUser?.email || "No user"}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100 text-gray-700 cursor-not-allowed"
+            className={`w-full border rounded-lg px-4 py-3 cursor-not-allowed ${
+              mode === "dark" 
+                ? "border-gray-600 bg-gray-700 text-gray-300" 
+                : "border-gray-300 bg-gray-100 text-gray-700"
+            }`}
             readOnly
           />
         )}
