@@ -212,6 +212,10 @@ export function GenericTable({
                  renderedValue.props.children !== "" &&
                  !renderedValue.props.className?.includes("text-gray-400");
         }
+        // For date columns, be more lenient - show even if some dates are invalid
+        if (accessor === "timestamp" || accessor === "created_at" || accessor === "updated_at") {
+          return renderedValue !== "-" && renderedValue !== "";
+        }
         return renderedValue !== "-" && renderedValue !== "";
       }
       
@@ -349,6 +353,41 @@ export function GenericTable({
           );
         }
 
+        // Auto-format date fields
+        const isDateField = col.accessor === "timestamp" || 
+                           col.accessor === "created_at" || 
+                           col.accessor === "updated_at" || 
+                           col.accessor === "date" ||
+                           col.accessor === "order_date" ||
+                           col.accessor === "sale_date" ||
+                           col.accessor === "purchase_date" ||
+                           col.accessor === "due_date" ||
+                           col.accessor === "expiry_date" ||
+                           col.accessor === "start_date" ||
+                           col.accessor === "end_date" ||
+                           (col.accessor && col.accessor.toLowerCase().includes("date")) ||
+                           (col.accessor && col.accessor.toLowerCase().includes("time"));
+
+        let displayValue = value;
+        
+        if (isDateField && value) {
+          try {
+            const date = new Date(value);
+            if (!isNaN(date.getTime())) {
+              displayValue = date.toLocaleDateString('en-GB', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            }
+          } catch (e) {
+            // Keep original value if date parsing fails
+            displayValue = value;
+          }
+        }
+
         return (
           <td
             key={col.accessor}
@@ -357,7 +396,7 @@ export function GenericTable({
             }`}
           >
             <div className="truncate max-w-[120px] sm:max-w-none">
-              {value}
+              {displayValue}
             </div>
           </td>
         );
@@ -439,6 +478,42 @@ export function GenericTable({
           <div className="flex-1 ml-3">
             {filteredColumns.slice(0, 2).map((col) => {
               let value = row[col.accessor];
+              
+              // Auto-format date fields for mobile view
+              const isDateField = col.accessor === "timestamp" || 
+                                 col.accessor === "created_at" || 
+                                 col.accessor === "updated_at" || 
+                                 col.accessor === "date" ||
+                                 col.accessor === "order_date" ||
+                                 col.accessor === "sale_date" ||
+                                 col.accessor === "purchase_date" ||
+                                 col.accessor === "due_date" ||
+                                 col.accessor === "expiry_date" ||
+                                 col.accessor === "start_date" ||
+                                 col.accessor === "end_date" ||
+                                 (col.accessor && col.accessor.toLowerCase().includes("date")) ||
+                                 (col.accessor && col.accessor.toLowerCase().includes("time"));
+
+              let displayValue = value;
+              
+              if (isDateField && value && typeof col.render !== "function") {
+                try {
+                  const date = new Date(value);
+                  if (!isNaN(date.getTime())) {
+                    displayValue = date.toLocaleDateString('en-GB', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                  }
+                } catch (e) {
+                  // Keep original value if date parsing fails
+                  displayValue = value;
+                }
+              }
+
               return (
                 <div key={col.accessor} className="mb-2">
                   <span className={`text-xs font-medium ${
@@ -460,7 +535,7 @@ export function GenericTable({
                         height={32}
                       />
                     ) : (
-                      <span className="truncate">{value}</span>
+                      <span className="truncate">{displayValue}</span>
                     )}
                   </div>
                 </div>
@@ -492,6 +567,42 @@ export function GenericTable({
         {/* Additional columns in mobile view */}
         {filteredColumns.slice(2).map((col) => {
           let value = row[col.accessor];
+          
+          // Auto-format date fields for mobile view
+          const isDateField = col.accessor === "timestamp" || 
+                             col.accessor === "created_at" || 
+                             col.accessor === "updated_at" || 
+                             col.accessor === "date" ||
+                             col.accessor === "order_date" ||
+                             col.accessor === "sale_date" ||
+                             col.accessor === "purchase_date" ||
+                             col.accessor === "due_date" ||
+                             col.accessor === "expiry_date" ||
+                             col.accessor === "start_date" ||
+                             col.accessor === "end_date" ||
+                             (col.accessor && col.accessor.toLowerCase().includes("date")) ||
+                             (col.accessor && col.accessor.toLowerCase().includes("time"));
+
+          let displayValue = value;
+          
+          if (isDateField && value && typeof col.render !== "function") {
+            try {
+              const date = new Date(value);
+              if (!isNaN(date.getTime())) {
+                displayValue = date.toLocaleDateString('en-GB', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              }
+            } catch (e) {
+              // Keep original value if date parsing fails
+              displayValue = value;
+            }
+          }
+
           return (
             <div key={col.accessor} className="mb-2">
               <span className={`text-xs font-medium ${
@@ -505,7 +616,7 @@ export function GenericTable({
                 {typeof col.render === "function" ? (
                   col.render(row, value, index)
                 ) : (
-                  <span className="truncate">{value}</span>
+                  <span className="truncate">{displayValue}</span>
                 )}
               </div>
             </div>

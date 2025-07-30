@@ -312,18 +312,50 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
   // Table columns for sales data
   const columns = [
     { Header: "Order ID", accessor: "id" },
-    { Header: "Date", accessor: "timestamp", 
-      Cell: ({ value }) => new Date(value).toLocaleDateString() },
-    { Header: "Customer", accessor: "customer_name", 
-      Cell: ({ value }) => value || "Walk-in Customer" },
-    { Header: "Items", accessor: "item_count", 
-      Cell: ({ value }) => value || "0" },
-    { Header: "Total", accessor: "total", 
-      Cell: ({ value }) => `GHS ${parseFloat(value || 0).toFixed(2)}` },
-    { Header: "Payment", accessor: "payment_method", 
-      Cell: ({ value }) => value ? value.charAt(0).toUpperCase() + value.slice(1) : "Cash" },
-    { Header: "Status", accessor: "status", 
-      Cell: ({ value }) => (
+    { 
+      Header: "Date", 
+      accessor: "timestamp", 
+      render: (row, value) => {
+        if (!value) return "No Date";
+        try {
+          const date = new Date(value);
+          if (isNaN(date.getTime())) return "Invalid Date";
+          return date.toLocaleDateString('en-GB', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (e) {
+          return "Invalid Date";
+        }
+      }
+    },
+    { 
+      Header: "Customer", 
+      accessor: "customer_name", 
+      render: (row, value) => value || "Walk-in Customer"
+    },
+    { 
+      Header: "Items", 
+      accessor: "item_count", 
+      render: (row, value) => value || "0"
+    },
+    { 
+      Header: "Total", 
+      accessor: "total", 
+      render: (row, value) => `GHS ${parseFloat(value || 0).toFixed(2)}`
+    },
+    { 
+      Header: "Payment", 
+      accessor: "payment_method", 
+      render: (row, value) => value ? value.charAt(0).toUpperCase() + value.slice(1) : "Cash"
+    },
+    { 
+      Header: "Status", 
+      accessor: "status", 
+      render: (row, value) => (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
           value === 'completed' ? 'bg-green-100 text-green-800' :
           value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -332,9 +364,13 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
         }`}>
           {value ? value.charAt(0).toUpperCase() + value.slice(1) : "Completed"}
         </span>
-      )},
-    { Header: "Cashier", accessor: "cashier_name", 
-      Cell: ({ value }) => value || "Staff" }
+      )
+    },
+    { 
+      Header: "Cashier", 
+      accessor: "cashier_name", 
+      render: (row, value) => value || "Staff"
+    }
   ];
 
   // Flatten sales data for export
@@ -648,6 +684,7 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
           onRefresh={fetchSalesData}
           exportType="sales"
           exportTitle="Export Sales Report"
+          hideEmptyColumns={false}
           getFieldsOrder={() => [
             { label: "Order ID", key: "id", icon: "mdi:identifier" },
             { label: "Date", key: "timestamp", icon: "mdi:calendar" },

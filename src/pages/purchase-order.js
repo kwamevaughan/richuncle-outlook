@@ -339,7 +339,7 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                     </div>
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                       <Icon
-                        icon="mdi:currency-usd"
+                        icon="fa7-solid:cedi-sign"
                         className="w-6 h-6 text-blue-600"
                       />
                     </div>
