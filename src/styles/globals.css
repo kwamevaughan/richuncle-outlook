@@ -70,6 +70,26 @@ body {
   display: none;  /* Safari and Chrome */
 }
 
+/* Custom animation for line-md icons */
+@keyframes iconDraw {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.icon-draw-animation {
+  animation: iconDraw 3s ease-in-out infinite;
+}
+
 
 .animate-fade-in {
   animation: fade-in 0.5s ease-in-out;
