@@ -136,7 +136,7 @@ const SimpleModal = ({
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="group p-3 bg-red-500 rounded-2xl transition-all duration-300 hover:bg-white/20 hover:scale-110 active:scale-95"
+                    className="group p-3 bg-white/20 rounded-2xl transition-all duration-300 hover:bg-white/20 hover:scale-110 active:scale-95"
                     // style={{
                     //   backdropFilter: "blur(4px)",
                     //   background: "rgba(255, 255, 255, 0.1)",
@@ -144,7 +144,7 @@ const SimpleModal = ({
                   >
                     <Icon
                       icon="heroicons:x-mark"
-                      className="h-6 w-6 text-white transition-transform duration-300 group-hover:rotate-90"
+                      className="h-6 w-6 text-white font-bold transition-transform duration-300 group-hover:rotate-90"
                     />
                   </button>
                 </div>
