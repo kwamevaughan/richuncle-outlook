@@ -533,29 +533,6 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
         mode={mode}
       >
         <div className="space-y-6">
-          {user && user.role === "admin" && (
-            <AddRegisterForm
-              mode={mode}
-              onRegisterAdded={async () => {
-                try {
-                  const response = await fetch("/api/registers");
-                  const result = await response.json();
-                  if (result.success) {
-                    setRegisters(result.data || []);
-                    if (
-                      result.data &&
-                      result.data.length > 0 &&
-                      !selectedRegister
-                    ) {
-                      setSelectedRegister(result.data[0].id);
-                    }
-                  }
-                } catch (err) {
-                  console.error("Failed to refresh registers:", err);
-                }
-              }}
-            />
-          )}
           <RegisterSelector
             registers={filteredRegisters}
             selectedRegister={selectedRegister}
