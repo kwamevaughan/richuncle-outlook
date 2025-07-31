@@ -9,9 +9,20 @@ export default function ZReportView({ zReport, onPrint, showPrintButton = true, 
   return (
     <div className="space-y-6">
       <div className="rounded-xl p-6 border bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 dark:bg-gray-800 dark:border-gray-600">
-        <div className="flex items-center gap-3 mb-4">
-          <Icon icon="material-symbols:receipt-long" className="w-8 h-8 text-green-600" />
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Z-Report</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Icon icon="material-symbols:receipt-long" className="w-8 h-8 text-green-600" />
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Z-Report</h3>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              title="Close Z-Report"
+            >
+              <Icon icon="mdi:close" className="w-6 h-6" />
+            </button>
+          )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-lg p-4 shadow-sm dark:bg-gray-700">
@@ -116,7 +127,16 @@ export default function ZReportView({ zReport, onPrint, showPrintButton = true, 
           </div>
         </div>
         {showPrintButton && (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3">
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              >
+                <Icon icon="mdi:close" className="w-5 h-5" />
+                Close
+              </button>
+            )}
             <button
               onClick={onPrint}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
