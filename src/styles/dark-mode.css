@@ -10,14 +10,14 @@
 .dark input,
 .dark select,
 .dark textarea {
-  background-color: #374151 !important;
-  border-color: #4b5563 !important;
-  color: #f9fafb !important;
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
-  color: #9ca3af !important;
+  color: #9ca3af;
 }
 
 /* Common button styles - AUTO APPLIES TO ALL BUTTONS */
@@ -53,20 +53,21 @@
 }
 
 /* Card and container styles - AUTO APPLIES TO COMMON PATTERNS */
-.dark .card,
-.dark [class*="bg-white"],
-.dark [class*="bg-gray-50"] {
+/* Only apply to elements that don't have specific dark mode classes */
+.dark .card:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]),
+.dark [class*="bg-white"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]):not([class*="bg-gray-"]),
+.dark [class*="bg-gray-50"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
   background-color: #1f2937;
 }
 
 .dark [class*="border-gray-200"],
 .dark [class*="border-gray-300"] {
-  border-color: #374151 !important;
+  border-color: #374151;
 }
 
 .dark .modal,
-.dark [class*="bg-white/"],
-.dark [class*="bg-gray-50/"] {
+.dark [class*="bg-white/"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]),
+.dark [class*="bg-gray-50/"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
   background-color: #1f2937;
 }
 
@@ -79,49 +80,103 @@
 
 .dark [class*="text-gray-600"],
 .dark [class*="text-gray-500"] {
-  color: #d1d5db !important;
+  color: #d1d5db;
 }
 
 /* Icon colors - AUTO APPLIES TO ALL ICONS */
 .dark [class*="text-gray-500"] {
-  color: #9ca3af !important;
+  color: #9ca3af;
 }
 
 .dark [class*="text-gray-400"] {
-  color: #9ca3af !important;
+  color: #9ca3af;
 }
 
 .dark [class*="text-gray-300"] {
-  color: #d1d5db !important;
+  color: #d1d5db;
 }
 
 /* Iconify specific support */
 .dark .iconify,
 .dark [class*="iconify"] {
-  color: #9ca3af !important;
+  color: #9ca3af;
 }
 
 /* Icon hover states in dark mode */
 .dark [class*="text-gray-500"]:hover {
-  color: #d1d5db !important;
+  color: #d1d5db;
 }
 
 .dark [class*="text-gray-400"]:hover {
-  color: #d1d5db !important;
+  color: #d1d5db;
 }
 
 .dark [class*="text-gray-300"]:hover {
-  color: #f9fafb !important;
+  color: #f9fafb;
 }
 
 /* Background colors - AUTO APPLIES TO COMMON BACKGROUNDS */
-.dark [class*="bg-gray-50"],
-.dark [class*="bg-gray-100"] {
+/* Only apply to elements that don't have specific dark mode classes */
+.dark [class*="bg-gray-50"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]),
+.dark [class*="bg-gray-100"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
   background-color: #374151;
 }
 
-.dark [class*="bg-white"]:not([class*="hover:bg-"]) {
+.dark [class*="bg-white"]:not([class*="hover:bg-"]):not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
   background-color: #1f2937;
+}
+
+/* Green backgrounds - AUTO APPLIES TO GREEN BACKGROUNDS */
+.dark [class*="bg-green-50"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
+  background-color: #1f2937;
+}
+
+.dark [class*="bg-green-100"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
+  background-color: #374151;
+}
+
+/* Blue backgrounds - AUTO APPLIES TO BLUE BACKGROUNDS */
+.dark [class*="bg-blue-50"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
+  background-color: #1f2937;
+}
+
+.dark [class*="bg-blue-100"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
+  background-color: #374151;
+}
+
+/* Purple backgrounds - AUTO APPLIES TO PURPLE BACKGROUNDS */
+.dark [class*="bg-purple-50"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
+  background-color: #1f2937;
+}
+
+.dark [class*="bg-purple-100"]:not([class*="bg-gradient-"]):not([class*="from-"]):not([class*="to-"]) {
+  background-color: #374151;
+}
+
+/* Purple-to-Blue Gradient - REPLACE WITH DARK BACKGROUND */
+.dark [class*="bg-gradient-to-r from-purple-50 to-blue-50"] {
+  background: #1f2937 !important;
+}
+
+.dark [class*="border-purple-200"] {
+  border-color: #374151 !important;
+}
+
+/* Green-to-Blue Gradient - REPLACE WITH DARK BACKGROUND */
+.dark [class*="bg-gradient-to-r from-green-100 to-blue-100"] {
+  background: #1f2937 !important;
+}
+
+.dark [class*="hover:from-green-200"] {
+  background: #374151 !important;
+}
+
+.dark [class*="hover:to-blue-200"] {
+  background: #374151 !important;
+}
+
+.dark [class*="border-green-300"] {
+  border-color: #374151 !important;
 }
 
 /* Table styles */

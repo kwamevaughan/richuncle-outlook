@@ -121,7 +121,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 <TooltipIconButton
                   label="Back to Dashboard"
                   mode={mode}
-                  className="select-none px-2 py-2 sm:px-1 sm:py-1 mr-2 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px] flex-shrink-0"
+                  className="select-none px-2 py-2 sm:px-1 sm:py-1 mr-2 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 flex-shrink-0"
                   onClick={() => {
                     router.push("/dashboard");
                   }}
@@ -180,7 +180,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
               <TooltipIconButton
                 label="Cash Register"
                 mode={mode}
-                className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px]"
+                className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500"
                 onClick={() => {
                   console.log("Cash Register button clicked");
                   if (setShowCashRegister) setShowCashRegister(true);
@@ -195,7 +195,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
               <TooltipIconButton
                 label="Print Last Receipt"
                 mode={mode}
-                className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px]"
+                className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500"
                 onClick={printLastReceipt}
                 disabled={!lastOrderData}
               >
@@ -212,7 +212,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 <TooltipIconButton
                   label="More Actions"
                   mode={mode}
-                  className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px]"
+                  className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500"
                   onClick={() => setAddNewDropdownOpen(!addNewDropdownOpen)}
                 >
                   <Icon
@@ -341,7 +341,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                   </span>
                 }
                 mode={mode}
-                className="select-none bg-white/50 hover:-mt-1 active:scale-95 transition-all duration-500 min-h-[44px] min-w-[44px] px-2 py-2 sm:px-1 sm:py-1"
+                className="select-none bg-white/50 hover:-mt-1 active:scale-95 transition-all duration-500 px-2 py-2 sm:px-1 sm:py-1"
               >
                 <div
                   className="flex items-center gap-2 relative"

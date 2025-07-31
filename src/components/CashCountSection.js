@@ -26,8 +26,8 @@ const CashCountSection = ({
   return (
     <div className={`rounded-xl p-6 border mb-4 ${
       mode === "dark" 
-        ? "bg-gradient-to-r from-gray-800 to-gray-700 border-gray-600" 
-        : "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200"
+        ? "bg-gray-800 border-gray-600" 
+        : "bg-gray-50 border-gray-200"
     }`}>
       <div className="flex items-center gap-3 mb-4">
         <Icon icon={`mdi:cash ${mode === "dark" ? "text-gray-400" : "text-gray-600"}`} className="w-6 h-6" />

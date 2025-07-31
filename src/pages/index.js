@@ -33,11 +33,19 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
   // (No need for useEffect that redirects cashiers to /pos)
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-login pt-0">
-      <div className="w-full md:w-2/5 flex flex-col justify-between overflow-y-auto gap-10 bg-white/70 backdrop-blur-lg border border-white/30 shadow-xl">
+    <div className={`flex flex-col md:flex-row min-h-screen ${
+      mode === "dark" ? "bg-gray-900" : "bg-login"
+    } pt-0`}>
+      <div className={`w-full md:w-2/5 flex flex-col justify-between overflow-y-auto gap-10 ${
+        mode === "dark" 
+          ? "bg-gray-800/70 backdrop-blur-lg border border-gray-700/30 shadow-xl" 
+          : "bg-white/70 backdrop-blur-lg border border-white/30 shadow-xl"
+      }`}>
         <div className="flex-grow flex flex-col justify-center items-center">
           <div className="w-full max-w-md">
-            <div className="py-4 px-4 mb-4 shadow-lg hover:shadow-none transition-all duration-500 bg-white/80 rounded-lg">
+            <div className={`py-4 px-4 mb-4 shadow-lg hover:shadow-none transition-all duration-500 rounded-lg ${
+              mode === "dark" ? "bg-gray-700/80" : "bg-white/80"
+            }`}>
               <p
                 className={`text-4xl font-black text-center ${
                   mode === "dark" ? "text-white" : "text-blue-900"
@@ -50,8 +58,10 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
 
           <div className="w-full max-w-md py-4">
             <div className="pb-6 space-y-2">
-              <p className="text-3xl text-blue-800 font-bold">Welcome back!</p>
-              <p className="text-blue-900">
+              <p className={`text-3xl font-bold ${
+                mode === "dark" ? "text-blue-300" : "text-blue-800"
+              }`}>Welcome back!</p>
+              <p className={mode === "dark" ? "text-gray-300" : "text-blue-900"}>
                 Access the store dashboard using your email and password.
               </p>
             </div>
@@ -69,9 +79,15 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                     value={loginData.email}
                     placeholder="Enter your email"
                     onChange={handleLoginChange}
-                    className="w-full bg-white/80 text-blue-950 rounded-lg py-2.5 md:py-3 px-2 focus:outline-none focus:border-blue-500"
+                    className={`w-full rounded-lg py-2.5 md:py-3 px-2 focus:outline-none focus:border-blue-500 ${
+                      mode === "dark" 
+                        ? "bg-gray-700 text-gray-100 placeholder-gray-400 border border-gray-600" 
+                        : "bg-white/80 text-blue-950 border border-gray-300"
+                    }`}
                   />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-950">
+                  <span className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                    mode === "dark" ? "text-gray-400" : "text-blue-950"
+                  }`}>
                     <Icon icon="heroicons:envelope" className="w-5 h-5" />
                   </span>
                 </div>
@@ -89,11 +105,17 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                     value={loginData.password}
                     placeholder="Enter your password"
                     onChange={handleLoginChange}
-                    className="w-full bg-white/80 text-blue-950 rounded-lg py-2.5 md:py-3 px-2 focus:outline-none focus:border-blue-500"
+                    className={`w-full rounded-lg py-2.5 md:py-3 px-2 focus:outline-none focus:border-blue-500 ${
+                      mode === "dark" 
+                        ? "bg-gray-700 text-gray-100 placeholder-gray-400 border border-gray-600" 
+                        : "bg-white/80 text-blue-950 border border-gray-300"
+                    }`}
                   />
                   <span
                     onClick={togglePasswordVisibility}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-lue-950 cursor-pointer"
+                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer ${
+                      mode === "dark" ? "text-gray-400" : "text-blue-950"
+                    }`}
                   >
                     {showPassword ? (
                       <Icon icon="heroicons:eye-slash" className="w-5 h-5" />
@@ -106,7 +128,9 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
 
               <div className="mb-6">
                 <div className="flex flex-col items-center">
-                  <p className="text-xs text-gray-600 mb-2 text-center">
+                  <p className={`text-xs mb-2 text-center ${
+                    mode === "dark" ? "text-gray-400" : "text-gray-600"
+                  }`}>
                     Please verify that you're not a robot
                   </p>
                   <div
@@ -120,7 +144,7 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                       onChange={handleRecaptchaChange}
                       onExpired={handleRecaptchaExpired}
                       onError={handleRecaptchaError}
-                      theme="light"
+                      theme={mode === "dark" ? "dark" : "light"}
                       size="normal"
                       onLoad={() =>
                         console.log("reCAPTCHA loaded successfully")
@@ -153,20 +177,28 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                         rememberMe: !prev.rememberMe,
                       }))
                     }
-                    className={`w-5 h-5 flex items-center justify-center border-2 border-blue-950 rounded-full cursor-pointer transition-all duration-200 ease-in-out ${
+                    className={`w-5 h-5 flex items-center justify-center border-2 rounded-full cursor-pointer transition-all duration-200 ease-in-out ${
+                      mode === "dark" 
+                        ? "border-gray-400" 
+                        : "border-blue-950"
+                    } ${
                       loginData.rememberMe ? "bg-transparent" : "bg-transparent"
                     }`}
                   >
                     {loginData.rememberMe && (
                       <Icon
                         icon="ic:baseline-check"
-                        className="w-4 h-4 text-blue-950"
+                        className={`w-4 h-4 ${
+                          mode === "dark" ? "text-gray-400" : "text-blue-950"
+                        }`}
                       />
                     )}
                   </div>
 
                   <label
-                    className="ml-2 text-blue-950 font-light text-sm md:text-base cursor-pointer"
+                    className={`ml-2 font-light text-sm md:text-base cursor-pointer ${
+                      mode === "dark" ? "text-gray-300" : "text-blue-950"
+                    }`}
                     onClick={() =>
                       setLoginData((prev) => ({
                         ...prev,
@@ -182,7 +214,11 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                   <button
                     type="button"
                     onClick={() => setShowForgotPasswordModal(true)}
-                    className="text-blue-950 font-light text-sm md:text-base hover:underline hover:text-red-600"
+                    className={`font-light text-sm md:text-base hover:underline ${
+                      mode === "dark" 
+                        ? "text-blue-300 hover:text-red-400" 
+                        : "text-blue-950 hover:text-red-600"
+                    }`}
                   >
                     Forgot Password?
                   </button>
@@ -192,7 +228,11 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
               <button
                 type="submit"
                 disabled={isRecaptchaLoading || !recaptchaToken}
-                className={`w-full bg-blue-900 text-white font-bold py-3 rounded-full transform transition-transform duration-700 ease-in-out hover:scale-105 ${
+                className={`w-full font-bold py-3 rounded-full transform transition-transform duration-700 ease-in-out hover:scale-105 ${
+                  mode === "dark" 
+                    ? "bg-blue-600 text-white hover:bg-blue-700" 
+                    : "bg-blue-900 text-white hover:bg-blue-800"
+                } ${
                   isRecaptchaLoading || !recaptchaToken
                     ? "opacity-50 cursor-not-allowed"
                     : ""
@@ -230,11 +270,15 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
             </div> */}
 
           </div>
-          <span>Copyright © {currentYear}, All rights reserved.</span>
+          <span className={mode === "dark" ? "text-gray-400" : "text-gray-600"}>
+            Copyright © {currentYear}, All rights reserved.
+          </span>
         </div>
       </div>
 
-      <div className="hidden md:block w-full md:w-3/5 bg-blue-950/10"></div>
+      <div className={`hidden md:block w-full md:w-3/5 ${
+        mode === "dark" ? "bg-gray-800/10" : "bg-blue-950/10"
+      }`}></div>
 
       <SimpleModal
         isOpen={showForgotPasswordModal}
@@ -244,7 +288,9 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
         width="max-w-md"
       >
         <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
-          <label htmlFor="reset-email" className="text-sm font-medium">
+          <label htmlFor="reset-email" className={`text-sm font-medium ${
+            mode === "dark" ? "text-gray-200" : "text-gray-700"
+          }`}>
             Enter your email address to reset your password:
           </label>
           <input
@@ -253,13 +299,21 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
             type="email"
             required
             placeholder="Email address"
-            className="w-full bg-white/80 text-blue-950 rounded-lg py-2 px-3 focus:outline-none focus:border-blue-500 border border-gray-200"
+            className={`w-full rounded-lg py-2 px-3 focus:outline-none focus:border-blue-500 border ${
+              mode === "dark" 
+                ? "bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600" 
+                : "bg-white/80 text-blue-950 border-gray-200"
+            }`}
             value={loginData.email}
             onChange={handleLoginChange}
           />
           <button
             type="submit"
-            className="w-full bg-blue-900 text-white font-bold py-2 rounded-lg mt-2 hover:bg-blue-800 transition-all duration-200"
+            className={`w-full font-bold py-2 rounded-lg mt-2 transition-all duration-200 ${
+              mode === "dark" 
+                ? "bg-blue-600 text-white hover:bg-blue-700" 
+                : "bg-blue-900 text-white hover:bg-blue-800"
+            }`}
           >
             Send Reset Link
           </button>

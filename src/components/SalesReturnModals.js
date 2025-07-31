@@ -42,6 +42,46 @@
     const [referenceOrderItems, setReferenceOrderItems] = useState([]);
     const [showSaleDetailsModal, setShowSaleDetailsModal] = useState(false);
 
+    // Custom styles for react-select based on mode
+    const selectStyles = {
+      control: (provided, state) => ({
+        ...provided,
+        backgroundColor: mode === "dark" ? "#374151" : "#ffffff",
+        borderColor: mode === "dark" ? "#4B5563" : "#D1D5DB",
+        color: mode === "dark" ? "#F9FAFB" : "#111827",
+        "&:hover": {
+          borderColor: mode === "dark" ? "#6B7280" : "#9CA3AF",
+        },
+      }),
+      menu: (provided) => ({
+        ...provided,
+        backgroundColor: mode === "dark" ? "#374151" : "#ffffff",
+        border: `1px solid ${mode === "dark" ? "#4B5563" : "#D1D5DB"}`,
+      }),
+      option: (provided, state) => ({
+        ...provided,
+        backgroundColor: state.isFocused 
+          ? (mode === "dark" ? "#4B5563" : "#F3F4F6")
+          : "transparent",
+        color: mode === "dark" ? "#F9FAFB" : "#111827",
+        "&:hover": {
+          backgroundColor: mode === "dark" ? "#4B5563" : "#F3F4F6",
+        },
+      }),
+      singleValue: (provided) => ({
+        ...provided,
+        color: mode === "dark" ? "#F9FAFB" : "#111827",
+      }),
+      input: (provided) => ({
+        ...provided,
+        color: mode === "dark" ? "#F9FAFB" : "#111827",
+      }),
+      placeholder: (provided) => ({
+        ...provided,
+        color: mode === "dark" ? "#9CA3AF" : "#6B7280",
+      }),
+    };
+
     // Fetch customers, stores, and recent sales/orders
     useEffect(() => {
       fetch("/api/customers")
@@ -288,7 +328,9 @@
           {/* Reference/Original Sale FIRST */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Reference/Original Sale</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>Reference/Original Sale</label>
               <Select
                 options={filteredOrders.map((o) => ({
                   value: String(o.id),
@@ -322,6 +364,7 @@
                 placeholder="Search or select sale/invoice..."
                 classNamePrefix="react-select"
                 isDisabled={loading}
+                styles={selectStyles}
               />
               {selectedReference && (
                 user?.role === 'cashier' ? (
@@ -356,23 +399,43 @@
           {/* Show reference order line items if a reference is selected */}
           {selectedReference && referenceOrderItems.length > 0 && (
             <div className="my-4">
-              <div className="font-semibold mb-2">Products in Selected Order</div>
-              <table className="min-w-full text-sm border">
-                <thead className="bg-gray-100">
+              <div className={`font-semibold mb-2 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-900"
+              }`}>Products in Selected Order</div>
+              <table className={`min-w-full text-sm border ${
+                mode === "dark" ? "border-gray-600" : "border-gray-300"
+              }`}>
+                <thead className={mode === "dark" ? "bg-gray-700" : "bg-gray-100"}>
                   <tr>
-                    <th className="px-4 py-2 border">Product</th>
-                    <th className="px-4 py-2 border">Quantity</th>
-                    <th className="px-4 py-2 border">Unit Price</th>
-                    <th className="px-4 py-2 border">Total</th>
+                    <th className={`px-4 py-2 border ${
+                      mode === "dark" ? "border-gray-600 text-gray-200" : "border-gray-300 text-gray-700"
+                    }`}>Product</th>
+                    <th className={`px-4 py-2 border ${
+                      mode === "dark" ? "border-gray-600 text-gray-200" : "border-gray-300 text-gray-700"
+                    }`}>Quantity</th>
+                    <th className={`px-4 py-2 border ${
+                      mode === "dark" ? "border-gray-600 text-gray-200" : "border-gray-300 text-gray-700"
+                    }`}>Unit Price</th>
+                    <th className={`px-4 py-2 border ${
+                      mode === "dark" ? "border-gray-600 text-gray-200" : "border-gray-300 text-gray-700"
+                    }`}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {referenceOrderItems.map((item, idx) => (
                     <tr key={idx}>
-                      <td className="px-4 py-2 border">{item.name}</td>
-                      <td className="px-4 py-2 border text-center">{item.quantity}</td>
-                      <td className="px-4 py-2 border text-right">GHS {Number(item.unit_price).toFixed(2)}</td>
-                      <td className="px-4 py-2 border text-right">GHS {Number(item.total).toFixed(2)}</td>
+                      <td className={`px-4 py-2 border ${
+                        mode === "dark" ? "border-gray-600 text-gray-200" : "border-gray-300 text-gray-900"
+                      }`}>{item.name}</td>
+                      <td className={`px-4 py-2 border text-center ${
+                        mode === "dark" ? "border-gray-600 text-gray-200" : "border-gray-300 text-gray-900"
+                      }`}>{item.quantity}</td>
+                      <td className={`px-4 py-2 border text-right ${
+                        mode === "dark" ? "border-gray-600 text-gray-200" : "border-gray-300 text-gray-900"
+                      }`}>GHS {Number(item.unit_price).toFixed(2)}</td>
+                      <td className={`px-4 py-2 border text-right ${
+                        mode === "dark" ? "border-gray-600 text-gray-200" : "border-gray-300 text-gray-900"
+                      }`}>GHS {Number(item.total).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -385,12 +448,18 @@
           {/* Warehouse field remains */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Store Location *</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>Store Location *</label>
               <input
                 type="text"
                 value={stores.find(s => s.id === form.store_id)?.name || ''}
                 readOnly
-                className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
+                className={`w-full border rounded px-3 py-2 cursor-not-allowed ${
+                  mode === "dark" 
+                    ? "bg-gray-700 border-gray-600 text-gray-200" 
+                    : "bg-gray-100 border-gray-300 text-gray-900"
+                }`}
                 disabled
                 placeholder="Store location"
               />
@@ -398,24 +467,36 @@
           </div>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Date *</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>Date *</label>
               <input
                 name="date"
                 type="date"
                 value={form.date}
                 onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
+                className={`w-full border rounded px-3 py-2 ${
+                  mode === "dark" 
+                    ? "bg-gray-700 border-gray-600 text-gray-200" 
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
                 required
                 disabled={loading}
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Status *</label>
+              <label className={`block text-sm font-medium mb-1 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>Status *</label>
               <select
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
+                className={`w-full border rounded px-3 py-2 ${
+                  mode === "dark" 
+                    ? "bg-gray-700 border-gray-600 text-gray-200" 
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
                 required
                 disabled={loading}
               >
@@ -428,7 +509,9 @@
           </div>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">
+              <label className={`block text-sm font-medium mb-1 ${
+                mode === "dark" ? "text-gray-200" : "text-gray-700"
+              }`}>
                 Return Number
               </label>
               <input
@@ -436,14 +519,20 @@
                 type="text"
                 value={form.return_number}
                 readOnly
-                className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
+                className={`w-full border rounded px-3 py-2 cursor-not-allowed ${
+                  mode === "dark" 
+                    ? "bg-gray-700 border-gray-600 text-gray-200" 
+                    : "bg-gray-100 border-gray-300 text-gray-900"
+                }`}
                 disabled
                 placeholder="Auto-generated"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Total *</label>
+            <label className={`block text-sm font-medium mb-1 ${
+              mode === "dark" ? "text-gray-200" : "text-gray-700"
+            }`}>Total *</label>
             <input
               name="total"
               type="number"
@@ -451,22 +540,34 @@
               step="0.01"
               value={calculatedTotal}
               readOnly
-              className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
+              className={`w-full border rounded px-3 py-2 cursor-not-allowed ${
+                mode === "dark" 
+                  ? "bg-gray-700 border-gray-600 text-gray-200" 
+                  : "bg-gray-100 border-gray-300 text-gray-900"
+              }`}
               required
               disabled={true}
               placeholder="Total Amount"
             />
-            <div className="text-xs text-gray-500 mt-1">
+            <div className={`text-xs mt-1 ${
+              mode === "dark" ? "text-gray-400" : "text-gray-500"
+            }`}>
               Total is auto-calculated from line items.
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Notes</label>
+            <label className={`block text-sm font-medium mb-1 ${
+              mode === "dark" ? "text-gray-200" : "text-gray-700"
+            }`}>Notes</label>
             <textarea
               name="notes"
               value={form.notes}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
+              className={`w-full border rounded px-3 py-2 ${
+                mode === "dark" 
+                  ? "bg-gray-700 border-gray-600 text-gray-200" 
+                  : "bg-white border-gray-300 text-gray-900"
+              }`}
               rows={2}
               disabled={loading}
               placeholder="Notes (optional)"
@@ -478,7 +579,11 @@
           <div className="flex gap-2 pt-2">
             <button
               type="button"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+              className={`flex-1 px-4 py-2 border rounded ${
+                mode === "dark" 
+                  ? "border-gray-600 text-gray-200 bg-gray-700 hover:bg-gray-600" 
+                  : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+              }`}
               onClick={onClose}
               disabled={loading}
             >
