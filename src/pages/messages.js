@@ -43,14 +43,18 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     getRolePermissions,
     setCurrentConversation,
     setConversations,
+    setMessages,
     typingUsers,
     sendTypingStatus,
     checkTypingStatus,
+    refreshCurrentConversation,
   } = useMessaging(soundEnabled);
 
   const permissions = getRolePermissions();
 
   const handleSelectConversation = async (conversation) => {
+    // Clear current messages before switching to prevent mixing
+    setMessages([]);
     setCurrentConversation(conversation);
     await fetchConversation(conversation.id);
   };
@@ -251,6 +255,30 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     return () => clearInterval(interval);
   }, [user, fetchConversations]);
 
+  // Refresh current conversation when conversation list updates
+  useEffect(() => {
+    if (currentConversation?.id && conversations.length > 0) {
+      // Check if the current conversation has been updated in the list
+      const updatedConversation = conversations.find(conv => conv.id === currentConversation.id);
+      if (updatedConversation && updatedConversation.updated_at !== currentConversation.updated_at) {
+        // Only refresh if the conversation was updated more recently than our current state
+        const currentUpdatedAt = new Date(currentConversation.updated_at || 0);
+        const newUpdatedAt = new Date(updatedConversation.updated_at);
+        
+        if (newUpdatedAt > currentUpdatedAt) {
+          // Small delay to prevent rapid refreshes
+          const timeoutId = setTimeout(() => {
+            refreshCurrentConversation();
+          }, 1000);
+          
+          return () => clearTimeout(timeoutId);
+        }
+      }
+    }
+  }, [conversations, currentConversation, refreshCurrentConversation]);
+
+
+
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
     if (typeof window !== "undefined") {
@@ -326,6 +354,14 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
                 <div className="flex items-center space-x-2">
                   {currentConversation && (
                     <>
+                      <button
+                        onClick={refreshCurrentConversation}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        title="Refresh messages"
+                      >
+                        <Icon icon="mdi:refresh" className="w-4 h-4 mr-2" />
+                        Refresh
+                      </button>
                       <button
                         onClick={() => setShowMessageSearch(true)}
                         className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"

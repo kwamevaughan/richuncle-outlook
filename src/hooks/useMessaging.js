@@ -62,12 +62,17 @@ export default function useMessaging(soundEnabled = true) {
 
       const data = await response.json();
       setCurrentConversation(data.conversation);
-      setMessages(data.messages);
-      setParticipants(data.participants);
+      
+      // Sort messages by created_at to ensure proper order
+      const sortedMessages = (data.messages || []).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      setMessages(sortedMessages);
+      setParticipants(data.participants || []);
       
       // Track last message for real-time updates
       if (data.messages && data.messages.length > 0) {
         setLastMessageId(data.messages[data.messages.length - 1].id);
+      } else {
+        setLastMessageId(null);
       }
     } catch (error) {
       console.error('Error fetching conversation:', error);
@@ -77,42 +82,30 @@ export default function useMessaging(soundEnabled = true) {
     }
   }, [user]);
 
-    // Check for new messages in current conversation
+      // Check for new messages in current conversation
   const checkForNewMessages = useCallback(async () => {
     if (!currentConversation?.id) return;
 
-    console.log('Checking for new messages in conversation:', currentConversation.id, 'lastMessageId:', lastMessageId);
-
     try {
-      // If we have a lastMessageId, use it to get only new messages
-      // Otherwise, fetch all messages to ensure we have the latest
-      const requestBody = { user };
-      if (lastMessageId) {
-        requestBody.after = lastMessageId;
-      }
-
+      // Always fetch all messages to ensure we have the latest
       const response = await fetch(`/api/messages/${currentConversation.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ user }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Received messages:', data.messages?.length || 0, 'messages');
         
         if (data.messages && data.messages.length > 0) {
-          if (lastMessageId) {
-            // Only add new messages if we're checking for updates
-            const newMessages = data.messages.filter(msg => msg.id !== lastMessageId);
-            console.log('New messages found:', newMessages.length);
+          // Compare with current messages to find new ones
+          setMessages(prev => {
+            const currentIds = new Set(prev.map(msg => msg.id));
+            const newMessages = data.messages.filter(msg => !currentIds.has(msg.id));
             
             if (newMessages.length > 0) {
-              setMessages(prev => [...prev, ...newMessages]);
-              setLastMessageId(newMessages[newMessages.length - 1].id);
-              
               // Show notification for new messages from others
               const ownMessages = newMessages.filter(msg => msg.sender_id === user?.id);
               if (ownMessages.length < newMessages.length) {
@@ -120,30 +113,35 @@ export default function useMessaging(soundEnabled = true) {
                 
                 // Play notification sound for new messages from others
                 if (soundEnabled) {
-                  try {
-                    const { playMessageNotification } = await import('../utils/messageSounds');
-                    playMessageNotification();
-                  } catch (error) {
-                    console.log('Could not play message notification sound:', error);
-                  }
+                  // Use setTimeout to avoid async issues in setState callback
+                  setTimeout(async () => {
+                    try {
+                      const { playMessageNotification } = await import('../utils/messageSounds');
+                      playMessageNotification();
+                    } catch (error) {
+                      console.log('Could not play message notification sound:', error);
+                    }
+                  }, 0);
                 }
-                
-                // Refresh conversation list to update sidebar
-                fetchConversations();
               }
             }
-          } else {
-            // If no lastMessageId, update the entire message list and set lastMessageId
-            console.log('No lastMessageId, updating entire message list');
-            setMessages(data.messages);
-            setLastMessageId(data.messages[data.messages.length - 1].id);
-          }
+            
+            // Always update to the latest messages and sort them
+            return data.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+          });
+          
+          // Update lastMessageId to the latest message
+          setLastMessageId(data.messages[data.messages.length - 1].id);
+        } else {
+          // No messages in conversation
+          setMessages([]);
+          setLastMessageId(null);
         }
       }
     } catch (error) {
       console.error('Error checking for new messages:', error);
     }
-  }, [currentConversation, lastMessageId, user, soundEnabled, fetchConversations]);
+  }, [currentConversation, user, soundEnabled]);
 
   // Send message
   const sendMessage = useCallback(async (content, conversationId = null) => {
@@ -154,6 +152,37 @@ export default function useMessaging(soundEnabled = true) {
       toast.error('No conversation selected');
       return;
     }
+
+    // Create optimistic message (appears immediately)
+    const optimisticMessage = {
+      id: `temp-${Date.now()}-${Math.random()}`,
+      conversation_id: targetConversationId,
+      sender_id: user.id,
+      content: content,
+      message_type: 'text',
+      created_at: new Date().toISOString(),
+      sender: {
+        id: user.id,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        role: user.role
+      }
+    };
+
+    // Add optimistic message immediately to UI
+    setMessages(prev => {
+      const allMessages = [...prev, optimisticMessage];
+      return allMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    });
+
+    // Update conversation in list immediately
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === targetConversationId 
+          ? { ...conv, updated_at: new Date().toISOString() }
+          : conv
+      )
+    );
 
     try {
       const response = await fetch(`/api/messages/${targetConversationId}`, {
@@ -173,18 +202,13 @@ export default function useMessaging(soundEnabled = true) {
 
       const data = await response.json();
       
-      // Add new message to state
-      setMessages(prev => [...prev, data.message]);
+      // Replace optimistic message with real message
+      setMessages(prev => {
+        const filteredMessages = prev.filter(msg => msg.id !== optimisticMessage.id);
+        const allMessages = [...filteredMessages, data.message];
+        return allMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      });
       setLastMessageId(data.message.id);
-      
-      // Update conversation in list
-      setConversations(prev => 
-        prev.map(conv => 
-          conv.id === targetConversationId 
-            ? { ...conv, updated_at: new Date().toISOString() }
-            : conv
-        )
-      );
 
       // Play success sound for sent message
       if (soundEnabled) {
@@ -199,6 +223,10 @@ export default function useMessaging(soundEnabled = true) {
       return data.message;
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      
       toast.error('Failed to send message');
       
       // Play error sound for failed message
@@ -213,7 +241,7 @@ export default function useMessaging(soundEnabled = true) {
       
       throw error;
     }
-  }, [user, currentConversation]);
+  }, [user, currentConversation, soundEnabled]);
 
   // Create new conversation
   const createConversation = useCallback(async (participantIds, title = null) => {
@@ -361,19 +389,15 @@ export default function useMessaging(soundEnabled = true) {
   useEffect(() => {
     if (!currentConversation?.id) return;
 
-    console.log('Starting polling for conversation:', currentConversation.id, 'lastMessageId:', lastMessageId);
-
     const interval = setInterval(() => {
-      console.log('Polling for new messages...');
       checkForNewMessages();
       checkTypingStatus(currentConversation.id);
-    }, 3000); // Check every 3 seconds
+    }, 5000); // Check every 5 seconds
 
     return () => {
-      console.log('Stopping polling for conversation:', currentConversation.id);
       clearInterval(interval);
     };
-  }, [currentConversation, checkForNewMessages, checkTypingStatus, lastMessageId]);
+  }, [currentConversation?.id, checkForNewMessages, checkTypingStatus]);
 
   // Initialize
   useEffect(() => {
@@ -382,6 +406,13 @@ export default function useMessaging(soundEnabled = true) {
       fetchUsers();
     }
   }, [user, fetchConversations, fetchUsers]);
+
+  // Manual refresh function for current conversation
+  const refreshCurrentConversation = useCallback(async () => {
+    if (currentConversation?.id) {
+      await fetchConversation(currentConversation.id);
+    }
+  }, [currentConversation?.id, fetchConversation]);
 
   return {
     conversations,
@@ -399,8 +430,10 @@ export default function useMessaging(soundEnabled = true) {
     getRolePermissions,
     setCurrentConversation,
     setConversations,
+    setMessages,
     typingUsers,
     sendTypingStatus,
     checkTypingStatus,
+    refreshCurrentConversation,
   };
 } 

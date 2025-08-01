@@ -10,9 +10,15 @@ export default function MessageInput({ onSendMessage, disabled = false, placehol
   const handleSubmit = (e) => {
     e.preventDefault();
     if (message.trim() && !disabled) {
-      onSendMessage(message.trim());
+      const messageContent = message.trim();
       setMessage('');
       setIsTyping(false);
+      
+      // Send message in background (don't await)
+      onSendMessage(messageContent).catch(error => {
+        console.error('Error sending message:', error);
+        // Optionally show error toast here if needed
+      });
     }
   };
 
