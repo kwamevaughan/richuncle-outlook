@@ -253,16 +253,6 @@ export const sidebarNav = [
         icon: "mdi:email-outline",
         label: "Messages",
       },
-      {
-        href: "/chat",
-        icon: "mdi:chat-outline",
-        label: "Chat",
-      },
-      {
-        href: "/push-updates",
-        icon: "mdi:bell-outline",
-        label: "Push Updates",
-      },
     ],
   },
   {
