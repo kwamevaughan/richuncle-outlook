@@ -4,14 +4,42 @@ import { format } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
 import MessageReactions from './MessageReactions';
 
-export default function MessageList({ messages, loading, participants, onReaction, shouldAutoScroll = true }) {
+export default function MessageList({ messages, loading, participants, onReaction, shouldAutoScroll = true, scrollContainerRef }) {
   const { user } = useUser();
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Method 1: Try scrolling the container
+    let scrollTarget = null;
+    
+    if (scrollContainerRef?.current) {
+      scrollTarget = scrollContainerRef.current;
+      console.log('Using passed scroll container ref');
+    } else if (messagesContainerRef.current) {
+      const parent = messagesContainerRef.current.closest('.overflow-y-auto');
+      if (parent) {
+        scrollTarget = parent;
+        console.log('Found parent with overflow-y-auto');
+      }
+    }
+    
+    if (scrollTarget) {
+      console.log('Scrolling container to bottom');
+      scrollTarget.scrollTop = scrollTarget.scrollHeight;
+      
+      // Force scroll again after a short delay
+      setTimeout(() => {
+        scrollTarget.scrollTop = scrollTarget.scrollHeight;
+      }, 50);
+    }
+    
+    // Method 2: Try scrolling the last message into view
+    if (messagesEndRef.current) {
+      console.log('Scrolling last message into view');
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
   };
 
   const isNearBottom = () => {
@@ -29,14 +57,34 @@ export default function MessageList({ messages, loading, participants, onReactio
   };
 
   useEffect(() => {
-    // Only auto-scroll if:
-    // 1. User is near the bottom of the message list
-    // 2. There are messages to scroll to
-    // 3. Auto-scroll is enabled
-    if (messages.length > 0 && isNearBottom() && shouldAutoScroll) {
-      scrollToBottom();
+    // Auto-scroll to bottom when new messages arrive
+    if (messages.length > 0 && shouldAutoScroll) {
+      // Longer delay to ensure DOM is fully updated
+      setTimeout(() => {
+        scrollToBottom();
+      }, 200);
     }
   }, [messages, shouldAutoScroll]);
+
+  // Force scroll to bottom on initial load
+  useEffect(() => {
+    if (messages.length > 0 && !loading) {
+      // Force scroll to bottom when messages are initially loaded
+      setTimeout(() => {
+        scrollToBottom();
+      }, 300);
+    }
+  }, [messages.length, loading]);
+
+  // Additional effect to handle auto-scroll when user stops typing
+  useEffect(() => {
+    if (messages.length > 0 && shouldAutoScroll && isNearBottom()) {
+      // Auto-scroll when user stops typing and is near bottom
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [shouldAutoScroll]);
 
   const formatMessageTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -71,7 +119,7 @@ export default function MessageList({ messages, loading, participants, onReactio
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -79,7 +127,7 @@ export default function MessageList({ messages, loading, participants, onReactio
 
   if (!messages || messages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+      <div className="flex flex-col items-center justify-center h-96 text-gray-500">
         <Icon icon="mdi:chat-outline" className="w-12 h-12 mb-4" />
         <p className="text-sm">No messages yet</p>
         <p className="text-xs text-gray-400 mt-1">Start the conversation!</p>
@@ -91,7 +139,7 @@ export default function MessageList({ messages, loading, participants, onReactio
     <div className="flex-1 relative">
       <div 
         ref={messagesContainerRef} 
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        className="h-full p-4 space-y-4"
         onScroll={handleScroll}
       >
       {messages.map((message, index) => {

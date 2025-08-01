@@ -1,7 +1,7 @@
 import MainLayout from "@/layouts/MainLayout";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
@@ -26,6 +26,8 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
   const [mutedConversations, setMutedConversations] = useState([]);
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const scrollContainerRef = useRef(null);
 
   const {
     conversations,
@@ -57,13 +59,34 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     setMessages([]);
     setCurrentConversation(conversation);
     await fetchConversation(conversation.id);
+    
+    // Force scroll to bottom after conversation is loaded
+    setTimeout(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+      }
+    }, 200);
   };
 
   const handleSendMessage = async (content) => {
     try {
+      setIsSendingMessage(true);
       await sendMessage(content);
+      
+      // Force auto-scroll to bottom after sending message
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+      }, 100);
+      
     } catch (error) {
       console.error('Error sending message:', error);
+    } finally {
+      // Small delay to ensure the refresh prevention works
+      setTimeout(() => {
+        setIsSendingMessage(false);
+      }, 500);
     }
   };
 
@@ -257,6 +280,11 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
 
   // Refresh current conversation when conversation list updates
   useEffect(() => {
+    // Don't refresh if we're currently sending a message (to prevent auto-refresh on send)
+    if (isSendingMessage) {
+      return;
+    }
+    
     if (currentConversation?.id && conversations.length > 0) {
       // Check if the current conversation has been updated in the list
       const updatedConversation = conversations.find(conv => conv.id === currentConversation.id);
@@ -275,7 +303,43 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
         }
       }
     }
-  }, [conversations, currentConversation, refreshCurrentConversation]);
+  }, [conversations, currentConversation, refreshCurrentConversation, isSendingMessage]);
+
+  // Force auto-scroll when messages change (for sender)
+  useEffect(() => {
+    if (messages.length > 0 && isSendingMessage) {
+      // Force scroll to bottom when we're sending a message
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+      }, 50);
+    }
+  }, [messages, isSendingMessage]);
+
+  // Auto-scroll to bottom when conversation is loaded (for initial load)
+  useEffect(() => {
+    if (messages.length > 0 && currentConversation && !loading) {
+      // Scroll to bottom when conversation is initially loaded
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+      }, 100);
+    }
+  }, [messages, currentConversation, loading]);
+
+  // Force scroll to bottom on page reload when conversation exists
+  useEffect(() => {
+    if (messages.length > 0 && currentConversation && !loading && !isUserTyping) {
+      // Force scroll to bottom on page reload
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+      }, 500);
+    }
+  }, [messages.length, currentConversation, loading, isUserTyping]);
 
 
 
@@ -405,17 +469,19 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
               </div>
             </div>
 
-            {/* Messages Area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
               {currentConversation ? (
                 <>
-                  <MessageList
-                    messages={messages}
-                    loading={loading}
-                    participants={participants}
-                    onReaction={handleMessageReaction}
-                    shouldAutoScroll={!isUserTyping}
-                  />
+                  <div ref={scrollContainerRef} className="h-96 overflow-y-auto">
+                    <MessageList
+                      messages={messages}
+                      loading={loading}
+                      participants={participants}
+                      onReaction={handleMessageReaction}
+                      shouldAutoScroll={!isUserTyping}
+                      scrollContainerRef={scrollContainerRef}
+                    />
+                  </div>
                   <TypingIndicator typingUsers={typingUsers} />
                   <MessageInput
                     onSendMessage={handleSendMessage}

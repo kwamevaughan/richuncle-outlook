@@ -175,14 +175,8 @@ export default function useMessaging(soundEnabled = true) {
       return allMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     });
 
-    // Update conversation in list immediately
-    setConversations(prev => 
-      prev.map(conv => 
-        conv.id === targetConversationId 
-          ? { ...conv, updated_at: new Date().toISOString() }
-          : conv
-      )
-    );
+    // Don't update conversation list immediately to prevent auto-refresh
+    // The conversation will be updated when the server responds
 
     try {
       const response = await fetch(`/api/messages/${targetConversationId}`, {
