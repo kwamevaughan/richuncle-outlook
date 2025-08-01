@@ -99,8 +99,13 @@ export default async function handler(req, res) {
     // Remove password from response
     const { password: _, ...userWithoutPassword } = userData;
 
-    // Set user cookie with role for middleware
-    res.setHeader('Set-Cookie', cookie.serialize('user', encodeURIComponent(JSON.stringify({ role: userData.role })), {
+    // Set user cookie with role and id for middleware
+    res.setHeader('Set-Cookie', cookie.serialize('user', encodeURIComponent(JSON.stringify({ 
+      id: userData.id,
+      role: userData.role,
+      email: userData.email,
+      name: userData.full_name
+    })), {
       path: '/',
       httpOnly: false, // set to true if you don't need JS access
       sameSite: 'lax',

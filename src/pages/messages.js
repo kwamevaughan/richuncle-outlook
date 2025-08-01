@@ -3,25 +3,189 @@ import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import SimpleModal from "@/components/SimpleModal";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
+import useMessaging from "@/hooks/useMessaging";
+import ConversationList from "@/components/messaging/ConversationList";
+import MessageList from "@/components/messaging/MessageList";
+import MessageInput from "@/components/messaging/MessageInput";
+import NewConversationModal from "@/components/messaging/NewConversationModal";
+import MessageSearch from "@/components/messaging/MessageSearch";
+import ConversationActions from "@/components/messaging/ConversationActions";
+import PushNotificationService from "@/components/messaging/PushNotificationService";
 
 export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
   const router = useRouter();
-  const [iconKey, setIconKey] = useState(0);
-  
+  const [showNewConversationModal, setShowNewConversationModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showMessageSearch, setShowMessageSearch] = useState(false);
+  const [archivedConversations, setArchivedConversations] = useState([]);
+  const [mutedConversations, setMutedConversations] = useState([]);
 
-  // Force icon to redraw every 6 seconds
+  const {
+    conversations,
+    currentConversation,
+    messages,
+    participants,
+    users,
+    groupedUsers,
+    loading,
+    fetchConversations,
+    fetchConversation,
+    sendMessage,
+    createConversation,
+    fetchUsers,
+    getRolePermissions,
+    setCurrentConversation,
+  } = useMessaging();
+
+  const permissions = getRolePermissions();
+
+  const handleSelectConversation = async (conversation) => {
+    setCurrentConversation(conversation);
+    await fetchConversation(conversation.id);
+  };
+
+  const handleSendMessage = async (content) => {
+    try {
+      await sendMessage(content);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const handleCreateConversation = async (participantIds, title, type) => {
+    try {
+      const conversation = await createConversation(participantIds, title, type);
+      if (conversation) {
+        await handleSelectConversation(conversation);
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    }
+  };
+
+  // Handle message reactions
+  const handleMessageReaction = async (messageId, reactionName) => {
+    try {
+      const response = await fetch(`/api/messages/reactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message_id: messageId, reaction_name: reactionName }),
+      });
+
+      if (response.ok) {
+        // Refresh messages to show updated reactions
+        if (currentConversation) {
+          await fetchConversation(currentConversation.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      toast.error('Failed to add reaction');
+    }
+  };
+
+  // Handle conversation archiving
+  const handleArchiveConversation = async (conversationId) => {
+    try {
+      const response = await fetch(`/api/messages/conversations/${conversationId}/archive`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        setArchivedConversations(prev => [...prev, conversationId]);
+        toast.success('Conversation archived');
+      }
+    } catch (error) {
+      console.error('Error archiving conversation:', error);
+      toast.error('Failed to archive conversation');
+    }
+  };
+
+  const handleUnarchiveConversation = async (conversationId) => {
+    try {
+      const response = await fetch(`/api/messages/conversations/${conversationId}/unarchive`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        setArchivedConversations(prev => prev.filter(id => id !== conversationId));
+        toast.success('Conversation unarchived');
+      }
+    } catch (error) {
+      console.error('Error unarchiving conversation:', error);
+      toast.error('Failed to unarchive conversation');
+    }
+  };
+
+  // Handle conversation muting
+  const handleMuteConversation = async (conversationId) => {
+    try {
+      const response = await fetch(`/api/messages/conversations/${conversationId}/mute`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        setMutedConversations(prev => [...prev, conversationId]);
+        toast.success('Conversation muted');
+      }
+    } catch (error) {
+      console.error('Error muting conversation:', error);
+      toast.error('Failed to mute conversation');
+    }
+  };
+
+  const handleUnmuteConversation = async (conversationId) => {
+    try {
+      const response = await fetch(`/api/messages/conversations/${conversationId}/unmute`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        setMutedConversations(prev => prev.filter(id => id !== conversationId));
+        toast.success('Conversation unmuted');
+      }
+    } catch (error) {
+      console.error('Error unmuting conversation:', error);
+      toast.error('Failed to unmute conversation');
+    }
+  };
+
+  // Handle message search
+  const handleMessageSearch = (selectedMessage) => {
+    // Scroll to the selected message
+    const messageElement = document.getElementById(`message-${selectedMessage.id}`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      messageElement.classList.add('bg-yellow-100');
+      setTimeout(() => {
+        messageElement.classList.remove('bg-yellow-100');
+      }, 3000);
+    }
+  };
+
+  // Initialize push notifications
+  useEffect(() => {
+    if (user && PushNotificationService) {
+      PushNotificationService.initialize();
+    }
+  }, [user]);
+
+  // Auto-refresh conversations every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setIconKey(prev => prev + 1);
-    }, 6000);
-    
+      if (user) {
+        fetchConversations();
+      }
+    }, 30000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [user, fetchConversations]);
 
   if (userLoading && LoadingComponent) return LoadingComponent;
   if (!user) {
@@ -40,63 +204,156 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
       {...props}
     >
       <div className="flex flex-1 bg-gray-50 min-h-screen">
-        <div className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
-            {/* Enhanced Header */}
-            <div className="mb-4 sm:mb-8">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-4 sm:mb-6">
-                <div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
-                      <Icon
-                        icon="mdi:view-dashboard"
-                        className="w-4 h-4 sm:w-6 sm:h-6 text-white"
-                      />
+        <div className="flex flex-1">
+          {/* Sidebar */}
+          <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 flex-shrink-0 border-r border-gray-200 bg-white`}>
+            <div className="h-full">
+              <ConversationList
+                conversations={conversations}
+                currentConversation={currentConversation}
+                onSelectConversation={handleSelectConversation}
+                onCreateNew={() => setShowNewConversationModal(true)}
+                loading={loading}
+              />
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col">
+            {/* Header */}
+            <div className="bg-white border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  {/* Mobile menu button */}
+                  <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                  >
+                    <Icon icon="mdi:menu" className="w-6 h-6" />
+                  </button>
+
+                  {/* Conversation Info */}
+                  {currentConversation ? (
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Icon 
+                          icon={currentConversation.type === 'group' ? 'mdi:account-group' : 'mdi:account'} 
+                          className="w-5 h-5 text-blue-600" 
+                        />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          {currentConversation.title}
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                          {participants?.length || 0} participants
+                        </p>
+                      </div>
                     </div>
-                    Messaging
-                  </h1>
-                  <p className="text-sm sm:text-base text-gray-600">
-                    Send and receive messages to staff
-                  </p>
+                  ) : (
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
+                      <p className="text-sm text-gray-500">Select a conversation to start messaging</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center space-x-2">
+                  {currentConversation && (
+                    <>
+                      <button
+                        onClick={() => setShowMessageSearch(true)}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        title="Search messages"
+                      >
+                        <Icon icon="mdi:magnify" className="w-4 h-4 mr-2" />
+                        Search
+                      </button>
+                      <ConversationActions
+                        conversation={currentConversation}
+                        onArchive={handleArchiveConversation}
+                        onUnarchive={handleUnarchiveConversation}
+                        onDelete={() => {}} // Implement delete functionality
+                        onMute={handleMuteConversation}
+                        onUnmute={handleUnmuteConversation}
+                        isArchived={archivedConversations.includes(currentConversation.id)}
+                        isMuted={mutedConversations.includes(currentConversation.id)}
+                      />
+                      <button
+                        onClick={() => setShowNewConversationModal(true)}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <Icon icon="mdi:plus" className="w-4 h-4 mr-2" />
+                        New
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mt-6 py-10">
-              <div className="flex flex-col items-center justify-center h-full w-full ">
-                <div className="mb-2">
-                  <Icon
-                    key={iconKey}
-                    icon="line-md:chat"
-                    width="96"
-                    height="96"
-                    className="text-blue-600"
-                    auto="1"                    
+            {/* Messages Area */}
+            <div className="flex-1 flex flex-col">
+              {currentConversation ? (
+                <>
+                  <MessageList
+                    messages={messages}
+                    loading={loading}
+                    participants={participants}
+                    onReaction={handleMessageReaction}
+                    userReactions={[]} // TODO: Fetch user reactions
                   />
+                  <MessageInput
+                    onSendMessage={handleSendMessage}
+                    disabled={loading}
+                  />
+                </>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Icon icon="mdi:chat-outline" className="w-12 h-12 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Welcome to Messages
+                    </h3>
+                    <p className="text-gray-500 mb-6 max-w-md">
+                      Start a conversation with your team members. You can send direct messages, create group chats, and stay connected with everyone.
+                    </p>
+                    <button
+                      onClick={() => setShowNewConversationModal(true)}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <Icon icon="mdi:plus" className="w-4 h-4 mr-2" />
+                      Start a Conversation
+                    </button>
+                  </div>
                 </div>
-
-                <p className="text-lg text-center max-w-xl mb-8 text-gray-500 dark:text-gray-300">
-                  We&apos;re finalizing the Messaging platform to ensure you get
-                  the best experience. Please check back soon!
-                </p>
-                <div className="flex justify-center">
-                  <span className="inline-block animate-bounce rounded-full bg-blue-600 h-4 w-4 mr-2"></span>
-                  <span
-                    className="inline-block animate-bounce rounded-full bg-blue-600 h-4 w-4 mr-2"
-                    style={{ animationDelay: "0.2s" }}
-                  ></span>
-                  <span
-                    className="inline-block animate-bounce rounded-full bg-blue-600 h-4 w-4"
-                    style={{ animationDelay: "0.4s" }}
-                  ></span>
-                </div>
-              </div>
-            </div>          
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      
+      {/* New Conversation Modal */}
+      <NewConversationModal
+        isOpen={showNewConversationModal}
+        onClose={() => setShowNewConversationModal(false)}
+        onCreateConversation={handleCreateConversation}
+        users={users}
+        groupedUsers={groupedUsers}
+        loading={loading}
+        permissions={permissions}
+      />
+
+      {/* Message Search Modal */}
+      <MessageSearch
+        isOpen={showMessageSearch}
+        onClose={() => setShowMessageSearch(false)}
+        messages={messages}
+        onSelectMessage={handleMessageSearch}
+      />
     </MainLayout>
   );
 } 
