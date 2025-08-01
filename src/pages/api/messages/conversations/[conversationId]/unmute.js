@@ -5,20 +5,11 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     try {
-      // Get user from custom auth system
-      const userCookie = req.cookies.user;
-      let user = null;
+      // Get user from request body
+      const { user } = req.body;
 
-      if (userCookie) {
-        try {
-          user = JSON.parse(decodeURIComponent(userCookie));
-        } catch (e) {
-          console.error('Error parsing user cookie:', e);
-        }
-      }
-
-      if (!user) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!user || !user.id) {
+        return res.status(401).json({ error: "Unauthorized - User information required" });
       }
 
       // Remove from mutes

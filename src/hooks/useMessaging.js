@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from './useUser';
 import toast from 'react-hot-toast';
 
-export default function useMessaging() {
+export default function useMessaging(soundEnabled = true) {
   const { user } = useUser();
   const [conversations, setConversations] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
@@ -12,6 +12,7 @@ export default function useMessaging() {
   const [users, setUsers] = useState([]);
   const [groupedUsers, setGroupedUsers] = useState({});
   const [lastMessageId, setLastMessageId] = useState(null);
+  const [typingUsers, setTypingUsers] = useState([]);
 
   // Fetch conversations
   const fetchConversations = useCallback(async () => {
@@ -104,6 +105,16 @@ export default function useMessaging() {
             const ownMessages = newMessages.filter(msg => msg.sender_id === user?.id);
             if (ownMessages.length < newMessages.length) {
               toast.success(`${newMessages.length - ownMessages.length} new message(s)`);
+              
+              // Play notification sound for new messages from others
+              if (soundEnabled) {
+                try {
+                  const { playMessageNotification } = await import('../utils/messageSounds');
+                  playMessageNotification();
+                } catch (error) {
+                  console.log('Could not play message notification sound:', error);
+                }
+              }
             }
           }
         }
@@ -154,10 +165,31 @@ export default function useMessaging() {
         )
       );
 
+      // Play success sound for sent message
+      if (soundEnabled) {
+        try {
+          const { playMessageSent } = await import('../utils/messageSounds');
+          playMessageSent();
+        } catch (error) {
+          console.log('Could not play message sent sound:', error);
+        }
+      }
+
       return data.message;
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
+      
+      // Play error sound for failed message
+      if (soundEnabled) {
+        try {
+          const { playMessageError } = await import('../utils/messageSounds');
+          playMessageError();
+        } catch (error) {
+          console.log('Could not play message error sound:', error);
+        }
+      }
+      
       throw error;
     }
   }, [user, currentConversation]);
@@ -259,16 +291,62 @@ export default function useMessaging() {
     return permissions[user.role] || permissions.cashier;
   }, [user]);
 
-  // Real-time polling for new messages
+  // Send typing status
+  const sendTypingStatus = useCallback(async (conversationId, isTyping) => {
+    if (!user || !conversationId) return;
+
+    try {
+      await fetch(`/api/messages/conversations/${conversationId}/typing`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          user,
+          isTyping 
+        }),
+      });
+    } catch (error) {
+      console.error('Error sending typing status:', error);
+    }
+  }, [user]);
+
+  // Check for typing status updates
+  const checkTypingStatus = useCallback(async (conversationId) => {
+    if (!user || !conversationId) return;
+
+    try {
+      const response = await fetch(`/api/messages/conversations/${conversationId}/typing`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          user,
+          check: true 
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTypingUsers(data.typingUsers || []);
+      }
+    } catch (error) {
+      console.error('Error checking typing status:', error);
+    }
+  }, [user]);
+
+  // Real-time polling for new messages and typing status
   useEffect(() => {
     if (!currentConversation?.id) return;
 
     const interval = setInterval(() => {
       checkForNewMessages();
-    }, 5000); // Check every 5 seconds
+      checkTypingStatus(currentConversation.id);
+    }, 3000); // Check every 3 seconds
 
     return () => clearInterval(interval);
-  }, [currentConversation, checkForNewMessages]);
+  }, [currentConversation, checkForNewMessages, checkTypingStatus]);
 
   // Initialize
   useEffect(() => {
@@ -293,5 +371,9 @@ export default function useMessaging() {
     fetchUsers,
     getRolePermissions,
     setCurrentConversation,
+    setConversations,
+    typingUsers,
+    sendTypingStatus,
+    checkTypingStatus,
   };
 } 

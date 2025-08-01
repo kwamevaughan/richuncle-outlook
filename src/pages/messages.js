@@ -13,6 +13,7 @@ import NewConversationModal from "@/components/messaging/NewConversationModal";
 import MessageSearch from "@/components/messaging/MessageSearch";
 import ConversationActions from "@/components/messaging/ConversationActions";
 import PushNotificationService from "@/components/messaging/PushNotificationService";
+import TypingIndicator from "@/components/messaging/TypingIndicator";
 
 export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -24,6 +25,7 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
   const [archivedConversations, setArchivedConversations] = useState([]);
   const [mutedConversations, setMutedConversations] = useState([]);
   const [isUserTyping, setIsUserTyping] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const {
     conversations,
@@ -40,7 +42,11 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     fetchUsers,
     getRolePermissions,
     setCurrentConversation,
-  } = useMessaging();
+    setConversations,
+    typingUsers,
+    sendTypingStatus,
+    checkTypingStatus,
+  } = useMessaging(soundEnabled);
 
   const permissions = getRolePermissions();
 
@@ -104,6 +110,10 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     try {
       const response = await fetch(`/api/messages/conversations/${conversationId}/archive`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user }),
       });
 
       if (response.ok) {
@@ -120,6 +130,10 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     try {
       const response = await fetch(`/api/messages/conversations/${conversationId}/unarchive`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user }),
       });
 
       if (response.ok) {
@@ -137,6 +151,10 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     try {
       const response = await fetch(`/api/messages/conversations/${conversationId}/mute`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user }),
       });
 
       if (response.ok) {
@@ -153,6 +171,10 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     try {
       const response = await fetch(`/api/messages/conversations/${conversationId}/unmute`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user }),
       });
 
       if (response.ok) {
@@ -162,6 +184,39 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     } catch (error) {
       console.error('Error unmuting conversation:', error);
       toast.error('Failed to unmute conversation');
+    }
+  };
+
+  // Handle conversation deletion
+  const handleDeleteConversation = async (conversationId) => {
+    try {
+      const response = await fetch(`/api/messages/conversations/${conversationId}/delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user }),
+      });
+
+      if (response.ok) {
+        // Remove conversation from list
+        setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+        
+        // If this was the current conversation, clear it
+        if (currentConversation?.id === conversationId) {
+          setCurrentConversation(null);
+          setMessages([]);
+          setParticipants([]);
+        }
+        
+        toast.success('Conversation deleted successfully');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to delete conversation');
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      toast.error('Failed to delete conversation');
     }
   };
 
@@ -212,7 +267,7 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-1 bg-gray-50 min-h-screen">
+      <div className="flex flex-1 bg-gray-50">
         <div className="flex flex-1">
           {/* Sidebar */}
           <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 flex-shrink-0 border-r border-gray-200 bg-white`}>
@@ -279,11 +334,23 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
                         <Icon icon="mdi:magnify" className="w-4 h-4 mr-2" />
                         Search
                       </button>
+                      <button
+                        onClick={() => setSoundEnabled(!soundEnabled)}
+                        className={`inline-flex items-center px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          soundEnabled 
+                            ? 'bg-green-100 text-green-700 border-green-300 hover:bg-green-50' 
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                        title={soundEnabled ? "Disable sound notifications" : "Enable sound notifications"}
+                      >
+                        <Icon icon={soundEnabled ? "mdi:volume-high" : "mdi:volume-off"} className="w-4 h-4 mr-2" />
+                        {soundEnabled ? "Sound On" : "Sound Off"}
+                      </button>
                       <ConversationActions
                         conversation={currentConversation}
                         onArchive={handleArchiveConversation}
                         onUnarchive={handleUnarchiveConversation}
-                        onDelete={() => {}} // Implement delete functionality
+                        onDelete={handleDeleteConversation}
                         onMute={handleMuteConversation}
                         onUnmute={handleUnmuteConversation}
                         isArchived={archivedConversations.includes(currentConversation.id)}
@@ -313,10 +380,13 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
                     onReaction={handleMessageReaction}
                     shouldAutoScroll={!isUserTyping}
                   />
+                  <TypingIndicator typingUsers={typingUsers} />
                   <MessageInput
                     onSendMessage={handleSendMessage}
                     disabled={loading}
                     onTypingChange={handleTypingChange}
+                    onTypingStatus={sendTypingStatus}
+                    conversationId={currentConversation?.id}
                   />
                 </>
               ) : (

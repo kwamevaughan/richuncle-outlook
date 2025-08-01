@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 
-export default function MessageInput({ onSendMessage, disabled = false, placeholder = "Type a message...", onTypingChange }) {
+export default function MessageInput({ onSendMessage, disabled = false, placeholder = "Type a message...", onTypingChange, onTypingStatus, conversationId }) {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const textareaRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -26,8 +27,26 @@ export default function MessageInput({ onSendMessage, disabled = false, placehol
     setMessage(e.target.value);
     const typing = e.target.value.length > 0;
     setIsTyping(typing);
+    
     if (onTypingChange) {
       onTypingChange(typing);
+    }
+
+    // Send typing status to other users
+    if (onTypingStatus && conversationId) {
+      onTypingStatus(conversationId, typing);
+      
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Set timeout to stop typing status after 3 seconds of inactivity
+      if (typing) {
+        typingTimeoutRef.current = setTimeout(() => {
+          onTypingStatus(conversationId, false);
+        }, 3000);
+      }
     }
   };
 
@@ -74,19 +93,7 @@ export default function MessageInput({ onSendMessage, disabled = false, placehol
         </button>
       </form>
 
-      {/* Typing indicator */}
-      {isTyping && (
-        <div className="mt-2 text-xs text-gray-500">
-          <span className="inline-flex items-center">
-            <span className="animate-pulse">Typing</span>
-            <span className="ml-1">
-              <span className="inline-block w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="inline-block w-1 h-1 bg-gray-400 rounded-full animate-bounce ml-1" style={{ animationDelay: '150ms' }}></span>
-              <span className="inline-block w-1 h-1 bg-gray-400 rounded-full animate-bounce ml-1" style={{ animationDelay: '300ms' }}></span>
-            </span>
-          </span>
-        </div>
-      )}
+
     </div>
   );
 } 
