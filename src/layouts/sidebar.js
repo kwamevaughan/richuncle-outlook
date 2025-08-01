@@ -206,7 +206,6 @@ const Sidebar = ({
 
   if (windowWidth === null) return null;
 
-  console.log("[Sidebar] Rendering sidebar:", { isMobile, isOpen, windowWidth });
 
   return (
     <div className="relative z-[20]">
