@@ -99,6 +99,16 @@ export default async function handler(req, res) {
             full_name,
             avatar_url,
             role
+          ),
+          message_reactions(
+            id,
+            reaction_name,
+            user_id,
+            created_at,
+            users!message_reactions_user_id_fkey(
+              id,
+              full_name
+            )
           )
         `)
         .eq('conversation_id', conversationId)

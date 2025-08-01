@@ -35,6 +35,22 @@ const NOTIFICATION_TYPES = {
     title: "Cash Register",
     description: "Cash register activity"
   },
+  new_message: {
+    icon: "mdi:message-text-outline",
+    color: "text-purple-500",
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-200",
+    title: "New Message",
+    description: "You have a new message"
+  },
+  unread_messages: {
+    icon: "mdi:message-multiple-outline",
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-indigo-200",
+    title: "Unread Messages",
+    description: "You have unread messages"
+  },
   system: {
     icon: "mdi:cog-outline",
     color: "text-gray-500",
@@ -60,15 +76,23 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
-      const [ordersResponse, productsResponse, cashResponse] = await Promise.all([
+      const [ordersResponse, productsResponse, cashResponse, conversationsResponse] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/products'),
-        fetch('/api/cash-movements')
+        fetch('/api/cash-movements'),
+        fetch('/api/messages/conversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ user }),
+        })
       ]);
       
       const ordersData = await ordersResponse.json();
       const productsData = await productsResponse.json();
       const cashData = await cashResponse.json();
+      const conversationsData = await conversationsResponse.json();
       
       const recentOrders = ordersData.success ? 
         (ordersData.data || []).filter(order => new Date(order.timestamp) >= yesterday).slice(0, 5) : [];
@@ -81,6 +105,10 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
       
       const cashActivities = cashData.success ? 
         (cashData.data || []).filter(activity => new Date(activity.created_at) >= yesterday).slice(0, 3) : [];
+
+      // Get messaging notifications
+      const conversationsWithUnread = conversationsData.success ? 
+        (conversationsData.conversations || []).filter(conv => conv.unread_count > 0).slice(0, 5) : [];
 
       // Build notifications array
       const allNotifications = [];
@@ -145,6 +173,26 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
             timestamp: activity.created_at,
             data: activity,
             read: false
+          });
+        });
+      }
+
+      // Add messaging notifications
+      if (conversationsWithUnread && conversationsWithUnread.length > 0) {
+        conversationsWithUnread.forEach(conversation => {
+          const lastMessage = conversation.last_message;
+          const senderName = lastMessage?.sender?.full_name || 'Unknown User';
+          const messagePreview = lastMessage?.content?.substring(0, 50) || 'New message';
+          
+          allNotifications.push({
+            id: `message_${conversation.id}`,
+            type: 'new_message',
+            title: `New Message in ${conversation.title}`,
+            message: `${senderName}: ${messagePreview}${messagePreview.length >= 50 ? '...' : ''}`,
+            timestamp: lastMessage?.created_at || conversation.updated_at,
+            data: conversation,
+            read: false,
+            unreadCount: conversation.unread_count
           });
         });
       }
@@ -216,6 +264,12 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
       case 'cash_register':
         // Could open cash register modal
         console.log('Opening cash register activity:', notification.data);
+        break;
+      case 'new_message':
+        // Navigate to messages page and open the specific conversation
+        if (typeof window !== 'undefined') {
+          window.location.href = `/messages?conversation=${notification.data.id}`;
+        }
         break;
       default:
         break;
@@ -315,23 +369,36 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
         )}
       </div>
 
-      {notifications.length > 0 && (
-        <div className={`p-3 border-t ${
-          mode === "dark" ? "border-gray-700" : "border-gray-200"
-        }`}>
+      <div className={`p-3 border-t ${
+        mode === "dark" ? "border-gray-700" : "border-gray-200"
+      }`}>
+        <div className="flex items-center justify-between">
           <button
             onClick={() => {
               // Could open full notifications page
               console.log('View all notifications');
             }}
-            className={`w-full text-sm ${
+            className={`text-sm ${
               mode === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-500"
             }`}
           >
             View all notifications
           </button>
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.href = '/messages';
+              }
+            }}
+            className={`text-sm flex items-center gap-1 ${
+              mode === "dark" ? "text-purple-400 hover:text-purple-300" : "text-purple-600 hover:text-purple-500"
+            }`}
+          >
+            <Icon icon="mdi:message-text-outline" className="h-4 w-4" />
+            Messages
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

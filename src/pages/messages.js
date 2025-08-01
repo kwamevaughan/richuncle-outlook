@@ -23,6 +23,7 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
   const [showMessageSearch, setShowMessageSearch] = useState(false);
   const [archivedConversations, setArchivedConversations] = useState([]);
   const [mutedConversations, setMutedConversations] = useState([]);
+  const [isUserTyping, setIsUserTyping] = useState(false);
 
   const {
     conversations,
@@ -56,6 +57,10 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     }
   };
 
+  const handleTypingChange = (isTyping) => {
+    setIsUserTyping(isTyping);
+  };
+
   const handleCreateConversation = async (participantIds, title, type) => {
     try {
       const conversation = await createConversation(participantIds, title, type);
@@ -75,7 +80,11 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message_id: messageId, reaction_name: reactionName }),
+        body: JSON.stringify({ 
+          message_id: messageId, 
+          reaction_name: reactionName,
+          user 
+        }),
       });
 
       if (response.ok) {
@@ -302,11 +311,12 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
                     loading={loading}
                     participants={participants}
                     onReaction={handleMessageReaction}
-                    userReactions={[]} // TODO: Fetch user reactions
+                    shouldAutoScroll={!isUserTyping}
                   />
                   <MessageInput
                     onSendMessage={handleSendMessage}
                     disabled={loading}
+                    onTypingChange={handleTypingChange}
                   />
                 </>
               ) : (

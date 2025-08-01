@@ -14,13 +14,21 @@ const NotificationButton = ({ mode, user, showLabel = false }) => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
-      const [ordersResponse, productsResponse] = await Promise.all([
+      const [ordersResponse, productsResponse, conversationsResponse] = await Promise.all([
         fetch('/api/orders'),
-        fetch('/api/products')
+        fetch('/api/products'),
+        fetch('/api/messages/conversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ user }),
+        })
       ]);
       
       const ordersData = await ordersResponse.json();
       const productsData = await productsResponse.json();
+      const conversationsData = await conversationsResponse.json();
       
       const recentOrders = ordersData.success ? 
         (ordersData.data || []).filter(order => new Date(order.timestamp) >= yesterday) : [];
@@ -31,11 +39,16 @@ const NotificationButton = ({ mode, user, showLabel = false }) => {
       const outOfStockProducts = productsData.success ? 
         (productsData.data || []).filter(p => p.quantity <= 0) : [];
 
+      // Get unread message count
+      const unreadMessages = conversationsData.success ? 
+        (conversationsData.conversations || []).reduce((total, conv) => total + (conv.unread_count || 0), 0) : 0;
+
       // Calculate total notifications
       const totalNotifications = 
         (recentOrders?.length || 0) + 
         (lowStockProducts?.length || 0) + 
-        (outOfStockProducts?.length || 0);
+        (outOfStockProducts?.length || 0) +
+        (unreadMessages > 0 ? 1 : 0); // Add 1 for messaging if there are unread messages
       
       setUnreadCount(totalNotifications);
     } catch (error) {

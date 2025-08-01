@@ -10,7 +10,7 @@ const REACTIONS = [
   { emoji: '😡', name: 'angry' },
 ];
 
-export default function MessageReactions({ message, onReact, userReactions = [] }) {
+export default function MessageReactions({ message, onReact, currentUserId }) {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   const handleReaction = (reactionName) => {
@@ -19,22 +19,25 @@ export default function MessageReactions({ message, onReact, userReactions = [] 
   };
 
   const hasUserReacted = (reactionName) => {
-    return userReactions.some(reaction => 
-      reaction.message_id === message.id && reaction.reaction_name === reactionName
-    );
+    return message.message_reactions?.some(reaction => 
+      reaction.user_id === currentUserId && reaction.reaction_name === reactionName
+    ) || false;
   };
 
   const getReactionCount = (reactionName) => {
-    return userReactions.filter(reaction => 
-      reaction.message_id === message.id && reaction.reaction_name === reactionName
-    ).length;
+    return message.message_reactions?.filter(reaction => 
+      reaction.reaction_name === reactionName
+    ).length || 0;
   };
 
   const getUniqueReactions = () => {
-    const reactions = userReactions.filter(reaction => reaction.message_id === message.id);
+    if (!message.message_reactions || message.message_reactions.length === 0) {
+      return [];
+    }
+
     const unique = {};
     
-    reactions.forEach(reaction => {
+    message.message_reactions.forEach(reaction => {
       if (!unique[reaction.reaction_name]) {
         unique[reaction.reaction_name] = {
           name: reaction.reaction_name,
@@ -43,7 +46,7 @@ export default function MessageReactions({ message, onReact, userReactions = [] 
         };
       }
       unique[reaction.reaction_name].count++;
-      unique[reaction.reaction_name].users.push(reaction.user_name);
+      unique[reaction.reaction_name].users.push(reaction.users?.full_name || 'Unknown User');
     });
 
     return Object.values(unique);

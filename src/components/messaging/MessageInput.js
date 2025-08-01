@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 
-export default function MessageInput({ onSendMessage, disabled = false, placeholder = "Type a message..." }) {
+export default function MessageInput({ onSendMessage, disabled = false, placeholder = "Type a message...", onTypingChange }) {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const textareaRef = useRef(null);
@@ -24,7 +24,11 @@ export default function MessageInput({ onSendMessage, disabled = false, placehol
 
   const handleInputChange = (e) => {
     setMessage(e.target.value);
-    setIsTyping(e.target.value.length > 0);
+    const typing = e.target.value.length > 0;
+    setIsTyping(typing);
+    if (onTypingChange) {
+      onTypingChange(typing);
+    }
   };
 
   // Auto-resize textarea

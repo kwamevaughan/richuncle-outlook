@@ -1,20 +1,42 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { format } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
 import MessageReactions from './MessageReactions';
 
-export default function MessageList({ messages, loading, participants, onReaction, userReactions = [] }) {
+export default function MessageList({ messages, loading, participants, onReaction, shouldAutoScroll = true }) {
   const { user } = useUser();
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const isNearBottom = () => {
+    if (!messagesContainerRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const threshold = 100; // pixels from bottom
+    return scrollHeight - scrollTop - clientHeight < threshold;
+  };
+
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const isNear = isNearBottom();
+      setShowScrollButton(!isNear);
+    }
+  };
+
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Only auto-scroll if:
+    // 1. User is near the bottom of the message list
+    // 2. There are messages to scroll to
+    // 3. Auto-scroll is enabled
+    if (messages.length > 0 && isNearBottom() && shouldAutoScroll) {
+      scrollToBottom();
+    }
+  }, [messages, shouldAutoScroll]);
 
   const formatMessageTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -66,7 +88,12 @@ export default function MessageList({ messages, loading, participants, onReactio
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 relative">
+      <div 
+        ref={messagesContainerRef} 
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        onScroll={handleScroll}
+      >
       {messages.map((message, index) => {
         const isOwnMessage = message.sender_id === user?.id;
         const showSenderInfo = index === 0 || 
@@ -118,14 +145,26 @@ export default function MessageList({ messages, loading, participants, onReactio
                  <MessageReactions
                    message={message}
                    onReact={onReaction}
-                   userReactions={userReactions}
+                   currentUserId={user?.id}
                  />
                </div>
             </div>
           </div>
         );
-      })}
-      <div ref={messagesEndRef} />
+              })}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Scroll to bottom button */}
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-4 right-4 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 z-10"
+          title="Scroll to bottom"
+        >
+          <Icon icon="mdi:chevron-down" className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 } 

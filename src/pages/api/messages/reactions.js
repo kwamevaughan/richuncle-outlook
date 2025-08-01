@@ -3,23 +3,16 @@ import supabaseAdmin from "@/lib/supabaseAdmin";
 export default async function handler(req, res) {
   if (req.method === "POST") {
     try {
-      // Get user from custom auth system
-      const userCookie = req.cookies.user;
-      let user = null;
+      // Get user from request body
+      const { user, message_id, reaction_name } = req.body;
 
-      if (userCookie) {
-        try {
-          user = JSON.parse(decodeURIComponent(userCookie));
-        } catch (e) {
-          console.error('Error parsing user cookie:', e);
-        }
+      if (!user || !user.id) {
+        return res.status(401).json({ error: "Unauthorized - User information required" });
       }
 
-      if (!user) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!message_id || !reaction_name) {
+        return res.status(400).json({ error: "Message ID and reaction name are required" });
       }
-
-      const { message_id, reaction_name } = req.body;
 
       if (!message_id || !reaction_name) {
         return res.status(400).json({ error: "Message ID and reaction name are required" });
