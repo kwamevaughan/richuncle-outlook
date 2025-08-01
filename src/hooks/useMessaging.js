@@ -13,6 +13,10 @@ export default function useMessaging(soundEnabled = true) {
   const [groupedUsers, setGroupedUsers] = useState({});
   const [lastMessageId, setLastMessageId] = useState(null);
   const [typingUsers, setTypingUsers] = useState([]);
+  
+  // Cache for conversation messages to enable instant switching
+  const [messageCache, setMessageCache] = useState({});
+  const [participantCache, setParticipantCache] = useState({});
 
   // Fetch conversations
   const fetchConversations = useCallback(async () => {
@@ -46,6 +50,29 @@ export default function useMessaging(soundEnabled = true) {
   const fetchConversation = useCallback(async (conversationId) => {
     if (!user || !conversationId) return;
 
+    // Check if we have cached data for this conversation
+    const cachedMessages = messageCache[conversationId];
+    const cachedParticipants = participantCache[conversationId];
+    
+    if (cachedMessages && cachedParticipants) {
+      // Use cached data for instant switching
+      setCurrentConversation(conversations.find(conv => conv.id === conversationId));
+      setMessages(cachedMessages);
+      setParticipants(cachedParticipants);
+      
+      // Track last message for real-time updates
+      if (cachedMessages.length > 0) {
+        setLastMessageId(cachedMessages[cachedMessages.length - 1].id);
+      } else {
+        setLastMessageId(null);
+      }
+      
+      // Fetch fresh data in background to update cache
+      fetchFreshConversationData(conversationId);
+      return;
+    }
+
+    // No cache, fetch data normally
     setLoading(true);
     try {
       const response = await fetch(`/api/messages/${conversationId}`, {
@@ -68,6 +95,16 @@ export default function useMessaging(soundEnabled = true) {
       setMessages(sortedMessages);
       setParticipants(data.participants || []);
       
+      // Cache the data for future use
+      setMessageCache(prev => ({
+        ...prev,
+        [conversationId]: sortedMessages
+      }));
+      setParticipantCache(prev => ({
+        ...prev,
+        [conversationId]: data.participants || []
+      }));
+      
       // Track last message for real-time updates
       if (data.messages && data.messages.length > 0) {
         setLastMessageId(data.messages[data.messages.length - 1].id);
@@ -80,7 +117,50 @@ export default function useMessaging(soundEnabled = true) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, messageCache, participantCache, conversations]);
+
+  // Fetch fresh conversation data in background (for cache updates)
+  const fetchFreshConversationData = useCallback(async (conversationId) => {
+    if (!user || !conversationId) return;
+
+    try {
+      const response = await fetch(`/api/messages/${conversationId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Sort messages by created_at to ensure proper order
+        const sortedMessages = (data.messages || []).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        
+        // Update cache with fresh data
+        setMessageCache(prev => ({
+          ...prev,
+          [conversationId]: sortedMessages
+        }));
+        setParticipantCache(prev => ({
+          ...prev,
+          [conversationId]: data.participants || []
+        }));
+        
+        // Update current conversation if it's the active one
+        if (currentConversation?.id === conversationId) {
+          setMessages(sortedMessages);
+          setParticipants(data.participants || []);
+          if (data.messages && data.messages.length > 0) {
+            setLastMessageId(data.messages[data.messages.length - 1].id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching fresh conversation data:', error);
+    }
+  }, [user, currentConversation]);
 
       // Check for new messages in current conversation
   const checkForNewMessages = useCallback(async () => {
@@ -127,7 +207,15 @@ export default function useMessaging(soundEnabled = true) {
             }
             
             // Always update to the latest messages and sort them
-            return data.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            const sortedMessages = data.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            
+            // Update cache with new messages
+            setMessageCache(prev => ({
+              ...prev,
+              [currentConversation.id]: sortedMessages
+            }));
+            
+            return sortedMessages;
           });
           
           // Update lastMessageId to the latest message
@@ -200,7 +288,15 @@ export default function useMessaging(soundEnabled = true) {
       setMessages(prev => {
         const filteredMessages = prev.filter(msg => msg.id !== optimisticMessage.id);
         const allMessages = [...filteredMessages, data.message];
-        return allMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        const sortedMessages = allMessages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        
+        // Update cache with the new message
+        setMessageCache(prevCache => ({
+          ...prevCache,
+          [targetConversationId]: sortedMessages
+        }));
+        
+        return sortedMessages;
       });
       setLastMessageId(data.message.id);
 
@@ -238,7 +334,7 @@ export default function useMessaging(soundEnabled = true) {
   }, [user, currentConversation, soundEnabled]);
 
   // Create new conversation
-  const createConversation = useCallback(async (participantIds, title = null) => {
+  const createConversation = useCallback(async (participantIds, title = null, type = 'direct') => {
     if (!user) return;
 
     try {
@@ -250,6 +346,7 @@ export default function useMessaging(soundEnabled = true) {
         body: JSON.stringify({
           participant_ids: participantIds,
           title,
+          type,
           user,
         }),
       });
@@ -260,17 +357,31 @@ export default function useMessaging(soundEnabled = true) {
 
       const data = await response.json();
       
-      // Add new conversation to list
-      setConversations(prev => [data.conversation, ...prev]);
-      
-      toast.success('Conversation created successfully');
-      return data.conversation;
+      if (data.isExisting) {
+        // Existing conversation found - show it instead of creating new one
+        toast.success('Existing conversation found');
+        
+        // Find the existing conversation in the list and make it current
+        const existingConversation = conversations.find(conv => conv.id === data.conversation.id);
+        if (existingConversation) {
+          setCurrentConversation(existingConversation);
+          // Fetch the conversation to load its messages
+          fetchConversation(existingConversation.id);
+        }
+        
+        return data.conversation;
+      } else {
+        // New conversation created
+        setConversations(prev => [data.conversation, ...prev]);
+        toast.success('Conversation created successfully');
+        return data.conversation;
+      }
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast.error('Failed to create conversation');
       throw error;
     }
-  }, [user]);
+  }, [user, conversations, fetchConversation]);
 
   // Fetch available users
   const fetchUsers = useCallback(async (role = 'all', search = '') => {
@@ -425,6 +536,7 @@ export default function useMessaging(soundEnabled = true) {
     setCurrentConversation,
     setConversations,
     setMessages,
+    setParticipants,
     typingUsers,
     sendTypingStatus,
     checkTypingStatus,

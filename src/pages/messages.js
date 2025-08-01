@@ -46,6 +46,7 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     setCurrentConversation,
     setConversations,
     setMessages,
+    setParticipants,
     typingUsers,
     sendTypingStatus,
     checkTypingStatus,
@@ -58,7 +59,9 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     // Clear current messages before switching to prevent mixing
     setMessages([]);
     setCurrentConversation(conversation);
-    await fetchConversation(conversation.id);
+    
+    // Fetch conversation (will use cache if available for instant switching)
+    fetchConversation(conversation.id);
     
     // Force scroll to bottom after conversation is loaded
     setTimeout(() => {

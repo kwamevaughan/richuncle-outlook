@@ -72,7 +72,123 @@ export default async function handler(req, res) {
       // Add current user to participants if not already included
       const allParticipantIds = [...new Set([user.id, ...participant_ids])];
 
-      // Create conversation
+      // Check for existing conversation with the same participants
+      // For direct messages with one participant, do a simple check
+      if (type === 'direct' && participant_ids.length === 1) {
+        const otherUserId = participant_ids[0];
+        
+        // Get all conversations where current user is a participant
+        const { data: userConversations, error: userConvError } = await supabaseAdmin
+          .from('conversation_participants')
+          .select('conversation_id')
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+
+        if (!userConvError && userConversations) {
+          const userConvIds = userConversations.map(c => c.conversation_id);
+          
+          // Get all conversations where other user is a participant
+          const { data: otherUserConversations, error: otherConvError } = await supabaseAdmin
+            .from('conversation_participants')
+            .select('conversation_id')
+            .eq('user_id', otherUserId)
+            .eq('is_active', true);
+
+          if (!otherConvError && otherUserConversations) {
+            const otherConvIds = otherUserConversations.map(c => c.conversation_id);
+            
+            // Find intersection (conversations where both users are participants)
+            const commonConversationIds = userConvIds.filter(id => otherConvIds.includes(id));
+            
+            if (commonConversationIds.length > 0) {
+              // Check if any of these are direct conversations
+              const { data: existingDirectConversation, error: directCheckError } = await supabaseAdmin
+                .from('conversations')
+                .select('id, title, type')
+                .eq('type', 'direct')
+                .eq('is_active', true)
+                .in('id', commonConversationIds)
+                .single();
+
+              if (!directCheckError && existingDirectConversation) {
+                console.log('Found existing direct conversation:', existingDirectConversation.id);
+                return res.status(200).json({ 
+                  conversation: existingDirectConversation,
+                  message: "Existing conversation found",
+                  isExisting: true
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // For other cases, get all conversations where the current user is a participant
+      const { data: existingConversations, error: checkError } = await supabaseAdmin
+        .from('conversations')
+        .select(`
+          id,
+          title,
+          type,
+          conversation_participants(user_id)
+        `)
+        .eq('conversation_participants.user_id', user.id)
+        .eq('conversation_participants.is_active', true)
+        .eq('is_active', true);
+
+      if (checkError) {
+        console.error("Error checking existing conversations:", checkError);
+        return res.status(500).json({ error: "Failed to check existing conversations" });
+      }
+
+      // Check if any existing conversation has the exact same participants
+      let existingConversation = null;
+      console.log('Checking for duplicates with participants:', allParticipantIds);
+      console.log('Existing conversations found:', existingConversations?.length || 0);
+      
+      for (const conv of existingConversations || []) {
+        // Get all participants for this conversation
+        const { data: participants, error: partError } = await supabaseAdmin
+          .from('conversation_participants')
+          .select('user_id')
+          .eq('conversation_id', conv.id)
+          .eq('is_active', true);
+        
+        if (partError) {
+          console.error('Error fetching participants for conversation:', conv.id, partError);
+          continue;
+        }
+        
+        const convParticipantIds = participants.map(p => p.user_id).sort();
+        const requestedParticipantIds = allParticipantIds.sort();
+        
+        console.log(`Checking conversation ${conv.id}:`, {
+          convParticipantIds,
+          requestedParticipantIds,
+          match: convParticipantIds.length === requestedParticipantIds.length &&
+                  convParticipantIds.every((id, index) => id === requestedParticipantIds[index])
+        });
+        
+        if (convParticipantIds.length === requestedParticipantIds.length &&
+            convParticipantIds.every((id, index) => id === requestedParticipantIds[index])) {
+          existingConversation = conv;
+          console.log('Found existing conversation:', conv.id);
+          break;
+        }
+      }
+
+      // If existing conversation found, return it instead of creating new one
+      if (existingConversation) {
+        return res.status(200).json({ 
+          conversation: existingConversation,
+          message: "Existing conversation found",
+          isExisting: true
+        });
+      }
+
+
+
+      // Create new conversation only if no existing one found
       const { data: conversation, error: convError } = await supabaseAdmin
         .from('conversations')
         .insert([{
