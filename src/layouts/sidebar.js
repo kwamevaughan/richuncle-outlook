@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { Icon } from "@iconify/react";
 import { sidebarNav } from "@/data/nav";
+import { filterNavigationByRole } from "@/utils/navigationFilter";
 
 const Sidebar = ({
   mode,
@@ -23,7 +24,7 @@ const Sidebar = ({
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedItems, setExpandedItems] = useState({});
 
-  const filteredNav = sidebarNav;
+  const filteredNav = filterNavigationByRole(sidebarNav, user?.role);
 
   useEffect(() => {
     if (

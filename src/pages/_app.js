@@ -8,6 +8,7 @@ import { Nunito } from "next/font/google";
 import { AuthProvider } from "@/context/authContext";
 import useSidebar from "@/hooks/useSidebar";
 import { DarkModeProvider } from "@/components/GlobalDarkMode";
+import RoleBasedAccess from "@/components/RoleBasedAccess";
 import "../styles/dark-mode-date-range.css";
 
 const nunito = Nunito({
@@ -212,15 +213,17 @@ function MyApp({ Component, pageProps }) {
       <Toaster position="top-center" reverseOrder={false} />
         <AuthProvider>
           <DarkModeProvider>
-            <main className="flex-1">
-              <Component
-                {...pageProps}
-                mode={mode}
-                toggleMode={toggleMode}
-                breadcrumbs={breadcrumbs}
-                isSidebarOpen={isSidebarOpen}
-              />
-            </main>
+            <RoleBasedAccess>
+              <main className="flex-1">
+                <Component
+                  {...pageProps}
+                  mode={mode}
+                  toggleMode={toggleMode}
+                  breadcrumbs={breadcrumbs}
+                  isSidebarOpen={isSidebarOpen}
+                />
+              </main>
+            </RoleBasedAccess>
           </DarkModeProvider>
         </AuthProvider>
     </div>
