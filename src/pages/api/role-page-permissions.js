@@ -57,6 +57,8 @@ export default async function handler(req, res) {
     try {
       const { role_id, page_paths } = req.body;
 
+      console.log('Received data:', { role_id, page_paths });
+
       if (!role_id || !Array.isArray(page_paths)) {
         return res.status(400).json({ 
           success: false, 
@@ -78,12 +80,24 @@ export default async function handler(req, res) {
         });
       }
 
-      // Insert new permissions
-      if (page_paths.length > 0) {
-        const permissionsToInsert = page_paths.map(page_path => ({
+      // Insert new permissions - filter out null/undefined/empty values
+      const validPagePaths = page_paths.filter(path => 
+        path && 
+        typeof path === 'string' && 
+        path.trim() !== '' && 
+        path !== null && 
+        path !== undefined
+      );
+
+      console.log('Filtered page paths:', validPagePaths);
+
+      if (validPagePaths.length > 0) {
+        const permissionsToInsert = validPagePaths.map(page_path => ({
           role_id,
-          page_path
+          page_path: page_path.trim()
         }));
+
+        console.log('Permissions to insert:', permissionsToInsert);
 
         const { error: insertError } = await supabaseAdmin
           .from('role_page_permissions')

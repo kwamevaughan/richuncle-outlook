@@ -122,18 +122,19 @@ export default function RoleBasedAccess({ children }) {
         userHasAccess = true;
       }
       
-      if (!userHasAccess) {
-        // Redirect to first allowed page
-        const firstAllowedPage = allowedPages[0] || '/pos';
-        toast.error(`Access denied. You don't have permission to access this page.`);
-        
-        // Immediate redirect
-        router.push(firstAllowedPage);
-        
-        setAccessChecked(true);
-        setHasAccess(false);
-        return;
-      }
+          if (!userHasAccess) {
+      // Redirect to first allowed page
+      const firstAllowedPage = allowedPages[0] || '/pos';
+      const pageName = currentPath === '/' ? 'Home' : currentPath.replace('/', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      toast.error(`Access denied. You don't have permission to access the "${pageName}" page.`);
+      
+      // Immediate redirect
+      router.push(firstAllowedPage);
+      
+      setAccessChecked(true);
+      setHasAccess(false);
+      return;
+    }
       
       // For cashiers, redirect from home page to POS
       if (userRole === 'cashier' && currentPath === '/') {

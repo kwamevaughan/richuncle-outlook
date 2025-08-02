@@ -7,6 +7,7 @@ import { GenericTable } from "@/components/GenericTable";
 import SimpleModal from "@/components/SimpleModal";
 import TooltipIconButton from "@/components/TooltipIconButton";
 import { sidebarNav } from "@/data/nav";
+import toast from "react-hot-toast";
 
 export default function RolesPermissionsPage({
   mode = "light",
@@ -41,8 +42,8 @@ export default function RolesPermissionsPage({
   const [permForm, setPermForm] = useState({ key: "", label: "" });
   const [permToDelete, setPermToDelete] = useState(null);
   const [showDeletePermModal, setShowDeletePermModal] = useState(false);
-  // Page permissions modal
-  const [showPagePermModal, setShowPagePermModal] = useState(false);
+  // Unified access modal
+  const [showAccessModal, setShowAccessModal] = useState(false);
   const [editingPagePerms, setEditingPagePerms] = useState([]);
   // Search/filter
   const [roleSearch, setRoleSearch] = useState("");
@@ -86,9 +87,14 @@ export default function RolesPermissionsPage({
       // Process role page permissions
       const rpp = {};
       for (const role of rolesRes.data) rpp[role.id] = [];
-      for (const pp of pagePermsRes.data || []) {
-        if (rpp[pp.role_id]) rpp[pp.role_id].push(pp.page_path);
+      
+      // Handle the grouped format from API
+      for (const roleGroup of pagePermsRes.data || []) {
+        if (roleGroup.role_id && roleGroup.page_paths) {
+          rpp[roleGroup.role_id] = roleGroup.page_paths;
+        }
       }
+      
       setRolePagePermissions(rpp);
       
       const uc = {};
@@ -137,7 +143,7 @@ export default function RolesPermissionsPage({
     setShowRoleModal(true);
   };
   const saveRole = async () => {
-    if (!roleForm.name.trim()) return alert("Role name is required");
+    if (!roleForm.name.trim()) return toast.error("Role name is required");
     setSaving(true);
     try {
       const method = roleModalMode === "edit" ? "PUT" : "POST";
@@ -151,8 +157,9 @@ export default function RolesPermissionsPage({
         throw new Error(result.error || "Failed to save role");
       setShowRoleModal(false);
       fetchAll();
+      toast.success(roleModalMode === "edit" ? "Role updated successfully!" : "Role created successfully!");
     } catch (err) {
-      alert(err.message || "Failed to save role");
+      toast.error(err.message || "Failed to save role");
     } finally {
       setSaving(false);
     }
@@ -176,8 +183,9 @@ export default function RolesPermissionsPage({
       setShowDeleteRoleModal(false);
       setRoleToDelete(null);
       fetchAll();
+      toast.success("Role deleted successfully!");
     } catch (err) {
-      alert(err.message || "Failed to delete role");
+      toast.error(err.message || "Failed to delete role");
     } finally {
       setSaving(false);
     }
@@ -196,7 +204,7 @@ export default function RolesPermissionsPage({
   };
   const savePerm = async () => {
     if (!permForm.key.trim() || !permForm.label.trim())
-      return alert("Key and label are required");
+      return toast.error("Key and label are required");
     setSaving(true);
     try {
       const method = permModalMode === "edit" ? "PUT" : "POST";
@@ -210,8 +218,9 @@ export default function RolesPermissionsPage({
         throw new Error(result.error || "Failed to save permission");
       setShowPermModal(false);
       fetchAll();
+      toast.success(permModalMode === "edit" ? "Permission updated successfully!" : "Permission created successfully!");
     } catch (err) {
-      alert(err.message || "Failed to save permission");
+      toast.error(err.message || "Failed to save permission");
     } finally {
       setSaving(false);
     }
@@ -235,8 +244,9 @@ export default function RolesPermissionsPage({
       setShowDeletePermModal(false);
       setPermToDelete(null);
       fetchAll();
+      toast.success("Permission deleted successfully!");
     } catch (err) {
-      alert(err.message || "Failed to delete permission");
+      toast.error(err.message || "Failed to delete permission");
     } finally {
       setSaving(false);
     }
@@ -316,30 +326,16 @@ export default function RolesPermissionsPage({
       ),
     },
     {
-      label: "Edit Permissions",
-      icon: "mdi:shield-key-outline",
-      onClick: openEditPermissions,
+      label: "Edit Access",
+      icon: "mdi:shield-account",
+      onClick: openEditAccess,
       render: (row) => (
         <TooltipIconButton
-          icon="mdi:shield-key-outline"
-          label="Edit Permissions"
-          onClick={() => openEditPermissions(row)}
+          icon="mdi:shield-account"
+          label="Edit Access"
+          onClick={() => openEditAccess(row)}
           mode={mode}
-          className="bg-green-50 text-green-600 text-xs"
-        />
-      ),
-    },
-    {
-      label: "Edit Page Access",
-      icon: "mdi:page-layout-body",
-      onClick: openEditPagePermissions,
-      render: (row) => (
-        <TooltipIconButton
-          icon="mdi:page-layout-body"
-          label="Edit Page Access"
-          onClick={() => openEditPagePermissions(row)}
-          mode={mode}
-          className="bg-purple-50 text-purple-600 text-xs"
+          className="bg-blue-50 text-blue-600 text-xs"
         />
       ),
     },
@@ -405,48 +401,94 @@ export default function RolesPermissionsPage({
         [editingRole.id]: editingPerms,
       }));
       setShowModal(false);
+      toast.success(`Permissions updated successfully for ${editingRole.name}!`);
     } catch (err) {
-      alert(err.message || "Failed to update permissions");
+      toast.error(err.message || "Failed to update permissions");
     } finally {
       setSaving(false);
     }
   };
 
-  // --- Edit Page Permissions Modal ---
-  function openEditPagePermissions(role) {
+  // --- Unified Access Management ---
+  function openEditAccess(role) {
     setEditingRole(role);
-    setEditingPagePerms(rolePagePermissions[role.id] || []);
-    setShowPagePermModal(true);
+    const currentPermissions = rolePagePermissions[role.id] || [];
+    const currentPerms = rolePermissions[role.id] || [];
+    setEditingPagePerms(currentPermissions);
+    setEditingPerms(currentPerms);
+    setShowAccessModal(true);
   }
   const handlePagePermChange = (pagePath) => {
-    setEditingPagePerms((prev) =>
-      prev.includes(pagePath)
-        ? prev.filter((p) => p !== pagePath)
-        : [...prev, pagePath]
-    );
+    if (!pagePath || typeof pagePath !== 'string' || pagePath.trim() === '') {
+      console.warn('Invalid page path:', pagePath);
+      return;
+    }
+    
+    setEditingPagePerms((prev) => {
+      const current = Array.isArray(prev) ? prev : [];
+      return current.includes(pagePath)
+        ? current.filter((p) => p !== pagePath)
+        : [...current, pagePath];
+    });
   };
-  const savePagePermissions = async () => {
+  const saveAccess = async () => {
     if (!editingRole) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/role-page-permissions", {
+      // Save page permissions
+      const validPagePaths = Array.isArray(editingPagePerms) 
+        ? editingPagePerms.filter(path => 
+            path && 
+            typeof path === 'string' && 
+            path.trim() !== '' && 
+            path !== null && 
+            path !== undefined
+          )
+        : [];
+
+      const pagePermsRes = await fetch("/api/role-page-permissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           role_id: editingRole.id,
-          page_paths: editingPagePerms,
+          page_paths: validPagePaths,
         }),
       });
-      const result = await res.json();
-      if (!result.success)
-        throw new Error(result.error || "Failed to update page permissions");
+      const pagePermsResult = await pagePermsRes.json();
+      if (!pagePermsResult.success)
+        throw new Error(pagePermsResult.error || "Failed to update page permissions");
+
+      // Save feature permissions
+      const permsRes = await fetch("/api/role-permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role_id: editingRole.id,
+          permission_ids: editingPerms,
+        }),
+      });
+      const permsResult = await permsRes.json();
+      if (!permsResult.success)
+        throw new Error(permsResult.error || "Failed to update permissions");
+
+      // Update local state
       setRolePagePermissions((prev) => ({
         ...prev,
-        [editingRole.id]: editingPagePerms,
+        [editingRole.id]: validPagePaths,
       }));
-      setShowPagePermModal(false);
+      setRolePermissions((prev) => ({
+        ...prev,
+        [editingRole.id]: editingPerms,
+      }));
+      setShowAccessModal(false);
+      
+      // Refresh the data to ensure consistency
+      setTimeout(() => {
+        fetchAll();
+      }, 100);
+      toast.success(`Access settings updated successfully for ${editingRole.name}!`);
     } catch (err) {
-      alert(err.message || "Failed to update page permissions");
+      toast.error(err.message || "Failed to update access settings");
     } finally {
       setSaving(false);
     }
@@ -592,9 +634,9 @@ export default function RolesPermissionsPage({
               {activeTab === "page-access" && (
                 <div>
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Page Access Management</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Access Management</h3>
                     <p className="text-gray-600 mb-4">
-                      Configure which pages each role can access. This controls what users see in the navigation and can access directly.
+                      Configure page access and feature permissions for each role. This controls what users can see and do in the application.
                     </p>
                   </div>
                   <div className="grid gap-6">
@@ -609,24 +651,61 @@ export default function RolesPermissionsPage({
                             </p>
                           </div>
                           <button
-                            onClick={() => openEditPagePermissions(role)}
-                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                            onClick={() => openEditAccess(role)}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                           >
-                            <Icon icon="mdi:page-layout-body" className="w-4 h-4" />
+                            <Icon icon="mdi:shield-account" className="w-4 h-4" />
                             Configure Access
                           </button>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                          {rolePagePermissions[role.id]?.map((pagePath) => (
-                            <span
-                              key={pagePath}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                            >
-                              {pagePath === '/' ? 'Home' : pagePath}
-                            </span>
-                          )) || (
-                            <span className="text-gray-500 text-sm">No pages configured</span>
-                          )}
+                        
+                        {/* Page Access Summary */}
+                        <div className="mb-4">
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">Page Access ({rolePagePermissions[role.id]?.length || 0} pages)</h5>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                            {rolePagePermissions[role.id]?.slice(0, 8).map((pagePath) => (
+                              <span
+                                key={pagePath}
+                                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                              >
+                                {pagePath === '/' ? 'Home' : pagePath}
+                              </span>
+                            ))}
+                            {rolePagePermissions[role.id]?.length > 8 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                +{rolePagePermissions[role.id].length - 8} more
+                              </span>
+                            )}
+                            {(!rolePagePermissions[role.id] || rolePagePermissions[role.id].length === 0) && (
+                              <span className="text-gray-500 text-sm">No pages configured</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Feature Permissions Summary */}
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">Feature Permissions ({rolePermissions[role.id]?.length || 0} permissions)</h5>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                            {rolePermissions[role.id]?.slice(0, 6).map((permId) => {
+                              const perm = permissions.find(p => p.id === permId);
+                              return perm ? (
+                                <span
+                                  key={permId}
+                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                                >
+                                  {perm.label}
+                                </span>
+                              ) : null;
+                            })}
+                            {rolePermissions[role.id]?.length > 6 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                +{rolePermissions[role.id].length - 6} more
+                              </span>
+                            )}
+                            {(!rolePermissions[role.id] || rolePermissions[role.id].length === 0) && (
+                              <span className="text-gray-500 text-sm">No permissions configured</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -851,17 +930,74 @@ export default function RolesPermissionsPage({
           </div>
         </div>
       </SimpleModal>
-      {/* Edit Page Permissions Modal */}
+      {/* Unified Access Management Modal */}
       <SimpleModal
-        isOpen={showPagePermModal}
-        onClose={() => setShowPagePermModal(false)}
-        title={`Edit Page Access: ${editingRole?.name || ""}`}
-        width="max-w-4xl"
+        isOpen={showAccessModal}
+        onClose={() => setShowAccessModal(false)}
+        title={`Edit Access: ${editingRole?.name || ""}`}
+        width="max-w-6xl"
       >
-        <div className="space-y-6">
+        <div className="space-y-8">
+          {/* Page Access Section */}
           <div>
-            <div className="mb-4 font-semibold text-gray-700">Select pages this role can access:</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Page Access</h3>
+              <p className="text-sm text-gray-600">Select which pages this role can access and see in navigation</p>
+            </div>
+            
+            {/* Select All Pages Checkbox */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={(() => {
+                    const allPages = [];
+                    sidebarNav.forEach(item => {
+                      if (item.href) {
+                        allPages.push(item.href);
+                      }
+                      if (item.items) {
+                        item.items.forEach(subItem => {
+                          if (subItem.href) {
+                            allPages.push(subItem.href);
+                          }
+                        });
+                      }
+                    });
+                    return allPages.every(pagePath => editingPagePerms.includes(pagePath));
+                  })()}
+                  onChange={() => {
+                    const allPages = [];
+                    sidebarNav.forEach(item => {
+                      if (item.href) {
+                        allPages.push(item.href);
+                      }
+                      if (item.items) {
+                        item.items.forEach(subItem => {
+                          if (subItem.href) {
+                            allPages.push(subItem.href);
+                          }
+                        });
+                      }
+                    });
+                    
+                    const allSelected = allPages.every(pagePath => editingPagePerms.includes(pagePath));
+                    if (allSelected) {
+                      setEditingPagePerms([]);
+                    } else {
+                      setEditingPagePerms(allPages);
+                    }
+                  }}
+                  className="form-checkbox h-4 w-4 text-blue-600"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">Select All Pages</div>
+                  <div className="text-sm text-gray-500">Grant access to all available pages</div>
+                </div>
+              </label>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto">
               {(() => {
                 const allPages = [];
                 sidebarNav.forEach(item => {
@@ -894,7 +1030,7 @@ export default function RolesPermissionsPage({
                     type="checkbox"
                     checked={editingPagePerms.includes(page.path)}
                     onChange={() => handlePagePermChange(page.path)}
-                    className="form-checkbox h-4 w-4 text-purple-600"
+                    className="form-checkbox h-4 w-4 text-blue-600"
                   />
                   <div className="flex-1">
                     <div className="font-medium text-gray-900">{page.label}</div>
@@ -905,22 +1041,243 @@ export default function RolesPermissionsPage({
               ))}
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <button
-              className="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold"
-              onClick={() => setShowPagePermModal(false)}
-              disabled={saving}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-6 py-2 rounded bg-purple-700 text-white font-semibold"
-              onClick={savePagePermissions}
-              disabled={saving}
-            >
-              {saving ? "Saving..." : "Save Page Access"}
-            </button>
+
+          {/* Feature Permissions Section */}
+          <div>
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Feature Permissions</h3>
+              <p className="text-sm text-gray-600">
+                {editingPagePerms.length > 0 
+                  ? `Select permissions for the ${editingPagePerms.length} page(s) this role can access`
+                  : "Select permissions after choosing page access above"
+                }
+              </p>
+            </div>
+            
+            {editingPagePerms.length === 0 && (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Icon icon="mdi:information" className="w-5 h-5 text-yellow-600" />
+                  <div>
+                    <div className="font-medium text-yellow-800">No pages selected</div>
+                    <div className="text-sm text-yellow-700">
+                      Select pages above first, then choose relevant permissions for those pages.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {editingPagePerms.length > 0 && (
+              <>
+                {/* Page-Aware Permission Mapping */}
+                {(() => {
+                  // Define which permissions are relevant to which pages
+                  // Based on actual permissions in the database
+                  const pagePermissionMap = {
+                    '/dashboard': ['view_dashboard'],
+                    '/pos': ['manage_sales', 'manage_returns'],
+                    '/sales': ['manage_sales'],
+                    '/sales-return': ['manage_returns'],
+                    '/products': ['manage_products'],
+                    '/brands': ['manage_products'], // Brands are part of products
+                    '/category': ['manage_products'], // Categories are part of products
+                    '/units': ['manage_products'], // Units are part of products
+                    '/variant-attributes': ['manage_products'], // Attributes are part of products
+                    '/inventory-overview': ['manage_products'], // Inventory is related to products
+                    '/stock-operations': ['manage_products'],
+                    '/stock-history': ['manage_products'],
+                    '/purchases': ['manage_purchases'], // Purchases have their own permission
+                    '/purchase-order': ['manage_purchases'],
+                    '/purchase-return': ['manage_returns'],
+                    '/suppliers': ['manage_suppliers'], // Suppliers have their own permission
+                    '/customers': ['manage_sales'], // Customers are related to sales
+                    '/reports': ['view_reports'],
+                    '/users': ['manage_users'],
+                    '/roles-permissions': ['manage_users'],
+                    '/messages': ['manage_messages'], // Messages have their own permission
+                    '/expenses': ['manage_expenses'], // Expenses have their own permission
+                    '/expense-category': ['manage_expenses'],
+                    '/discount': ['manage_sales'], // Discounts are related to sales
+                    '/registers': ['manage_sales'], // Registers are related to sales
+                    '/business-locations': ['manage_settings'], // Locations are settings
+                    '/profile': ['manage_settings'], // Profile is settings
+                  };
+
+                  // Get relevant permissions for selected pages
+                  const relevantPermissions = [];
+                  editingPagePerms.forEach(pagePath => {
+                    const pagePerms = pagePermissionMap[pagePath] || [];
+                    pagePerms.forEach(permKey => {
+                      const perm = permissions.find(p => p.key === permKey);
+                      if (perm && !relevantPermissions.find(rp => rp.id === perm.id)) {
+                        relevantPermissions.push(perm);
+                      }
+                    });
+                  });
+
+                  // No general permissions - only show page-specific permissions
+                  const uniquePermissions = relevantPermissions;
+
+                  return (
+                    <>
+                      {/* Quick Permission Presets */}
+                      <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="text-sm font-medium text-gray-700 mb-2">Quick Presets:</div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => {
+                              // Select only view permissions
+                              const viewPerms = uniquePermissions
+                                .filter(p => p.key.includes('view_') || p.key.includes('read_'))
+                                .map(p => p.id);
+                              setEditingPerms(viewPerms);
+                            }}
+                            className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
+                          >
+                            View Only
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Select permissions for cashier-like role (sales focused)
+                              const cashierPerms = uniquePermissions
+                                .filter(p => p.key.includes('manage_sales') || p.key.includes('view_') || p.key.includes('create_sales'))
+                                .map(p => p.id);
+                              setEditingPerms(cashierPerms);
+                            }}
+                            className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200"
+                          >
+                            Cashier Access
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Select permissions for manager-like role (broader access)
+                              const managerPerms = uniquePermissions
+                                .filter(p => p.key.includes('manage_') || p.key.includes('view_') || p.key.includes('create_'))
+                                .map(p => p.id);
+                              setEditingPerms(managerPerms);
+                            }}
+                            className="px-3 py-1 text-xs bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200"
+                          >
+                            Manager Access
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Select all relevant permissions
+                              setEditingPerms(uniquePermissions.map(p => p.id));
+                            }}
+                            className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+                          >
+                            Full Access
+                          </button>
+                          <button
+                            onClick={() => setEditingPerms([])}
+                            className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200"
+                          >
+                            Clear All
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Relevant Permissions */}
+                      <div className="mb-4">
+                        <div className="text-sm font-medium text-gray-700 mb-2">
+                          Relevant Permissions ({uniquePermissions.length} available)
+                        </div>
+                        
+                        {uniquePermissions.length === 0 ? (
+                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Icon icon="mdi:information" className="w-5 h-5 text-blue-600" />
+                              <div>
+                                <div className="font-medium text-blue-800">No specific permissions found</div>
+                                <div className="text-sm text-blue-700">
+                                  The selected pages don't have specific permissions defined. You can still assign general permissions below.
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto">
+                            {uniquePermissions.map((perm) => (
+                              <label
+                                key={perm.id}
+                                className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={editingPerms.includes(perm.id)}
+                                  onChange={() => handlePermChange(perm.id)}
+                                  className="form-checkbox h-4 w-4 text-green-600"
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium text-gray-900">{perm.label}</div>
+                                  <div className="text-sm text-gray-500">{perm.key}</div>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* All Permissions (Collapsible) */}
+                      <details className="border border-gray-200 rounded-lg">
+                        <summary className="px-4 py-2 bg-gray-50 cursor-pointer hover:bg-gray-100 font-medium text-gray-700">
+                          Show All Permissions ({permissions.length} total)
+                        </summary>
+                        <div className="p-4">
+                          <div className="text-sm text-gray-600 mb-3">
+                            These are all available permissions. Only relevant ones are shown above.
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-48 overflow-y-auto">
+                            {permissions.map((perm) => (
+                              <label
+                                key={perm.id}
+                                className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                                  uniquePermissions.find(p => p.id === perm.id) ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={editingPerms.includes(perm.id)}
+                                  onChange={() => handlePermChange(perm.id)}
+                                  className="form-checkbox h-4 w-4 text-green-600"
+                                />
+                                <div className="flex-1">
+                                  <div className="font-medium text-gray-900">{perm.label}</div>
+                                  <div className="text-sm text-gray-500">{perm.key}</div>
+                                  {uniquePermissions.find(p => p.id === perm.id) && (
+                                    <div className="text-xs text-green-600">✓ Relevant</div>
+                                  )}
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      </details>
+                    </>
+                  );
+                })()}
+              </>
+            )}
           </div>
+        </div>
+        
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+          <button
+            className="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold"
+            onClick={() => setShowAccessModal(false)}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-6 py-2 rounded bg-blue-700 text-white font-semibold"
+            onClick={saveAccess}
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save Access Settings"}
+          </button>
         </div>
       </SimpleModal>
     </MainLayout>
