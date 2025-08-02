@@ -30,6 +30,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
   // Demo state for SalesReturnModals
   const [salesReturnModalData, setSalesReturnModalData] = useState({});
   const [salesReturnReference, setSalesReturnReference] = useState("");
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const router = useRouter();
   // Debug logging
   useEffect(() => {
@@ -62,6 +63,35 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
       }
     })();
   }, []);
+
+  // Fetch unread message count
+  const fetchUnreadMessageCount = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user }),
+      });
+      const data = await res.json();
+      if (data.conversations) {
+        // Calculate total unread count from all conversations
+        const totalUnread = data.conversations.reduce((total, conv) => {
+          return total + (conv.unread_count || 0);
+        }, 0);
+        setUnreadMessageCount(totalUnread);
+      }
+    } catch (err) {
+      console.error("Failed to fetch unread message count:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadMessageCount();
+    // Refresh unread count every 30 seconds
+    const interval = setInterval(fetchUnreadMessageCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -205,6 +235,23 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                     lastOrderData ? "text-gray-500" : "text-gray-300"
                   }`}
                 />
+              </TooltipIconButton>
+
+              <TooltipIconButton
+                label="Messages"
+                mode={mode}
+                className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 relative"
+                onClick={() => router.push('/messages')}
+              >
+                <Icon
+                  icon="mdi:message-text"
+                  className="h-6 w-6 sm:h-7 sm:w-7 text-gray-500"
+                />
+                {unreadMessageCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                    {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                  </div>
+                )}
               </TooltipIconButton>
 
               {/* All Other Actions - Consolidated Dropdown */}

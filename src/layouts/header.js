@@ -283,21 +283,23 @@ const Header = ({
                       }`}
                     >
                       <div className="p-2 space-y-1">
-                        {/* Add New */}
-                        <button
-                          onClick={() => {
-                            setAddNewDropdownOpen(false);
-                            // This will trigger the Add New dropdown
-                          }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
-                            mode === "dark"
-                              ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
-                              : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
-                          }`}
-                        >
-                          <Icon icon="icons8:plus" className="h-5 w-5" />
-                          <span>Add New</span>
-                        </button>
+                        {/* Add New - Only for non-cashiers */}
+                        {user?.role !== "cashier" && (
+                          <button
+                            onClick={() => {
+                              setAddNewDropdownOpen(false);
+                              // This will trigger the Add New dropdown
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                              mode === "dark"
+                                ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                                : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                            }`}
+                          >
+                            <Icon icon="icons8:plus" className="h-5 w-5" />
+                            <span>Add New</span>
+                          </button>
+                        )}
 
                         {/* POS */}
                         <Link href="/pos/" className="block">
@@ -319,10 +321,12 @@ const Header = ({
                           <LanguageSwitch mode={mode} showLabel={true} />
                         </div>
 
-                        {/* Notification Button */}
-                        <div className="px-3">
-                          <NotificationButton mode={mode} user={user} showLabel={true} />
-                        </div>
+                        {/* Notification Button - Only for non-cashiers */}
+                        {user?.role !== "cashier" && (
+                          <div className="px-3">
+                            <NotificationButton mode={mode} user={user} showLabel={true} />
+                          </div>
+                        )}
 
                         {/* Theme Toggle */}
                         <button
@@ -351,78 +355,80 @@ const Header = ({
               ) : (
                 /* Desktop: All buttons visible */
                 <>
-                  {/* Add New dropdown - desktop */}
-                  <div className="relative flex-shrink-0" ref={addNewDropdownRef}>
-                    <button
-                      className={`flex items-center justify-center gap-1 bg-blue-900 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500`}
-                      onClick={() => setAddNewDropdownOpen((prev) => !prev)}
-                    >
-                      <Icon icon="icons8:plus" className="h-3 w-3 text-white" />
-                      <span>Add New</span>
-                    </button>
-                    <div
-                      className={`absolute right-0 mt-2 w-[620px] rounded-xl shadow-lg overflow-hidden transition-all duration-300 z-30
-                        ${
-                          mode === "dark"
-                            ? "bg-gray-900 text-gray-100"
-                            : "bg-white text-black"
-                        }
-                        ${
-                          addNewDropdownOpen
-                            ? "max-h-96 opacity-100 scale-100"
-                            : "max-h-0 opacity-0 scale-95"
-                        }`}
-                    >
-                      <div className="grid grid-cols-6 gap-2 p-3">
-                        {[
-                          // Setup & Configuration (Most used for initial setup)
-                          { label: "Store", icon: "mdi:store-outline", href: "/business-locations" },
-                          { label: "Category", icon: "mdi:folder-outline", href: "/category" },
-                          { label: "Product", icon: "mdi:package-variant", href: "/products" },
-                          
-                          // People & Relationships
-                          { label: "User", icon: "mdi:account-outline", href: "/users" },
-                          { label: "Customer", icon: "mdi:account-group-outline", href: "/customers" },
-                          { label: "Supplier", icon: "mdi:truck-outline", href: "/suppliers" },
-                          
-                          // Core Business Operations (Most frequently used)
-                          { label: "Sale", icon: "mdi:cart-arrow-up", href: "/sales" },
-                          { label: "Purchase", icon: "mdi:cart-arrow-down", href: "/purchases" },
-                          { label: "Expense", icon: "mdi:cash-minus", href: "/expenses" },
-                          
-                          // Inventory Management
-                          { label: "Transfer", icon: "mdi:bank-transfer", href: "/stock-operations" },
-                          { label: "Return", icon: "mdi:undo-variant", href: "/sales-return" },
-                        ].map((item) => (
-                          <Link key={item.label} href={item.href} legacyBehavior passHref>
-                            <a
-                              className={`flex flex-col items-center justify-center rounded-lg p-2 text-xs font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 border ${
-                                mode === "dark"
-                                  ? "bg-gray-800 border-gray-700 text-gray-100 hover:bg-gray-700"
-                                  : "bg-white border-gray-200 hover:bg-orange-50"
-                              } hover:border-orange-400`}
-                              tabIndex={0}
-                              onClick={() => setAddNewDropdownOpen(false)}
-                            >
-                              <span
-                                className={`flex items-center justify-center h-8 w-8 rounded-full mb-1 ${
+                  {/* Add New dropdown - desktop - Only for non-cashiers */}
+                  {user?.role !== "cashier" && (
+                    <div className="relative flex-shrink-0" ref={addNewDropdownRef}>
+                      <button
+                        className={`flex items-center justify-center gap-1 bg-blue-900 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500`}
+                        onClick={() => setAddNewDropdownOpen((prev) => !prev)}
+                      >
+                        <Icon icon="icons8:plus" className="h-3 w-3 text-white" />
+                        <span>Add New</span>
+                      </button>
+                      <div
+                        className={`absolute right-0 mt-2 w-[620px] rounded-xl shadow-lg overflow-hidden transition-all duration-300 z-30
+                          ${
+                            mode === "dark"
+                              ? "bg-gray-900 text-gray-100"
+                              : "bg-white text-black"
+                          }
+                          ${
+                            addNewDropdownOpen
+                              ? "max-h-96 opacity-100 scale-100"
+                              : "max-h-0 opacity-0 scale-95"
+                          }`}
+                      >
+                        <div className="grid grid-cols-6 gap-2 p-3">
+                          {[
+                            // Setup & Configuration (Most used for initial setup)
+                            { label: "Store", icon: "mdi:store-outline", href: "/business-locations" },
+                            { label: "Category", icon: "mdi:folder-outline", href: "/category" },
+                            { label: "Product", icon: "mdi:package-variant", href: "/products" },
+                            
+                            // People & Relationships
+                            { label: "User", icon: "mdi:account-outline", href: "/users" },
+                            { label: "Customer", icon: "mdi:account-group-outline", href: "/customers" },
+                            { label: "Supplier", icon: "mdi:truck-outline", href: "/suppliers" },
+                            
+                            // Core Business Operations (Most frequently used)
+                            { label: "Sale", icon: "mdi:cart-arrow-up", href: "/sales" },
+                            { label: "Purchase", icon: "mdi:cart-arrow-down", href: "/purchases" },
+                            { label: "Expense", icon: "mdi:cash-minus", href: "/expenses" },
+                            
+                            // Inventory Management
+                            { label: "Transfer", icon: "mdi:bank-transfer", href: "/stock-operations" },
+                            { label: "Return", icon: "mdi:undo-variant", href: "/sales-return" },
+                          ].map((item) => (
+                            <Link key={item.label} href={item.href} legacyBehavior passHref>
+                              <a
+                                className={`flex flex-col items-center justify-center rounded-lg p-2 text-xs font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 border ${
                                   mode === "dark"
-                                    ? "bg-gray-900 hover:bg-gray-700"
-                                    : "bg-gray-100 hover:bg-orange-50"
-                                } transition-all duration-200`}
+                                    ? "bg-gray-800 border-gray-700 text-gray-100 hover:bg-gray-700"
+                                    : "bg-white border-gray-200 hover:bg-orange-50"
+                                } hover:border-orange-400`}
+                                tabIndex={0}
+                                onClick={() => setAddNewDropdownOpen(false)}
                               >
-                                <Icon
-                                  icon={item.icon}
-                                  className="h-5 w-5 text-blue-950"
-                                />
-                              </span>
-                              <span className="text-xs">{item.label}</span>
-                            </a>
-                          </Link>
-                        ))}
+                                <span
+                                  className={`flex items-center justify-center h-8 w-8 rounded-full mb-1 ${
+                                    mode === "dark"
+                                      ? "bg-gray-900 hover:bg-gray-700"
+                                      : "bg-gray-100 hover:bg-orange-50"
+                                  } transition-all duration-200`}
+                                >
+                                  <Icon
+                                    icon={item.icon}
+                                    className="h-5 w-5 text-blue-950"
+                                  />
+                                </span>
+                                <span className="text-xs">{item.label}</span>
+                              </a>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                   
                   {/* POS button - desktop */}
                   <Link href="/pos/" className="flex-shrink-0">
@@ -438,7 +444,10 @@ const Header = ({
                   {/* Language and notification buttons - desktop */}
                   <div className="flex items-center gap-2">
                     <LanguageSwitch mode={mode} />
-                    <NotificationButton mode={mode} user={user} />
+                    {/* Notification Button - Only for non-cashiers */}
+                    {user?.role !== "cashier" && (
+                      <NotificationButton mode={mode} user={user} />
+                    )}
                   </div>
 
                   {/* Theme toggle - desktop */}
