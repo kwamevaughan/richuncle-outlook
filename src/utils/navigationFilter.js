@@ -23,28 +23,79 @@ function extractAllPages(navigation) {
   return Array.from(pages);
 }
 
-// Define allowed pages for each role
-const ROLE_ACCESS = {
-  cashier: ['/pos', '/messages', '/'],
-  manager: ['*'], // All pages
-  admin: ['*'], // All pages
-};
-
 // Get all pages from navigation
 const ALL_PAGES = extractAllPages(sidebarNav);
 
-export function filterNavigationByRole(navigation, userRole = 'cashier') {
+// Cache for role page permissions
+let rolePagePermissionsCache = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Fetch role page permissions from database
+async function fetchRolePagePermissions() {
+  const now = Date.now();
+  
+  // Return cached data if still valid
+  if (rolePagePermissionsCache && (now - cacheTimestamp) < CACHE_DURATION) {
+    return rolePagePermissionsCache;
+  }
+  
+  try {
+    const response = await fetch('/api/role-page-permissions', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      rolePagePermissionsCache = data.data || [];
+      cacheTimestamp = now;
+      return rolePagePermissionsCache;
+    }
+  } catch (error) {
+    console.error('Error fetching role page permissions:', error);
+  }
+  
+  return [];
+}
+
+// Get allowed pages for a specific role
+async function getRoleAllowedPages(roleName) {
+  const rolePermissions = await fetchRolePagePermissions();
+  
+  // Find the role by name
+  const role = rolePermissions.find(rp => rp.role_name === roleName);
+  
+  if (role) {
+    return role.page_paths || [];
+  }
+  
+  // Fallback to default permissions based on role
+  if (roleName === 'admin') {
+    return ALL_PAGES;
+  } else if (roleName === 'manager') {
+    return ALL_PAGES.filter(page => !['/users', '/roles-permissions'].includes(page));
+  } else if (roleName === 'cashier') {
+    return ['/pos', '/messages', '/'];
+  }
+  
+  return [];
+}
+
+export async function filterNavigationByRole(navigation, userRole = 'cashier') {
   if (!navigation) return [];
   
   const role = userRole?.toLowerCase() || 'cashier';
-  const allowedPages = ROLE_ACCESS[role] || ROLE_ACCESS.cashier;
+  const allowedPages = await getRoleAllowedPages(role);
   
   // If user has access to all pages, return full navigation
   if (allowedPages.includes('*')) {
     return navigation;
   }
   
-  // Filter navigation for cashiers
+  // Filter navigation for specific pages
   return navigation.filter(item => {
     // Handle standalone items
     if (item.href) {
@@ -71,19 +122,20 @@ export function filterNavigationByRole(navigation, userRole = 'cashier') {
   });
 }
 
-export function isPageAccessible(path, userRole = 'cashier') {
+export async function isPageAccessible(path, userRole = 'cashier') {
   const role = userRole?.toLowerCase() || 'cashier';
-  const allowedPages = ROLE_ACCESS[role] || ROLE_ACCESS.cashier;
+  const allowedPages = await getRoleAllowedPages(role);
   
-  // If user has access to all pages, check if the path exists in navigation
-  if (allowedPages.includes('*')) {
-    return ALL_PAGES.includes(path) || path === '/';
-  }
-  
-  return allowedPages.includes(path);
+  return allowedPages.includes('*') || allowedPages.includes(path);
 }
 
 // Export the extracted pages for debugging or other uses
 export function getAllPages() {
   return ALL_PAGES;
+}
+
+// Clear cache (useful for testing or when permissions change)
+export function clearRolePermissionsCache() {
+  rolePagePermissionsCache = null;
+  cacheTimestamp = 0;
 } 

@@ -27,15 +27,66 @@ function extractAllPages(navigation) {
   return Array.from(pages);
 }
 
-// Define allowed pages for each role
-const ROLE_ACCESS = {
-  cashier: ['/pos', '/messages', '/'],
-  manager: ['*'], // All pages
-  admin: ['*'], // All pages
-};
-
 // Get all pages from navigation
 const ALL_PAGES = extractAllPages(sidebarNav);
+
+// Cache for role page permissions
+let rolePagePermissionsCache = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Fetch role page permissions from database
+async function fetchRolePagePermissions() {
+  const now = Date.now();
+  
+  // Return cached data if still valid
+  if (rolePagePermissionsCache && (now - cacheTimestamp) < CACHE_DURATION) {
+    return rolePagePermissionsCache;
+  }
+  
+  try {
+    const response = await fetch('/api/role-page-permissions', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      rolePagePermissionsCache = data.data || [];
+      cacheTimestamp = now;
+      return rolePagePermissionsCache;
+    }
+  } catch (error) {
+    console.error('Error fetching role page permissions:', error);
+  }
+  
+  return [];
+}
+
+// Get allowed pages for a specific role
+async function getRoleAllowedPages(roleName) {
+  const rolePermissions = await fetchRolePagePermissions();
+  
+  // Find the role by name
+  const role = rolePermissions.find(rp => rp.role_name === roleName);
+  
+  if (role) {
+    return role.page_paths || [];
+  }
+  
+  // Fallback to default permissions based on role
+  if (roleName === 'admin') {
+    return ALL_PAGES;
+  } else if (roleName === 'manager') {
+    return ALL_PAGES.filter(page => !['/users', '/roles-permissions'].includes(page));
+  } else if (roleName === 'cashier') {
+    return ['/pos', '/messages', '/'];
+  }
+  
+  return [];
+}
 
 export default function RoleBasedAccess({ children }) {
   const { user, loading } = useUser();
@@ -47,48 +98,58 @@ export default function RoleBasedAccess({ children }) {
     // Skip check if still loading or no user
     if (loading || !user) return;
 
-    const userRole = user.role?.toLowerCase() || 'cashier';
-    const currentPath = router.pathname;
-    
-    // Get allowed pages for user's role
-    const allowedPages = ROLE_ACCESS[userRole] || ROLE_ACCESS.cashier;
-    
-    // Check if user has access to current page
-    let userHasAccess = false;
-    
-    if (allowedPages.includes('*')) {
-      // User has access to all pages, check if the path exists in navigation
-      userHasAccess = ALL_PAGES.includes(currentPath) || currentPath === '/';
-    } else {
-      // User has specific allowed pages
-      userHasAccess = allowedPages.includes(currentPath);
-    }
-    
-    if (!userHasAccess) {
-      // Redirect to first allowed page
-      const firstAllowedPage = allowedPages[0] || '/pos';
-      toast.error(`Access denied. You don't have permission to access this page.`);
+    const checkAccess = async () => {
+      const userRole = user.role?.toLowerCase() || 'cashier';
+      const currentPath = router.pathname;
       
-      // Immediate redirect
-      router.push(firstAllowedPage);
+      // Check if user has access to current page
+      let userHasAccess = false;
+      let allowedPages = [];
       
+      try {
+        allowedPages = await getRoleAllowedPages(user.role);
+        
+        if (allowedPages.includes('*')) {
+          // User has access to all pages, check if the path exists in navigation
+          userHasAccess = ALL_PAGES.includes(currentPath) || currentPath === '/';
+        } else {
+          // User has specific allowed pages
+          userHasAccess = allowedPages.includes(currentPath);
+        }
+      } catch (error) {
+        console.error('Error checking page access:', error);
+        // Fallback to default behavior
+        userHasAccess = true;
+      }
+      
+      if (!userHasAccess) {
+        // Redirect to first allowed page
+        const firstAllowedPage = allowedPages[0] || '/pos';
+        toast.error(`Access denied. You don't have permission to access this page.`);
+        
+        // Immediate redirect
+        router.push(firstAllowedPage);
+        
+        setAccessChecked(true);
+        setHasAccess(false);
+        return;
+      }
+      
+      // For cashiers, redirect from home page to POS
+      if (userRole === 'cashier' && currentPath === '/') {
+        router.push('/pos');
+        
+        setAccessChecked(true);
+        setHasAccess(false);
+        return;
+      }
+      
+      // User has access
       setAccessChecked(true);
-      setHasAccess(false);
-      return;
-    }
-    
-    // For cashiers, redirect from home page to POS
-    if (userRole === 'cashier' && currentPath === '/') {
-      router.push('/pos');
-      
-      setAccessChecked(true);
-      setHasAccess(false);
-      return;
-    }
-    
-    // User has access
-    setAccessChecked(true);
-    setHasAccess(true);
+      setHasAccess(true);
+    };
+
+    checkAccess();
   }, [user, loading, router.pathname, router]);
 
   // Show loading while checking access or if access is denied

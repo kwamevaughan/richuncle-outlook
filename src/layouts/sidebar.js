@@ -23,8 +23,24 @@ const Sidebar = ({
   const [showLogout, setShowLogout] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedItems, setExpandedItems] = useState({});
+  const [filteredNav, setFilteredNav] = useState([]);
 
-  const filteredNav = filterNavigationByRole(sidebarNav, user?.role);
+  // Fetch filtered navigation
+  useEffect(() => {
+    const fetchFilteredNav = async () => {
+      try {
+        const filtered = await filterNavigationByRole(sidebarNav, user?.role);
+        setFilteredNav(filtered);
+      } catch (error) {
+        console.error('Error filtering navigation:', error);
+        setFilteredNav(sidebarNav); // Fallback to full navigation
+      }
+    };
+
+    if (user?.role) {
+      fetchFilteredNav();
+    }
+  }, [user?.role]);
 
   useEffect(() => {
     if (

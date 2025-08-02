@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { GenericTable } from "@/components/GenericTable";
 import SimpleModal from "@/components/SimpleModal";
 import TooltipIconButton from "@/components/TooltipIconButton";
+import { sidebarNav } from "@/data/nav";
 
 export default function RolesPermissionsPage({
   mode = "light",
@@ -21,6 +22,7 @@ export default function RolesPermissionsPage({
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [rolePermissions, setRolePermissions] = useState({}); // { role_id: [permission_id, ...] }
+  const [rolePagePermissions, setRolePagePermissions] = useState({}); // { role_id: [page_path, ...] }
   const [userCounts, setUserCounts] = useState({}); // { role_id: count }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -39,21 +41,25 @@ export default function RolesPermissionsPage({
   const [permForm, setPermForm] = useState({ key: "", label: "" });
   const [permToDelete, setPermToDelete] = useState(null);
   const [showDeletePermModal, setShowDeletePermModal] = useState(false);
+  // Page permissions modal
+  const [showPagePermModal, setShowPagePermModal] = useState(false);
+  const [editingPagePerms, setEditingPagePerms] = useState([]);
   // Search/filter
   const [roleSearch, setRoleSearch] = useState("");
   const [permSearch, setPermSearch] = useState("");
   // Tab state
-  const [activeTab, setActiveTab] = useState("roles"); // 'roles' or 'permissions'
+  const [activeTab, setActiveTab] = useState("roles"); // 'roles', 'permissions', or 'page-access'
 
   // Fetch all data on mount or after changes
   const fetchAll = async () => {
     setLoading(true);
     setError("");
     try {
-      const [rolesRes, permsRes, assignmentsRes, usersRes] = await Promise.all([
+      const [rolesRes, permsRes, assignmentsRes, pagePermsRes, usersRes] = await Promise.all([
         fetch("/api/roles").then((r) => r.json()),
         fetch("/api/permissions").then((r) => r.json()),
         fetch("/api/role-permissions").then((r) => r.json()),
+        fetch("/api/role-page-permissions").then((r) => r.json()),
         fetch("/api/users").then((r) => r.json()),
       ]);
       if (!rolesRes.success)
@@ -62,16 +68,29 @@ export default function RolesPermissionsPage({
         throw new Error(permsRes.error || "Failed to fetch permissions");
       if (!assignmentsRes.success)
         throw new Error(assignmentsRes.error || "Failed to fetch assignments");
+      if (!pagePermsRes.success)
+        throw new Error(pagePermsRes.error || "Failed to fetch page permissions");
       if (!usersRes.success)
         throw new Error(usersRes.error || "Failed to fetch users");
       setRoles(rolesRes.data || []);
       setPermissions(permsRes.data || []);
+      
+      // Process role permissions
       const rp = {};
       for (const role of rolesRes.data) rp[role.id] = [];
       for (const a of assignmentsRes.data) {
         if (rp[a.role_id]) rp[a.role_id].push(a.permission_id);
       }
       setRolePermissions(rp);
+      
+      // Process role page permissions
+      const rpp = {};
+      for (const role of rolesRes.data) rpp[role.id] = [];
+      for (const pp of pagePermsRes.data || []) {
+        if (rpp[pp.role_id]) rpp[pp.role_id].push(pp.page_path);
+      }
+      setRolePagePermissions(rpp);
+      
       const uc = {};
       for (const role of rolesRes.data) uc[role.id] = 0;
       for (const user of usersRes.data || []) {
@@ -311,6 +330,20 @@ export default function RolesPermissionsPage({
       ),
     },
     {
+      label: "Edit Page Access",
+      icon: "mdi:page-layout-body",
+      onClick: openEditPagePermissions,
+      render: (row) => (
+        <TooltipIconButton
+          icon="mdi:page-layout-body"
+          label="Edit Page Access"
+          onClick={() => openEditPagePermissions(row)}
+          mode={mode}
+          className="bg-purple-50 text-purple-600 text-xs"
+        />
+      ),
+    },
+    {
       label: "Delete Role",
       icon: "mynaui:trash",
       onClick: confirmDeleteRole,
@@ -374,6 +407,46 @@ export default function RolesPermissionsPage({
       setShowModal(false);
     } catch (err) {
       alert(err.message || "Failed to update permissions");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // --- Edit Page Permissions Modal ---
+  function openEditPagePermissions(role) {
+    setEditingRole(role);
+    setEditingPagePerms(rolePagePermissions[role.id] || []);
+    setShowPagePermModal(true);
+  }
+  const handlePagePermChange = (pagePath) => {
+    setEditingPagePerms((prev) =>
+      prev.includes(pagePath)
+        ? prev.filter((p) => p !== pagePath)
+        : [...prev, pagePath]
+    );
+  };
+  const savePagePermissions = async () => {
+    if (!editingRole) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/role-page-permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role_id: editingRole.id,
+          page_paths: editingPagePerms,
+        }),
+      });
+      const result = await res.json();
+      if (!result.success)
+        throw new Error(result.error || "Failed to update page permissions");
+      setRolePagePermissions((prev) => ({
+        ...prev,
+        [editingRole.id]: editingPagePerms,
+      }));
+      setShowPagePermModal(false);
+    } catch (err) {
+      alert(err.message || "Failed to update page permissions");
     } finally {
       setSaving(false);
     }
@@ -445,6 +518,17 @@ export default function RolesPermissionsPage({
                   <Icon icon="mdi:key-outline" className="w-5 h-5" />
                   Permissions
                 </button>
+                <button
+                  onClick={() => setActiveTab("page-access")}
+                  className={`${
+                    activeTab === "page-access"
+                      ? "border-blue-800 text-blue-800"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                >
+                  <Icon icon="mdi:page-layout-body" className="w-5 h-5" />
+                  Page Access
+                </button>
               </nav>
             </div>
           </div>
@@ -503,6 +587,50 @@ export default function RolesPermissionsPage({
                     selectable={false}
                     searchable={false}
                   />
+                </div>
+              )}
+              {activeTab === "page-access" && (
+                <div>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Page Access Management</h3>
+                    <p className="text-gray-600 mb-4">
+                      Configure which pages each role can access. This controls what users see in the navigation and can access directly.
+                    </p>
+                  </div>
+                  <div className="grid gap-6">
+                    {roles.map((role) => (
+                      <div key={role.id} className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-900">{role.name}</h4>
+                            <p className="text-sm text-gray-500">{role.description}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {userCounts[role.id] || 0} users with this role
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => openEditPagePermissions(role)}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                          >
+                            <Icon icon="mdi:page-layout-body" className="w-4 h-4" />
+                            Configure Access
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                          {rolePagePermissions[role.id]?.map((pagePath) => (
+                            <span
+                              key={pagePath}
+                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                            >
+                              {pagePath === '/' ? 'Home' : pagePath}
+                            </span>
+                          )) || (
+                            <span className="text-gray-500 text-sm">No pages configured</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -719,6 +847,78 @@ export default function RolesPermissionsPage({
               disabled={saving}
             >
               {saving ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </div>
+      </SimpleModal>
+      {/* Edit Page Permissions Modal */}
+      <SimpleModal
+        isOpen={showPagePermModal}
+        onClose={() => setShowPagePermModal(false)}
+        title={`Edit Page Access: ${editingRole?.name || ""}`}
+        width="max-w-4xl"
+      >
+        <div className="space-y-6">
+          <div>
+            <div className="mb-4 font-semibold text-gray-700">Select pages this role can access:</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+              {(() => {
+                const allPages = [];
+                sidebarNav.forEach(item => {
+                  if (item.href) {
+                    allPages.push({
+                      path: item.href,
+                      label: item.label,
+                      category: 'Standalone'
+                    });
+                  }
+                  if (item.items) {
+                    item.items.forEach(subItem => {
+                      if (subItem.href) {
+                        allPages.push({
+                          path: subItem.href,
+                          label: subItem.label,
+                          category: item.category
+                        });
+                      }
+                    });
+                  }
+                });
+                return allPages.sort((a, b) => a.label.localeCompare(b.label));
+              })().map((page) => (
+                <label
+                  key={page.path}
+                  className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={editingPagePerms.includes(page.path)}
+                    onChange={() => handlePagePermChange(page.path)}
+                    className="form-checkbox h-4 w-4 text-purple-600"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{page.label}</div>
+                    <div className="text-sm text-gray-500">{page.path}</div>
+                    <div className="text-xs text-gray-400">{page.category}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              className="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold"
+              onClick={() => setShowPagePermModal(false)}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-6 py-2 rounded bg-purple-700 text-white font-semibold"
+              onClick={savePagePermissions}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Page Access"}
             </button>
           </div>
         </div>
