@@ -277,9 +277,8 @@ const PosOrderList = ({
 
         {/* Customer Info */}
 
-        <div className="flex justify-start   gap-6">
-          <div className="mb-4">
-            <label
+        <div className="flex justify-start mb-2  gap-6">
+            {/* <label
               className={`block font-semibold mb-1 ${
                 mode === "dark" ? "text-white" : "text-black"
               }`}
@@ -294,68 +293,68 @@ const PosOrderList = ({
                   - {selectedDbCustomer.name}
                 </span>
               )}
-            </label>
-            <div className="flex gap-2 mb-2">
-              <TooltipIconButton
-                label="Add Customer"
-                mode="light"
-                className="rounded-full text-green-500 p-2 hover:text-green-600"
-                onClick={handleAddCustomer}
-              >
-                <Icon icon="mdi:account-plus" className="w-5 h-5" />
-              </TooltipIconButton>
-              <select
-                className={`border rounded px-3  w-full ${
-                  mode === "dark"
-                    ? "bg-gray-800 text-white border-gray-600"
-                    : "bg-white text-black border-gray-300"
-                }`}
-                value={
-                  selectedCustomerId.startsWith("db_")
-                    ? "customer_db"
-                    : selectedCustomerId
-                }
-                onChange={(e) => {
-                  if (e.target.value === "__online__") {
-                    if (typeof setIsOnlinePurchase === "function")
-                      setIsOnlinePurchase(true);
-                    setSelectedCustomerId("__online__");
-                  } else if (e.target.value === "customer_db") {
-                    if (typeof setIsOnlinePurchase === "function")
-                      setIsOnlinePurchase(false);
-                    setSelectedCustomerId("customer_db");
-                  } else {
-                    if (typeof setIsOnlinePurchase === "function")
-                      setIsOnlinePurchase(false);
-                    setSelectedCustomerId(e.target.value);
+            </label> */}
+            <div className="flex gap-2 rounded-full border px-4">
+                <TooltipIconButton
+                  label="Add Customer"
+                  mode="light"
+                  className="rounded-full text-green-500 p-2 hover:text-green-600"
+                  onClick={handleAddCustomer}
+                >
+                  <Icon icon="mdi:account-plus" className="w-5 h-5" />
+                </TooltipIconButton>
+                <select
+                  className={`px-3  w-full ${
+                    mode === "dark"
+                      ? "bg-gray-800 text-white border-gray-600"
+                      : "bg-white text-black border-gray-300"
+                  }`}
+                  value={
+                    selectedCustomerId.startsWith("db_")
+                      ? "customer_db"
+                      : selectedCustomerId
                   }
-                }}
-              >
-                <option value="">Walk In Customer</option>
-                <option value="__online__">Online Purchase</option>
-                <option value="customer_db">Customer Database</option>
-              </select>
-              {/* Show react-select if Customer Database is selected */}
-              {selectedCustomerId === "customer_db" && (
-                <div className="flex-1 min-w-[200px]">
-                  <Select
-                    options={customers.map((c) => ({
-                      value: c.id,
-                      label: `${c.name} - ${c.phone}`,
-                    }))}
-                    onChange={(option) => {
-                      setSelectedCustomerId(
-                        option ? `db_${option.value}` : "customer_db"
-                      );
-                    }}
-                    isClearable
-                    placeholder="Search customer..."
-                    classNamePrefix="react-select"
-                    autoFocus
-                  />
-                </div>
-              )}
-            </div>
+                  onChange={(e) => {
+                    if (e.target.value === "__online__") {
+                      if (typeof setIsOnlinePurchase === "function")
+                        setIsOnlinePurchase(true);
+                      setSelectedCustomerId("__online__");
+                    } else if (e.target.value === "customer_db") {
+                      if (typeof setIsOnlinePurchase === "function")
+                        setIsOnlinePurchase(false);
+                      setSelectedCustomerId("customer_db");
+                    } else {
+                      if (typeof setIsOnlinePurchase === "function")
+                        setIsOnlinePurchase(false);
+                      setSelectedCustomerId(e.target.value);
+                    }
+                  }}
+                >
+                  <option value="">Walk In Customer</option>
+                  <option value="__online__">Online Purchase</option>
+                  <option value="customer_db">Customer Database</option>
+                </select>
+
+                {/* Show react-select if Customer Database is selected */}
+                {selectedCustomerId === "customer_db" && (
+                  <div className="flex-1 min-w-[200px]">
+                    <Select
+                      options={customers.map((c) => ({
+                        value: c.id,
+                        label: `${c.name} - ${c.phone}`,
+                      }))}
+                      onChange={(option) => {
+                        setSelectedCustomerId(
+                          option ? `db_${option.value}` : "customer_db"
+                        );
+                      }}
+                      isClearable
+                      placeholder="Search customer..."
+                      classNamePrefix="react-select"
+                      autoFocus
+                    />
+                  </div>
+                )}
           </div>
           <div className="flex items-center gap-2">
             <div className="relative flex-[2] min-w-[500px]">
@@ -497,7 +496,7 @@ const PosOrderList = ({
             }`}
           >
             <div
-              className={`grid grid-cols-4 text-sm font-bold px-4 py-2 ${
+              className={`grid grid-cols-4 items-center text-sm font-bold px-4 py-2 ${
                 mode === "dark"
                   ? "bg-gray-800 text-gray-300"
                   : "bg-gray-50 text-gray-600"
@@ -506,7 +505,10 @@ const PosOrderList = ({
               <div>Item</div>
               <div className="text-center">Quantity</div>
               <div className="text-right">Sub Total</div>
-              <div className="text-center flex items-center justify-center">
+              <div
+                className="text-center flex items-center justify-center cursor-pointer"
+                onClick={handleClearAll}
+              >
                 <Icon
                   icon="ic:baseline-clear"
                   className={`w-8 h-8 ${

@@ -25,7 +25,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   
   // Product pagination state
   const [displayedProducts, setDisplayedProducts] = useState([]);
-  const [productsPerPage, setProductsPerPage] = useState(20); // Start with 20 products
+  const [productsPerPage, setProductsPerPage] = useState(12); // Start with 20 products
   const [currentProductPage, setCurrentProductPage] = useState(1);
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -227,7 +227,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     
     // Check if product is already selected
     if (selectedProducts.includes(productId)) {
-      // Remove from selection
+      // Remove from selection (no beep sound)
       setSelectedProducts((prev) => prev.filter((id) => id !== productId));
       return;
     }
@@ -238,9 +238,8 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
       return;
     }
     
-    // Add to selection and play beep sound
+    // Add to selection (no beep sound for adding products with stock)
     setSelectedProducts((prev) => [...prev, productId]);
-    playBellBeep();
   };
 
   const getStockStatus = (quantity) => {
@@ -285,7 +284,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 <button
                   type="button"
                   key={cat.id}
-                  className={` flex flex-col items-center justify-center text-center text-xs sm:text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none gap-1 sm:gap-2 min-w-[60px] sm:min-w-[70px] md:min-w-[80px] touch-manipulation active:scale-95 flex-shrink-0 ${
+                  className={` flex flex-col items-center justify-center text-center text-xs sm:text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none  min-w-[60px] my-2 p-2 touch-manipulation active:scale-95 flex-shrink-0 ${
                     selectedCategory === cat.id
                       ? `${mode === "dark" ? "bg-blue-600 text-white border-blue-500" : "bg-blue-100 text-blue-700 border-blue-400"} scale-105`
                       : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-600" : "bg-white text-gray-700 hover:bg-blue-100 border-transparent"}`
@@ -341,13 +340,16 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               {displayedProducts.map((product) => (
                 <div
                   key={product.id}
-                  className={`group relative border-2 rounded-xl p-4 flex flex-col items-center transition-all duration-200 cursor-pointer touch-manipulation m-0.5
+                  className={`group relative border-2 rounded-xl p-3 flex flex-col items-center transition-all duration-200 cursor-pointer touch-manipulation m-0.5
                     ${
                       selectedProducts.includes(product.id)
                         ? `${mode === "dark" ? "border-green-400 shadow-green-900" : "border-green-500 shadow-green-100"} scale-105`
                         : `${mode === "dark" ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"}`
                     }
-                    ${mode === "dark" ? "group-hover:border-green-400 group-hover:shadow-green-900" : "group-hover:border-green-500 group-hover:shadow-green-100"}
+                    ${product.quantity > 0 ? 
+                      `${mode === "dark" ? "group-hover:border-green-400 group-hover:shadow-green-900" : "group-hover:border-green-500 group-hover:shadow-green-100"}` 
+                      : ""
+                    }
                     hover:shadow-lg
                     active:scale-95
                   `}
@@ -356,19 +358,22 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       ? mode === "dark" ? "0 0 0 0 #4ade80" : "0 0 0 0 #22c55e"
                       : undefined,
                   }}
-                  onMouseEnter={(e) =>
-                    e.currentTarget.classList.add(
-                      mode === "dark" ? "border-green-400" : "border-green-500",
-                      mode === "dark" ? "shadow-green-900" : "shadow-green-100"
-                    )
-                  }
-                  onMouseLeave={(e) =>
-                    !selectedProducts.includes(product.id) &&
-                    e.currentTarget.classList.remove(
-                      mode === "dark" ? "border-green-400" : "border-green-500",
-                      mode === "dark" ? "shadow-green-900" : "shadow-green-100"
-                    )
-                  }
+                  onMouseEnter={(e) => {
+                    if (product.quantity > 0) {
+                      e.currentTarget.classList.add(
+                        mode === "dark" ? "border-green-400" : "border-green-500",
+                        mode === "dark" ? "shadow-green-900" : "shadow-green-100"
+                      );
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!selectedProducts.includes(product.id) && product.quantity > 0) {
+                      e.currentTarget.classList.remove(
+                        mode === "dark" ? "border-green-400" : "border-green-500",
+                        mode === "dark" ? "shadow-green-900" : "shadow-green-100"
+                      );
+                    }
+                  }}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -378,34 +383,36 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       );
                       return;
                     }
+                    if (product.quantity <= 0) {
+                      toast.error("This product is out of stock!");
+                      playBellBeep(); // Add beep sound for out of stock
+                      return;
+                    }
                     toggleProductSelect(product.id);
                   }}
                 >
-                  {(selectedProducts.includes(product.id) ||
-                    true) /* always show on hover */ && (
+                  {(selectedProducts.includes(product.id) && product.quantity > 0) && (
                     <span
-                      className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-500 ${
-                        selectedProducts.includes(product.id) ? "opacity-100" : ""
-                      }`}
+                      className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-100 transition-all duration-500`}
                     >
                       <Icon icon="mdi:check" className="w-2 h-2 text-white" />
                     </span>
                   )}
                   {product.image_url ? (
-                    <div className="w-full flex items-center justify-center mb-3 bg-gray-100 rounded-lg p-2 min-h-[80px]">
+                    <div className="w-full flex items-center justify-center mb-3 bg-gray-100 rounded-lg">
                       <Image
                         src={product.image_url}
                         alt={product.name}
-                        width={80}
-                        height={80}
+                        width={60}
+                        height={60}
                         className="object-cover rounded-lg w-20 h-20 transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
                   ) : (
-                    <div className="w-full flex items-center justify-center mb-3 bg-gray-50 rounded-lg p-2 min-h-[60px]">
+                    <div className="w-full flex items-center justify-center bg-gray-50 rounded-lg">
                       <Icon
                         icon="carbon:no-image"
-                        className="w-12 h-12 text-gray-400"
+                        className="w-10 h-16 text-gray-400"
                       />
                     </div>
                   )}
@@ -417,7 +424,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       return cat ? cat.name : "";
                     })()}
                   </div> */}
-                  <div className={`font-normal mb-2 self-start truncate max-w-full overflow-hidden text-xs ${mode === "dark" ? "text-white" : "text-black"}`}>
+                  <div className={`font-normal capitalize mb-2 self-start truncate max-w-full overflow-hidden text-xs ${mode === "dark" ? "text-white" : "text-black"}`}>
                     {product.name}
                   </div>
 
@@ -443,9 +450,9 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
                   <span className={`border-t w-full py-1 ${mode === "dark" ? "border-gray-600" : "border-gray-200"}`}></span>
 
-                  <div className="flex flex-col gap-1 self-start mt-2 w-full">
+                  <div className="flex flex-col gap-1 self-start w-full">
                     <div className="flex items-center justify-between w-full">
-                      <span className={`text-base font-semibold ${mode === "dark" ? "text-blue-400" : "text-blue-700"}`}>
+                      <span className={`text-sm font-semibold ${mode === "dark" ? "text-blue-400" : "text-blue-700"}`}>
                         GHS {product.price}
                       </span>
                     </div>
@@ -472,7 +479,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 <button
                   onClick={loadMoreProducts}
                   disabled={loadingMore}
-                  className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
+                  className={`px-4 py-2 rounded-xl font-semibold text-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
                     loadingMore
                       ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                       : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
