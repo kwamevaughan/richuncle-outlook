@@ -229,6 +229,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     if (selectedProducts.includes(productId)) {
       // Remove from selection
       setSelectedProducts((prev) => prev.filter((id) => id !== productId));
+      playBellBeep(); // Add beep sound when removing
       return;
     }
     
@@ -238,9 +239,8 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
       return;
     }
     
-    // Add to selection and play beep sound
+    // Add to selection (no beep sound for adding products with stock)
     setSelectedProducts((prev) => [...prev, productId]);
-    playBellBeep();
   };
 
   const getStockStatus = (quantity) => {
@@ -347,7 +347,10 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                         ? `${mode === "dark" ? "border-green-400 shadow-green-900" : "border-green-500 shadow-green-100"} scale-105`
                         : `${mode === "dark" ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"}`
                     }
-                    ${mode === "dark" ? "group-hover:border-green-400 group-hover:shadow-green-900" : "group-hover:border-green-500 group-hover:shadow-green-100"}
+                    ${product.quantity > 0 ? 
+                      `${mode === "dark" ? "group-hover:border-green-400 group-hover:shadow-green-900" : "group-hover:border-green-500 group-hover:shadow-green-100"}` 
+                      : ""
+                    }
                     hover:shadow-lg
                     active:scale-95
                   `}
@@ -356,19 +359,22 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       ? mode === "dark" ? "0 0 0 0 #4ade80" : "0 0 0 0 #22c55e"
                       : undefined,
                   }}
-                  onMouseEnter={(e) =>
-                    e.currentTarget.classList.add(
-                      mode === "dark" ? "border-green-400" : "border-green-500",
-                      mode === "dark" ? "shadow-green-900" : "shadow-green-100"
-                    )
-                  }
-                  onMouseLeave={(e) =>
-                    !selectedProducts.includes(product.id) &&
-                    e.currentTarget.classList.remove(
-                      mode === "dark" ? "border-green-400" : "border-green-500",
-                      mode === "dark" ? "shadow-green-900" : "shadow-green-100"
-                    )
-                  }
+                  onMouseEnter={(e) => {
+                    if (product.quantity > 0) {
+                      e.currentTarget.classList.add(
+                        mode === "dark" ? "border-green-400" : "border-green-500",
+                        mode === "dark" ? "shadow-green-900" : "shadow-green-100"
+                      );
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!selectedProducts.includes(product.id) && product.quantity > 0) {
+                      e.currentTarget.classList.remove(
+                        mode === "dark" ? "border-green-400" : "border-green-500",
+                        mode === "dark" ? "shadow-green-900" : "shadow-green-100"
+                      );
+                    }
+                  }}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -378,15 +384,17 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       );
                       return;
                     }
+                    if (product.quantity <= 0) {
+                      toast.error("This product is out of stock!");
+                      playBellBeep(); // Add beep sound for out of stock
+                      return;
+                    }
                     toggleProductSelect(product.id);
                   }}
                 >
-                  {(selectedProducts.includes(product.id) ||
-                    true) /* always show on hover */ && (
+                  {(selectedProducts.includes(product.id) && product.quantity > 0) && (
                     <span
-                      className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all duration-500 ${
-                        selectedProducts.includes(product.id) ? "opacity-100" : ""
-                      }`}
+                      className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-100 transition-all duration-500`}
                     >
                       <Icon icon="mdi:check" className="w-2 h-2 text-white" />
                     </span>

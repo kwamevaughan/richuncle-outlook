@@ -497,7 +497,7 @@ const PosOrderList = ({
             }`}
           >
             <div
-              className={`grid grid-cols-4 text-sm font-bold px-4 py-2 ${
+              className={`grid grid-cols-4 items-center text-sm font-bold px-4 py-2 ${
                 mode === "dark"
                   ? "bg-gray-800 text-gray-300"
                   : "bg-gray-50 text-gray-600"
