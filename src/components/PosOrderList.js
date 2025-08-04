@@ -94,6 +94,8 @@ const PosOrderList = ({
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showAddDiscountModal, setShowAddDiscountModal] = useState(false);
   const [discountPlans, setDiscountPlans] = useState([]);
+  const [discountValue, setDiscountValue] = useState("");
+  const [newDiscountType, setNewDiscountType] = useState("percentage");
   
   // Detect if user is on Chrome
   const isChrome = typeof window !== 'undefined' && /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
@@ -266,7 +268,7 @@ const PosOrderList = ({
     <div
       className={`p-4 gap-6 flex flex-col ${
         mode === "dark" ? "bg-gray-800" : "bg-gray-200"
-      } rounded-lg h-screen overflow-auto ${className}`}
+      } rounded-lg overflow-auto ${className}`}
     >
       <div
         className={`${
@@ -278,7 +280,7 @@ const PosOrderList = ({
         {/* Customer Info */}
 
         <div className="flex justify-start mb-2  gap-6">
-            {/* <label
+          {/* <label
               className={`block font-semibold mb-1 ${
                 mode === "dark" ? "text-white" : "text-black"
               }`}
@@ -294,67 +296,67 @@ const PosOrderList = ({
                 </span>
               )}
             </label> */}
-            <div className="flex gap-2 rounded-full border px-4">
-                <TooltipIconButton
-                  label="Add Customer"
-                  mode="light"
-                  className="rounded-full text-green-500 p-2 hover:text-green-600"
-                  onClick={handleAddCustomer}
-                >
-                  <Icon icon="mdi:account-plus" className="w-5 h-5" />
-                </TooltipIconButton>
-                <select
-                  className={`px-3  w-full ${
-                    mode === "dark"
-                      ? "bg-gray-800 text-white border-gray-600"
-                      : "bg-white text-black border-gray-300"
-                  }`}
-                  value={
-                    selectedCustomerId.startsWith("db_")
-                      ? "customer_db"
-                      : selectedCustomerId
-                  }
-                  onChange={(e) => {
-                    if (e.target.value === "__online__") {
-                      if (typeof setIsOnlinePurchase === "function")
-                        setIsOnlinePurchase(true);
-                      setSelectedCustomerId("__online__");
-                    } else if (e.target.value === "customer_db") {
-                      if (typeof setIsOnlinePurchase === "function")
-                        setIsOnlinePurchase(false);
-                      setSelectedCustomerId("customer_db");
-                    } else {
-                      if (typeof setIsOnlinePurchase === "function")
-                        setIsOnlinePurchase(false);
-                      setSelectedCustomerId(e.target.value);
-                    }
-                  }}
-                >
-                  <option value="">Walk In Customer</option>
-                  <option value="__online__">Online Purchase</option>
-                  <option value="customer_db">Customer Database</option>
-                </select>
+          <div className="flex gap-2 rounded-full border px-4">
+            <TooltipIconButton
+              label="Add Customer"
+              mode="light"
+              className="rounded-full text-green-500 p-2 hover:text-green-600"
+              onClick={handleAddCustomer}
+            >
+              <Icon icon="mdi:account-plus" className="w-5 h-5" />
+            </TooltipIconButton>
+            <select
+              className={`px-3  w-full ${
+                mode === "dark"
+                  ? "bg-gray-800 text-white border-gray-600"
+                  : "bg-white text-black border-gray-300"
+              }`}
+              value={
+                selectedCustomerId.startsWith("db_")
+                  ? "customer_db"
+                  : selectedCustomerId
+              }
+              onChange={(e) => {
+                if (e.target.value === "__online__") {
+                  if (typeof setIsOnlinePurchase === "function")
+                    setIsOnlinePurchase(true);
+                  setSelectedCustomerId("__online__");
+                } else if (e.target.value === "customer_db") {
+                  if (typeof setIsOnlinePurchase === "function")
+                    setIsOnlinePurchase(false);
+                  setSelectedCustomerId("customer_db");
+                } else {
+                  if (typeof setIsOnlinePurchase === "function")
+                    setIsOnlinePurchase(false);
+                  setSelectedCustomerId(e.target.value);
+                }
+              }}
+            >
+              <option value="">Walk In Customer</option>
+              <option value="__online__">Online Purchase</option>
+              <option value="customer_db">Customer Database</option>
+            </select>
 
-                {/* Show react-select if Customer Database is selected */}
-                {selectedCustomerId === "customer_db" && (
-                  <div className="flex-1 min-w-[200px]">
-                    <Select
-                      options={customers.map((c) => ({
-                        value: c.id,
-                        label: `${c.name} - ${c.phone}`,
-                      }))}
-                      onChange={(option) => {
-                        setSelectedCustomerId(
-                          option ? `db_${option.value}` : "customer_db"
-                        );
-                      }}
-                      isClearable
-                      placeholder="Search customer..."
-                      classNamePrefix="react-select"
-                      autoFocus
-                    />
-                  </div>
-                )}
+            {/* Show react-select if Customer Database is selected */}
+            {selectedCustomerId === "customer_db" && (
+              <div className="flex-1 min-w-[200px]">
+                <Select
+                  options={customers.map((c) => ({
+                    value: c.id,
+                    label: `${c.name} - ${c.phone}`,
+                  }))}
+                  onChange={(option) => {
+                    setSelectedCustomerId(
+                      option ? `db_${option.value}` : "customer_db"
+                    );
+                  }}
+                  isClearable
+                  placeholder="Search customer..."
+                  classNamePrefix="react-select"
+                  autoFocus
+                />
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <div className="relative flex-[2] min-w-[500px]">
@@ -616,50 +618,129 @@ const PosOrderList = ({
 
           {/* Add Discount Modal */}
           {showAddDiscountModal && (
-            <AddEditModal
-              type="discounts"
-              categories={discountPlans}
-              item={{
-                store_id: user?.store_id || null,
-                discount_type: "percentage",
-              }}
+            <SimpleModal
+              isOpen={true}
               onClose={() => setShowAddDiscountModal(false)}
-              onSave={async (discountData) => {
-                try {
-                  // For cashiers, always use their assigned store
-                  const finalDiscountData = {
-                    ...discountData,
-                    store_id: user?.store_id || null,
-                  };
+              title="Quick Discount"
+              mode="light"
+              width="max-w-md"
+            >
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
+                      newDiscountType === "percentage" 
+                        ? "bg-blue-600 text-white" 
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                    onClick={() => setNewDiscountType("percentage")}
+                  >
+                    Percentage
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
+                      newDiscountType === "fixed" 
+                        ? "bg-blue-600 text-white" 
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                    onClick={() => setNewDiscountType("fixed")}
+                  >
+                    Fixed Amount
+                  </button>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold">
+                    {newDiscountType === "percentage" ? "Discount Percentage" : "Discount Amount (GHS)"}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={newDiscountType === "percentage" ? "100" : "999999"}
+                    step={newDiscountType === "percentage" ? "0.1" : "0.01"}
+                    className="w-full border rounded-lg px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder={newDiscountType === "percentage" ? "e.g., 10" : "e.g., 50"}
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                    autoFocus
+                  />
+                </div>
 
-                  const response = await fetch("/api/discounts", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(finalDiscountData),
-                  });
-                  const result = await response.json();
+                {discountValue && (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm text-gray-600">
+                      {newDiscountType === "percentage" ? (
+                        <>
+                          <span className="font-semibold">{discountValue}%</span> off = 
+                          <span className="font-semibold text-red-600"> -GHS {((subtotal * Number(discountValue)) / 100).toFixed(2)}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-semibold">GHS {discountValue}</span> off
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                  if (result.success && result.data) {
-                    setShowAddDiscountModal(false);
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    className="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                    onClick={() => setShowAddDiscountModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!discountValue || Number(discountValue) <= 0}
+                    onClick={async () => {
+                      try {
+                        const discountData = {
+                          name: `${newDiscountType === "percentage" ? discountValue + "%" : "GHS " + discountValue} Discount`,
+                          value: Number(discountValue),
+                          discount_type: newDiscountType,
+                          store_id: user?.store_id || null,
+                        };
 
-                    // Add to discounts list
-                    if (typeof setDiscounts === "function") {
-                      setDiscounts((prev) => [result.data, ...prev]);
-                    }
+                        const response = await fetch("/api/discounts", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(discountData),
+                        });
+                        const result = await response.json();
 
-                    if (typeof setSelectedDiscountId === "function") {
-                      setSelectedDiscountId(result.data.id);
-                    }
+                        if (result.success && result.data) {
+                          setShowAddDiscountModal(false);
+                          setDiscountValue("");
+                          setNewDiscountType("percentage");
 
-                    toast.success("Discount added!");
-                  } else {
-                    toast.error(result.error || "Failed to add discount");
-                  }
-                } catch (err) {
-                  toast.error(err.message || "Failed to add discount");
-                }
-              }}
-            />
+                          // Add to discounts list
+                          if (typeof setDiscounts === "function") {
+                            setDiscounts((prev) => [result.data, ...prev]);
+                          }
+
+                          if (typeof setSelectedDiscountId === "function") {
+                            setSelectedDiscountId(result.data.id);
+                          }
+
+                          toast.success("Discount applied!");
+                        } else {
+                          toast.error(result.error || "Failed to apply discount");
+                        }
+                      } catch (err) {
+                        toast.error(err.message || "Failed to apply discount");
+                      }
+                    }}
+                  >
+                    Apply Discount
+                  </button>
+                </div>
+              </div>
+            </SimpleModal>
           )}
         </div>
         {/* Payment Summary */}
@@ -682,8 +763,26 @@ const PosOrderList = ({
             </div>
             <div className="flex flex-col gap-1 text-sm">
               <div className="flex justify-between items-center text-lg font-semibold">
-                <span className={mode === "dark" ? "text-white" : "text-black"}>
-                  Discount: {""}
+                <span className={mode === "dark" ? "text-white" : "flex items-center justify-center text-black"}>
+                  Discount: [
+                  {selectedDiscountId ? (
+                    <Icon 
+                      icon="ic:baseline-minus" 
+                      className="w-5 h-5 cursor-pointer text-black hover:text-red-700" 
+                      onClick={() => {
+                        setSelectedDiscountId("");
+                        toast.success("Discount removed!");
+                      }} 
+                    />
+                  ) : (
+                    <Icon 
+                      icon="ic:baseline-plus" 
+                      className="w-5 h-5 cursor-pointer" 
+                      onClick={() => setShowAddDiscountModal(true)} 
+                    />
+                  )}
+                  ]
+                  {""}
                 </span>
                 <span className="ml-2 text-red-500">
                   - GHS {discount.toLocaleString()}

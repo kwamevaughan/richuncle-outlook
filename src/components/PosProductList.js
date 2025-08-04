@@ -250,7 +250,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
   return (
     <div className={className}>
-      <div className={`flex rounded-lg overflow-hidden h-screen ${mode === "dark" ? "bg-gray-900" : "bg-white"}`}>
+      <div className={`flex rounded-lg overflow-hidden ${mode === "dark" ? "bg-gray-900" : "bg-white"}`}>
         {/* Tab Content: Products Grid */}
         <div className="w-full px-6 py-0 flex flex-col pt-28 sm:pt-2">
           <div className="flex justify-between items-center gap-4 mb-4">
@@ -482,7 +482,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   className={`px-4 py-2 rounded-xl font-semibold text-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
                     loadingMore
                       ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+                      : " text-blue-600 hover:text-gray-600 active:scale-95"
                   }`}
                 >
                   {loadingMore ? (
@@ -501,11 +501,11 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
             )}
             
             {/* Products Count Info */}
-            {!prodLoading && displayedProducts.length > 0 && (
+            {/* {!prodLoading && displayedProducts.length > 0 && (
               <div className={`text-center py-2 text-sm ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
                 Showing {displayedProducts.length} of {filteredProducts.length} products
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
