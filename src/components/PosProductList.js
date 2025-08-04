@@ -229,6 +229,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     if (selectedProducts.includes(productId)) {
       // Remove from selection (no beep sound)
       setSelectedProducts((prev) => prev.filter((id) => id !== productId));
+      playBellBeep(); // Add beep sound when removing
       return;
     }
     
