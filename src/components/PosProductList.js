@@ -45,11 +45,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     return (
       <components.Option {...props}>
         <div className="flex items-center gap-3">
-          {product.image_url ? (
-            <Image src={product.image_url} alt={product.name} width={32} height={32} className="rounded object-cover w-8 h-8" />
-          ) : (
-            <Icon icon="mdi:image-off-outline" className="w-8 h-8 text-gray-300" />
-          )}
+          
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-sm truncate">{product.name}</div>
             <div className="text-xs text-gray-500">GHS {product.price}</div>
@@ -144,7 +140,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   // Update categories per page based on screen size
   useEffect(() => {
     const updateCategoriesPerPage = () => {
-      setCategoriesPerPage(window.innerWidth < 640 ? 3 : 4);
+      setCategoriesPerPage(window.innerWidth < 640 ? 3 : 5);
     };
     
     updateCategoriesPerPage();
@@ -259,110 +255,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
         {/* Tab Content: Products Grid */}
         <div className="w-full px-6 py-0 flex flex-col pt-28 sm:pt-2">
           <div className="flex justify-between items-center gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  <Icon
-                    icon="material-symbols:search-rounded"
-                    className="w-5 h-5"
-                  />
-                </span>
-                <div className="w-full">
-                  <Select
-                    options={productOptions}
-                    components={{ Option: ProductOption }}
-                    placeholder="Search or select product..."
-                    isClearable
-                    isSearchable
-                    // menuIsOpen removed to allow default open/close behavior
-                    onFocus={() => {
-                      /* Optionally, you can set a local state to control open if needed */
-                    }}
-                    onChange={(option) => {
-                      if (option && option.product) {
-                        toggleProductSelect(option.product.id);
-                      }
-                    }}
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        borderRadius: "1rem",
-                        minHeight: "48px",
-                        paddingLeft: "2.5rem",
-                        fontSize: "1rem",
-                        boxShadow: "none",
-                        borderColor: mode === "dark" ? "#4b5563" : "#cbd5e1",
-                        backgroundColor: mode === "dark" ? "transparent" : "#fff",
-                        color: mode === "dark" ? "#f9fafb" : "#222",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 100,
-                        maxHeight: 320,
-                        backgroundColor: mode === "dark" ? "#374151" : "#fff",
-                        border: mode === "dark" ? "1px solid #4b5563" : "1px solid #e5e7eb",
-                      }),
-                      option: (base, state) => ({
-                        ...base,
-                        backgroundColor: state.isFocused 
-                          ? (mode === "dark" ? "#4b5563" : "#e0f2fe") 
-                          : (mode === "dark" ? "#374151" : "#fff"),
-                        color: mode === "dark" ? "#f9fafb" : "#222",
-                        cursor: "pointer",
-                        padding: "12px 16px",
-                        fontSize: "1rem",
-                      }),
-                      singleValue: (base) => ({
-                        ...base,
-                        color: mode === "dark" ? "#f9fafb" : "#222",
-                      }),
-                      input: (base) => ({
-                        ...base,
-                        color: mode === "dark" ? "#f9fafb" : "#222",
-                      }),
-                      placeholder: (base) => ({
-                        ...base,
-                        color: mode === "dark" ? "#9ca3af" : "#6b7280",
-                      }),
-                    }}
-                  />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    <Icon
-                      icon="material-symbols:search-rounded"
-                      className="w-5 h-5"
-                    />
-                  </span>
-                </div>
-              </div>
-
-              <TooltipIconButton
-                label="Open Barcode Scanner"
-                mode={mode}
-                className={`ml-2 p-3 rounded-2xl border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95 ${mode === "dark" ? "bg-gray-800 hover:bg-gray-700 border-gray-600" : "bg-white hover:bg-blue-50 border-gray-300"}`}
-                onClick={() => setShowBarcodeModal(true)}
-              >
-                <Icon icon="tabler:barcode" className="w-6 h-6" />
-              </TooltipIconButton>
-
-              <TooltipIconButton
-                label="Refresh Product List"
-                mode={mode}
-                className={`ml-2 p-3 rounded-2xl border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95 ${mode === "dark" ? "bg-gray-800 hover:bg-gray-700 border-gray-600" : "bg-white hover:bg-blue-50 border-gray-300"}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toast.loading("Refreshing products...", {
-                    id: "reload-products",
-                  });
-                  setReloadFlag((f) => f + 1);
-                }}
-              >
-                <Icon
-                  icon="material-symbols:refresh"
-                  className={`w-6 h-6 ${mode === "dark" ? "text-blue-400" : "text-blue-800"}`}
-                />
-              </TooltipIconButton>
-            </div>
+            
           </div>
           <div className="flex items-center gap-2  mb-4">
             {/* Left Arrow */}
@@ -370,9 +263,9 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               type="button"
               onClick={prevPage}
               disabled={categoryPage === 0}
-              className={`p-3 rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
+              className={` transition-colors focus:outline-none focus:ring-2  touch-manipulation ${
                 categoryPage === 0
-                  ? `${mode === "dark" ? "bg-gray-700 text-gray-500" : "bg-gray-100 text-gray-400"} cursor-not-allowed`
+                  ? `${mode === "dark" ? "bg-gray-700 text-gray-500" : ""} cursor-not-allowed`
                   : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-white text-gray-700 hover:bg-blue-50"} active:scale-95`
               }`}
             >
@@ -380,7 +273,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
             </button>
 
             {/* Categories Container */}
-            <div className="flex gap-1 sm:gap-2 md:gap-4 flex-1 justify-center items-center overflow-x-auto scrollbar-hide">
+            <div className=" flex gap-1 sm:gap-2 md:gap-4 flex-1 justify-center items-center overflow-x-auto scrollbar-hide">
               {catLoading && (
                 <div className={`p-4 ${mode === "dark" ? "text-blue-400" : "text-blue-600"}`}>Loading...</div>
               )}
@@ -392,7 +285,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 <button
                   type="button"
                   key={cat.id}
-                  className={`flex flex-col items-center justify-center px-2 sm:px-3 py-2 sm:py-3 text-center text-xs sm:text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none gap-1 sm:gap-2 min-w-[60px] sm:min-w-[70px] md:min-w-[80px] min-h-[60px] sm:min-h-[65px] md:min-h-[70px] touch-manipulation active:scale-95 flex-shrink-0 ${
+                  className={` flex flex-col items-center justify-center text-center text-xs sm:text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none gap-1 sm:gap-2 min-w-[60px] sm:min-w-[70px] md:min-w-[80px] touch-manipulation active:scale-95 flex-shrink-0 ${
                     selectedCategory === cat.id
                       ? `${mode === "dark" ? "bg-blue-600 text-white border-blue-500" : "bg-blue-100 text-blue-700 border-blue-400"} scale-105`
                       : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-600" : "bg-white text-gray-700 hover:bg-blue-100 border-transparent"}`
@@ -424,9 +317,9 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               type="button"
               onClick={nextPage}
               disabled={categoryPage >= totalPages - 1}
-              className={`p-3 rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation ${
+              className={` transition-colors focus:outline-none focus:ring-2  touch-manipulation ${
                 categoryPage >= totalPages - 1
-                  ? `${mode === "dark" ? "bg-gray-700 text-gray-500" : "bg-gray-100 text-gray-400"} cursor-not-allowed opacity-50`
+                  ? `${mode === "dark" ? "bg-gray-700 text-gray-500" : ""} cursor-not-allowed`
                   : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-white text-gray-700 hover:bg-blue-50"} active:scale-95`
               }`}
             >
@@ -448,7 +341,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               {displayedProducts.map((product) => (
                 <div
                   key={product.id}
-                  className={`group relative border-2 rounded-xl p-4 flex flex-col items-center transition-all duration-200 cursor-pointer min-h-[220px] touch-manipulation m-0.5
+                  className={`group relative border-2 rounded-xl p-4 flex flex-col items-center transition-all duration-200 cursor-pointer touch-manipulation m-0.5
                     ${
                       selectedProducts.includes(product.id)
                         ? `${mode === "dark" ? "border-green-400 shadow-green-900" : "border-green-500 shadow-green-100"} scale-105`
@@ -516,15 +409,15 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       />
                     </div>
                   )}
-                  <div className={`text-sm mb-2 self-start ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                  {/* <div className={`text-sm mb-2 self-start ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
                     {(() => {
                       const cat = categories.find(
                         (c) => c.id === product.category_id
                       );
                       return cat ? cat.name : "";
                     })()}
-                  </div>
-                  <div className={`font-semibold mb-2 self-start truncate max-w-full overflow-hidden text-base ${mode === "dark" ? "text-white" : "text-black"}`}>
+                  </div> */}
+                  <div className={`font-normal mb-2 self-start truncate max-w-full overflow-hidden text-xs ${mode === "dark" ? "text-white" : "text-black"}`}>
                     {product.name}
                   </div>
 
@@ -552,7 +445,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
                   <div className="flex flex-col gap-1 self-start mt-2 w-full">
                     <div className="flex items-center justify-between w-full">
-                      <span className={`text-lg font-bold ${mode === "dark" ? "text-blue-400" : "text-blue-700"}`}>
+                      <span className={`text-base font-semibold ${mode === "dark" ? "text-blue-400" : "text-blue-700"}`}>
                         GHS {product.price}
                       </span>
                     </div>

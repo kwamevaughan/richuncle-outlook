@@ -9,7 +9,7 @@ import ReceiptPreviewModal from "./ReceiptPreviewModal";
 import { playBellBeep } from "../utils/posSounds";
 import { getPaymentTypeLabel } from "./payment/utils/paymentHelpers";
 import useUsers from "../hooks/useUsers";
-import Select from 'react-select';
+import Select, { components } from 'react-select';
 import { paymentMethods } from "@/constants/paymentMethods";
 import TooltipIconButton from "./TooltipIconButton";
 
@@ -151,6 +151,35 @@ const PosOrderList = ({
     setShowCustomerModal(true);
   };
 
+  const productOptions = React.useMemo(
+    () =>
+      products.map((product) => ({
+        value: product.id,
+        label: product.name,
+        product,
+      })),
+    [products]
+  );
+
+  const ProductOption = (props) => {
+    const { product } = props.data;
+    return (
+      <components.Option {...props}>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm truncate">{product.name}</div>
+            <div className="text-xs text-gray-500">GHS {product.price}</div>
+          </div>
+          {user?.role !== "cashier" && (
+            <div className="text-xs text-gray-400">
+              Stock: {product.quantity}
+            </div>
+          )}
+        </div>
+      </components.Option>
+    );
+  };
+
   const handlePrintOrder = () => {
     const printReceipt = PrintReceipt({
       orderId: orderId, // Use the passed orderId
@@ -234,106 +263,264 @@ const PosOrderList = ({
     : null;
 
   return (
-    <div className={`p-4 gap-6 flex flex-col ${mode === "dark" ? "bg-gray-800" : "bg-gray-200"} rounded-lg h-screen overflow-auto ${className}`}>
-      <div className={`${mode === "dark" ? "bg-gray-900" : "bg-white"} rounded-lg p-6`}>
+    <div
+      className={`p-4 gap-6 flex flex-col ${
+        mode === "dark" ? "bg-gray-800" : "bg-gray-200"
+      } rounded-lg h-screen overflow-auto ${className}`}
+    >
+      <div
+        className={`${
+          mode === "dark" ? "bg-gray-900" : "bg-white"
+        } rounded-lg p-6`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <h2 className={`text-xl font-bold ${mode === "dark" ? "text-white" : "text-black"}`}>Order List</h2>
-          <div className="flex items-center gap-2">
-            <span className="bg-blue-900 text-white text-xs font-bold rounded-lg px-3 py-1">
-              #{orderId}
-            </span>
-          </div>
-        </div>
+
         {/* Customer Info */}
-        <div className="mb-4">
-          <label className={`block font-semibold mb-1 ${mode === "dark" ? "text-white" : "text-black"}`}>
-            Customer Information
-            {selectedDbCustomer && (
-              <span className={`ml-2 font-normal ${mode === "dark" ? "text-blue-400" : "text-blue-700"}`}>
-                - {selectedDbCustomer.name}
-              </span>
-            )}
-          </label>
-          <div className="flex gap-2 mb-2">
-            <select
-              className={`border rounded px-3 py-2 w-full ${mode === "dark" ? "bg-gray-800 text-white border-gray-600" : "bg-white text-black border-gray-300"}`}
-              value={
-                selectedCustomerId.startsWith("db_")
-                  ? "customer_db"
-                  : selectedCustomerId
-              }
-              onChange={(e) => {
-                if (e.target.value === "__online__") {
-                  if (typeof setIsOnlinePurchase === 'function') setIsOnlinePurchase(true);
-                  setSelectedCustomerId("__online__");
-                } else if (e.target.value === "customer_db") {
-                  if (typeof setIsOnlinePurchase === 'function') setIsOnlinePurchase(false);
-                  setSelectedCustomerId("customer_db");
-                } else {
-                  if (typeof setIsOnlinePurchase === 'function') setIsOnlinePurchase(false);
-                  setSelectedCustomerId(e.target.value);
+
+        <div className="flex justify-start   gap-6">
+          <div className="mb-4">
+            <label
+              className={`block font-semibold mb-1 ${
+                mode === "dark" ? "text-white" : "text-black"
+              }`}
+            >
+              Customer Information
+              {selectedDbCustomer && (
+                <span
+                  className={`ml-2 font-normal ${
+                    mode === "dark" ? "text-blue-400" : "text-blue-700"
+                  }`}
+                >
+                  - {selectedDbCustomer.name}
+                </span>
+              )}
+            </label>
+            <div className="flex gap-2 mb-2">
+              <TooltipIconButton
+                label="Add Customer"
+                mode="light"
+                className="rounded-full text-green-500 p-2 hover:text-green-600"
+                onClick={handleAddCustomer}
+              >
+                <Icon icon="mdi:account-plus" className="w-5 h-5" />
+              </TooltipIconButton>
+              <select
+                className={`border rounded px-3  w-full ${
+                  mode === "dark"
+                    ? "bg-gray-800 text-white border-gray-600"
+                    : "bg-white text-black border-gray-300"
+                }`}
+                value={
+                  selectedCustomerId.startsWith("db_")
+                    ? "customer_db"
+                    : selectedCustomerId
                 }
+                onChange={(e) => {
+                  if (e.target.value === "__online__") {
+                    if (typeof setIsOnlinePurchase === "function")
+                      setIsOnlinePurchase(true);
+                    setSelectedCustomerId("__online__");
+                  } else if (e.target.value === "customer_db") {
+                    if (typeof setIsOnlinePurchase === "function")
+                      setIsOnlinePurchase(false);
+                    setSelectedCustomerId("customer_db");
+                  } else {
+                    if (typeof setIsOnlinePurchase === "function")
+                      setIsOnlinePurchase(false);
+                    setSelectedCustomerId(e.target.value);
+                  }
+                }}
+              >
+                <option value="">Walk In Customer</option>
+                <option value="__online__">Online Purchase</option>
+                <option value="customer_db">Customer Database</option>
+              </select>
+              {/* Show react-select if Customer Database is selected */}
+              {selectedCustomerId === "customer_db" && (
+                <div className="flex-1 min-w-[200px]">
+                  <Select
+                    options={customers.map((c) => ({
+                      value: c.id,
+                      label: `${c.name} - ${c.phone}`,
+                    }))}
+                    onChange={(option) => {
+                      setSelectedCustomerId(
+                        option ? `db_${option.value}` : "customer_db"
+                      );
+                    }}
+                    isClearable
+                    placeholder="Search customer..."
+                    classNamePrefix="react-select"
+                    autoFocus
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-[2] min-w-[500px]">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <Icon
+                  icon="material-symbols:search-rounded"
+                  className="w-5 h-5"
+                />
+              </span>
+              <div className="w-full">
+                <Select
+                  options={productOptions}
+                  components={{ Option: ProductOption }}
+                  placeholder="Search / select product..."
+                  isClearable
+                  isSearchable
+                  // menuIsOpen removed to allow default open/close behavior
+                  onFocus={() => {
+                    /* Optionally, you can set a local state to control open if needed */
+                  }}
+                  onChange={(option) => {
+                    if (option && option.product) {
+                      toggleProductSelect(option.product.id);
+                    }
+                  }}
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      borderRadius: "1rem",
+                      minHeight: "38px",
+                      paddingLeft: "2.5rem",
+                      fontSize: "1rem",
+                      boxShadow: "none",
+                      borderColor: mode === "dark" ? "#4b5563" : "#cbd5e1",
+                      backgroundColor: mode === "dark" ? "transparent" : "#fff",
+                      color: mode === "dark" ? "#f9fafb" : "#222",
+                    }),
+                    menu: (base) => ({
+                      ...base,
+                      zIndex: 100,
+                      maxHeight: 320,
+                      backgroundColor: mode === "dark" ? "#374151" : "#fff",
+                      border:
+                        mode === "dark"
+                          ? "1px solid #4b5563"
+                          : "1px solid #e5e7eb",
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isFocused
+                        ? mode === "dark"
+                          ? "#4b5563"
+                          : "#e0f2fe"
+                        : mode === "dark"
+                        ? "#374151"
+                        : "#fff",
+                      color: mode === "dark" ? "#f9fafb" : "#222",
+                      cursor: "pointer",
+                      padding: "12px 16px",
+                      fontSize: "1rem",
+                    }),
+                    singleValue: (base) => ({
+                      ...base,
+                      color: mode === "dark" ? "#f9fafb" : "#222",
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      color: mode === "dark" ? "#f9fafb" : "#222",
+                    }),
+                    placeholder: (base) => ({
+                      ...base,
+                      color: mode === "dark" ? "#9ca3af" : "#6b7280",
+                    }),
+                  }}
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <Icon
+                    icon="material-symbols:search-rounded"
+                    className="w-5 h-5"
+                  />
+                </span>
+              </div>
+            </div>
+
+            {/* <TooltipIconButton
+              label="Open Barcode Scanner"
+              mode={mode}
+              className={`ml-2 p-3 rounded-2xl border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95 ${
+                mode === "dark"
+                  ? "bg-gray-800 hover:bg-gray-700 border-gray-600"
+                  : "bg-white hover:bg-blue-50 border-gray-300"
+              }`}
+              onClick={() => setShowBarcodeModal(true)}
+            >
+              <Icon icon="tabler:barcode" className="w-6 h-6" />
+            </TooltipIconButton> */}
+
+            {/* <TooltipIconButton
+              label="Refresh Product List"
+              mode={mode}
+              className={`ml-2 p-3 rounded-2xl border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 touch-manipulation active:scale-95 ${
+                mode === "dark"
+                  ? "bg-gray-800 hover:bg-gray-700 border-gray-600"
+                  : "bg-white hover:bg-blue-50 border-gray-300"
+              }`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toast.loading("Refreshing products...", {
+                  id: "reload-products",
+                });
+                setReloadFlag((f) => f + 1);
               }}
             >
-              <option value="">Walk In Customer</option>
-              <option value="__online__">Online Purchase</option>
-              <option value="customer_db">Customer Database</option>
-            </select>
-            {/* Show react-select if Customer Database is selected */}
-            {selectedCustomerId === "customer_db" && (
-              <div className="flex-1 min-w-[200px]">
-                <Select
-                  options={customers.map((c) => ({
-                    value: c.id,
-                    label: `${c.name} - ${c.phone}`,
-                  }))}
-                  onChange={(option) => {
-                    setSelectedCustomerId(
-                      option ? `db_${option.value}` : "customer_db"
-                    );
-                  }}
-                  isClearable
-                  placeholder="Search customer..."
-                  classNamePrefix="react-select"
-                  autoFocus
-                />
-              </div>
-            )}
-            <TooltipIconButton
-              label="Add Customer"
-              mode="light"
-              className="rounded-full text-green-500 p-2 hover:text-green-600"
-              onClick={handleAddCustomer}
-            >
-              <Icon icon="mdi:account-plus" className="w-5 h-5" />
-            </TooltipIconButton>
+              <Icon
+                icon="material-symbols:refresh"
+                className={`w-6 h-6 ${
+                  mode === "dark" ? "text-blue-400" : "text-blue-800"
+                }`}
+              />
+            </TooltipIconButton> */}
           </div>
         </div>
+
         {/* Order Details */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <div className={`font-bold ${mode === "dark" ? "text-white" : "text-black"}`}>Order Details</div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs rounded px-2 py-1 ${mode === "dark" ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-700"}`}>
-                Items : {selectedProducts.length}
-              </span>
-              <button
-                className={`text-xs hover:text-red-600 ${mode === "dark" ? "text-red-400" : "text-red-400"}`}
-                onClick={handleClearAll}
-              >
-                Clear all
-              </button>
-            </div>
+            {/* <div
+              className={`font-bold ${
+                mode === "dark" ? "text-white" : "text-black"
+              }`}
+            >
+              Order Details
+            </div> */}
           </div>
-          <div className={`border rounded-lg overflow-hidden max-h-60 overflow-y-auto ${mode === "dark" ? "border-gray-600" : "border-gray-300"}`}>
-            <div className={`grid grid-cols-3 text-sm font-bold px-4 py-2 ${mode === "dark" ? "bg-gray-800 text-gray-300" : "bg-gray-50 text-gray-600"}`}>
+          <div
+            className={`border rounded-lg overflow-hidden max-h-[500px] h-[300px] overflow-y-auto ${
+              mode === "dark" ? "border-gray-600" : "border-gray-300"
+            }`}
+          >
+            <div
+              className={`grid grid-cols-4 text-sm font-bold px-4 py-2 ${
+                mode === "dark"
+                  ? "bg-gray-800 text-gray-300"
+                  : "bg-gray-50 text-gray-600"
+              }`}
+            >
               <div>Item</div>
               <div className="text-center">Quantity</div>
               <div className="text-right">Sub Total</div>
+              <div className="text-center flex items-center justify-center">
+                <Icon
+                  icon="ic:baseline-clear"
+                  className={`w-8 h-8 ${
+                    mode === "dark" ? "text-gray-300" : ""
+                  }`}
+                />
+              </div>
             </div>
             {selectedProducts.length === 0 && (
-              <div className={`text-center py-6 ${mode === "dark" ? "text-gray-500" : "text-gray-400"}`}>
+              <div
+                className={`text-center py-6 ${
+                  mode === "dark" ? "text-gray-500" : "text-gray-400"
+                }`}
+              >
                 No products selected.
               </div>
             )}
@@ -344,39 +531,72 @@ const PosOrderList = ({
               return (
                 <div
                   key={id}
-                  className={`grid grid-cols-3 items-center px-4 py-2 border-t text-sm ${mode === "dark" ? "border-gray-600" : "border-gray-200"}`}
+                  className={`grid grid-cols-4 items-center px-4 py-2 border-t text-sm ${
+                    mode === "dark" ? "border-gray-600" : "border-gray-200"
+                  }`}
                 >
                   <div className="flex items-center gap-2">
-                    <Icon
-                      icon="mdi:delete-outline"
-                      className={`w-4 h-4 cursor-pointer ${mode === "dark" ? "text-gray-500 hover:text-red-400" : "text-gray-400 hover:text-red-500"}`}
-                      onClick={() => handleRemove(id)}
-                    />
-                    <span className={mode === "dark" ? "text-white" : "text-black"}>{product.name}</span>
+                    <span
+                      className={mode === "dark" ? "text-white" : "text-black"}
+                    >
+                      {product.name}
+                    </span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => handleQty(id, -1)}
-                      className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${mode === "dark" ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white" : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"}`}
+                      className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${
+                        mode === "dark"
+                          ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white"
+                          : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"
+                      }`}
                     >
                       -
                     </button>
-                    <span className={`w-6 text-center ${mode === "dark" ? "text-white" : "text-black"}`}>{qty}</span>
+                    <span
+                      className={`w-6 text-center ${
+                        mode === "dark" ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {qty}
+                    </span>
                     <button
                       onClick={() => handleQty(id, 1)}
-                      className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${mode === "dark" ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white" : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"}`}
+                      className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${
+                        mode === "dark"
+                          ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white"
+                          : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"
+                      }`}
                     >
                       +
                     </button>
                   </div>
-                  <div className={`text-right font-semibold ${mode === "dark" ? "text-white" : "text-black"}`}>
+                  <div
+                    className={`text-right font-semibold ${
+                      mode === "dark" ? "text-white" : "text-black"
+                    }`}
+                  >
                     GHS {(product.price * qty).toLocaleString()}
                   </div>
-                  <div className={`text-xs mt-1 ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                  <div className="flex items-center justify-center">
+                    <Icon
+                      icon="ic:baseline-clear"
+                      className={`w-8 h-8 cursor-pointer ${
+                        mode === "dark"
+                          ? "text-gray-500 hover:text-red-400"
+                          : "text-red-600 hover:text-red-500"
+                      }`}
+                      onClick={() => handleRemove(id)}
+                    />
+                  </div>
+
+                  <div
+                    className={`text-xs mt-1 col-span-4 ${
+                      mode === "dark" ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
                     {user?.role !== "cashier" && (
-                      <>
-                        Stock: {product.quantity} | 
-                      </>
+                      <>Stock: {product.quantity} |</>
                     )}
                     {/* Ordered: {qty} */}
                     {qty > product.quantity && user?.role !== "cashier" && (
@@ -389,108 +609,91 @@ const PosOrderList = ({
               );
             })}
           </div>
+
           {/* Discount Selector */}
-          <div className="mt-4 mb-2">
-            <label className={`block text-sm font-semibold mb-2 ${mode === "dark" ? "text-blue-400" : "text-blue-800"}`}>
-              Select Discount
-            </label>
-            <div className={`flex flex-col sm:flex-row gap-3 ${user?.role === "cashier" ? "" : ""}`}>
-              {/* Discount Dropdown */}
-              <div className={user?.role === "cashier" ? "w-full" : "flex-1 min-w-0"}>
-                <select
-                  className={`w-full px-4 py-3 border rounded-lg font-medium text-base focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${mode === "dark" ? "bg-gray-800 border-blue-500 text-blue-300" : "bg-white border-blue-300 text-blue-800"}`}
-                  value={selectedDiscountId}
-                  onChange={(e) => setSelectedDiscountId(e.target.value)}
-                >
-                  <option value="">Select Discount</option>
-                  {discounts.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name || d.label} (
-                      {d.type === "percent"
-                        ? `${d.value}%`
-                        : `GHS ${d.value}`}
-                      )
-                    </option>
-                  ))}
-                </select>
-                {discountLabel !== "No discount" && (
-                  <div className={`text-xs mt-1 ml-1 ${mode === "dark" ? "text-gray-400" : "text-gray-600"}`}>{discountLabel}</div>
-                )}
-              </div>
-              
-              {/* Add Discount Button - Only for non-cashiers */}
-              {user?.role !== "cashier" && (
-                <button
-                  type="button"
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors min-w-[120px]"
-                  onClick={() => setShowAddDiscountModal(true)}
-                >
-                  <Icon icon="mdi:plus" className="w-5 h-5" />
-                  <span className="text-sm">Add</span>
-                </button>
-              )}
-            </div>
-          </div>
-            {/* Add Discount Modal */}
-            {showAddDiscountModal && (
-              <AddEditModal
-                type="discounts"
-                categories={discountPlans}
-                item={{
-                  store_id: user?.store_id || null,
-                  discount_type: "percentage"
-                }}
-                onClose={() => setShowAddDiscountModal(false)}
-                onSave={async (discountData) => {
-                  try {
-                    // For cashiers, always use their assigned store
-                    const finalDiscountData = {
-                      ...discountData,
-                      store_id: user?.store_id || null
-                    };
-                    
-                    const response = await fetch("/api/discounts", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(finalDiscountData),
-                    });
-                    const result = await response.json();
-                    
-                    if (result.success && result.data) {
-                      setShowAddDiscountModal(false);
-                      
-                      // Add to discounts list
-                      if (typeof setDiscounts === "function") {
-                        setDiscounts((prev) => [result.data, ...prev]);
-                      }
-                      
-                      if (typeof setSelectedDiscountId === "function") {
-                        setSelectedDiscountId(result.data.id);
-                      }
-                      
-                      toast.success("Discount added!");
-                    } else {
-                      toast.error(result.error || "Failed to add discount");
+
+          {/* Add Discount Modal */}
+          {showAddDiscountModal && (
+            <AddEditModal
+              type="discounts"
+              categories={discountPlans}
+              item={{
+                store_id: user?.store_id || null,
+                discount_type: "percentage",
+              }}
+              onClose={() => setShowAddDiscountModal(false)}
+              onSave={async (discountData) => {
+                try {
+                  // For cashiers, always use their assigned store
+                  const finalDiscountData = {
+                    ...discountData,
+                    store_id: user?.store_id || null,
+                  };
+
+                  const response = await fetch("/api/discounts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(finalDiscountData),
+                  });
+                  const result = await response.json();
+
+                  if (result.success && result.data) {
+                    setShowAddDiscountModal(false);
+
+                    // Add to discounts list
+                    if (typeof setDiscounts === "function") {
+                      setDiscounts((prev) => [result.data, ...prev]);
                     }
-                  } catch (err) {
-                    toast.error(err.message || "Failed to add discount");
+
+                    if (typeof setSelectedDiscountId === "function") {
+                      setSelectedDiscountId(result.data.id);
+                    }
+
+                    toast.success("Discount added!");
+                  } else {
+                    toast.error(result.error || "Failed to add discount");
                   }
-                }}
-              />
-            )}
-          </div>
+                } catch (err) {
+                  toast.error(err.message || "Failed to add discount");
+                }
+              }}
+            />
+          )}
+        </div>
         {/* Payment Summary */}
         <div className="mb-2">
-          <div className={`font-bold mb-2 ${mode === "dark" ? "text-white" : "text-black"}`}>Payment Summary</div>
-          <div className={`flex justify-between items-center text-xs mb-2 ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
-            <span>Items: {selectedProducts.length}</span>
-            <span>Total Items: {selectedProducts.reduce((sum, productId) => sum + (quantities[productId] || 1), 0)}</span>
-          </div>
-          <div className="flex flex-col gap-1 text-sm">
-            <div className="flex justify-between items-center">
-              <span className={mode === "dark" ? "text-white" : "text-black"}>Discount</span>
-              <span className="text-red-500">
-                -GHS {discount.toLocaleString()}
+          {/* <div
+            className={`font-bold mb-2 ${
+              mode === "dark" ? "text-white" : "text-black"
+            }`}
+          >
+            Payment Summary
+          </div> */}
+
+          <div className="flex justify-center gap-40 items-center">
+            <div
+              className={`flex justify-between items-center text-lg font-semibold ${
+                mode === "dark" ? "text-gray-400" : "text-black"
+              }`}
+            >
+              <span>Items: {selectedProducts.length}</span>
+            </div>
+            <div className="flex flex-col gap-1 text-sm">
+              <div className="flex justify-between items-center text-lg font-semibold">
+                <span className={mode === "dark" ? "text-white" : "text-black"}>
+                  Discount: {""}
+                </span>
+                <span className="ml-2 text-red-500">
+                  - GHS {discount.toLocaleString()}
+                </span>
+              </div>
+            </div>
+            <div className="flex justify-between items-center text-lg font-semibold">
+              <span className={mode === "dark" ? "text-white" : "text-black"}>
+                Total: {""}
+              </span>
+              <span className="ml-2 text-blue-900">
+                GHS {total.toLocaleString()}
               </span>
             </div>
 
@@ -504,14 +707,13 @@ const PosOrderList = ({
                 </span>
               </div>
             )}
-
           </div>
         </div>
-        <div className={`border-t my-2 ${mode === "dark" ? "border-gray-600" : "border-gray-200"}`}></div>
-        <div className="flex justify-between items-center text-lg font-bold">
-          <span className={mode === "dark" ? "text-white" : "text-black"}>Total Payable</span>
-          <span className="text-blue-900">GHS {total.toLocaleString()}</span>
-        </div>
+        <div
+          className={`border-t my-2 ${
+            mode === "dark" ? "border-gray-600" : "border-gray-200"
+          }`}
+        ></div>
       </div>
 
       {/* Payment Section */}
@@ -522,7 +724,7 @@ const PosOrderList = ({
             if (selectedProducts.length === 0) {
               return "bg-gray-300 text-gray-500 cursor-not-allowed";
             }
-            
+
             switch (pm.key) {
               case "cash":
                 return "bg-green-500 border border-green-600 text-white hover:bg-green-600";
@@ -625,8 +827,8 @@ const PosOrderList = ({
                   const qty = quantities[found.id] || 1;
                   if (qty > found.quantity) {
                     toast.error(
-                      user?.role === "cashier" 
-                        ? "Cannot add items. Insufficient stock." 
+                      user?.role === "cashier"
+                        ? "Cannot add items. Insufficient stock."
                         : `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`
                     );
                     return;
@@ -640,8 +842,8 @@ const PosOrderList = ({
                       const newQty = (currentQuantities[found.id] || 1) + qty;
                       if (newQty > found.quantity) {
                         toast.error(
-                          user?.role === "cashier" 
-                            ? "Cannot add more items. Insufficient stock." 
+                          user?.role === "cashier"
+                            ? "Cannot add more items. Insufficient stock."
                             : `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`
                         );
                         return currentQuantities; // Return unchanged quantities
@@ -711,8 +913,8 @@ const PosOrderList = ({
                 onClick={() => {
                   if (barcodeQty > barcodeProduct.quantity) {
                     toast.error(
-                      user?.role === "cashier" 
-                        ? "Cannot add items. Insufficient stock." 
+                      user?.role === "cashier"
+                        ? "Cannot add items. Insufficient stock."
                         : `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
                     );
                     return;
@@ -778,7 +980,7 @@ const PosOrderList = ({
         user={allUsers.find((u) => u.id === user?.id) || user}
         allUsers={allUsers}
         isOnlinePurchase={isOnlinePurchase}
-        products={products.filter(p => selectedProducts.includes(p.id))}
+        products={products.filter((p) => selectedProducts.includes(p.id))}
         quantities={quantities}
       />
 
