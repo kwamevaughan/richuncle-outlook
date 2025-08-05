@@ -48,12 +48,16 @@ const ModernInput = ({
       >
         {icon && (
           <div
-            className={`absolute left-4 top-[40px] transform -translate-y-1/2 transition-colors duration-300 z-10 ${
+            className={`absolute left-4 transition-all duration-300 z-10 ${
               focused
                 ? "text-blue-500"
                 : mode === "dark"
                 ? "text-gray-400"
                 : "text-gray-500"
+            } ${
+              isFloating
+                ? "top-10"
+                : "top-12"
             }`}
           >
             <Icon icon={icon} className="w-5 h-5" />
@@ -71,7 +75,7 @@ const ModernInput = ({
           min={min}
           disabled={disabled}
           className={`
-            w-full h-16 px-4 pt-6 pb-2 border-2 text-lg rounded-2xl transition-all duration-300
+            w-full h-20 px-4 pt-6 pb-2 border-2 text-lg rounded-2xl transition-all duration-300
             ${icon ? "pl-12" : "pl-4"}
             ${
               focused
@@ -1117,8 +1121,27 @@ const PaymentForm = ({
     setIsLoading(true);
 
     try {
+      // Validate required fields
+      if (paymentType !== "split") {
+        if (!paymentData.receivedAmount || parseFloat(paymentData.receivedAmount) <= 0) {
+          toast.error("Please enter the amount received");
+          setIsLoading(false);
+          return;
+        }
+        
+        const received = parseFloat(paymentData.receivedAmount);
+        const paying = parseFloat(paymentData.payingAmount);
+        
+        if (received < paying) {
+          toast.error("Amount received cannot be less than the total amount");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Validate payment data
       if (!validatePaymentData(paymentData, paymentType, total, toast)) {
+        setIsLoading(false);
         return;
       }
 
@@ -2116,7 +2139,8 @@ const PaymentForm = ({
                 loading={isLoading}
                 disabled={
                   isLoading ||
-                  (paymentType === "split" && paymentData.remainingAmount > 0)
+                  (paymentType === "split" && paymentData.remainingAmount > 0) ||
+                  (paymentType !== "split" && (!paymentData.receivedAmount || parseFloat(paymentData.receivedAmount) <= 0 || parseFloat(paymentData.receivedAmount) < parseFloat(paymentData.payingAmount)))
                 }
                 mode={mode}
               >
