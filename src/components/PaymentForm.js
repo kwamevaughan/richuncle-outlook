@@ -1966,7 +1966,7 @@ const PaymentForm = ({
                         >
                           Total Amount to Pay
                         </div>
-                        <div className="text-3xl font-bold text-blue-600 mt-1">
+                        <div className="text-3xl font-bold text-green-600 mt-1">
                           GHS{" "}
                           {parseFloat(
                             paymentData.payingAmount || 0
