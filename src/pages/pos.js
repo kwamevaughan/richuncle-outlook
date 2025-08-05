@@ -272,6 +272,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [successOrderData, setSuccessOrderData] = useState(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
+  const [isResumingOrder, setIsResumingOrder] = useState(false);
 
   // Update processCompleteTransaction to accept paymentInfo
   const processCompleteTransaction = async (paymentInfo) => {
@@ -417,14 +418,27 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         store_id: storeId,
         // Add other columns as needed
       };
-      // Insert order into 'orders' table
+      // Insert or update order in 'orders' table
       const response = await fetch('/api/orders', {
-        method: 'POST',
+        method: isResumingOrder ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
       const orderResJson = await response.json();
       if (orderResJson.error) throw orderResJson.error;
+      // Handle order items - delete existing items for resumed orders, then insert new ones
+      if (isResumingOrder) {
+        // Delete existing order items for this order
+        const deleteResponse = await fetch(`/api/order-items?order_id=${orderData.id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const deleteResult = await deleteResponse.json();
+        if (deleteResult.error) {
+          console.warn('Failed to delete existing order items:', deleteResult.error);
+        }
+      }
+      
       // Insert order items into 'order_items' table
       const itemsToInsert = items.map(item => ({
         order_id: orderData.id,
@@ -527,6 +541,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       setPaymentData(null);
       setSelectedPayment("");
       setLastPaymentData(paymentResult);
+      setIsResumingOrder(false); // Reset the resuming flag
       // Generate new order ID
       const timestamp = Date.now().toString().slice(-6);
       const random = Math.floor(Math.random() * 100);
@@ -802,6 +817,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             setSelectedDiscountId(order.discount_id || "");
             setSaleNote(order.sale_note || "");
             setPaymentData(order.payment_data || {});
+            setIsResumingOrder(true); // Mark that we're resuming an existing order
             setShowRetrieveSales(false);
           }}
         />
@@ -1089,8 +1105,10 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             <div>
               <label className="block font-semibold mb-1">
                 Customer{" "}
-                {holdLayawayType === "layaway" && (
+                {holdLayawayType === "layaway" ? (
                   <span className="text-red-500">*</span>
+                ) : (
+                  <span className="text-gray-400">(optional)</span>
                 )}
               </label>
               <Select
@@ -1112,7 +1130,11 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                   setHoldLayawayCustomer(option ? option.value : null)
                 }
                 isClearable
-                placeholder="Search customer..."
+                placeholder={
+                  holdLayawayType === "layaway" 
+                    ? "Search customer..." 
+                    : "Search customer (optional)..."
+                }
                 classNamePrefix="react-select"
               />
               {holdLayawayType === "layaway" && !holdLayawayCustomer && (
@@ -1286,6 +1308,14 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                     setOrderId(
                       `RUO${timestamp}${random.toString().padStart(2, "0")}`
                     );
+                    // Close the modal after successful submission
+                    setShowHoldLayawayModal(false);
+                    // Reset modal form data
+                    setHoldLayawayCustomer(null);
+                    setHoldLayawayNote("");
+                    setLayawayDeposit("");
+                    setLayawayPaymentMethod("");
+                    setLayawayReference("");
                   } catch (error) {
                     if (toast) {
                       toast.dismiss(processingToast);

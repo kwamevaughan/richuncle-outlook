@@ -210,7 +210,18 @@ function MyApp({ Component, pageProps }) {
 
   return (
     <div className={`${mode === "dark" ? "dark" : ""} ${nunito.variable} font-sans flex flex-col min-h-screen`}>
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster 
+        position="top-center" 
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            zIndex: 9999,
+          },
+        }}
+        containerStyle={{
+          zIndex: 9999,
+        }}
+      />
         <AuthProvider>
           <DarkModeProvider>
             <RoleBasedAccess>

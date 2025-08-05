@@ -151,7 +151,7 @@ const ModernSelect = ({
       >
         {icon && (
           <div
-            className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 z-10 ${
+            className={`absolute left-4 top-1/4 transform -translate-y-1/2 transition-colors duration-300 z-10 ${
               focused
                 ? "text-blue-500"
                 : mode === "dark"
@@ -1096,12 +1096,8 @@ const PaymentForm = ({
         ...prev,
         receivedAmount: layawayOutstanding.toFixed(2),
       }));
-    } else if (paymentType === "momo" || paymentType === "cash") {
-      setPaymentData((prev) => ({
-        ...prev,
-        receivedAmount: prev.payingAmount || total.toFixed(2),
-      }));
     }
+    // Removed auto-fill for momo and cash payments to allow manual input
   }, [isLayaway, layawayOutstanding, paymentType, total]);
 
   const handleReceivedAmountChange = (value) => {
