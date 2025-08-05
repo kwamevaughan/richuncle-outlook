@@ -53,7 +53,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
           : "bg-white/80 border-gray-200 border-white/20"
       }`}
     >
-      <div className="flex flex-row gap-2 sm:gap-4 lg:gap-8 justify flex-1 min-h-0 overflow-hidden items-center w-full px-2 sm:px-4">
+      <div className="flex flex-row gap-2 sm:gap-4 lg:gap-8 justify flex-1 min-h-0 overflow-visible items-center w-full px-2 sm:px-4">
         <div className="ml-8 md:ml-0 flex flex-wrap gap-2 sm:gap-3">
           <div className="relative">
             <button
@@ -77,11 +77,12 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
             {showRetrieveOptions && (
               <div
                 ref={retrieveRef}
-                className={`absolute bottom-14 left-0 border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[120px] sm:min-w-[160px] ${
+                className={`absolute bottom-full mb-2 left-0 border rounded-lg shadow-xl p-4 flex flex-col gap-2 z-[100] min-w-[120px] sm:min-w-[160px] backdrop-blur-sm ${
                   mode === "dark"
-                    ? "bg-gray-800 border-gray-600"
-                    : "bg-white border-gray-300"
+                    ? "bg-gray-800/95 border-gray-600"
+                    : "bg-white/95 border-gray-300"
                 }`}
+                style={{ boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)' }}
               >
                 <button
                   className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${
@@ -152,11 +153,12 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
             {showHoldOptions && (
               <div
                 ref={holdRef}
-                className={`absolute bottom-14 left-0 border rounded-lg shadow-lg p-4 flex flex-col gap-2 z-50 min-w-[120px] sm:min-w-[160px] ${
+                className={`absolute bottom-full mb-2 left-0 border rounded-lg shadow-xl p-4 flex flex-col gap-2 z-[100] min-w-[120px] sm:min-w-[160px] backdrop-blur-sm ${
                   mode === "dark"
-                    ? "bg-gray-800 border-gray-600"
-                    : "bg-white border-gray-300"
+                    ? "bg-gray-800/95 border-gray-600"
+                    : "bg-white/95 border-gray-300"
                 }`}
+                style={{ boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)' }}
               >
                 <button
                   className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${

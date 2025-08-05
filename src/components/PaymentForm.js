@@ -14,6 +14,7 @@ import {
 import LayawaySummary from "./payment/LayawaySummary";
 import OrderItems from "./OrderItems";
 import TooltipIconButton from "./TooltipIconButton";
+import SplitPaymentStable from "./payment/SplitPaymentStable";
 
 // Modern Input Component with Floating Labels
 const ModernInput = ({
@@ -70,7 +71,7 @@ const ModernInput = ({
           min={min}
           disabled={disabled}
           className={`
-            w-full h-16 px-4 pt-6 pb-2 border-2 rounded-2xl transition-all duration-300
+            w-full h-16 px-4 pt-6 pb-2 border-2 text-lg rounded-2xl transition-all duration-300
             ${icon ? "pl-12" : "pl-4"}
             ${
               focused
@@ -96,7 +97,7 @@ const ModernInput = ({
           ${icon ? "left-12" : "left-4"}
           ${
             isFloating
-              ? "top-2 text-xs font-medium"
+              ? "top-2 text-md font-medium"
               : "top-1/2 transform -translate-y-1/2 text-base"
           }
           ${
@@ -428,238 +429,20 @@ const CollapsibleSection = ({
   );
 };
 
-const PaymentForm = ({
-  isOpen,
-  onClose,
-  paymentType,
-  total,
-  orderId,
-  onPaymentComplete,
-  customer = null,
-  customers = [],
-  onCustomerChange = null,
-  user = null,
-  allUsers = [],
-  isOnlinePurchase = false,
-  processCompleteTransaction,
-  paymentData: propPaymentData,
-  layawayTotal,
-  products = [],
-  quantities = {},
-  mode = "light",
-}) => {
-  const modalRef = useRef(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [animationState, setAnimationState] = useState("closed");
-
-  // Initialize payment data
-  const [paymentData, setPaymentData] = useState(() => {
-    if (
-      propPaymentData &&
-      Array.isArray(propPaymentData.payments) &&
-      propPaymentData.payments.length > 0
-    ) {
-      return {
-        ...propPaymentData,
-        paymentType: paymentType,
-        payingAmount: total.toFixed(2),
-        receivedAmount: "",
-        change: 0,
-        remainingAmount: total,
-      };
-    }
-    return {
-      receivedAmount: "",
-      payingAmount: total.toFixed(2),
-      change: 0,
-      paymentType: paymentType,
-      paymentReceiver: user?.id || "",
-      saleNote: "",
-      referenceNumber: "",
-      cardType: "",
-      momoProvider: "",
-      customerPhone: "",
-      transactionId: "",
-      splitPayments: [],
-      remainingAmount: total,
-      bankName: "",
-      chequeDate: "",
-    };
-  });
-
-  // Animation effects
-  useEffect(() => {
-    if (isOpen) {
-      setAnimationState("opening");
-      setTimeout(() => setAnimationState("open"), 50);
-    } else {
-      setAnimationState("closing");
-      setTimeout(() => setAnimationState("closed"), 300);
-    }
-  }, [isOpen]);
-
-  // Reset form when payment type changes
-  useEffect(() => {
-    setPaymentData((prev) => {
-      if (
-        prev.payments &&
-        Array.isArray(prev.payments) &&
-        prev.payments.length > 0
-      ) {
-        return {
-          ...prev,
-          paymentType: paymentType,
-          payingAmount: total.toFixed(2),
-          receivedAmount: "",
-          change: 0,
-        };
-      }
-      return {
-        ...prev,
-        paymentType: paymentType,
-        payingAmount: total.toFixed(2),
-        receivedAmount: "",
-        change: 0,
-      };
-    });
-  }, [paymentType, total]);
-
-  // Split payment reset
-  useEffect(() => {
-    if (isOpen && paymentType === "split") {
-      setPaymentData((prev) => ({
-        ...prev,
-        splitPayments: [],
-        remainingAmount: total,
-        newSplitMethod: "",
-        newSplitAmount: "",
-        newSplitRemaining: 0,
-        editingPayment: null,
-        momoProvider: "",
-        customerPhone: "",
-        referenceNumber: "",
-        bankName: "",
-        chequeDate: "",
-      }));
-    }
-  }, [isOpen, total, paymentType]);
-
-  // Layaway calculations
-  const layawayPayments = Array.isArray(paymentData.payments)
-    ? paymentData.payments.filter((p) => p && typeof p.amount !== "undefined")
-    : paymentData.amount
-    ? [
-        {
-          amount: paymentData.amount,
-          method: paymentData.method,
-          reference: paymentData.reference,
-          date:
-            paymentData.date ||
-            paymentData.timestamp ||
-            new Date().toISOString(),
-          user: paymentData.user || null,
-        },
-      ]
-    : [];
-  const isLayaway = layawayPayments.length > 0;
-  const layawayPaid = layawayPayments.reduce(
-    (sum, p) => sum + Number(p.amount || 0),
-    0
-  );
-  const layawayTotalValue =
-    typeof layawayTotal !== "undefined"
-      ? Number(layawayTotal)
-      : isLayaway
-      ? layawayPaid + total
-      : total;
-  const layawayOutstanding = isLayaway ? layawayTotalValue - layawayPaid : 0;
-
-  // Auto-fill received amount
-  useEffect(() => {
-    if (isLayaway && paymentType !== "split") {
-      setPaymentData((prev) => ({
-        ...prev,
-        receivedAmount: layawayOutstanding.toFixed(2),
-      }));
-    } else if (paymentType === "momo" || paymentType === "cash") {
-      setPaymentData((prev) => ({
-        ...prev,
-        receivedAmount: prev.payingAmount || total.toFixed(2),
-      }));
-    }
-  }, [isLayaway, layawayOutstanding, paymentType, total]);
-
-  const handleReceivedAmountChange = (value) => {
-    const received = parseFloat(value) || 0;
-    const paying = parseFloat(paymentData.payingAmount) || 0;
-    const change = Math.max(0, received - paying);
-
-    setPaymentData((prev) => ({
-      ...prev,
-      receivedAmount: value,
-      change: change,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // Validate payment data
-      if (!validatePaymentData(paymentData, paymentType, total, toast)) {
-        return;
-      }
-
-      // Calculate change (only for non-split payments)
-      let change = 0;
-      if (paymentType !== "split") {
-        const received = parseFloat(paymentData.receivedAmount);
-        const paying = parseFloat(paymentData.payingAmount);
-        change = received - paying;
-      }
-
-      // Prepare payment data for parent component
-      const paymentInfo = {
-        ...paymentData,
-        change,
-        total,
-        orderId,
-        paymentType,
-      };
-
-      if (paymentType === "split") {
-        paymentInfo.splitPayments = paymentData.splitPayments;
-        paymentInfo.totalPaid = total - paymentData.remainingAmount;
-        paymentInfo.remainingAmount = paymentData.remainingAmount;
-      }
-
-      // Call parent callback with payment data
-      if (onPaymentComplete) {
-        onPaymentComplete(paymentInfo);
-      }
-
-      // Finalize order immediately with paymentInfo
-      if (processCompleteTransaction) {
-        await processCompleteTransaction(paymentInfo);
-      }
-
-      // Success feedback
-      playBellBeep();
-      toast.success("Payment processed successfully!");
-
-      // Close modal
-      onClose();
-    } catch (error) {
-      toast.error("Payment processing failed. Please try again.");
-      console.error("Payment error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Modern Split Payment Component
-  const ModernSplitPayment = () => {
+// Modern Split Payment Component - MOVED OUTSIDE to prevent re-creation
+const ModernSplitPayment = React.memo(
+  ({
+    paymentData,
+    setPaymentData,
+    total,
+    mode,
+    getPaymentTypeIcon,
+    getPaymentTypeLabel,
+    toast,
+    ModernCard,
+    ModernButton,
+    Icon,
+  }) => {
     const addSplitPayment = (method, amount) => {
       if (amount <= 0 || amount > paymentData.remainingAmount) {
         toast.error("Invalid amount");
@@ -899,19 +682,65 @@ const PaymentForm = ({
               </h4>
             </div>
 
-            <ModernInput
-              label="Enter Amount"
-              value={paymentData.newSplitAmount || ""}
-              onChange={(value) =>
-                setPaymentData((prev) => ({ ...prev, newSplitAmount: value }))
-              }
-              type="number"
-              step="0.01"
-              max={paymentData.remainingAmount}
-              min="0.01"
-              icon="mdi:currency-usd"
-              mode={mode}
-            />
+            <div className="relative">
+              <input
+                key={`split-input-${Date.now()}`}
+                type="number"
+                step="0.01"
+                max={paymentData.remainingAmount}
+                min="0.01"
+                ref={(el) => {
+                  if (el) {
+                    // Store reference to prevent re-creation
+                    window.splitInputRef = el;
+
+                    // Remove existing listeners to prevent duplicates
+                    el.removeEventListener("input", window.splitInputHandler);
+
+                    // Create stable event handler
+                    window.splitInputHandler = (e) => {
+                      const value = e.target.value;
+                      console.log("Split amount input (DOM handler):", value);
+
+                      // Update state immediately without debouncing
+                      setPaymentData((prev) => ({
+                        ...prev,
+                        newSplitAmount: value,
+                      }));
+                    };
+
+                    // Add event listener directly to DOM element
+                    el.addEventListener("input", window.splitInputHandler);
+                  }
+                }}
+                className={`
+                  w-full h-16 px-4 pt-6 pb-2 pl-12 border-2 rounded-2xl transition-all duration-300
+                  focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20
+                  ${
+                    mode === "dark"
+                      ? "border-gray-600 bg-gray-800/50 text-gray-100 placeholder-gray-400 backdrop-blur-sm hover:border-gray-500"
+                      : "border-gray-200 bg-white/80 text-gray-900 placeholder-gray-500 backdrop-blur-sm hover:border-gray-300"
+                  }
+                  focus:outline-none focus:ring-0
+                `}
+                placeholder={`Max: GHS ${paymentData.remainingAmount.toLocaleString()}`}
+              />
+              <div
+                className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${
+                  mode === "dark" ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                <Icon icon="fa6-solid:cedi-sign" className="w-5 h-5" />
+              </div>
+              <label
+                className={`
+                  absolute left-12 top-2 text-xs font-medium transition-colors duration-300
+                  ${mode === "dark" ? "text-gray-400" : "text-gray-600"}
+                `}
+              >
+                Enter Amount
+              </label>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <ModernButton
@@ -1083,7 +912,711 @@ const PaymentForm = ({
         )}
       </ModernCard>
     );
+  }
+);
+
+const PaymentForm = ({
+  isOpen,
+  onClose,
+  paymentType,
+  total,
+  orderId,
+  onPaymentComplete,
+  customer = null,
+  customers = [],
+  onCustomerChange = null,
+  user = null,
+  allUsers = [],
+  isOnlinePurchase = false,
+  processCompleteTransaction,
+  paymentData: propPaymentData,
+  layawayTotal,
+  products = [],
+  quantities = {},
+  mode = "light",
+}) => {
+  const modalRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [animationState, setAnimationState] = useState("closed");
+
+  // Initialize payment data
+  const [paymentData, setPaymentData] = useState(() => {
+    if (
+      propPaymentData &&
+      Array.isArray(propPaymentData.payments) &&
+      propPaymentData.payments.length > 0
+    ) {
+      return {
+        ...propPaymentData,
+        paymentType: paymentType,
+        payingAmount: total.toFixed(2),
+        receivedAmount: "",
+        change: 0,
+        remainingAmount: total,
+      };
+    }
+    return {
+      receivedAmount: "",
+      payingAmount: total.toFixed(2),
+      change: 0,
+      paymentType: paymentType,
+      paymentReceiver: user?.id || "",
+      saleNote: "",
+      referenceNumber: "",
+      cardType: "",
+      momoProvider: "",
+      customerPhone: "",
+      transactionId: "",
+      splitPayments: [],
+      remainingAmount: total,
+      bankName: "",
+      chequeDate: "",
+    };
+  });
+
+  // Animation effects
+  useEffect(() => {
+    if (isOpen) {
+      setAnimationState("opening");
+      setTimeout(() => setAnimationState("open"), 50);
+    } else {
+      setAnimationState("closing");
+      setTimeout(() => setAnimationState("closed"), 300);
+    }
+  }, [isOpen]);
+
+  // Reset form when payment type changes
+  useEffect(() => {
+    setPaymentData((prev) => {
+      if (
+        prev.payments &&
+        Array.isArray(prev.payments) &&
+        prev.payments.length > 0
+      ) {
+        return {
+          ...prev,
+          paymentType: paymentType,
+          payingAmount: total.toFixed(2),
+          receivedAmount: "",
+          change: 0,
+        };
+      }
+      return {
+        ...prev,
+        paymentType: paymentType,
+        payingAmount: total.toFixed(2),
+        receivedAmount: "",
+        change: 0,
+      };
+    });
+  }, [paymentType, total]);
+
+  // Split payment reset
+  useEffect(() => {
+    if (isOpen && paymentType === "split") {
+      setPaymentData((prev) => ({
+        ...prev,
+        splitPayments: [],
+        remainingAmount: total,
+        newSplitMethod: "",
+        newSplitAmount: "",
+        newSplitRemaining: 0,
+        editingPayment: null,
+        momoProvider: "",
+        customerPhone: "",
+        referenceNumber: "",
+        bankName: "",
+        chequeDate: "",
+      }));
+    }
+  }, [isOpen, total, paymentType]);
+
+  // Layaway calculations
+  const layawayPayments = Array.isArray(paymentData.payments)
+    ? paymentData.payments.filter((p) => p && typeof p.amount !== "undefined")
+    : paymentData.amount
+    ? [
+        {
+          amount: paymentData.amount,
+          method: paymentData.method,
+          reference: paymentData.reference,
+          date:
+            paymentData.date ||
+            paymentData.timestamp ||
+            new Date().toISOString(),
+          user: paymentData.user || null,
+        },
+      ]
+    : [];
+  const isLayaway = layawayPayments.length > 0;
+  const layawayPaid = layawayPayments.reduce(
+    (sum, p) => sum + Number(p.amount || 0),
+    0
+  );
+  const layawayTotalValue =
+    typeof layawayTotal !== "undefined"
+      ? Number(layawayTotal)
+      : isLayaway
+      ? layawayPaid + total
+      : total;
+  const layawayOutstanding = isLayaway ? layawayTotalValue - layawayPaid : 0;
+
+  // Auto-fill received amount
+  useEffect(() => {
+    if (isLayaway && paymentType !== "split") {
+      setPaymentData((prev) => ({
+        ...prev,
+        receivedAmount: layawayOutstanding.toFixed(2),
+      }));
+    } else if (paymentType === "momo" || paymentType === "cash") {
+      setPaymentData((prev) => ({
+        ...prev,
+        receivedAmount: prev.payingAmount || total.toFixed(2),
+      }));
+    }
+  }, [isLayaway, layawayOutstanding, paymentType, total]);
+
+  const handleReceivedAmountChange = (value) => {
+    const received = parseFloat(value) || 0;
+    const paying = parseFloat(paymentData.payingAmount) || 0;
+    const change = Math.max(0, received - paying);
+
+    setPaymentData((prev) => ({
+      ...prev,
+      receivedAmount: value,
+      change: change,
+    }));
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Validate payment data
+      if (!validatePaymentData(paymentData, paymentType, total, toast)) {
+        return;
+      }
+
+      // Calculate change (only for non-split payments)
+      let change = 0;
+      if (paymentType !== "split") {
+        const received = parseFloat(paymentData.receivedAmount);
+        const paying = parseFloat(paymentData.payingAmount);
+        change = received - paying;
+      }
+
+      // Prepare payment data for parent component
+      const paymentInfo = {
+        ...paymentData,
+        change,
+        total,
+        orderId,
+        paymentType,
+      };
+
+      if (paymentType === "split") {
+        paymentInfo.splitPayments = paymentData.splitPayments;
+        paymentInfo.totalPaid = total - paymentData.remainingAmount;
+        paymentInfo.remainingAmount = paymentData.remainingAmount;
+      }
+
+      // Call parent callback with payment data
+      if (onPaymentComplete) {
+        onPaymentComplete(paymentInfo);
+      }
+
+      // Finalize order immediately with paymentInfo
+      if (processCompleteTransaction) {
+        await processCompleteTransaction(paymentInfo);
+      }
+
+      // Success feedback
+      playBellBeep();
+      toast.success("Payment processed successfully!");
+
+      // Close modal
+      onClose();
+    } catch (error) {
+      toast.error("Payment processing failed. Please try again.");
+      console.error("Payment error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Modern Split Payment Component - Extract outside main component
+  const ModernSplitPayment = React.memo(() => {
+    const addSplitPayment = (method, amount) => {
+      if (amount <= 0 || amount > paymentData.remainingAmount) {
+        toast.error("Invalid amount");
+        return;
+      }
+
+      const newPayment = {
+        id: Date.now(),
+        method,
+        amount,
+        status: "pending",
+        timestamp: new Date().toISOString(),
+      };
+
+      const updatedPayments = [...paymentData.splitPayments, newPayment];
+      const updatedPaid = updatedPayments.reduce(
+        (sum, p) => sum + (parseFloat(p.amount) || 0),
+        0
+      );
+
+      setPaymentData((prev) => ({
+        ...prev,
+        splitPayments: updatedPayments,
+        remainingAmount: total - updatedPaid,
+        newSplitAmount: "",
+      }));
+    };
+
+    const removeSplitPayment = (paymentId) => {
+      setPaymentData((prev) => {
+        const updatedPayments = prev.splitPayments.filter(
+          (p) => p.id !== paymentId
+        );
+        const updatedPaid = updatedPayments.reduce(
+          (sum, p) => sum + (parseFloat(p.amount) || 0),
+          0
+        );
+        return {
+          ...prev,
+          splitPayments: updatedPayments,
+          remainingAmount: total - updatedPaid,
+        };
+      });
+      toast.success("Payment removed");
+    };
+
+    const quickSplit5050 = () => {
+      const half = Math.ceil(paymentData.remainingAmount / 2);
+      const remaining = paymentData.remainingAmount - half;
+
+      if (half > 0) {
+        const cashPayment = {
+          id: Date.now(),
+          method: "cash",
+          amount: half,
+          status: "pending",
+          timestamp: new Date().toISOString(),
+        };
+
+        const momoPayment = {
+          id: Date.now() + 1,
+          method: "momo",
+          amount: remaining,
+          status: "pending",
+          timestamp: new Date().toISOString(),
+        };
+
+        const updatedPayments = [
+          ...paymentData.splitPayments,
+          cashPayment,
+          momoPayment,
+        ];
+        const updatedPaid = updatedPayments.reduce(
+          (sum, p) => sum + (parseFloat(p.amount) || 0),
+          0
+        );
+
+        setPaymentData((prev) => ({
+          ...prev,
+          splitPayments: updatedPayments,
+          remainingAmount: total - updatedPaid,
+        }));
+
+        toast.success(
+          `Split: Cash (GHS ${half.toLocaleString()}) + MoMo (GHS ${remaining.toLocaleString()})`
+        );
+      }
+    };
+
+    return (
+      <ModernCard
+        title="Split Payment"
+        icon="mdi:call-split"
+        mode={mode}
+        className="space-y-8"
+      >
+        {/* Payment Progress */}
+        <div
+          className={`p-6 rounded-2xl border-2 border-dashed ${
+            mode === "dark"
+              ? "border-purple-500/30 bg-purple-900/10"
+              : "border-purple-300/50 bg-purple-50/50"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div
+                className={`p-2 rounded-xl ${
+                  mode === "dark" ? "bg-purple-500/20" : "bg-purple-100"
+                }`}
+              >
+                <Icon
+                  icon="mdi:progress-check"
+                  className="w-6 h-6 text-purple-600"
+                />
+              </div>
+              <div>
+                <h4
+                  className={`font-bold text-lg ${
+                    mode === "dark" ? "text-purple-300" : "text-purple-800"
+                  }`}
+                >
+                  Payment Progress
+                </h4>
+                <p
+                  className={`text-sm ${
+                    mode === "dark" ? "text-purple-400" : "text-purple-600"
+                  }`}
+                >
+                  Total: GHS {total.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div
+            className={`w-full h-3 rounded-full overflow-hidden ${
+              mode === "dark" ? "bg-gray-700" : "bg-gray-200"
+            }`}
+          >
+            <div
+              className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500 ease-out"
+              style={{
+                width: `${Math.min(
+                  100,
+                  ((total - paymentData.remainingAmount) / total) * 100
+                )}%`,
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div
+              className={`text-center p-4 rounded-xl ${
+                mode === "dark" ? "bg-green-900/20" : "bg-green-50"
+              }`}
+            >
+              <div
+                className={`text-sm font-medium ${
+                  mode === "dark" ? "text-green-300" : "text-green-600"
+                }`}
+              >
+                Paid
+              </div>
+              <div
+                className={`text-xl font-bold ${
+                  mode === "dark" ? "text-green-400" : "text-green-700"
+                }`}
+              >
+                GHS {(total - paymentData.remainingAmount).toLocaleString()}
+              </div>
+            </div>
+            <div
+              className={`text-center p-4 rounded-xl ${
+                mode === "dark" ? "bg-orange-900/20" : "bg-orange-50"
+              }`}
+            >
+              <div
+                className={`text-sm font-medium ${
+                  mode === "dark" ? "text-orange-300" : "text-orange-600"
+                }`}
+              >
+                Remaining
+              </div>
+              <div
+                className={`text-xl font-bold ${
+                  mode === "dark" ? "text-orange-400" : "text-orange-700"
+                }`}
+              >
+                GHS {paymentData.remainingAmount.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        {paymentData.remainingAmount > 0 && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Icon
+                icon="mdi:lightning-bolt"
+                className="w-5 h-5 text-yellow-500"
+              />
+              <h4
+                className={`font-semibold ${
+                  mode === "dark" ? "text-gray-200" : "text-gray-800"
+                }`}
+              >
+                Quick Split
+              </h4>
+            </div>
+
+            <ModernButton
+              onClick={quickSplit5050}
+              variant="primary"
+              size="lg"
+              icon="mdi:call-split"
+              className="w-full"
+            >
+              Split 50/50 (Cash + MoMo)
+            </ModernButton>
+          </div>
+        )}
+
+        {/* Custom Amount Input */}
+        {paymentData.remainingAmount > 0 && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Icon icon="mdi:calculator" className="w-5 h-5 text-blue-500" />
+              <h4
+                className={`font-semibold ${
+                  mode === "dark" ? "text-gray-200" : "text-gray-800"
+                }`}
+              >
+                Custom Amount
+              </h4>
+            </div>
+
+            <div className="relative">
+              <input
+                ref={(el) => {
+                  // Store the input ref for later use
+                  if (el) {
+                    el.splitAmountInputRef = true;
+                  }
+                }}
+                type="number"
+                step="0.01"
+                max={paymentData.remainingAmount}
+                min="0.01"
+                defaultValue={paymentData.newSplitAmount || ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  console.log(
+                    "Split amount input onChange (uncontrolled):",
+                    value
+                  );
+
+                  // Update state without causing re-render issues
+                  // Use a debounced approach to prevent excessive updates
+                  clearTimeout(window.splitAmountTimeout);
+                  window.splitAmountTimeout = setTimeout(() => {
+                    setPaymentData((prev) => ({
+                      ...prev,
+                      newSplitAmount: value,
+                    }));
+                  }, 100); // 100ms debounce
+                }}
+                className={`
+                  w-full h-16 px-4 pt-6 pb-2 pl-12 border-2 rounded-2xl transition-all duration-300
+                  focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20
+                  ${
+                    mode === "dark"
+                      ? "border-gray-600 bg-gray-800/50 text-gray-100 placeholder-gray-400 backdrop-blur-sm hover:border-gray-500"
+                      : "border-gray-200 bg-white/80 text-gray-900 placeholder-gray-500 backdrop-blur-sm hover:border-gray-300"
+                  }
+                  focus:outline-none focus:ring-0
+                `}
+                placeholder={`Max: GHS ${paymentData.remainingAmount.toLocaleString()}`}
+              />
+              <div
+                className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${
+                  mode === "dark" ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                <Icon icon="fa6-solid:cedi-sign" className="w-5 h-5" />
+              </div>
+              <label
+                className={`
+                absolute left-12 top-2 text-xs font-medium transition-colors duration-300
+                ${mode === "dark" ? "text-gray-400" : "text-gray-600"}
+              `}
+              >
+                Enter Amount
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <ModernButton
+                onClick={() => {
+                  const amount = parseFloat(paymentData.newSplitAmount) || 0;
+                  if (amount > 0 && amount <= paymentData.remainingAmount) {
+                    addSplitPayment("cash", amount);
+                    const remaining = paymentData.remainingAmount - amount;
+                    if (remaining > 0) {
+                      addSplitPayment("momo", remaining);
+                    }
+                  } else {
+                    toast.error("Please enter a valid amount");
+                  }
+                }}
+                variant="success"
+                icon="mdi:cash"
+                disabled={
+                  !paymentData.newSplitAmount ||
+                  parseFloat(paymentData.newSplitAmount) <= 0
+                }
+              >
+                Cash + MoMo Balance
+              </ModernButton>
+
+              <ModernButton
+                onClick={() => {
+                  const amount = parseFloat(paymentData.newSplitAmount) || 0;
+                  if (amount > 0 && amount <= paymentData.remainingAmount) {
+                    addSplitPayment("momo", amount);
+                    const remaining = paymentData.remainingAmount - amount;
+                    if (remaining > 0) {
+                      addSplitPayment("cash", remaining);
+                    }
+                  } else {
+                    toast.error("Please enter a valid amount");
+                  }
+                }}
+                variant="primary"
+                icon="mdi:cellphone"
+                disabled={
+                  !paymentData.newSplitAmount ||
+                  parseFloat(paymentData.newSplitAmount) <= 0
+                }
+              >
+                MoMo + Cash Balance
+              </ModernButton>
+            </div>
+          </div>
+        )}
+
+        {/* Payment List */}
+        {paymentData.splitPayments.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Icon
+                icon="mdi:format-list-bulleted"
+                className="w-5 h-5 text-gray-500"
+              />
+              <h4
+                className={`font-semibold ${
+                  mode === "dark" ? "text-gray-200" : "text-gray-800"
+                }`}
+              >
+                Payment Summary
+              </h4>
+            </div>
+
+            <div className="space-y-3">
+              {paymentData.splitPayments.map((payment, index) => (
+                <div
+                  key={payment.id}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 hover:shadow-md ${
+                    mode === "dark"
+                      ? "bg-gray-700/50 border-gray-600/50"
+                      : "bg-gray-50/80 border-gray-200/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`p-2 rounded-xl ${
+                        payment.method === "cash"
+                          ? mode === "dark"
+                            ? "bg-green-900/30"
+                            : "bg-green-100"
+                          : mode === "dark"
+                          ? "bg-blue-900/30"
+                          : "bg-blue-100"
+                      }`}
+                    >
+                      <Icon
+                        icon={getPaymentTypeIcon(payment.method)}
+                        className={`w-5 h-5 ${
+                          payment.method === "cash"
+                            ? "text-green-600"
+                            : "text-blue-600"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <div
+                        className={`font-semibold ${
+                          mode === "dark" ? "text-gray-200" : "text-gray-800"
+                        }`}
+                      >
+                        {getPaymentTypeLabel(payment.method)}
+                      </div>
+                      <div
+                        className={`text-sm ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      >
+                        {new Date(payment.timestamp).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="font-bold text-green-600 text-lg">
+                        GHS {payment.amount.toLocaleString()}
+                      </div>
+                    </div>
+                    <ModernButton
+                      onClick={() => removeSplitPayment(payment.id)}
+                      variant="danger"
+                      size="sm"
+                      icon="mdi:delete"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Total Summary */}
+            <div
+              className={`p-4 rounded-2xl border-2 border-dashed ${
+                paymentData.remainingAmount === 0
+                  ? mode === "dark"
+                    ? "border-green-500/50 bg-green-900/10"
+                    : "border-green-300/50 bg-green-50/50"
+                  : mode === "dark"
+                  ? "border-orange-500/50 bg-orange-900/10"
+                  : "border-orange-300/50 bg-orange-50/50"
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <span
+                  className={`font-bold text-lg ${
+                    mode === "dark" ? "text-gray-200" : "text-gray-900"
+                  }`}
+                >
+                  Status:
+                </span>
+                <span
+                  className={`font-bold text-lg ${
+                    paymentData.remainingAmount === 0
+                      ? "text-green-600"
+                      : "text-orange-600"
+                  }`}
+                >
+                  {paymentData.remainingAmount === 0
+                    ? "Complete"
+                    : `GHS ${paymentData.remainingAmount.toLocaleString()} Remaining`}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </ModernCard>
+    );
+  });
 
   const renderPaymentTypeFields = () => {
     switch (paymentType) {
@@ -1175,7 +1708,17 @@ const PaymentForm = ({
         );
 
       case "split":
-        return <ModernSplitPayment />;
+        return (
+          <SplitPaymentStable
+            paymentData={paymentData}
+            setPaymentData={setPaymentData}
+            total={total}
+            mode={mode}
+            getPaymentTypeIcon={getPaymentTypeIcon}
+            getPaymentTypeLabel={getPaymentTypeLabel}
+            toast={toast}
+          />
+        );
 
       default:
         return null;
@@ -1244,7 +1787,7 @@ const PaymentForm = ({
             className="relative overflow-hidden"
             style={{ borderRadius: "32px 32px 0 0" }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 opacity-90" />
+            <div className="absolute inset-0 bg-blue-600 opacity-90" />
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent" />
 
             {/* Animated background elements */}
@@ -1253,13 +1796,13 @@ const PaymentForm = ({
               <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000" />
             </div>
 
-            <div className="relative px-10 py-8">
+            <div className="relative px-6 py-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-6">
-                  <div className="p-4 bg-white/15 rounded-3xl backdrop-blur-sm border border-white/20">
+                  <div className="p-3 bg-white/15 rounded-3xl backdrop-blur-sm border border-white/20">
                     <Icon
                       icon={getPaymentTypeIcon(paymentType)}
-                      className="w-10 h-10 text-white"
+                      className="w-7 h-7 text-white"
                     />
                   </div>
                   <div>
@@ -1321,7 +1864,10 @@ const PaymentForm = ({
           )}
 
           {/* Content Area - Streamlined */}
-          <div className="px-6 py-6 max-h-[calc(85vh-200px)] overflow-y-auto space-y-6">
+          <div
+            ref={scrollContainerRef}
+            className="px-6 py-6 max-h-[calc(85vh-200px)] overflow-y-auto space-y-6"
+          >
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Streamlined Payment Header - Essential Info Only */}
 
@@ -1339,7 +1885,7 @@ const PaymentForm = ({
                     >
                       <div className="text-center flex items-center gap-4">
                         <div
-                          className={`text-sm font-medium ${
+                          className={`text-md font-medium ${
                             mode === "dark" ? "text-gray-400" : "text-gray-600"
                           }`}
                         >
