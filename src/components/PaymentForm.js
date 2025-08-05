@@ -980,10 +980,37 @@ const PaymentForm = ({
     if (isOpen) {
       setAnimationState("opening");
       setTimeout(() => setAnimationState("open"), 50);
+      
+      // Prevent background scrolling and interaction
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${window.scrollY}px`;
     } else {
       setAnimationState("closing");
       setTimeout(() => setAnimationState("closed"), 300);
+      
+      // Restore background scrolling and interaction
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
     }
+    
+    // Cleanup function to restore scrolling when component unmounts
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+    };
   }, [isOpen]);
 
   // Reset form when payment type changes
@@ -1736,6 +1763,16 @@ const PaymentForm = ({
       {/* Enhanced Backdrop */}
       <div
         className="fixed inset-0 transition-all duration-500"
+        onClick={(e) => {
+          // Prevent clicks from reaching background elements
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onTouchMove={(e) => {
+          // Prevent touch scrolling on background
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         style={{
           background:
             mode === "dark"
@@ -1754,7 +1791,17 @@ const PaymentForm = ({
       />
 
       {/* Modal Container */}
-      <div className="flex min-h-full items-center justify-center p-6">
+      <div 
+        className="flex min-h-full items-center justify-center p-6"
+        onClick={(e) => {
+          // Prevent clicks from reaching background elements
+          e.stopPropagation();
+        }}
+        onTouchMove={(e) => {
+          // Allow touch scrolling within modal but prevent background scrolling
+          e.stopPropagation();
+        }}
+      >
         <div
           ref={modalRef}
           className={`
@@ -1765,6 +1812,10 @@ const PaymentForm = ({
                 : "scale-95 translate-y-8"
             }
           `}
+          onClick={(e) => {
+            // Prevent clicks from reaching background elements
+            e.stopPropagation();
+          }}
           style={{
             borderRadius: "32px",
             background:
