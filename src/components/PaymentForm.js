@@ -1888,7 +1888,7 @@ const PaymentForm = ({
                           : "bg-white/60 border-gray-200/50"
                       }`}
                     >
-                      <div className="text-center flex items-center gap-4">
+                      <div className="text-center flex items-center gap-3">
                         <div
                           className={`text-md font-medium ${
                             mode === "dark" ? "text-gray-400" : "text-gray-600"
