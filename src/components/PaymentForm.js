@@ -48,7 +48,7 @@ const ModernInput = ({
       >
         {icon && (
           <div
-            className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 z-10 ${
+            className={`absolute left-4 top-[40px] transform -translate-y-1/2 transition-colors duration-300 z-10 ${
               focused
                 ? "text-blue-500"
                 : mode === "dark"
@@ -1911,7 +1911,7 @@ const PaymentForm = ({
                       onChange={handleReceivedAmountChange}
                       type="number"
                       step="0.01"
-                      icon="mdi:cash"
+                      icon="fa6-solid:cedi-sign"
                       mode={mode}
                       required
                     />

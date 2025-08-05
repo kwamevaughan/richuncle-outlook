@@ -80,11 +80,12 @@ const PosOrderList = ({
   setOnlineOrderRef,
   allUsers,
   orderId,
+  selectedCustomerId,
+  setSelectedCustomerId,
   className = "",
   mode = "light",
 }) => {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
   const [barcodeProduct, setBarcodeProduct] = useState(null);
@@ -346,11 +347,14 @@ const PosOrderList = ({
                   : "bg-white text-black border-gray-300"
               }`}
               value={
-                selectedCustomerId.startsWith("db_")
+                selectedCustomerId === "__online__"
+                  ? "__online__"
+                  : selectedCustomerId.startsWith("db_")
                   ? "customer_db"
-                  : selectedCustomerId
+                  : selectedCustomerId || ""
               }
               onChange={(e) => {
+                console.log('Customer selection changed:', e.target.value);
                 if (e.target.value === "__online__") {
                   if (typeof setIsOnlinePurchase === "function")
                     setIsOnlinePurchase(true);
@@ -368,8 +372,29 @@ const PosOrderList = ({
             >
               <option value="">Walk In Customer</option>
               <option value="__online__">Online Purchase</option>
-              <option value="customer_db">Customer Database</option>
+              <option value="customer_db">
+                {selectedCustomerId.startsWith("db_") 
+                  ? customers.find((c) => c.id === selectedCustomerId.replace("db_", ""))?.name || "Customer Database"
+                  : "Customer Database"
+                }
+              </option>
             </select>
+            {(selectedCustomerId && selectedCustomerId !== "") && (
+              <TooltipIconButton
+                label="Clear Customer Selection"
+                mode="light"
+                className="rounded-full text-red-500 p-2 hover:text-red-600"
+                onClick={() => {
+                  setSelectedCustomerId("");
+                  if (typeof setIsOnlinePurchase === "function") {
+                    setIsOnlinePurchase(false);
+                  }
+                  toast.success("Customer selection cleared");
+                }}
+              >
+                <Icon icon="mdi:close" className="w-5 h-5" />
+              </TooltipIconButton>
+            )}
 
             {/* Show react-select if Customer Database is selected */}
             {selectedCustomerId === "customer_db" && (
@@ -1196,13 +1221,21 @@ const PosOrderList = ({
         orderId={orderId}
         onPaymentComplete={handlePaymentComplete}
         customer={
-          selectedCustomerId === "__online__"
-            ? { id: "__online__", name: "Online Purchase" }
-            : selectedCustomerId.startsWith("db_")
-            ? customers.find((c) => c.id === selectedCustomerId.replace("db_", ""))
-            : selectedCustomerId
-            ? { id: selectedCustomerId, name: selectedCustomerId }
-            : null
+          (() => {
+            const customerInfo = selectedCustomerId === "__online__"
+              ? { id: "__online__", name: "Online Purchase" }
+              : selectedCustomerId.startsWith("db_")
+              ? customers.find((c) => c.id === selectedCustomerId.replace("db_", ""))
+              : selectedCustomerId
+              ? { id: selectedCustomerId, name: selectedCustomerId }
+              : null;
+            console.log('PaymentForm customer prop:', {
+              selectedCustomerId,
+              customerInfo,
+              isOnlinePurchase
+            });
+            return customerInfo;
+          })()
         }
         customers={customers}
         onCustomerChange={handleCustomerChange}

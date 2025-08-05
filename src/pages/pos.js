@@ -207,7 +207,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const handlePaymentComplete = (paymentInfo) => {
     setPaymentData(paymentInfo);
     setShowPaymentModal(false);
-    // Optionally show a toast here if needed
+    // Process the transaction and print receipt
+    processCompleteTransaction(paymentInfo);
   };
 
   // Add orderId state at the top of POS:
@@ -322,15 +323,42 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         paymentReceiverName = user?.full_name || user?.email || 'Unknown';
       }
       // Find selected customer
-      let selectedCustomerId = '';
+      let customerId = '';
       let selectedCustomerName = '';
+      
+      // First check if customer info is in paymentInfo
       if (paymentInfo.customerId) {
-        selectedCustomerId = paymentInfo.customerId;
+        customerId = paymentInfo.customerId;
         selectedCustomerName = customers.find(c => c.id === paymentInfo.customerId)?.name || 'Walk In Customer';
       } else if (paymentInfo.customer && paymentInfo.customer.id) {
-        selectedCustomerId = paymentInfo.customer.id;
+        customerId = paymentInfo.customer.id;
         selectedCustomerName = paymentInfo.customer.name || 'Walk In Customer';
+      } else {
+        // Fall back to the selectedCustomerId state variable
+        customerId = selectedCustomerId || '';
+        if (selectedCustomerId === '__online__') {
+          selectedCustomerName = 'Online Purchase';
+        } else if (selectedCustomerId && selectedCustomerId.startsWith('db_')) {
+          // Handle database customer selection (remove db_ prefix for lookup)
+          const actualCustomerId = selectedCustomerId.replace('db_', '');
+          const customer = customers.find(c => c.id === actualCustomerId);
+          selectedCustomerName = customer?.name || 'Walk In Customer';
+          customerId = actualCustomerId; // Use the actual customer ID without prefix
+        } else if (selectedCustomerId) {
+          selectedCustomerName = customers.find(c => c.id === selectedCustomerId)?.name || 'Walk In Customer';
+        } else {
+          selectedCustomerName = 'Walk In Customer';
+        }
       }
+      
+      console.log('Customer processing:', {
+        paymentInfoCustomerId: paymentInfo.customerId,
+        paymentInfoCustomer: paymentInfo.customer,
+        selectedCustomerId: selectedCustomerId,
+        finalCustomerId: customerId,
+        finalCustomerName: selectedCustomerName,
+        customers: customers.length
+      });
       // Debug logs for product selection and order item building
       console.log('selectedProducts:', selectedProducts);
       console.log('products:', products);
@@ -368,7 +396,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       const storeId = selectedRegisterObj ? selectedRegisterObj.store_id : undefined;
       orderData = {
         id: orderId,
-        customer_id: selectedCustomerId || '',
+        customer_id: customerId || '',
         customer_name: selectedCustomerName || 'Walk In Customer',
         subtotal: 0, // You may want to calculate this
         tax: 0, // You may want to calculate this
@@ -439,6 +467,20 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       toast.dismiss(processingToast);
       
       // Auto-print receipt instead of showing preview modal
+      console.log('Attempting to print receipt with data:', {
+        orderId: orderData.id,
+        selectedProducts,
+        quantities,
+        products: products.length,
+        subtotal: calculateTotal() - (selectedDiscountId ? discounts.find(d => d.id === selectedDiscountId)?.value || 0 : 0),
+        tax: 0,
+        discount: selectedDiscountId ? discounts.find(d => d.id === selectedDiscountId)?.value || 0 : 0,
+        total: totalPayable,
+        selectedCustomerId: customerId || '',
+        customers: customers.length,
+        paymentData: paymentResult,
+      });
+      
       const printReceipt = PrintReceipt({
         orderId: orderData.id,
         selectedProducts: selectedProducts,
@@ -448,13 +490,16 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         tax: 0, // Calculate if needed
         discount: selectedDiscountId ? discounts.find(d => d.id === selectedDiscountId)?.value || 0 : 0,
         total: totalPayable,
-        selectedCustomerId: selectedCustomerId || '',
+        selectedCustomerId: customerId || '',
         customers: customers,
         paymentData: paymentResult,
         order: { ...orderData, items },
       });
       
+      console.log('PrintReceipt instance created:', printReceipt);
       const printSuccess = printReceipt.printOrder();
+      console.log('Print result:', printSuccess);
+      
       if (printSuccess) {
         toast.success("Order completed and receipt printed!");
       } else {
@@ -473,7 +518,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         ...orderData,
         items,
         payment: paymentInfoWithName,
-        customerId: selectedCustomerId || '',
+        customerId: customerId || '',
       });
       // Reset order state
       setSelectedProducts([]);
@@ -518,7 +563,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       tax: 0,
       discount: 0,
       total: totalPayable,
-      selectedCustomerId: '', // You may want to get the current customer
+      selectedCustomerId: selectedCustomerId || '', // Use the actual selected customer
       customers,
       paymentData: payment,
       order: lastOrderData,
@@ -694,6 +739,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             hasOpenSession={hasOpenSession}
             sessionCheckLoading={sessionCheckLoading}
             selectedPayment={selectedPayment}
+            setSelectedPayment={setSelectedPayment}
             selectedPaymentType={selectedPaymentType}
             showPaymentModal={showPaymentModal}
             setShowPaymentModal={setShowPaymentModal}
@@ -948,46 +994,6 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           sessionCheckLoading={sessionCheckLoading}
           user={user}
           mode={mode}
-        />
-        {(() => {
-          if (showPaymentModal) {
-            console.log("PaymentForm products (full):", products);
-            console.log("PaymentForm selectedProducts:", selectedProducts);
-            console.log(
-              "PaymentForm filtered products:",
-              products.filter((p) => selectedProducts.includes(p.id))
-            );
-            console.log("PaymentForm quantities:", quantities);
-          }
-          return null;
-        })()}
-        <PaymentForm
-          isOpen={showPaymentModal}
-          onClose={() => {
-            setShowPaymentModal(false);
-            setSelectedPayment("");
-          }}
-          paymentType={selectedPaymentType}
-          total={totalPayable}
-          orderId={orderId}
-          onPaymentComplete={handlePaymentComplete}
-          customer={
-            selectedCustomerId === "__online__"
-              ? { id: "__online__", name: "Online Purchase" }
-              : selectedCustomerId.startsWith("db_")
-              ? customers.find((c) => c.id === selectedCustomerId.replace("db_", ""))
-              : selectedCustomerId
-              ? { id: selectedCustomerId, name: selectedCustomerId }
-              : lastOrderData?.customerId
-              ? customers.find((c) => c.id === lastOrderData.customerId)
-              : null
-          }
-          customers={customers}
-          user={user}
-          allUsers={allUsers}
-          processCompleteTransaction={processCompleteTransaction}
-          products={products.filter((p) => selectedProducts.includes(p.id))}
-          quantities={quantities}
         />
         <SimpleModal
           isOpen={showNoOrderModal}

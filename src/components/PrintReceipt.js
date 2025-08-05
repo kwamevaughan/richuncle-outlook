@@ -134,13 +134,22 @@ const PrintReceipt = ({
           
           <div class="customer-info">
             <div>Customer: ${
-              customers.find((c) => c.id === selectedCustomerId)?.name ||
-              "Walk In Customer"
+              selectedCustomerId === '__online__' 
+                ? "Online Purchase"
+                : selectedCustomerId && selectedCustomerId.startsWith('db_')
+                ? customers.find((c) => c.id === selectedCustomerId.replace('db_', ''))?.name || "Walk In Customer"
+                : customers.find((c) => c.id === selectedCustomerId)?.name ||
+                  "Walk In Customer"
             }</div>
             ${
-              customers.find((c) => c.id === selectedCustomerId)?.phone
+              selectedCustomerId !== '__online__' && 
+              (selectedCustomerId && selectedCustomerId.startsWith('db_')
+                ? customers.find((c) => c.id === selectedCustomerId.replace('db_', ''))?.phone
+                : customers.find((c) => c.id === selectedCustomerId)?.phone)
                 ? `<div>Phone: ${
-                    customers.find((c) => c.id === selectedCustomerId)?.phone
+                    selectedCustomerId && selectedCustomerId.startsWith('db_')
+                      ? customers.find((c) => c.id === selectedCustomerId.replace('db_', ''))?.phone
+                      : customers.find((c) => c.id === selectedCustomerId)?.phone
                   }</div>`
                 : ""
             }
