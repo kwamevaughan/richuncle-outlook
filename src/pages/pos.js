@@ -703,6 +703,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             allUsers={allUsers}
             orderId={orderId}
             setOrderId={setOrderId}
+            selectedCustomerId={selectedCustomerId}
+            setSelectedCustomerId={setSelectedCustomerId}
             mode={mode}
           />
           
@@ -970,7 +972,13 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           orderId={orderId}
           onPaymentComplete={handlePaymentComplete}
           customer={
-            lastOrderData?.customerId
+            selectedCustomerId === "__online__"
+              ? { id: "__online__", name: "Online Purchase" }
+              : selectedCustomerId.startsWith("db_")
+              ? customers.find((c) => c.id === selectedCustomerId.replace("db_", ""))
+              : selectedCustomerId
+              ? { id: selectedCustomerId, name: selectedCustomerId }
+              : lastOrderData?.customerId
               ? customers.find((c) => c.id === lastOrderData.customerId)
               : null
           }

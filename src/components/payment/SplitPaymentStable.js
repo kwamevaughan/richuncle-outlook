@@ -102,6 +102,54 @@ const SplitPaymentStable = ({
     );
   };
 
+  const addMomoCashBalance = (momoAmount) => {
+    if (momoAmount <= 0 || momoAmount > paymentData.remainingAmount) {
+      toast.error("Invalid amount");
+      return;
+    }
+
+    const cashAmount = paymentData.remainingAmount - momoAmount;
+    
+    const momoPayment = {
+      id: Date.now(),
+      method: "momo",
+      amount: momoAmount,
+      status: "pending",
+      timestamp: new Date().toISOString(),
+    };
+
+    const cashPayment = {
+      id: Date.now() + 1,
+      method: "cash",
+      amount: cashAmount,
+      status: "pending",
+      timestamp: new Date().toISOString(),
+    };
+
+    const updatedPayments = [...paymentData.splitPayments, momoPayment, cashPayment];
+    const updatedPaid = updatedPayments.reduce(
+      (sum, p) => sum + (parseFloat(p.amount) || 0),
+      0
+    );
+
+    setPaymentData((prev) => ({
+      ...prev,
+      splitPayments: updatedPayments,
+      remainingAmount: total - updatedPaid,
+      newSplitAmount: "",
+    }));
+    
+    // Clear local amount
+    setLocalAmount("");
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+    
+    toast.success(
+      `Split: MoMo (GHS ${momoAmount.toLocaleString()}) + Cash (GHS ${cashAmount.toLocaleString()})`
+    );
+  };
+
   const removeSplitPayment = (paymentId) => {
     setPaymentData((prev) => {
       const updatedPayments = prev.splitPayments.filter(
@@ -434,11 +482,7 @@ const SplitPaymentStable = ({
                 onClick={() => {
                   const amount = parseFloat(localAmount) || 0;
                   if (amount > 0 && amount <= paymentData.remainingAmount) {
-                    addSplitPayment("momo", amount);
-                    const remaining = paymentData.remainingAmount - amount;
-                    if (remaining > 0) {
-                      addSplitPayment("cash", remaining);
-                    }
+                    addMomoCashBalance(amount);
                   } else {
                     toast.error("Please enter a valid amount");
                   }

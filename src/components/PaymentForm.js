@@ -1811,7 +1811,12 @@ const PaymentForm = ({
                     </h2>
                     <p className="text-blue-100 text-lg font-medium">
                       {getPaymentTypeLabel(paymentType)} Payment • Order #
-                      {orderId}
+                      {orderId} •{" "}
+                      {customer?.id === "__online__"
+                        ? "Online Purchase"
+                        : customer?.name
+                        ? customer.name
+                        : "Walk-In Customer"}
                     </p>
                   </div>
                 </div>
