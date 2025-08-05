@@ -2064,7 +2064,7 @@ const PaymentForm = ({
                                 : "text-gray-800"
                             }`}
                           >
-                            {user?.name || user?.email || "Not specified"}
+                            {user?.full_name || user?.name || user?.email || "Not specified"}
                           </div>
                         </div>
                       </div>

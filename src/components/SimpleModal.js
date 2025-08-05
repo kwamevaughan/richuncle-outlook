@@ -14,6 +14,38 @@ const SimpleModal = ({
 }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
+  // Prevent background scrolling and interaction when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Prevent background scrolling and interaction
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${window.scrollY}px`;
+    } else {
+      // Restore background scrolling and interaction
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+    
+    // Cleanup function to restore scrolling when component unmounts
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+    };
+  }, [isOpen]);
+
   // Handle escape key
   useEffect(() => {
       const handleEscape = (e) => {
@@ -73,6 +105,11 @@ const SimpleModal = ({
         className="fixed inset-0 overflow-y-auto"
         style={{ zIndex: 99999 }}
         onClick={handleOutsideClick}
+        onTouchMove={(e) => {
+          // Prevent touch scrolling on background
+          e.preventDefault();
+          e.stopPropagation();
+        }}
       >
         {/* Enhanced Glassmorphic Background */}
         <div
@@ -96,6 +133,10 @@ const SimpleModal = ({
         <div
           className="flex min-h-full items-center justify-center p-4"
           onClick={handleOutsideClick}
+          onTouchMove={(e) => {
+            // Allow touch scrolling within modal but prevent background scrolling
+            e.stopPropagation();
+          }}
         >
           <div
             className={`relative w-full ${width} rounded-3xl transform transition-all duration-500 max-h-[85vh] overflow-hidden

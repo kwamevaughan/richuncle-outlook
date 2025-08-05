@@ -139,7 +139,7 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
       </div>
 
       {/* Payment Instructions */}
-      <div className="bg-blue-50 dark:bg-slate-800/50 border border-blue-200 dark:border-slate-600 rounded-lg p-4">
+      {/* <div className="bg-blue-50 dark:bg-slate-800/50 border border-blue-200 dark:border-slate-600 rounded-lg p-4">
         <div className="flex items-center gap-2 mb-2">
           <Icon
             icon="mdi:cellphone-message"
@@ -171,7 +171,7 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
           </div>
           <div>6. Confirm transaction and provide reference number</div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
