@@ -3,7 +3,7 @@ import { Icon } from "@iconify/react";
 import { paymentMethods } from "@/constants/paymentMethods";
 import toast from "react-hot-toast";
 
-const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayment, onPrintOrder, onResetOrder, onHoldSale, onLayaway, onRetrieveSales, onRetrieveLayaways, hasOpenSession = true, sessionCheckLoading = false, user, mode = "light" }) => {
+const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayment, onPrintOrder, onResetOrder, onHoldSale, onLayaway, onRetrieveSales, onRetrieveLayaways, onRecentTransactions, hasOpenSession = true, sessionCheckLoading = false, user, mode = "light" }) => {
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showHoldOptions, setShowHoldOptions] = useState(false);
   const [showRetrieveOptions, setShowRetrieveOptions] = useState(false);
@@ -53,8 +53,8 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
           : "bg-white/80 border-gray-200 border-white/20"
       }`}
     >
-      <div className="flex flex-col lg:flex-row gap-2 sm:gap-4 lg:gap-8 justify- flex-1 min-h-0 overflow-hidden items-center w-full px-2 sm:px-4">
-        <div className="ml-8 flex flex-wrap gap-2 sm:gap-3">
+      <div className="flex flex-row gap-2 sm:gap-4 lg:gap-8 justify flex-1 min-h-0 overflow-hidden items-center w-full px-2 sm:px-4">
+        <div className="ml-8 md:ml-0 flex flex-wrap gap-2 sm:gap-3">
           <div className="relative">
             <button
               className={`select-none flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${
@@ -207,7 +207,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
             )}
           </div>
 
-          <button
+          {/* <button
             className={`select-none flex items-center gap-2 bg-gray-600 hover:bg-gray-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${
               isBlocked || isLoading ? "opacity-50 cursor-not-allowed" : ""
             }`}
@@ -226,73 +226,9 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               className="w-5 h-5"
             />
             Print Order
-          </button>
+          </button> */}
 
-          <div className="relative">
-            {/* <button
-              className={`select-none flex items-center gap-2 bg-cyan-500 hover:bg-cyan-600 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${isBlocked || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={() => {
-                if (isBlocked || isLoading) { blockAction(); return; }
-                if (hasProducts) setShowPaymentOptions(true);
-              }}
-              title={isBlocked ? 'Open a register to select payment method' : ''}
-              disabled={!hasProducts}
-            >
-              <Icon icon="mdi:cash-multiple" className="w-5 h-5" />
-              Select Payment Method
-            </button> */}
-            {showPaymentOptions && (
-              <div
-                className={`absolute bottom-14 left-0 border rounded-lg shadow-lg p-4 flex gap-2 sm:gap-4 z-50 ${
-                  mode === "dark"
-                    ? "bg-gray-800 border-gray-600"
-                    : "bg-white border-gray-300"
-                }`}
-              >
-                {paymentMethods.map((pm) => (
-                  <button
-                    key={pm.key}
-                    className={`flex flex-col items-center gap-1 px-4 py-2 rounded transition ${
-                      mode === "dark" ? "hover:bg-gray-700" : "hover:bg-blue-50"
-                    }`}
-                    onClick={() => {
-                      setShowPaymentOptions(false);
-                      onSelectPayment && onSelectPayment(pm.key);
-                    }}
-                  >
-                    <Icon icon={pm.icon} className="w-7 h-7 mb-1" />
-                    <span
-                      className={`font-semibold text-sm ${
-                        mode === "dark" ? "text-white" : "text-black"
-                      }`}
-                    >
-                      {pm.label}
-                    </span>
-                  </button>
-                ))}
-                <button
-                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded transition ${
-                    mode === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"
-                  }`}
-                  onClick={() => setShowPaymentOptions(false)}
-                >
-                  <Icon
-                    icon="mdi:close"
-                    className={`w-6 h-6 mb-1 ${
-                      mode === "dark" ? "text-gray-400" : "text-gray-500"
-                    }`}
-                  />
-                  <span
-                    className={`text-xs ${
-                      mode === "dark" ? "text-gray-400" : "text-gray-500"
-                    }`}
-                  >
-                    Cancel
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
+          
 
           <div>
             <button
@@ -313,7 +249,7 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
             </button>
           </div>
         </div>
-        <div className="flex  gap-20 ml-[130px]">
+        <div className="flex flex-wrap gap-2 ml-[130px] sm:ml-[130px] ">
           {hasProducts && (
             <div
               className={`font-extrabold text-3xl whitespace-nowrap mt-2 sm:mt-0 ${
@@ -323,7 +259,10 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               Total Payable: GHS {totalPayable.toLocaleString()}
             </div>
           )}
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <button 
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-colors"
+            onClick={() => onRecentTransactions && onRecentTransactions()}
+          >
             <Icon icon="mdi:history" className="w-5 h-5" />
             Recent Transactions
           </button>

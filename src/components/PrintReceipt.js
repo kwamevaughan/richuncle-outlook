@@ -1,19 +1,19 @@
-import React from 'react';
+import React from "react";
 
-const PrintReceipt = ({ 
-  orderId, 
-  selectedProducts, 
-  quantities, 
-  products, 
-  subtotal, 
-  tax, 
-  discount, 
-  total, 
-  selectedCustomerId, 
-  customers, 
+const PrintReceipt = ({
+  orderId,
+  selectedProducts,
+  quantities,
+  products,
+  subtotal,
+  tax,
+  discount,
+  total,
+  selectedCustomerId,
+  customers,
   paymentData,
   order,
-  originalTimestamp
+  originalTimestamp,
 }) => {
   const printOrder = () => {
     // Ensure all required props exist with safe defaults
@@ -26,7 +26,7 @@ const PrintReceipt = ({
     const safeTax = tax || 0;
     const safeDiscount = discount || 0;
     const safeTotal = total || 0;
-    
+
     if (safeSelectedProducts.length === 0) {
       return false;
     }
@@ -39,14 +39,22 @@ const PrintReceipt = ({
       change: 0,
       total: safeTotal,
       remainingAmount: 0,
-      splitPayments: []
+      splitPayments: [],
     };
 
     // Extract possible cashier fields from paymentData
-    const paymentDataReceiver = safePaymentData?.paymentReceiverName || safePaymentData?.payment_receiver_name || safePaymentData?.paymentReceiver || safePaymentData?.payment_receiver;
+    const paymentDataReceiver =
+      safePaymentData?.paymentReceiverName ||
+      safePaymentData?.payment_receiver_name ||
+      safePaymentData?.paymentReceiver ||
+      safePaymentData?.payment_receiver;
     // Extract possible cashier fields from order prop
-    const orderReceiver = safeOrder?.payment_receiver_name || safeOrder?.payment_receiver || safeOrder?.paymentReceiverName || safeOrder?.paymentReceiver;
-    const cashierName = paymentDataReceiver || orderReceiver || 'Unknown';
+    const orderReceiver =
+      safeOrder?.payment_receiver_name ||
+      safeOrder?.payment_receiver ||
+      safeOrder?.paymentReceiverName ||
+      safeOrder?.paymentReceiver;
+    const cashierName = paymentDataReceiver || orderReceiver || "Unknown";
 
     // Create print content
     const printContent = `
@@ -67,7 +75,7 @@ const PrintReceipt = ({
             .items-table { width: 100%; margin-bottom: 15px; }
             .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 5px 0; font-size: 12px; }
             .items-table td { padding: 3px 0; font-size: 11px; }
-            .item-name { width: 50%; }
+            .item-name { width: 50%; text-transform: uppercase; }
             .item-qty { width: 15%; text-align: center; }
             .item-price { width: 35%; text-align: right; }
             .summary { border-top: 1px dashed #000; padding-top: 10px; margin-bottom: 15px; }
@@ -90,7 +98,7 @@ const PrintReceipt = ({
           .items-table { width: 100%; margin-bottom: 15px; }
           .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 5px 0; font-size: 12px; }
           .items-table td { padding: 3px 0; font-size: 11px; }
-          .item-name { width: 50%; }
+          .item-name { width: 50%; text-transform: uppercase; }
           .item-qty { width: 15%; text-align: center; }
           .item-price { width: 35%; text-align: right; }
           .summary { border-top: 1px dashed #000; padding-top: 10px; margin-bottom: 15px; }
@@ -112,8 +120,16 @@ const PrintReceipt = ({
           
           <div class="order-info">
             <div class="order-id">Order ID: ${orderId}</div>
-            <div>Date: ${originalTimestamp ? new Date(originalTimestamp).toLocaleDateString("en-GH") : new Date().toLocaleDateString("en-GH")}</div>
-            <div>Time: ${originalTimestamp ? new Date(originalTimestamp).toLocaleTimeString("en-GH") : new Date().toLocaleTimeString("en-GH")}</div>
+            <div>Date: ${
+              originalTimestamp
+                ? new Date(originalTimestamp).toLocaleDateString("en-GH")
+                : new Date().toLocaleDateString("en-GH")
+            }</div>
+            <div>Time: ${
+              originalTimestamp
+                ? new Date(originalTimestamp).toLocaleTimeString("en-GH")
+                : new Date().toLocaleTimeString("en-GH")
+            }</div>
           </div>
           
           <div class="customer-info">
@@ -145,9 +161,9 @@ const PrintReceipt = ({
                   const qty = quantities[id] || 1;
                   return `
                   <tr>
-                    <td class="item-name">${
+                    <td class="item-name">${(
                       product?.name || "Unknown Product"
-                    }</td>
+                    ).toUpperCase()}</td>
                     <td class="item-qty">${qty}</td>
                     <td class="item-price">GHS ${(
                       product?.price * qty
@@ -197,14 +213,24 @@ const PrintReceipt = ({
                 safePaymentData?.paymentType === "split"
                   ? `
                 <div>Total Paid: GHS ${(
-                  (safePaymentData?.total || 0) - (safePaymentData?.remainingAmount || 0)
+                  (safePaymentData?.total || 0) -
+                  (safePaymentData?.remainingAmount || 0)
                 ).toLocaleString()}</div>
                 ${
-                  safePaymentData?.splitPayments && safePaymentData.splitPayments.length > 0
-                    ? safePaymentData.splitPayments.map((payment, index) => `
-                      <div>${payment.method || payment.paymentType || 'Payment'}: GHS ${parseFloat(payment.amount || 0).toLocaleString()}</div>
-                    `).join('')
-                    : '<div>Payment Methods: Split Payment</div>'
+                  safePaymentData?.splitPayments &&
+                  safePaymentData.splitPayments.length > 0
+                    ? safePaymentData.splitPayments
+                        .map(
+                          (payment, index) => `
+                      <div>${
+                        payment.method || payment.paymentType || "Payment"
+                      }: GHS ${parseFloat(
+                            payment.amount || 0
+                          ).toLocaleString()}</div>
+                    `
+                        )
+                        .join("")
+                    : "<div>Payment Methods: Split Payment</div>"
                 }
               `
                   : `
@@ -213,7 +239,9 @@ const PrintReceipt = ({
                 ).toLocaleString()}</div>
                 ${
                   (safePaymentData?.change || 0) > 0
-                    ? `<div>Change: GHS ${(safePaymentData?.change || 0).toFixed(2)}</div>`
+                    ? `<div>Change: GHS ${(
+                        safePaymentData?.change || 0
+                      ).toFixed(2)}</div>`
                     : ""
                 }
               `
@@ -231,7 +259,11 @@ const PrintReceipt = ({
           <div class="footer">
             <div class="thank-you">Thank You!</div>
             <div>Please come again</div>
-            <div class="timestamp">Printed: ${originalTimestamp ? new Date(originalTimestamp).toLocaleString("en-GH") : new Date().toLocaleString("en-GH")}</div>
+            <div class="timestamp">Printed: ${
+              originalTimestamp
+                ? new Date(originalTimestamp).toLocaleString("en-GH")
+                : new Date().toLocaleString("en-GH")
+            }</div>
           </div>
         </div>
       </body>
@@ -240,15 +272,19 @@ const PrintReceipt = ({
 
     try {
       // Create a minimal popup window
-      const printWindow = window.open('', 'PrintWindow', 'width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no');
-      
+      const printWindow = window.open(
+        "",
+        "PrintWindow",
+        "width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no"
+      );
+
       if (printWindow) {
         // Write content to the new window
         printWindow.document.write(printContent);
         printWindow.document.close();
-        
+
         // Wait for content to load, then print and close
-        printWindow.onload = function() {
+        printWindow.onload = function () {
           setTimeout(() => {
             printWindow.print();
             setTimeout(() => {
@@ -256,7 +292,7 @@ const PrintReceipt = ({
             }, 1000);
           }, 500);
         };
-        
+
         // Fallback: if onload doesn't fire, try printing anyway
         setTimeout(() => {
           if (!printWindow.closed) {
@@ -268,18 +304,18 @@ const PrintReceipt = ({
         }, 1500);
       } else {
         // Fallback to iframe method if popup is blocked
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.style.position = 'fixed';
-        iframe.style.top = '-9999px';
-        iframe.style.left = '-9999px';
-        
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.style.position = "fixed";
+        iframe.style.top = "-9999px";
+        iframe.style.left = "-9999px";
+
         document.body.appendChild(iframe);
-        
+
         iframe.contentDocument.write(printContent);
         iframe.contentDocument.close();
-        
-        iframe.onload = function() {
+
+        iframe.onload = function () {
           setTimeout(() => {
             iframe.contentWindow.print();
             setTimeout(() => {
@@ -288,10 +324,10 @@ const PrintReceipt = ({
           }, 500);
         };
       }
-      
+
       return true;
     } catch (error) {
-      console.error('Print error:', error);
+      console.error("Print error:", error);
       return false;
     }
   };
@@ -304,19 +340,25 @@ const PrintReceipt = ({
 
     return {
       orderId,
-      customer: customers.find(c => c.id === selectedCustomerId)?.name || "Walk In Customer",
-      customerPhone: customers.find(c => c.id === selectedCustomerId)?.phone,
-      date: new Date().toLocaleDateString('en-GH'),
-      time: new Date().toLocaleTimeString('en-GH'),
-      items: selectedProducts.map(id => {
-        const product = products.find(p => p.id === id);
+      customer:
+        customers.find((c) => c.id === selectedCustomerId)?.name ||
+        "Walk In Customer",
+      customerPhone: customers.find((c) => c.id === selectedCustomerId)?.phone,
+      date: new Date().toLocaleDateString("en-GH"),
+      time: new Date().toLocaleTimeString("en-GH"),
+      items: selectedProducts.map((id) => {
+        const product = products.find((p) => p.id === id);
         const qty = quantities[id] || 1;
         return {
-          name: product?.name || 'Unknown Product',
+          name: (product?.name || "Unknown Product").toUpperCase(),
           qty,
           price: product?.price * qty,
-          taxInfo: product?.tax_percentage && product?.tax_percentage > 0 ? 
-            `${product.tax_percentage}% (${product.tax_type === 'inclusive' ? 'Included' : 'Added'})` : null
+          taxInfo:
+            product?.tax_percentage && product?.tax_percentage > 0
+              ? `${product.tax_percentage}% (${
+                  product.tax_type === "inclusive" ? "Included" : "Added"
+                })`
+              : null,
         };
       }),
       subtotal,
@@ -325,12 +367,16 @@ const PrintReceipt = ({
       total,
       paymentData: {
         ...paymentData,
-        paymentReceiverName: paymentData?.paymentReceiverName || paymentData?.payment_receiver_name || paymentData?.paymentReceiver || paymentData?.payment_receiver
-      }
+        paymentReceiverName:
+          paymentData?.paymentReceiverName ||
+          paymentData?.payment_receiver_name ||
+          paymentData?.paymentReceiver ||
+          paymentData?.payment_receiver,
+      },
     };
   };
 
   return { printOrder, getReceiptContent };
 };
 
-export default PrintReceipt; 
+export default PrintReceipt;

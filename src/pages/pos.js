@@ -40,6 +40,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [reloadProducts, setReloadProducts] = useState(0);
   const [lastOrderData, setLastOrderData] = useState(null);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [showRecentTransactions, setShowRecentTransactions] = useState(false);
   const [showNoOrderModal, setShowNoOrderModal] = useState(false);
   const [showCashRegister, setShowCashRegister] = useState(false);
   const [showModernReceipt, setShowModernReceipt] = useState(false);
@@ -111,8 +112,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     if (selectedDiscountId) {
       const discountObj = discounts.find(d => d.id === selectedDiscountId);
       if (discountObj) {
-        const discountType = discountObj.type || "percent";
-        if (discountType === "percent") {
+        const discountType = discountObj.discount_type || discountObj.type || "percentage";
+        if (discountType === "percentage") {
           discount = Math.round(subtotal * (Number(discountObj.value) / 100));
         } else {
           discount = Number(discountObj.value);
@@ -120,8 +121,27 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       }
     }
     
-    // Calculate tax and roundoff
-    const tax = 0; // For now, tax is 0
+    // Calculate tax based on product tax configuration
+    const tax = selectedProducts.reduce((sum, id) => {
+      const product = products.find(p => p.id === id);
+      const qty = quantities[id] || 1;
+      if (!product || !product.tax_percentage || product.tax_percentage <= 0) return sum;
+      
+      const taxPercentage = Number(product.tax_percentage);
+      let itemTax = 0;
+      
+      if (product.tax_type === 'exclusive') {
+        // Tax is added on top of the price
+        itemTax = (product.price * taxPercentage / 100) * qty;
+      } else if (product.tax_type === 'inclusive') {
+        // Tax is included in the price, so we need to extract it
+        const priceWithoutTax = product.price / (1 + taxPercentage / 100);
+        itemTax = (product.price - priceWithoutTax) * qty;
+      }
+      
+      return sum + itemTax;
+    }, 0);
+    
     const roundoff = roundoffEnabled ? 0 : 0; // For now, roundoff is 0
     
     // Calculate total
@@ -267,8 +287,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     let processingToast = null;
     try {
       const { toast } = await import('react-hot-toast');
-      processingToast = toast.loading('Processing payment and creating order...');
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      processingToast = toast.loading('Processing order...');
       if (paymentInfo.paymentType === 'split') {
         paymentResult = {
           success: true,
@@ -418,9 +437,30 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       playBellBeep();
       // Dismiss processing toast
       toast.dismiss(processingToast);
-      // Show success modal
-      setModernReceiptData({ ...orderData, items });
-      setShowModernReceipt(true);
+      
+      // Auto-print receipt instead of showing preview modal
+      const printReceipt = PrintReceipt({
+        orderId: orderData.id,
+        selectedProducts: selectedProducts,
+        quantities: quantities,
+        products: products,
+        subtotal: calculateTotal() - (selectedDiscountId ? discounts.find(d => d.id === selectedDiscountId)?.value || 0 : 0),
+        tax: 0, // Calculate if needed
+        discount: selectedDiscountId ? discounts.find(d => d.id === selectedDiscountId)?.value || 0 : 0,
+        total: totalPayable,
+        selectedCustomerId: selectedCustomerId || '',
+        customers: customers,
+        paymentData: paymentResult,
+        order: { ...orderData, items },
+      });
+      
+      const printSuccess = printReceipt.printOrder();
+      if (printSuccess) {
+        toast.success("Order completed and receipt printed!");
+      } else {
+        toast.success("Order completed successfully!");
+      }
+      
       setShowSuccessModal(false);
       setSuccessOrderData(null);
       setReloadProducts(r => r + 1);
@@ -686,6 +726,12 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           customers={customers}
         />
         <OrderHistoryModal
+          isOpen={showRecentTransactions}
+          onClose={() => setShowRecentTransactions(false)}
+          customers={customers}
+          statusFilter={["Completed"]}
+        />
+        <OrderHistoryModal
           isOpen={showRetrieveSales}
           onClose={() => setShowRetrieveSales(false)}
           customers={customers}
@@ -895,6 +941,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           }}
           onRetrieveSales={() => setShowRetrieveSales(true)}
           onRetrieveLayaways={() => setShowRetrieveLayaways(true)}
+          onRecentTransactions={() => setShowRecentTransactions(true)}
           hasOpenSession={hasOpenSession}
           sessionCheckLoading={sessionCheckLoading}
           user={user}

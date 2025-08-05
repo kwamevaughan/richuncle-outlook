@@ -29,24 +29,15 @@ const PaymentAmounts = ({ paymentData, setPaymentData, handleReceivedAmountChang
         <label className={`block text-sm font-medium mb-2 ${
           mode === "dark" ? "text-gray-200" : "text-gray-700"
         }`}>
-          Paying Amount <span className="text-red-500">*</span>
+          Paying Amount
         </label>
-        <input
-          type="number"
-          step="0.01"
-          required
-          value={paymentData.payingAmount}
-          onChange={(e) => setPaymentData(prev => ({
-            ...prev,
-            payingAmount: e.target.value
-          }))}
-          className={`w-full border rounded-lg px-4 py-3 text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-            mode === "dark" 
-              ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
-              : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-          }`}
-          placeholder="0.00"
-        />
+        <div className={`w-full border rounded-lg px-4 py-3 text-lg font-semibold ${
+          mode === "dark" 
+            ? "border-gray-600 bg-gray-700 text-gray-100" 
+            : "border-gray-300 bg-gray-50 text-gray-900"
+        }`}>
+          GHS {parseFloat(paymentData.payingAmount || 0).toFixed(2)}
+        </div>
       </div>
       
       <div>

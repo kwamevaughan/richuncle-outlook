@@ -9,7 +9,7 @@ import ReceiptPreviewModal from "./ReceiptPreviewModal";
 import { playBellBeep } from "../utils/posSounds";
 import { getPaymentTypeLabel } from "./payment/utils/paymentHelpers";
 import useUsers from "../hooks/useUsers";
-import Select, { components } from 'react-select';
+import Select, { components } from "react-select";
 import { paymentMethods } from "@/constants/paymentMethods";
 import TooltipIconButton from "./TooltipIconButton";
 
@@ -39,12 +39,12 @@ const dummyOrder = {
   },
 };
 
-const PosOrderList = ({ 
-  selectedProducts = [], 
-  quantities = {}, 
-  products = [], 
-  setSelectedProducts, 
-  setQuantities, 
+const PosOrderList = ({
+  selectedProducts = [],
+  quantities = {},
+  products = [],
+  setSelectedProducts,
+  setQuantities,
   discounts = [],
   setDiscounts,
   selectedDiscountId,
@@ -83,7 +83,6 @@ const PosOrderList = ({
   className = "",
   mode = "light",
 }) => {
-
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
@@ -96,9 +95,12 @@ const PosOrderList = ({
   const [discountPlans, setDiscountPlans] = useState([]);
   const [discountValue, setDiscountValue] = useState("");
   const [newDiscountType, setNewDiscountType] = useState("percentage");
-  
+
   // Detect if user is on Chrome
-  const isChrome = typeof window !== 'undefined' && /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+  const isChrome =
+    typeof window !== "undefined" &&
+    /Chrome/.test(navigator.userAgent) &&
+    /Google Inc/.test(navigator.vendor);
 
   // Generate a unique order ID when component mounts
   useEffect(() => {
@@ -109,35 +111,39 @@ const PosOrderList = ({
 
   // Fetch discount plans
   useEffect(() => {
-    fetch('/api/discount-plans')
-      .then(response => response.json())
-      .then(result => {
+    fetch("/api/discount-plans")
+      .then((response) => response.json())
+      .then((result) => {
         if (result.success) {
           setDiscountPlans(result.data || []);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Failed to fetch discount plans:", err);
       });
   }, []);
 
   const handleQty = (id, delta) => {
     if (!products.length) return;
-    const product = products.find(p => p.id === id);
+    const product = products.find((p) => p.id === id);
     const qty = Math.max(1, (quantities[id] || 1) + delta);
-    
+
     // Validate against stock
     if (product && qty > product.quantity) {
-      toast.error(user?.role === "cashier" ? "Cannot exceed available stock." : `Cannot exceed available stock of ${product.quantity} units.`);
+      toast.error(
+        user?.role === "cashier"
+          ? "Cannot exceed available stock."
+          : `Cannot exceed available stock of ${product.quantity} units.`
+      );
       return;
     }
-    
-    setQuantities(prev => ({ ...prev, [id]: qty }));
+
+    setQuantities((prev) => ({ ...prev, [id]: qty }));
   };
 
   const handleRemove = (id) => {
-    setSelectedProducts(prev => prev.filter(pid => pid !== id));
-    setQuantities(prev => {
+    setSelectedProducts((prev) => prev.filter((pid) => pid !== id));
+    setQuantities((prev) => {
       const q = { ...prev };
       delete q[id];
       return q;
@@ -182,6 +188,32 @@ const PosOrderList = ({
     );
   };
 
+  const toggleProductSelect = (productId) => {
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+
+    // Check if product is already selected
+    if (selectedProducts.includes(productId)) {
+      // Remove from selection
+      setSelectedProducts((prev) => prev.filter((id) => id !== productId));
+      return;
+    }
+
+    // Check stock before adding
+    const currentQty = quantities[productId] || 1;
+    if (product.quantity < currentQty) {
+      toast.error(
+        user?.role === "cashier"
+          ? "Insufficient stock!"
+          : `Insufficient stock! Only ${product.quantity} units available.`
+      );
+      return;
+    }
+
+    // Add to selection
+    setSelectedProducts((prev) => [...prev, productId]);
+  };
+
   const handlePrintOrder = () => {
     const printReceipt = PrintReceipt({
       orderId: orderId, // Use the passed orderId
@@ -194,7 +226,7 @@ const PosOrderList = ({
       total,
       selectedCustomerId,
       customers,
-      paymentData
+      paymentData,
     });
 
     const success = printReceipt.printOrder();
@@ -207,48 +239,50 @@ const PosOrderList = ({
 
   // Calculate summary
   const subtotal = selectedProducts.reduce((sum, id) => {
-    const product = products.find(p => p.id === id);
+    const product = products.find((p) => p.id === id);
     const qty = quantities[id] || 1;
-    return product ? sum + (product.price * qty) : sum;
+    return product ? sum + product.price * qty : sum;
   }, 0);
-  
+
   const totalCost = selectedProducts.reduce((sum, id) => {
-    const product = products.find(p => p.id === id);
+    const product = products.find((p) => p.id === id);
     const qty = quantities[id] || 1;
-    return product ? sum + ((product.cost_price || 0) * qty) : sum;
+    return product ? sum + (product.cost_price || 0) * qty : sum;
   }, 0);
-  
+
   const totalProfit = subtotal - totalCost;
-  
+
   // Calculate tax based on product tax configuration
   const tax = selectedProducts.reduce((sum, id) => {
-    const product = products.find(p => p.id === id);
+    const product = products.find((p) => p.id === id);
     const qty = quantities[id] || 1;
-    if (!product || !product.tax_percentage || product.tax_percentage <= 0) return sum;
-    
+    if (!product || !product.tax_percentage || product.tax_percentage <= 0)
+      return sum;
+
     const taxPercentage = Number(product.tax_percentage);
     let itemTax = 0;
-    
-    if (product.tax_type === 'exclusive') {
+
+    if (product.tax_type === "exclusive") {
       // Tax is added on top of the price
-      itemTax = (product.price * taxPercentage / 100) * qty;
-    } else if (product.tax_type === 'inclusive') {
+      itemTax = ((product.price * taxPercentage) / 100) * qty;
+    } else if (product.tax_type === "inclusive") {
       // Tax is included in the price, so we need to extract it
       const priceWithoutTax = product.price / (1 + taxPercentage / 100);
       itemTax = (product.price - priceWithoutTax) * qty;
     }
-    
+
     return sum + itemTax;
   }, 0);
-  
+
   let discount = 0;
   let discountLabel = "No discount";
   let discountType = "";
   if (selectedDiscountId) {
-    const discountObj = discounts.find(d => d.id === selectedDiscountId);
+    const discountObj = discounts.find((d) => d.id === selectedDiscountId);
     if (discountObj) {
       discountLabel = discountObj.name || discountObj.label || "Discount";
-      discountType = discountObj.discount_type || discountObj.type || "percentage";
+      discountType =
+        discountObj.discount_type || discountObj.type || "percentage";
       if (discountType === "percentage") {
         discount = Math.round(subtotal * (Number(discountObj.value) / 100));
       } else {
@@ -257,11 +291,11 @@ const PosOrderList = ({
     }
   }
   const roundoff = roundoffEnabled ? 0 : 0;
-  const total = subtotal - discount + roundoff;
+  const total = subtotal + tax - discount + roundoff;
 
   // Find the selected customer object if selectedCustomerId starts with 'db_'
-  const selectedDbCustomer = selectedCustomerId.startsWith('db_')
-    ? customers.find(c => c.id === selectedCustomerId.replace('db_', ''))
+  const selectedDbCustomer = selectedCustomerId.startsWith("db_")
+    ? customers.find((c) => c.id === selectedCustomerId.replace("db_", ""))
     : null;
 
   return (
@@ -493,7 +527,7 @@ const PosOrderList = ({
             </div> */}
           </div>
           <div
-            className={`border rounded-lg overflow-hidden max-h-[500px] h-[300px] overflow-y-auto ${
+            className={`border rounded-lg overflow-hidden max-h-[500px] h-[350px] overflow-y-auto ${
               mode === "dark" ? "border-gray-600" : "border-gray-300"
             }`}
           >
@@ -528,7 +562,7 @@ const PosOrderList = ({
                 No products selected.
               </div>
             )}
-            {selectedProducts.map((id) => {
+            {selectedProducts.map((id, index) => {
               const product = products.find((p) => p.id === id);
               if (!product) return null;
               const qty = quantities[id] || 1;
@@ -537,9 +571,19 @@ const PosOrderList = ({
                   key={id}
                   className={`grid grid-cols-4 items-center px-4 py-2 border-t text-sm ${
                     mode === "dark" ? "border-gray-600" : "border-gray-200"
-                  }`}
+                  } ${
+                    index % 2 === 0
+                      ? mode === "dark"
+                        ? "bg-gray-800"
+                        : "bg-white"
+                      : mode === "dark"
+                      ? "bg-gray-750"
+                      : "bg-blue-50"
+                  } hover:${
+                    mode === "dark" ? "bg-gray-700" : "bg-blue-100"
+                  } transition-colors`}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 uppercase">
                     <span
                       className={mode === "dark" ? "text-white" : "text-black"}
                     >
@@ -630,8 +674,8 @@ const PosOrderList = ({
                   <button
                     type="button"
                     className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
-                      newDiscountType === "percentage" 
-                        ? "bg-blue-600 text-white" 
+                      newDiscountType === "percentage"
+                        ? "bg-blue-600 text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                     onClick={() => setNewDiscountType("percentage")}
@@ -641,8 +685,8 @@ const PosOrderList = ({
                   <button
                     type="button"
                     className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-colors ${
-                      newDiscountType === "fixed" 
-                        ? "bg-blue-600 text-white" 
+                      newDiscountType === "fixed"
+                        ? "bg-blue-600 text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                     onClick={() => setNewDiscountType("fixed")}
@@ -650,10 +694,12 @@ const PosOrderList = ({
                     Fixed Amount
                   </button>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold">
-                    {newDiscountType === "percentage" ? "Discount Percentage" : "Discount Amount (GHS)"}
+                    {newDiscountType === "percentage"
+                      ? "Discount Percentage"
+                      : "Discount Amount (GHS)"}
                   </label>
                   <input
                     type="number"
@@ -661,7 +707,9 @@ const PosOrderList = ({
                     max={newDiscountType === "percentage" ? "100" : "999999"}
                     step={newDiscountType === "percentage" ? "0.1" : "0.01"}
                     className="w-full border rounded-lg px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder={newDiscountType === "percentage" ? "e.g., 10" : "e.g., 50"}
+                    placeholder={
+                      newDiscountType === "percentage" ? "e.g., 10" : "e.g., 50"
+                    }
                     value={discountValue}
                     onChange={(e) => setDiscountValue(e.target.value)}
                     autoFocus
@@ -673,12 +721,42 @@ const PosOrderList = ({
                     <div className="text-sm text-gray-600">
                       {newDiscountType === "percentage" ? (
                         <>
-                          <span className="font-semibold">{discountValue}%</span> off = 
-                          <span className="font-semibold text-red-600"> -GHS {((subtotal * Number(discountValue)) / 100).toFixed(2)}</span>
+                          <span className="font-semibold">
+                            {discountValue}%
+                          </span>{" "}
+                          off =
+                          <span className="font-semibold text-red-600">
+                            {" "}
+                            -GHS{" "}
+                            {((subtotal * Number(discountValue)) / 100).toFixed(
+                              2
+                            )}
+                          </span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            New total: GHS{" "}
+                            {(
+                              subtotal -
+                              (subtotal * Number(discountValue)) / 100
+                            ).toFixed(2)}
+                          </div>
                         </>
                       ) : (
                         <>
-                          <span className="font-semibold">GHS {discountValue}</span> off
+                          <span className="font-semibold">
+                            GHS {discountValue}
+                          </span>{" "}
+                          off =
+                          <span className="font-semibold text-red-600">
+                            {" "}
+                            -GHS {Number(discountValue).toFixed(2)}
+                          </span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            New total: GHS{" "}
+                            {Math.max(
+                              0,
+                              subtotal - Number(discountValue)
+                            ).toFixed(2)}
+                          </div>
                         </>
                       )}
                     </div>
@@ -699,33 +777,60 @@ const PosOrderList = ({
                     disabled={!discountValue || Number(discountValue) <= 0}
                     onClick={async () => {
                       try {
-                        // Try to find an existing discount with the same value/type
-                        const existing = discounts.find(
-                          d =>
-                            d.value === Number(discountValue) &&
-                            (d.discount_type || d.type) === newDiscountType
-                        );
+                        // First, fetch all discounts from database to check for existing ones
+                        const fetchRes = await fetch("/api/discounts");
+                        const fetchJson = await fetchRes.json();
+                        const allDiscounts = fetchJson.success
+                          ? fetchJson.data
+                          : [];
+
+                        // Look for existing discount with same value and type
+                        const existing = allDiscounts.find((d) => {
+                          const valueMatch =
+                            Number(d.value) === Number(discountValue);
+                          const typeMatch =
+                            (d.discount_type || d.type || "").toLowerCase() ===
+                            newDiscountType.toLowerCase();
+                          const storeMatch =
+                            !user?.store_id || // If user has no store, match any
+                            !d.store_id || // If discount is global, match any
+                            d.store_id === user.store_id; // Otherwise, must match
+                          return valueMatch && typeMatch && storeMatch;
+                        });
+
                         if (existing) {
+                          // Use existing discount
                           setSelectedDiscountId(existing.id);
                           setShowAddDiscountModal(false);
                           setDiscountValue("");
                           setNewDiscountType("percentage");
-                          toast.success("Discount applied!");
+                          // Update local discounts array if needed
+                          if (typeof setDiscounts === "function") {
+                            setDiscounts(allDiscounts);
+                          }
+                          toast.success("Existing discount applied!");
                           return;
                         }
-                        // Otherwise, create a new discount as before
+
+                        // Create new discount only if none exists
                         const discountData = {
-                          name: `${newDiscountType === "percentage" ? discountValue + "%" : "GHS " + discountValue} Discount`,
+                          name: `${
+                            newDiscountType === "percentage"
+                              ? discountValue + "%"
+                              : "GHS " + discountValue
+                          } Discount`,
                           value: Number(discountValue),
                           discount_type: newDiscountType,
                           store_id: user?.store_id || null,
                         };
+
                         const response = await fetch("/api/discounts", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(discountData),
                         });
                         const result = await response.json();
+
                         if (response.ok && result.success && result.data) {
                           setShowAddDiscountModal(false);
                           setDiscountValue("");
@@ -736,41 +841,17 @@ const PosOrderList = ({
                           if (typeof setSelectedDiscountId === "function") {
                             setSelectedDiscountId(result.data.id);
                           }
-                          toast.success("Discount applied!");
-                        } else if (result.error && result.error.toLowerCase().includes('duplicate')) {
-                          // Fetch all discounts again
-                          const fetchRes = await fetch('/api/discounts');
-                          const fetchJson = await fetchRes.json();
-                          const match = fetchJson.data.find(d => {
-                            const valueMatch = Number(d.value) === Number(discountValue);
-                            const typeMatch = ((d.discount_type || d.type || '').toLowerCase() === newDiscountType.toLowerCase());
-                            const storeMatch =
-                              !user?.store_id || // If user has no store, match any
-                              !d.store_id ||     // If discount is global, match any
-                              d.store_id === user.store_id; // Otherwise, must match
-                            return valueMatch && typeMatch && storeMatch;
-                          });
-                          if (match) {
-                            setShowAddDiscountModal(false);
-                            setDiscountValue('');
-                            setNewDiscountType('percentage');
-                            if (typeof setDiscounts === 'function') {
-                              setDiscounts(fetchJson.data);
-                            }
-                            if (typeof setSelectedDiscountId === 'function') {
-                              setSelectedDiscountId(match.id);
-                            }
-                            toast.success('Discount applied!');
-                            return;
-                          }
-                          toast.error('Discount exists but could not be found. Please refresh and try again.');
+                          toast.success("New discount created and applied!");
                         } else {
-                          toast.error(result.error || result.message || 'Failed to apply discount');
+                          toast.error(
+                            result.error ||
+                              result.message ||
+                              "Failed to create discount"
+                          );
                         }
                       } catch (err) {
-                        // Only handle network errors here
-                        console.error('Discount creation error:', err);
-                        toast.error(err.message || 'Failed to apply discount');
+                        console.error("Discount creation error:", err);
+                        toast.error(err.message || "Failed to apply discount");
                       }
                     }}
                   >
@@ -791,7 +872,7 @@ const PosOrderList = ({
             Payment Summary
           </div> */}
 
-          <div className="flex justify-center gap-40 items-center">
+          <div className="flex justify-center gap-20 items-center">
             <div
               className={`flex justify-between items-center text-lg font-semibold ${
                 mode === "dark" ? "text-gray-400" : "text-black"
@@ -801,26 +882,31 @@ const PosOrderList = ({
             </div>
             <div className="flex flex-col gap-1 text-sm">
               <div className="flex justify-between items-center text-lg font-semibold">
-                <span className={mode === "dark" ? "text-white" : "flex items-center justify-center text-black"}>
+                <span
+                  className={
+                    mode === "dark"
+                      ? "text-white"
+                      : "flex items-center justify-center text-black"
+                  }
+                >
                   Discount: [
                   {selectedDiscountId ? (
-                    <Icon 
-                      icon="ic:baseline-minus" 
-                      className="w-5 h-5 cursor-pointer text-black hover:text-red-700" 
+                    <Icon
+                      icon="ic:baseline-minus"
+                      className="w-5 h-5 cursor-pointer text-black hover:text-red-700"
                       onClick={() => {
                         setSelectedDiscountId("");
                         toast.success("Discount removed!");
-                      }} 
+                      }}
                     />
                   ) : (
-                    <Icon 
-                      icon="ic:baseline-plus" 
-                      className="w-5 h-5 cursor-pointer" 
-                      onClick={() => setShowAddDiscountModal(true)} 
+                    <Icon
+                      icon="ic:baseline-plus"
+                      className="w-5 h-5 cursor-pointer"
+                      onClick={() => setShowAddDiscountModal(true)}
                     />
                   )}
-                  ]
-                  {""}
+                  ]{""}
                 </span>
                 <span className="ml-2 text-red-500">
                   - GHS {discount.toLocaleString()}
@@ -1112,7 +1198,11 @@ const PosOrderList = ({
         customer={
           selectedCustomerId === "__online__"
             ? { id: "__online__", name: "Online Purchase" }
-            : customers.find((c) => c.id === selectedCustomerId)
+            : selectedCustomerId.startsWith("db_")
+            ? customers.find((c) => c.id === selectedCustomerId.replace("db_", ""))
+            : selectedCustomerId
+            ? { id: selectedCustomerId, name: selectedCustomerId }
+            : null
         }
         customers={customers}
         onCustomerChange={handleCustomerChange}
@@ -1136,4 +1226,4 @@ const PosOrderList = ({
   );
 };
 
-export default PosOrderList; 
+export default PosOrderList;

@@ -1,23 +1,439 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "react-hot-toast";
 import { playBellBeep } from "../utils/posSounds";
 import PaymentSummary from "./payment/PaymentSummary";
-import PaymentAmounts from "./payment/PaymentAmounts";
 import PaymentNotes from "./payment/PaymentNotes";
 import PaymentCustomerInfo from "./payment/PaymentCustomerInfo";
 import MomoPayment from "./payment/types/MomoPayment";
-import { getPaymentTypeLabel, getPaymentTypeIcon, validatePaymentData } from "./payment/utils/paymentHelpers";
+import {
+  getPaymentTypeLabel,
+  getPaymentTypeIcon,
+  validatePaymentData,
+} from "./payment/utils/paymentHelpers";
 import LayawaySummary from "./payment/LayawaySummary";
 import OrderItems from "./OrderItems";
 import TooltipIconButton from "./TooltipIconButton";
 
-const PaymentForm = ({ 
-  isOpen, 
-  onClose, 
-  paymentType, 
-  total, 
-  orderId, 
+// Modern Input Component with Floating Labels
+const ModernInput = ({
+  label,
+  value,
+  onChange,
+  type = "text",
+  required = false,
+  mode = "light",
+  icon,
+  step,
+  max,
+  min,
+  disabled = false,
+}) => {
+  const [focused, setFocused] = useState(false);
+  const [hasValue, setHasValue] = useState(!!value);
+
+  useEffect(() => {
+    setHasValue(!!value);
+  }, [value]);
+
+  const isFloating = focused || hasValue;
+
+  return (
+    <div className="relative group">
+      <div
+        className={`relative transition-all duration-300 ${
+          focused ? "transform scale-[1.02]" : ""
+        }`}
+      >
+        {icon && (
+          <div
+            className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 z-10 ${
+              focused
+                ? "text-blue-500"
+                : mode === "dark"
+                ? "text-gray-400"
+                : "text-gray-500"
+            }`}
+          >
+            <Icon icon={icon} className="w-5 h-5" />
+          </div>
+        )}
+
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          step={step}
+          max={max}
+          min={min}
+          disabled={disabled}
+          className={`
+            w-full h-16 px-4 pt-6 pb-2 border-2 rounded-2xl transition-all duration-300
+            ${icon ? "pl-12" : "pl-4"}
+            ${
+              focused
+                ? "border-blue-500 shadow-lg shadow-blue-500/20"
+                : mode === "dark"
+                ? "border-gray-600 hover:border-gray-500"
+                : "border-gray-200 hover:border-gray-300"
+            }
+            ${
+              mode === "dark"
+                ? "bg-gray-800/50 text-gray-100 backdrop-blur-sm"
+                : "bg-white/80 text-gray-900 backdrop-blur-sm"
+            }
+            ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+            focus:outline-none focus:ring-0
+          `}
+          placeholder=""
+        />
+
+        <label
+          className={`
+          absolute left-4 transition-all duration-300 pointer-events-none
+          ${icon ? "left-12" : "left-4"}
+          ${
+            isFloating
+              ? "top-2 text-xs font-medium"
+              : "top-1/2 transform -translate-y-1/2 text-base"
+          }
+          ${
+            focused
+              ? "text-blue-500"
+              : mode === "dark"
+              ? "text-gray-400"
+              : "text-gray-600"
+          }
+        `}
+        >
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+
+        {/* Focus ring effect */}
+        <div
+          className={`
+          absolute inset-0 rounded-2xl transition-all duration-300 pointer-events-none
+          ${
+            focused
+              ? "ring-2 ring-blue-500/20 ring-offset-2 ring-offset-transparent"
+              : ""
+          }
+        `}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Modern Select Component
+const ModernSelect = ({
+  label,
+  value,
+  onChange,
+  options,
+  required = false,
+  mode = "light",
+  icon,
+}) => {
+  const [focused, setFocused] = useState(false);
+  const hasValue = !!value;
+  const isFloating = focused || hasValue;
+
+  return (
+    <div className="relative group">
+      <div
+        className={`relative transition-all duration-300 ${
+          focused ? "transform scale-[1.02]" : ""
+        }`}
+      >
+        {icon && (
+          <div
+            className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 z-10 ${
+              focused
+                ? "text-blue-500"
+                : mode === "dark"
+                ? "text-gray-400"
+                : "text-gray-500"
+            }`}
+          >
+            <Icon icon={icon} className="w-5 h-5" />
+          </div>
+        )}
+
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          className={`
+            w-full h-16 px-4 pt-6 pb-2 border-2 rounded-2xl transition-all duration-300 appearance-none
+            ${icon ? "pl-12" : "pl-4"}
+            ${
+              focused
+                ? "border-blue-500 shadow-lg shadow-blue-500/20"
+                : mode === "dark"
+                ? "border-gray-600 hover:border-gray-500"
+                : "border-gray-200 hover:border-gray-300"
+            }
+            ${
+              mode === "dark"
+                ? "bg-gray-800/50 text-gray-100 backdrop-blur-sm"
+                : "bg-white/80 text-gray-900 backdrop-blur-sm"
+            }
+            focus:outline-none focus:ring-0 cursor-pointer
+          `}
+        >
+          <option value="">Select {label}</option>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        <label
+          className={`
+          absolute left-4 transition-all duration-300 pointer-events-none
+          ${icon ? "left-12" : "left-4"}
+          ${
+            isFloating
+              ? "top-2 text-xs font-medium"
+              : "top-1/2 transform -translate-y-1/2 text-base"
+          }
+          ${
+            focused
+              ? "text-blue-500"
+              : mode === "dark"
+              ? "text-gray-400"
+              : "text-gray-600"
+          }
+        `}
+        >
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+
+        {/* Dropdown arrow */}
+        <div
+          className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 pointer-events-none ${
+            focused
+              ? "text-blue-500"
+              : mode === "dark"
+              ? "text-gray-400"
+              : "text-gray-500"
+          }`}
+        >
+          <Icon icon="mdi:chevron-down" className="w-5 h-5" />
+        </div>
+
+        {/* Focus ring effect */}
+        <div
+          className={`
+          absolute inset-0 rounded-2xl transition-all duration-300 pointer-events-none
+          ${
+            focused
+              ? "ring-2 ring-blue-500/20 ring-offset-2 ring-offset-transparent"
+              : ""
+          }
+        `}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Modern Button Component
+const ModernButton = ({
+  children,
+  onClick,
+  type = "button",
+  variant = "primary",
+  size = "md",
+  disabled = false,
+  loading = false,
+  icon,
+  mode = "light",
+  className = "",
+}) => {
+  const baseClasses = `
+    relative inline-flex items-center justify-center gap-3 font-semibold rounded-2xl
+    transition-all duration-300 transform active:scale-95 disabled:opacity-50 
+    disabled:cursor-not-allowed disabled:transform-none overflow-hidden
+    focus:outline-none focus:ring-2 focus:ring-offset-2
+  `;
+
+  const sizeClasses = {
+    sm: "px-4 py-2 text-sm h-10",
+    md: "px-6 py-3 text-base h-12",
+    lg: "px-8 py-4 text-lg h-16",
+  };
+
+  const variantClasses = {
+    primary: `
+      bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800
+      text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30
+      focus:ring-blue-500 hover:scale-105
+    `,
+    success: `
+      bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700
+      text-white shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/30
+      focus:ring-green-500 hover:scale-105
+    `,
+    secondary:
+      mode === "dark"
+        ? `
+        bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600
+        shadow-lg shadow-gray-900/25 hover:shadow-xl hover:shadow-gray-900/30
+        focus:ring-gray-500 hover:scale-105
+      `
+        : `
+        bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300
+        shadow-lg shadow-gray-500/10 hover:shadow-xl hover:shadow-gray-500/15
+        focus:ring-gray-500 hover:scale-105
+      `,
+    danger: `
+      bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800
+      text-white shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30
+      focus:ring-red-500 hover:scale-105
+    `,
+  };
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+    >
+      {/* Shimmer effect for primary buttons */}
+      {variant === "primary" && (
+        <div className="absolute inset-0 -top-px bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+      )}
+
+      {loading ? (
+        <Icon icon="mdi:loading" className="w-5 h-5 animate-spin" />
+      ) : icon ? (
+        <Icon icon={icon} className="w-5 h-5" />
+      ) : null}
+
+      {children}
+    </button>
+  );
+};
+
+// Modern Card Component
+const ModernCard = ({
+  children,
+  title,
+  icon,
+  mode = "light",
+  className = "",
+}) => {
+  return (
+    <div
+      className={`
+      rounded-3xl border backdrop-blur-xl transition-all duration-300 hover:shadow-xl
+      ${
+        mode === "dark"
+          ? "bg-gray-800/60 border-gray-700/50 shadow-2xl shadow-gray-900/20"
+          : "bg-white/80 border-gray-200/50 shadow-xl shadow-gray-900/5"
+      }
+      ${className}
+    `}
+    >
+      {title && (
+        <div
+          className={`px-8 py-6 border-b ${
+            mode === "dark" ? "border-gray-700/50" : "border-gray-200/50"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            {icon && (
+              <div
+                className={`p-3 rounded-2xl ${
+                  mode === "dark"
+                    ? "bg-blue-500/10 text-blue-400"
+                    : "bg-blue-500/10 text-blue-600"
+                }`}
+              >
+                <Icon icon={icon} className="w-6 h-6" />
+              </div>
+            )}
+            <h3
+              className={`text-xl font-bold ${
+                mode === "dark" ? "text-gray-100" : "text-gray-900"
+              }`}
+            >
+              {title}
+            </h3>
+          </div>
+        </div>
+      )}
+      <div className="p-8">{children}</div>
+    </div>
+  );
+};
+
+// Collapsible Section Component for Streamlined UI
+const CollapsibleSection = ({
+  children,
+  title,
+  icon,
+  mode = "light",
+  defaultOpen = false,
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div
+      className={`px-6 py-4 border-b ${
+        mode === "dark" ? "border-gray-700/30" : "border-gray-200/30"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-300 hover:shadow-md ${
+          mode === "dark"
+            ? "bg-gray-800/30 hover:bg-gray-800/50 text-gray-200"
+            : "bg-gray-200/50 hover:bg-gray-100/50 text-gray-700"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          {icon && (
+            <Icon
+              icon={icon}
+              className={`w-5 h-5 ${
+                mode === "dark" ? "text-gray-400" : "text-gray-500"
+              }`}
+            />
+          )}
+          <span className="font-medium">{title}</span>
+        </div>
+        <Icon
+          icon={isOpen ? "mdi:chevron-up" : "mdi:chevron-down"}
+          className={`w-5 h-5 transition-transform duration-300 ${
+            mode === "dark" ? "text-gray-400" : "text-gray-500"
+          }`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PaymentForm = ({
+  isOpen,
+  onClose,
+  paymentType,
+  total,
+  orderId,
   onPaymentComplete,
   customer = null,
   customers = [],
@@ -26,31 +442,38 @@ const PaymentForm = ({
   allUsers = [],
   isOnlinePurchase = false,
   processCompleteTransaction,
-  paymentData: propPaymentData, // Added propPaymentData to the destructuring
-  layawayTotal, // Added layawayTotal prop
-  products = [], // Added products prop
-  quantities = {}, // Added quantities prop
-  mode = "light" // Added mode prop
+  paymentData: propPaymentData,
+  layawayTotal,
+  products = [],
+  quantities = {},
+  mode = "light",
 }) => {
+  const modalRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [animationState, setAnimationState] = useState("closed");
+
+  // Initialize payment data
   const [paymentData, setPaymentData] = useState(() => {
-    // If props.paymentData has payments, use it as base
-    if (propPaymentData && (Array.isArray(propPaymentData.payments) && propPaymentData.payments.length > 0)) {
+    if (
+      propPaymentData &&
+      Array.isArray(propPaymentData.payments) &&
+      propPaymentData.payments.length > 0
+    ) {
       return {
         ...propPaymentData,
         paymentType: paymentType,
         payingAmount: total.toFixed(2),
         receivedAmount: "",
         change: 0,
-        remainingAmount: total
+        remainingAmount: total,
       };
     }
-    // Otherwise, use default
     return {
       receivedAmount: "",
       payingAmount: total.toFixed(2),
       change: 0,
       paymentType: paymentType,
-      paymentReceiver: "",
+      paymentReceiver: user?.id || "",
       saleNote: "",
       referenceNumber: "",
       cardType: "",
@@ -58,38 +481,53 @@ const PaymentForm = ({
       customerPhone: "",
       transactionId: "",
       splitPayments: [],
-      remainingAmount: total
+      remainingAmount: total,
+      bankName: "",
+      chequeDate: "",
     };
   });
 
-  // Reset form when payment type changes, but preserve layaway payments
+  // Animation effects
   useEffect(() => {
-    setPaymentData(prev => {
-      // If this is a layaway with payments, preserve them
-      if (prev.payments && Array.isArray(prev.payments) && prev.payments.length > 0) {
+    if (isOpen) {
+      setAnimationState("opening");
+      setTimeout(() => setAnimationState("open"), 50);
+    } else {
+      setAnimationState("closing");
+      setTimeout(() => setAnimationState("closed"), 300);
+    }
+  }, [isOpen]);
+
+  // Reset form when payment type changes
+  useEffect(() => {
+    setPaymentData((prev) => {
+      if (
+        prev.payments &&
+        Array.isArray(prev.payments) &&
+        prev.payments.length > 0
+      ) {
         return {
           ...prev,
           paymentType: paymentType,
           payingAmount: total.toFixed(2),
           receivedAmount: "",
-          change: 0
+          change: 0,
         };
       }
-      // Otherwise, reset as normal
       return {
         ...prev,
         paymentType: paymentType,
         payingAmount: total.toFixed(2),
         receivedAmount: "",
-        change: 0
+        change: 0,
       };
     });
   }, [paymentType, total]);
 
-  // Add this useEffect to reset split payment state when modal opens or order/total changes
+  // Split payment reset
   useEffect(() => {
     if (isOpen && paymentType === "split") {
-      setPaymentData(prev => ({
+      setPaymentData((prev) => ({
         ...prev,
         splitPayments: [],
         remainingAmount: total,
@@ -101,797 +539,996 @@ const PaymentForm = ({
         customerPhone: "",
         referenceNumber: "",
         bankName: "",
-        chequeDate: ""
+        chequeDate: "",
       }));
     }
   }, [isOpen, total, paymentType]);
 
-  // Determine if this is a layaway finalization (move above useEffect)
+  // Layaway calculations
   const layawayPayments = Array.isArray(paymentData.payments)
-    ? paymentData.payments.filter(p => p && typeof p.amount !== 'undefined')
+    ? paymentData.payments.filter((p) => p && typeof p.amount !== "undefined")
     : paymentData.amount
-      ? [{
+    ? [
+        {
           amount: paymentData.amount,
           method: paymentData.method,
           reference: paymentData.reference,
-          date: paymentData.date || paymentData.timestamp || new Date().toISOString(),
-          user: paymentData.user || null
-        }]
-      : [];
+          date:
+            paymentData.date ||
+            paymentData.timestamp ||
+            new Date().toISOString(),
+          user: paymentData.user || null,
+        },
+      ]
+    : [];
   const isLayaway = layawayPayments.length > 0;
-  const layawayPaid = layawayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-  const layawayTotalValue = typeof layawayTotal !== 'undefined' ? Number(layawayTotal) : (isLayaway ? layawayPaid + total : total);
+  const layawayPaid = layawayPayments.reduce(
+    (sum, p) => sum + Number(p.amount || 0),
+    0
+  );
+  const layawayTotalValue =
+    typeof layawayTotal !== "undefined"
+      ? Number(layawayTotal)
+      : isLayaway
+      ? layawayPaid + total
+      : total;
   const layawayOutstanding = isLayaway ? layawayTotalValue - layawayPaid : 0;
 
-  // Autofill receivedAmount for layaway (with outstanding balance) and for regular cash/momo
+  // Auto-fill received amount
   useEffect(() => {
-    if (isLayaway && paymentType !== 'split') {
-      setPaymentData(prev => ({
+    if (isLayaway && paymentType !== "split") {
+      setPaymentData((prev) => ({
         ...prev,
-        receivedAmount: layawayOutstanding.toFixed(2)
+        receivedAmount: layawayOutstanding.toFixed(2),
       }));
-    } else if (paymentType === 'momo' || paymentType === 'cash') {
-      setPaymentData(prev => ({
+    } else if (paymentType === "momo" || paymentType === "cash") {
+      setPaymentData((prev) => ({
         ...prev,
-        receivedAmount: prev.payingAmount || total.toFixed(2)
+        receivedAmount: prev.payingAmount || total.toFixed(2),
       }));
     }
-    // Do not disable the field, just auto-fill
   }, [isLayaway, layawayOutstanding, paymentType, total]);
-
-  // Sync paymentData state with prop when modal is opened for a new layaway
-  useEffect(() => {
-    if (isOpen && propPaymentData && Array.isArray(propPaymentData.payments) && propPaymentData.payments.length > 0) {
-      setPaymentData(prev => ({
-        ...propPaymentData,
-        paymentType: paymentType,
-        payingAmount: total.toFixed(2),
-        receivedAmount: "",
-        change: 0,
-        remainingAmount: total
-      }));
-    }
-  }, [isOpen, propPaymentData, paymentType, total]);
-
-  
-
-  // Normalize paymentData: always ensure payments is an array
-  useEffect(() => {
-    setPaymentData(prev => {
-      if (prev && !Array.isArray(prev.payments)) {
-        if (prev.amount) {
-          return {
-            ...prev,
-            payments: [
-              {
-                amount: prev.amount,
-                method: prev.method,
-                reference: prev.reference,
-                date: prev.date || prev.timestamp || new Date().toISOString(),
-                user: prev.user || null
-              }
-            ]
-          };
-        } else if (prev.payments && typeof prev.payments === 'object') {
-          // If payments is a single object, wrap it in an array
-          return {
-            ...prev,
-            payments: [prev.payments]
-          };
-        }
-      }
-      return prev;
-    });
-  }, [isOpen, propPaymentData, paymentData.amount]);
 
   const handleReceivedAmountChange = (value) => {
     const received = parseFloat(value) || 0;
     const paying = parseFloat(paymentData.payingAmount) || 0;
     const change = Math.max(0, received - paying);
-    
-    setPaymentData(prev => ({
+
+    setPaymentData((prev) => ({
       ...prev,
       receivedAmount: value,
-      change: change
+      change: change,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate payment data
-    if (!validatePaymentData(paymentData, paymentType, total, toast)) {
-      return;
+    setIsLoading(true);
+
+    try {
+      // Validate payment data
+      if (!validatePaymentData(paymentData, paymentType, total, toast)) {
+        return;
+      }
+
+      // Calculate change (only for non-split payments)
+      let change = 0;
+      if (paymentType !== "split") {
+        const received = parseFloat(paymentData.receivedAmount);
+        const paying = parseFloat(paymentData.payingAmount);
+        change = received - paying;
+      }
+
+      // Prepare payment data for parent component
+      const paymentInfo = {
+        ...paymentData,
+        change,
+        total,
+        orderId,
+        paymentType,
+      };
+
+      if (paymentType === "split") {
+        paymentInfo.splitPayments = paymentData.splitPayments;
+        paymentInfo.totalPaid = total - paymentData.remainingAmount;
+        paymentInfo.remainingAmount = paymentData.remainingAmount;
+      }
+
+      // Call parent callback with payment data
+      if (onPaymentComplete) {
+        onPaymentComplete(paymentInfo);
+      }
+
+      // Finalize order immediately with paymentInfo
+      if (processCompleteTransaction) {
+        await processCompleteTransaction(paymentInfo);
+      }
+
+      // Success feedback
+      playBellBeep();
+      toast.success("Payment processed successfully!");
+
+      // Close modal
+      onClose();
+    } catch (error) {
+      toast.error("Payment processing failed. Please try again.");
+      console.error("Payment error:", error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Calculate change (only for non-split payments)
-    let change = 0;
-    if (paymentType !== "split") {
-      const received = parseFloat(paymentData.receivedAmount);
-      const paying = parseFloat(paymentData.payingAmount);
-      change = received - paying;
-    }
-    
-    // Prepare payment data for parent component
-    const paymentInfo = {
-      ...paymentData,
-      change,
-      total,
-      orderId,
-      paymentType,
+  };
+
+  // Modern Split Payment Component
+  const ModernSplitPayment = () => {
+    const addSplitPayment = (method, amount) => {
+      if (amount <= 0 || amount > paymentData.remainingAmount) {
+        toast.error("Invalid amount");
+        return;
+      }
+
+      const newPayment = {
+        id: Date.now(),
+        method,
+        amount,
+        status: "pending",
+        timestamp: new Date().toISOString(),
+      };
+
+      const updatedPayments = [...paymentData.splitPayments, newPayment];
+      const updatedPaid = updatedPayments.reduce(
+        (sum, p) => sum + (parseFloat(p.amount) || 0),
+        0
+      );
+
+      setPaymentData((prev) => ({
+        ...prev,
+        splitPayments: updatedPayments,
+        remainingAmount: total - updatedPaid,
+        newSplitAmount: "",
+      }));
     };
-    
-    if (paymentType === "split") {
-      paymentInfo.splitPayments = paymentData.splitPayments;
-      paymentInfo.totalPaid = total - paymentData.remainingAmount;
-      paymentInfo.remainingAmount = paymentData.remainingAmount;
-    }
-    
-    // Call parent callback with payment data
-    if (onPaymentComplete) {
-      onPaymentComplete(paymentInfo);
-    }
-    
-    // Finalize order immediately with paymentInfo
-    if (processCompleteTransaction) {
-      processCompleteTransaction(paymentInfo);
-    }
-    
-    // Close modal
-    onClose();
+
+    const removeSplitPayment = (paymentId) => {
+      setPaymentData((prev) => {
+        const updatedPayments = prev.splitPayments.filter(
+          (p) => p.id !== paymentId
+        );
+        const updatedPaid = updatedPayments.reduce(
+          (sum, p) => sum + (parseFloat(p.amount) || 0),
+          0
+        );
+        return {
+          ...prev,
+          splitPayments: updatedPayments,
+          remainingAmount: total - updatedPaid,
+        };
+      });
+      toast.success("Payment removed");
+    };
+
+    const quickSplit5050 = () => {
+      const half = Math.ceil(paymentData.remainingAmount / 2);
+      const remaining = paymentData.remainingAmount - half;
+
+      if (half > 0) {
+        const cashPayment = {
+          id: Date.now(),
+          method: "cash",
+          amount: half,
+          status: "pending",
+          timestamp: new Date().toISOString(),
+        };
+
+        const momoPayment = {
+          id: Date.now() + 1,
+          method: "momo",
+          amount: remaining,
+          status: "pending",
+          timestamp: new Date().toISOString(),
+        };
+
+        const updatedPayments = [
+          ...paymentData.splitPayments,
+          cashPayment,
+          momoPayment,
+        ];
+        const updatedPaid = updatedPayments.reduce(
+          (sum, p) => sum + (parseFloat(p.amount) || 0),
+          0
+        );
+
+        setPaymentData((prev) => ({
+          ...prev,
+          splitPayments: updatedPayments,
+          remainingAmount: total - updatedPaid,
+        }));
+
+        toast.success(
+          `Split: Cash (GHS ${half.toLocaleString()}) + MoMo (GHS ${remaining.toLocaleString()})`
+        );
+      }
+    };
+
+    return (
+      <ModernCard
+        title="Split Payment"
+        icon="mdi:call-split"
+        mode={mode}
+        className="space-y-8"
+      >
+        {/* Payment Progress */}
+        <div
+          className={`p-6 rounded-2xl border-2 border-dashed ${
+            mode === "dark"
+              ? "border-purple-500/30 bg-purple-900/10"
+              : "border-purple-300/50 bg-purple-50/50"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div
+                className={`p-2 rounded-xl ${
+                  mode === "dark" ? "bg-purple-500/20" : "bg-purple-100"
+                }`}
+              >
+                <Icon
+                  icon="mdi:progress-check"
+                  className="w-6 h-6 text-purple-600"
+                />
+              </div>
+              <div>
+                <h4
+                  className={`font-bold text-lg ${
+                    mode === "dark" ? "text-purple-300" : "text-purple-800"
+                  }`}
+                >
+                  Payment Progress
+                </h4>
+                <p
+                  className={`text-sm ${
+                    mode === "dark" ? "text-purple-400" : "text-purple-600"
+                  }`}
+                >
+                  Total: GHS {total.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div
+            className={`w-full h-3 rounded-full overflow-hidden ${
+              mode === "dark" ? "bg-gray-700" : "bg-gray-200"
+            }`}
+          >
+            <div
+              className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500 ease-out"
+              style={{
+                width: `${Math.min(
+                  100,
+                  ((total - paymentData.remainingAmount) / total) * 100
+                )}%`,
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div
+              className={`text-center p-4 rounded-xl ${
+                mode === "dark" ? "bg-green-900/20" : "bg-green-50"
+              }`}
+            >
+              <div
+                className={`text-sm font-medium ${
+                  mode === "dark" ? "text-green-300" : "text-green-600"
+                }`}
+              >
+                Paid
+              </div>
+              <div
+                className={`text-xl font-bold ${
+                  mode === "dark" ? "text-green-400" : "text-green-700"
+                }`}
+              >
+                GHS {(total - paymentData.remainingAmount).toLocaleString()}
+              </div>
+            </div>
+            <div
+              className={`text-center p-4 rounded-xl ${
+                mode === "dark" ? "bg-orange-900/20" : "bg-orange-50"
+              }`}
+            >
+              <div
+                className={`text-sm font-medium ${
+                  mode === "dark" ? "text-orange-300" : "text-orange-600"
+                }`}
+              >
+                Remaining
+              </div>
+              <div
+                className={`text-xl font-bold ${
+                  mode === "dark" ? "text-orange-400" : "text-orange-700"
+                }`}
+              >
+                GHS {paymentData.remainingAmount.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        {paymentData.remainingAmount > 0 && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Icon
+                icon="mdi:lightning-bolt"
+                className="w-5 h-5 text-yellow-500"
+              />
+              <h4
+                className={`font-semibold ${
+                  mode === "dark" ? "text-gray-200" : "text-gray-800"
+                }`}
+              >
+                Quick Split
+              </h4>
+            </div>
+
+            <ModernButton
+              onClick={quickSplit5050}
+              variant="primary"
+              size="lg"
+              icon="mdi:call-split"
+              className="w-full"
+            >
+              Split 50/50 (Cash + MoMo)
+            </ModernButton>
+          </div>
+        )}
+
+        {/* Custom Amount Input */}
+        {paymentData.remainingAmount > 0 && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Icon icon="mdi:calculator" className="w-5 h-5 text-blue-500" />
+              <h4
+                className={`font-semibold ${
+                  mode === "dark" ? "text-gray-200" : "text-gray-800"
+                }`}
+              >
+                Custom Amount
+              </h4>
+            </div>
+
+            <ModernInput
+              label="Enter Amount"
+              value={paymentData.newSplitAmount || ""}
+              onChange={(value) =>
+                setPaymentData((prev) => ({ ...prev, newSplitAmount: value }))
+              }
+              type="number"
+              step="0.01"
+              max={paymentData.remainingAmount}
+              min="0.01"
+              icon="mdi:currency-usd"
+              mode={mode}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <ModernButton
+                onClick={() => {
+                  const amount = parseFloat(paymentData.newSplitAmount) || 0;
+                  if (amount > 0 && amount <= paymentData.remainingAmount) {
+                    addSplitPayment("cash", amount);
+                    const remaining = paymentData.remainingAmount - amount;
+                    if (remaining > 0) {
+                      addSplitPayment("momo", remaining);
+                    }
+                  } else {
+                    toast.error("Please enter a valid amount");
+                  }
+                }}
+                variant="success"
+                icon="mdi:cash"
+                disabled={
+                  !paymentData.newSplitAmount ||
+                  parseFloat(paymentData.newSplitAmount) <= 0
+                }
+              >
+                Cash + MoMo Balance
+              </ModernButton>
+
+              <ModernButton
+                onClick={() => {
+                  const amount = parseFloat(paymentData.newSplitAmount) || 0;
+                  if (amount > 0 && amount <= paymentData.remainingAmount) {
+                    addSplitPayment("momo", amount);
+                    const remaining = paymentData.remainingAmount - amount;
+                    if (remaining > 0) {
+                      addSplitPayment("cash", remaining);
+                    }
+                  } else {
+                    toast.error("Please enter a valid amount");
+                  }
+                }}
+                variant="primary"
+                icon="mdi:cellphone"
+                disabled={
+                  !paymentData.newSplitAmount ||
+                  parseFloat(paymentData.newSplitAmount) <= 0
+                }
+              >
+                MoMo + Cash Balance
+              </ModernButton>
+            </div>
+          </div>
+        )}
+
+        {/* Payment List */}
+        {paymentData.splitPayments.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Icon
+                icon="mdi:format-list-bulleted"
+                className="w-5 h-5 text-gray-500"
+              />
+              <h4
+                className={`font-semibold ${
+                  mode === "dark" ? "text-gray-200" : "text-gray-800"
+                }`}
+              >
+                Payment Summary
+              </h4>
+            </div>
+
+            <div className="space-y-3">
+              {paymentData.splitPayments.map((payment, index) => (
+                <div
+                  key={payment.id}
+                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 hover:shadow-md ${
+                    mode === "dark"
+                      ? "bg-gray-700/50 border-gray-600/50"
+                      : "bg-gray-50/80 border-gray-200/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`p-2 rounded-xl ${
+                        payment.method === "cash"
+                          ? mode === "dark"
+                            ? "bg-green-900/30"
+                            : "bg-green-100"
+                          : mode === "dark"
+                          ? "bg-blue-900/30"
+                          : "bg-blue-100"
+                      }`}
+                    >
+                      <Icon
+                        icon={getPaymentTypeIcon(payment.method)}
+                        className={`w-5 h-5 ${
+                          payment.method === "cash"
+                            ? "text-green-600"
+                            : "text-blue-600"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <div
+                        className={`font-semibold ${
+                          mode === "dark" ? "text-gray-200" : "text-gray-800"
+                        }`}
+                      >
+                        {getPaymentTypeLabel(payment.method)}
+                      </div>
+                      <div
+                        className={`text-sm ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      >
+                        {new Date(payment.timestamp).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="font-bold text-green-600 text-lg">
+                        GHS {payment.amount.toLocaleString()}
+                      </div>
+                    </div>
+                    <ModernButton
+                      onClick={() => removeSplitPayment(payment.id)}
+                      variant="danger"
+                      size="sm"
+                      icon="mdi:delete"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Total Summary */}
+            <div
+              className={`p-4 rounded-2xl border-2 border-dashed ${
+                paymentData.remainingAmount === 0
+                  ? mode === "dark"
+                    ? "border-green-500/50 bg-green-900/10"
+                    : "border-green-300/50 bg-green-50/50"
+                  : mode === "dark"
+                  ? "border-orange-500/50 bg-orange-900/10"
+                  : "border-orange-300/50 bg-orange-50/50"
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <span
+                  className={`font-bold text-lg ${
+                    mode === "dark" ? "text-gray-200" : "text-gray-900"
+                  }`}
+                >
+                  Status:
+                </span>
+                <span
+                  className={`font-bold text-lg ${
+                    paymentData.remainingAmount === 0
+                      ? "text-green-600"
+                      : "text-orange-600"
+                  }`}
+                >
+                  {paymentData.remainingAmount === 0
+                    ? "Complete"
+                    : `GHS ${paymentData.remainingAmount.toLocaleString()} Remaining`}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </ModernCard>
+    );
   };
 
   const renderPaymentTypeFields = () => {
     switch (paymentType) {
       case "momo":
-        return <MomoPayment paymentData={paymentData} setPaymentData={setPaymentData} total={total} />;
+        return (
+          <ModernCard
+            title="Mobile Money Details"
+            icon="mdi:cellphone"
+            mode={mode}
+          >
+            <MomoPayment
+              paymentData={paymentData}
+              setPaymentData={setPaymentData}
+              total={total}
+            />
+          </ModernCard>
+        );
 
       case "card":
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                mode === "dark" ? "text-gray-200" : "text-gray-700"
-              }`}>
-                Card Type
-              </label>
-              <select
+          <ModernCard
+            title="Card Payment Details"
+            icon="mdi:credit-card"
+            mode={mode}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ModernSelect
+                label="Card Type"
                 value={paymentData.cardType}
-                onChange={(e) => setPaymentData(prev => ({
-                  ...prev,
-                  cardType: e.target.value
-                }))}
-                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  mode === "dark" 
-                    ? "border-gray-600 bg-gray-700 text-gray-100" 
-                    : "border-gray-300 bg-white text-gray-900"
-                }`}
-              >
-                <option value="">Select Card Type</option>
-                <option value="visa">Visa</option>
-                <option value="mastercard">Mastercard</option>
-                <option value="amex">American Express</option>
-                <option value="local">Local Card</option>
-              </select>
-            </div>
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                mode === "dark" ? "text-gray-200" : "text-gray-700"
-              }`}>
-                Reference Number
-              </label>
-              <input
-                type="text"
+                onChange={(value) =>
+                  setPaymentData((prev) => ({ ...prev, cardType: value }))
+                }
+                options={[
+                  { value: "visa", label: "Visa" },
+                  { value: "mastercard", label: "Mastercard" },
+                  { value: "amex", label: "American Express" },
+                  { value: "local", label: "Local Card" },
+                ]}
+                icon="mdi:credit-card"
+                mode={mode}
+                required
+              />
+              <ModernInput
+                label="Reference Number"
                 value={paymentData.referenceNumber}
-                onChange={(e) => setPaymentData(prev => ({
-                  ...prev,
-                  referenceNumber: e.target.value
-                }))}
-                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  mode === "dark" 
-                    ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
-                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                }`}
-                placeholder="Enter transaction reference"
+                onChange={(value) =>
+                  setPaymentData((prev) => ({
+                    ...prev,
+                    referenceNumber: value,
+                  }))
+                }
+                icon="mdi:receipt"
+                mode={mode}
+                required
               />
             </div>
-          </div>
+          </ModernCard>
         );
 
       case "bank_transfer":
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                mode === "dark" ? "text-gray-200" : "text-gray-700"
-              }`}>
-                Bank Name
-              </label>
-              <input
-                type="text"
+          <ModernCard title="Bank Transfer Details" icon="mdi:bank" mode={mode}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ModernInput
+                label="Bank Name"
                 value={paymentData.bankName}
-                onChange={(e) => setPaymentData(prev => ({
-                  ...prev,
-                  bankName: e.target.value
-                }))}
-                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  mode === "dark" 
-                    ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
-                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                }`}
-                placeholder="Enter bank name"
+                onChange={(value) =>
+                  setPaymentData((prev) => ({ ...prev, bankName: value }))
+                }
+                icon="mdi:bank"
+                mode={mode}
+                required
               />
-            </div>
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                mode === "dark" ? "text-gray-200" : "text-gray-700"
-              }`}>
-                Reference Number
-              </label>
-              <input
-                type="text"
+              <ModernInput
+                label="Reference Number"
                 value={paymentData.referenceNumber}
-                onChange={(e) => setPaymentData(prev => ({
-                  ...prev,
-                  referenceNumber: e.target.value
-                }))}
-                className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  mode === "dark" 
-                    ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
-                    : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                }`}
-                placeholder="Enter transfer reference"
+                onChange={(value) =>
+                  setPaymentData((prev) => ({
+                    ...prev,
+                    referenceNumber: value,
+                  }))
+                }
+                icon="mdi:receipt"
+                mode={mode}
+                required
               />
             </div>
-          </div>
+          </ModernCard>
         );
 
       case "split":
-        return (
-          <div className="space-y-4">
-            {/* Streamlined Split Payment Summary */}
-            <div className={`border rounded-xl p-4 ${
-              mode === "dark" 
-                ? "bg-gradient-to-r from-purple-900/30 to-blue-900/30 border-purple-600" 
-                : "bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200"
-            }`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Icon icon="mdi:call-split" className="w-6 h-6 text-purple-600" />
-                  <span className={`font-bold text-lg ${
-                    mode === "dark" ? "text-purple-300" : "text-purple-800"
-                  }`}>Split Payment</span>
-                </div>
-                <div className="text-right">
-                  <div className={`text-sm ${
-                    mode === "dark" ? "text-gray-300" : "text-gray-600"
-                  }`}>Total</div>
-                  <div className={`text-xl font-bold ${
-                    mode === "dark" ? "text-purple-300" : "text-purple-700"
-                  }`}>GHS {total.toLocaleString()}</div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className={`rounded-lg p-3 ${
-                  mode === "dark" ? "bg-green-900/30" : "bg-green-100"
-                }`}>
-                  <div className={`text-sm ${
-                    mode === "dark" ? "text-green-300" : "text-green-600"
-                  }`}>Paid</div>
-                  <div className={`text-lg font-bold ${
-                    mode === "dark" ? "text-green-300" : "text-green-700"
-                  }`}>
-                    GHS {paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
-                  </div>
-                </div>
-                <div className={`rounded-lg p-3 ${
-                  mode === "dark" ? "bg-orange-900/30" : "bg-orange-100"
-                }`}>
-                  <div className={`text-sm ${
-                    mode === "dark" ? "text-orange-300" : "text-orange-600"
-                  }`}>Remaining</div>
-                  <div className={`text-lg font-bold ${
-                    mode === "dark" ? "text-orange-300" : "text-orange-700"
-                  }`}>
-                    GHS {(total - paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)).toLocaleString()}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Split Payment Options */}
-            {paymentData.remainingAmount > 0 && (
-              <div className="space-y-3">
-                <div className={`text-sm font-medium ${
-                  mode === "dark" ? "text-gray-200" : "text-gray-700"
-                }`}>Quick Split Options:</div>
-                <div className="flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const half = Math.ceil(paymentData.remainingAmount / 2);
-                      const remaining = paymentData.remainingAmount - half;
-                      if (half > 0) {
-                        // Add half in cash
-                        const cashPayment = {
-                          id: Date.now(),
-                          method: "cash",
-                          amount: half,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        
-                        // Add remaining in momo
-                        const momoPayment = {
-                          id: Date.now() + 1,
-                          method: "momo",
-                          amount: remaining,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        
-                        const updatedPayments = [...paymentData.splitPayments, cashPayment, momoPayment];
-                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                        setPaymentData(prev => ({
-                          ...prev,
-                          splitPayments: updatedPayments,
-                          remainingAmount: total - updatedPaid,
-                        }));
-                        toast.success(`Split: Cash (GHS ${half.toLocaleString()}) + MoMo (GHS ${remaining.toLocaleString()})`);
-                      }
-                    }}
-                    className={`flex items-center justify-center gap-3 p-4 border rounded-xl transition-all font-semibold w-full max-w-md ${
-                      mode === "dark" 
-                        ? "bg-gradient-to-r from-green-900/30 to-blue-900/30 border-green-600 hover:from-green-900/50 hover:to-blue-900/50 text-gray-200" 
-                        : "bg-gradient-to-r from-green-100 to-blue-100 border-green-300 hover:from-green-200 hover:to-blue-200 text-gray-700"
-                    }`}
-                  >
-                    <Icon icon="mdi:cash" className="w-6 h-6 text-green-600" />
-                    <span>Split 50/50</span>
-                    <Icon icon="mdi:cellphone" className="w-6 h-6 text-blue-600" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Custom Amount Input */}
-            {paymentData.remainingAmount > 0 && (
-              <div className={`border rounded-lg p-4 ${
-                mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-gray-50 border-gray-200"
-              }`}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Icon icon="mdi:plus-circle" className="w-5 h-5 text-blue-600" />
-                  <span className={`font-semibold ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-800"
-                  }`}>Custom Amount</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-1">
-                    <input
-                      type="number"
-                      step="0.01"
-                      max={paymentData.remainingAmount}
-                      value={paymentData.newSplitAmount || ""}
-                      onChange={(e) => {
-                        const amount = parseFloat(e.target.value) || 0;
-                        setPaymentData(prev => ({
-                          ...prev,
-                          newSplitAmount: e.target.value
-                        }));
-                      }}
-                      className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        mode === "dark" 
-                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
-                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                      }`}
-                      placeholder={`Max: GHS ${paymentData.remainingAmount.toLocaleString()}`}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <TooltipIconButton
-                      label={`Enter amount in Cash, pay remaining (GHS ${(paymentData.remainingAmount - (parseFloat(paymentData.newSplitAmount) || 0)).toLocaleString()}) in Mobile Money`}
-                      mode={mode}
-                      className={`flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors font-medium w-full ${
-                        mode === "dark" 
-                          ? "bg-green-900/30 border-green-600 hover:bg-green-900/50 text-green-300" 
-                          : "bg-green-100 border-green-300 hover:bg-green-200 text-green-700"
-                      }`}
-                      onClick={() => {
-                        if (!paymentData.newSplitAmount) {
-                          toast.error("Please enter an amount");
-                          return;
-                        }
-                        const amount = parseFloat(paymentData.newSplitAmount) || 0;
-                        if (amount <= 0) {
-                          toast.error("Amount must be greater than zero");
-                          return;
-                        }
-                        if (amount > paymentData.remainingAmount) {
-                          toast.error("Amount cannot exceed remaining balance");
-                          return;
-                        }
-                        
-                        const remaining = paymentData.remainingAmount - amount;
-                        
-                        // Add the entered amount in cash
-                        const cashPayment = {
-                          id: Date.now(),
-                          method: "cash",
-                          amount: amount,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        
-                        // Add remaining balance in momo
-                        const momoPayment = {
-                          id: Date.now() + 1,
-                          method: "momo",
-                          amount: remaining,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        
-                        const updatedPayments = [...paymentData.splitPayments, cashPayment, momoPayment];
-                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                        setPaymentData(prev => ({
-                          ...prev,
-                          splitPayments: updatedPayments,
-                          remainingAmount: total - updatedPaid,
-                          newSplitAmount: "",
-                        }));
-                        toast.success(`Cash: GHS ${amount.toLocaleString()} + MoMo: GHS ${remaining.toLocaleString()}`);
-                      }}
-                    >
-                      <Icon icon="mdi:cash" className="w-5 h-5" />
-                      <span>Cash + Balance MoMo</span>
-                    </TooltipIconButton>
-                    
-                    <TooltipIconButton
-                      label={`Enter amount in Mobile Money, pay remaining (GHS ${(paymentData.remainingAmount - (parseFloat(paymentData.newSplitAmount) || 0)).toLocaleString()}) in Cash`}
-                      mode={mode}
-                      className={`flex items-center justify-center gap-2 p-3 border rounded-lg transition-colors font-medium w-full ${
-                        mode === "dark" 
-                          ? "bg-blue-900/30 border-blue-600 hover:bg-blue-900/50 text-blue-300" 
-                          : "bg-blue-100 border-blue-300 hover:bg-blue-200 text-blue-700"
-                      }`}
-                      onClick={() => {
-                        if (!paymentData.newSplitAmount) {
-                          toast.error("Please enter an amount");
-                          return;
-                        }
-                        const amount = parseFloat(paymentData.newSplitAmount) || 0;
-                        if (amount <= 0) {
-                          toast.error("Amount must be greater than zero");
-                          return;
-                        }
-                        if (amount > paymentData.remainingAmount) {
-                          toast.error("Amount cannot exceed remaining balance");
-                          return;
-                        }
-                        
-                        const remaining = paymentData.remainingAmount - amount;
-                        
-                        // Add the entered amount in momo
-                        const momoPayment = {
-                          id: Date.now(),
-                          method: "momo",
-                          amount: amount,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        
-                        // Add remaining balance in cash
-                        const cashPayment = {
-                          id: Date.now() + 1,
-                          method: "cash",
-                          amount: remaining,
-                          status: 'pending',
-                          timestamp: new Date().toISOString(),
-                        };
-                        
-                        const updatedPayments = [...paymentData.splitPayments, momoPayment, cashPayment];
-                        const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                        setPaymentData(prev => ({
-                          ...prev,
-                          splitPayments: updatedPayments,
-                          remainingAmount: total - updatedPaid,
-                          newSplitAmount: "",
-                        }));
-                        toast.success(`MoMo: GHS ${amount.toLocaleString()} + Cash: GHS ${remaining.toLocaleString()}`);
-                      }}
-                    >
-                      <Icon icon="mdi:cellphone" className="w-5 h-5" />
-                      <span>MoMo + Balance Cash</span>
-                    </TooltipIconButton>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Payment List - Simplified */}
-            {paymentData.splitPayments.length > 0 && (
-              <div className={`border rounded-lg p-4 ${
-                mode === "dark" ? "bg-gray-800 border-gray-600" : "bg-white border-gray-200"
-              }`}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Icon icon="mdi:format-list-bulleted" className="w-5 h-5 text-gray-600" />
-                  <span className={`font-semibold ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-800"
-                  }`}>Payment Summary</span>
-                </div>
-                
-                <div className="space-y-2">
-                  {paymentData.splitPayments.map((payment, index) => (
-                    <div key={payment.id} className={`flex items-center justify-between p-3 rounded-lg ${
-                      mode === "dark" ? "bg-gray-700" : "bg-gray-50"
-                    }`}>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-3">
-                          <Icon 
-                            icon={getPaymentTypeIcon(payment.method)} 
-                            className="w-5 h-5 text-blue-600" 
-                          />
-                          <span className="font-medium">{getPaymentTypeLabel(payment.method)}</span>
-                          <TooltipIconButton
-                            label={`Added at ${new Date(payment.timestamp).toLocaleTimeString()}`}
-                            mode={mode}
-                            className="p-1"
-                          >
-                            <Icon 
-                              icon="mdi:clock-outline" 
-                              className="w-4 h-4 text-gray-400" 
-                            />
-                          </TooltipIconButton>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <span className="font-semibold text-green-600">
-                          GHS {payment.amount.toLocaleString()}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPaymentData(prev => {
-                              const updatedPayments = prev.splitPayments.filter(p => p.id !== payment.id);
-                              const updatedPaid = updatedPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-                              return {
-                                ...prev,
-                                splitPayments: updatedPayments,
-                                remainingAmount: total - updatedPaid
-                              };
-                            });
-                            toast.success("Payment removed");
-                          }}
-                          className="text-red-500 hover:text-red-700 p-1"
-                        >
-                          <Icon icon="mdi:delete" className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className={`mt-4 pt-4 border-t ${
-                  mode === "dark" ? "border-gray-600" : "border-gray-200"
-                }`}>
-                  <div className="flex justify-between items-center">
-                    <span className={`font-semibold ${
-                      mode === "dark" ? "text-gray-200" : "text-gray-900"
-                    }`}>Total Paid:</span>
-                    <span className="font-semibold text-green-600">
-                      GHS {paymentData.splitPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center mt-1">
-                    <span className={`font-semibold ${
-                      mode === "dark" ? "text-gray-200" : "text-gray-900"
-                    }`}>Remaining:</span>
-                    <span className={`font-semibold ${paymentData.remainingAmount > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                      GHS {paymentData.remainingAmount.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
+        return <ModernSplitPayment />;
 
       default:
         return null;
     }
   };
 
-
-
-  if (!isOpen) return null;
+  if (animationState === "closed") return null;
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-y-auto">
-      {/* Backdrop */}
+    <div
+      className={`fixed inset-0 z-[60] overflow-y-auto transition-all duration-300 ${
+        animationState === "open" ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      {/* Enhanced Backdrop */}
       <div
-        className={`fixed inset-0 transition-all duration-500 backdrop-blur-sm ${
-          mode === "dark" 
-            ? "bg-gradient-to-br from-gray-900/80 via-gray-800/60 to-gray-900/80" 
-            : "bg-gradient-to-br from-white/20 via-blue-50/30 to-blue-50/20"
-        }`}
+        className="fixed inset-0 transition-all duration-500"
         style={{
-          backgroundImage: mode === "dark" ? `
-            radial-gradient(circle at 20% 80%, rgba(55, 65, 81, 0.4) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(31, 41, 55, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, rgba(75, 85, 99, 0.2) 0%, transparent 50%)
-          ` : `
-            radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(0, 123, 255, 0.15) 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, rgba(100, 149, 237, 0.1) 0%, transparent 50%)
-          `,
+          background:
+            mode === "dark"
+              ? `
+              radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.02) 0%, rgba(15, 23, 42, 0.05) 100%)
+            `
+              : `
+              radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 50% 50%, rgba(248, 250, 252, 0.01) 0%, rgba(248, 250, 252, 0.03) 100%)
+            `,
+          backdropFilter: "blur(2px)",
         }}
       />
 
-      {/* Modal Content */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className={`relative w-full max-w-5xl rounded-3xl transform transition-all duration-500 h-full overflow-hidden shadow-2xl backdrop-blur-xl ${
-          mode === "dark" 
-            ? "bg-gray-800/90 text-gray-100 border border-gray-600/50 shadow-black/40" 
-            : "bg-white/20 text-gray-900 border border-white/20 shadow-black/20"
-        }`}>
-          {/* Header */}
-          <div className="relative px-8 py-3 overflow-hidden bg-[#172840]">
-            <div className="absolute inset-0 opacity-30">
-              <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-xl transform -translate-x-16 -translate-y-16"></div>
-              <div className="absolute bottom-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-lg transform translate-x-12 translate-y-12"></div>
+      {/* Modal Container */}
+      <div className="flex min-h-full items-center justify-center p-6">
+        <div
+          ref={modalRef}
+          className={`
+            relative w-full max-w-5xl transform transition-all duration-500
+            ${
+              animationState === "open"
+                ? "scale-100 translate-y-0"
+                : "scale-95 translate-y-8"
+            }
+          `}
+          style={{
+            borderRadius: "32px",
+            background:
+              mode === "dark"
+                ? "linear-gradient(145deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)"
+                : "linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)",
+            backdropFilter: "blur(40px)",
+            border:
+              mode === "dark"
+                ? "1px solid rgba(255, 255, 255, 0.1)"
+                : "1px solid rgba(255, 255, 255, 0.8)",
+            boxShadow:
+              mode === "dark"
+                ? "0 32px 64px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05)"
+                : "0 32px 64px -12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.8)",
+          }}
+        >
+          {/* Enhanced Header */}
+          <div
+            className="relative overflow-hidden"
+            style={{ borderRadius: "32px 32px 0 0" }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 opacity-90" />
+            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent" />
+
+            {/* Animated background elements */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute -top-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-2xl animate-pulse" />
+              <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-white/5 rounded-full blur-3xl animate-pulse delay-1000" />
             </div>
 
-            <div className="relative flex justify-between items-center">
-              <h2 className="text-2xl font-semibold text-white tracking-tight">
-                Finalize Sale - {getPaymentTypeLabel(paymentType)}
-              </h2>
-              <button
-                type="button"
-                onClick={onClose}
-                className="group p-3 rounded-2xl transition-all duration-300 hover:bg-white/20 hover:scale-110 active:scale-95"
-                style={{
-                  backdropFilter: "blur(4px)",
-                  background: "rgba(255, 255, 255, 0.1)",
-                }}
-              >
-                <Icon
+            <div className="relative px-10 py-8">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-6">
+                  <div className="p-4 bg-white/15 rounded-3xl backdrop-blur-sm border border-white/20">
+                    <Icon
+                      icon={getPaymentTypeIcon(paymentType)}
+                      className="w-10 h-10 text-white"
+                    />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold text-white tracking-tight mb-1">
+                      Finalize Sale
+                    </h2>
+                    <p className="text-blue-100 text-lg font-medium">
+                      {getPaymentTypeLabel(paymentType)} Payment • Order #
+                      {orderId}
+                    </p>
+                  </div>
+                </div>
+
+                <ModernButton
+                  onClick={onClose}
+                  variant="secondary"
+                  size="md"
                   icon="heroicons:x-mark"
-                  className="h-6 w-6 text-white transition-transform duration-300 group-hover:rotate-90"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/20 hover:border-white/30"
                 />
-              </button>
+              </div>
             </div>
           </div>
 
-          {/* Product List (if provided and not layaway) */}
-          {!isLayaway && <OrderItems products={products} quantities={quantities} />}
+          {/* Collapsible Product List */}
+          {!isLayaway && (
+            <CollapsibleSection
+              title={`View Items (${(() => {
+                if (!Array.isArray(products)) return 0;
 
-          {/* Content */}
-          <div className={`p-8 overflow-y-auto max-h-[calc(85vh-120px)] ${
-            mode === "dark" ? "bg-gray-700/60" : "bg-white/60"
-          }`} style={{ minHeight: '200px' }}>
+                // If quantities is empty but we have products, assume each product has quantity 1
+                if (!quantities || Object.keys(quantities).length === 0) {
+                  return products.length;
+                }
+
+                // Try multiple common patterns for matching products with quantities
+                const count = products.filter((p) => {
+                  // Try different possible keys that might be used
+                  const possibleKeys = [
+                    p.id, // Most common: product.id
+                    p.product_id, // Alternative: product.product_id
+                    p.name, // By name: product.name
+                    String(p.id), // String version of ID
+                    String(p.product_id), // String version of product_id
+                  ].filter((key) => key != null); // Remove null/undefined keys
+
+                  // Check if any of these keys have a quantity > 0
+                  return possibleKeys.some((key) => (quantities[key] || 0) > 0);
+                }).length;
+
+                return count;
+              })()})`}
+              icon="mdi:package-variant"
+              mode={mode}
+              defaultOpen={true}
+            >
+              <OrderItems products={products} quantities={quantities} />
+            </CollapsibleSection>
+          )}
+
+          {/* Content Area - Streamlined */}
+          <div className="px-6 py-6 max-h-[calc(85vh-200px)] overflow-y-auto space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Layaway Summary or Payment Summary */}
-              {isLayaway ? (
-                <LayawaySummary 
-                  isLayaway={isLayaway}
-                  layawayTotalValue={layawayTotalValue}
-                  layawayPaid={layawayPaid}
-                  layawayOutstanding={layawayOutstanding}
-                  layawayPayments={layawayPayments}
-                  products={products}
-                  quantities={quantities}
-                  orderId={orderId}
-                  customer={customer}
-                  total={total}
-                  paymentType={paymentType}
-                  paymentData={paymentData}
-                  users={allUsers}
-                  mode={mode}
-                />
-              ) : (
-                <PaymentSummary orderId={orderId} customer={customer} total={total} paymentType={paymentType} paymentData={paymentData} users={allUsers} mode={mode} />
-              )}
+              {/* Streamlined Payment Header - Essential Info Only */}
 
-              {/* Payment Type Selection for Layaway Finalization */}
-              {isLayaway && (
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-700"
-                  }`}>
-                    Payment Method
-                  </label>
-                  <select
-                    value={paymentType}
-                    onChange={e => {
-                      // Allow split or other payment types
-                      if (e.target.value === 'split') {
-                        setPaymentData(prev => ({ ...prev, paymentType: 'split' }));
-                      }
-                      // You can add more logic for other types if needed
-                    }}
-                    className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      mode === "dark" 
-                        ? "border-gray-600 bg-gray-700 text-gray-100" 
-                        : "border-gray-300 bg-white text-gray-900"
-                    }`}
-                  >
-                    <option value="cash">Cash</option>
-                    <option value="momo">Mobile Money</option>
-                    <option value="card">Card</option>
-                    <option value="split">Split Bill</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Payment Amounts - Hidden for Split Payments */}
+              {/* Streamlined Payment Input - Essential Fields Only */}
               {paymentType !== "split" && (
-                <PaymentAmounts 
-                  paymentData={paymentData} 
-                  setPaymentData={setPaymentData} 
-                  handleReceivedAmountChange={handleReceivedAmountChange}
-                  mode={mode}
-                />
-              )}
+                <div className="space-y-4">
+                  {/* Payment Amount Input - Simplified */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div
+                      className={`p-4 rounded-2xl border ${
+                        mode === "dark"
+                          ? "bg-gray-800/40 border-gray-700/50"
+                          : "bg-white/60 border-gray-200/50"
+                      }`}
+                    >
+                      <div className="text-center flex items-center gap-4">
+                        <div
+                          className={`text-sm font-medium ${
+                            mode === "dark" ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
+                          Total Amount to Pay
+                        </div>
+                        <div className="text-3xl font-bold text-blue-600 mt-1">
+                          GHS{" "}
+                          {parseFloat(
+                            paymentData.payingAmount || 0
+                          ).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
 
-              {/* Payment Type - Read Only (hide if layaway and type selector is shown) */}
-              {!isLayaway && (
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    mode === "dark" ? "text-gray-200" : "text-gray-700"
-                  }`}>
-                    Payment Type
-                  </label>
-                  <div className={`w-full border rounded-lg px-4 py-3 font-medium flex items-center gap-2 ${
-                    mode === "dark" 
-                      ? "border-gray-600 bg-gray-700 text-gray-200" 
-                      : "border-gray-300 bg-gray-50 text-gray-700"
-                  }`}>
-                    <Icon icon={getPaymentTypeIcon(paymentType)} className="w-5 h-5 text-green-600" />
-                    {getPaymentTypeLabel(paymentType)}
+                    <ModernInput
+                      label="Amount Received"
+                      value={paymentData.receivedAmount}
+                      onChange={handleReceivedAmountChange}
+                      type="number"
+                      step="0.01"
+                      icon="mdi:cash"
+                      mode={mode}
+                      required
+                    />
                   </div>
+
+                  {/* Change Display - Compact */}
+                  {paymentData.change > 0 && (
+                    <div
+                      className={`p-4 rounded-2xl border-2 border-dashed ${
+                        mode === "dark"
+                          ? "border-green-500/30 bg-green-900/10"
+                          : "border-green-300/50 bg-green-50/50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Icon
+                            icon="mdi:cash-refund"
+                            className="w-5 h-5 text-green-600"
+                          />
+                          <span
+                            className={`font-semibold ${
+                              mode === "dark"
+                                ? "text-green-300"
+                                : "text-green-700"
+                            }`}
+                          >
+                            Change to Give:
+                          </span>
+                        </div>
+                        <div className="text-xl font-bold text-green-600">
+                          GHS {paymentData.change.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Payment Type Specific Fields */}
               {renderPaymentTypeFields()}
 
-              {/* Customer Information */}
-              <PaymentCustomerInfo 
-                customer={customer}
-                customers={customers}
-                onCustomerChange={onCustomerChange}
-                paymentData={paymentData}
-                setPaymentData={setPaymentData}
-                currentUser={user}
+              {/* Collapsible Additional Options */}
+              <CollapsibleSection
+                title="Additional Options"
+                icon="mdi:cog"
                 mode={mode}
-              />
+                defaultOpen={false}
+              >
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div
+                      className={`p-4 rounded-2xl border ${
+                        mode === "dark"
+                          ? "bg-gray-800/40 border-gray-700/50"
+                          : "bg-white/60 border-gray-200/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon
+                          icon="mdi:account"
+                          className={`w-5 h-5 ${
+                            mode === "dark" ? "text-gray-400" : "text-gray-500"
+                          }`}
+                        />
+                        <div>
+                          <div
+                            className={`text-xs font-medium ${
+                              mode === "dark"
+                                ? "text-gray-400"
+                                : "text-gray-600"
+                            }`}
+                          >
+                            Payment Receiver
+                          </div>
+                          <div
+                            className={`font-semibold ${
+                              mode === "dark"
+                                ? "text-gray-200"
+                                : "text-gray-800"
+                            }`}
+                          >
+                            {user?.name || user?.email || "Not specified"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div></div> {/* Empty div for grid spacing */}
+                  </div>
 
-              {/* Notes Section */}
-              <PaymentNotes paymentData={paymentData} setPaymentData={setPaymentData} mode={mode} />
-
-
-              {/* Action Buttons - sticky at bottom for better accessibility */}
-              <div className="flex justify-end gap-4 pt-4 border-t bottom-0 z-10 bg-white/80 dark:bg-gray-800/95 border-gray-200 dark:border-gray-600">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-6 py-3 rounded-lg font-medium transition-colors text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
-                >
-                  <Icon icon="mdi:check-circle" className="w-5 h-5" />
-                  {isLayaway ? 'Complete Layaway' : 'Finalize Payment'}
-                </button>
-              </div>
+                  <div className="relative">
+                    <textarea
+                      value={paymentData.saleNote}
+                      onChange={(e) =>
+                        setPaymentData((prev) => ({
+                          ...prev,
+                          saleNote: e.target.value,
+                        }))
+                      }
+                      rows={3}
+                      className={`
+                        w-full p-4 pt-6 border-2 rounded-2xl transition-all duration-300 resize-none
+                        focus:border-blue-500 focus:shadow-lg focus:shadow-blue-500/20
+                        ${
+                          mode === "dark"
+                            ? "border-gray-600 bg-gray-800/50 text-gray-100 placeholder-gray-400 backdrop-blur-sm"
+                            : "border-gray-200 bg-white/80 text-gray-900 placeholder-gray-500 backdrop-blur-sm"
+                        }
+                        focus:outline-none focus:ring-0
+                      `}
+                      placeholder="Add any additional notes about this sale..."
+                    />
+                    <label
+                      className={`
+                      absolute top-2 left-4 text-xs font-medium transition-colors duration-300
+                      ${mode === "dark" ? "text-gray-400" : "text-gray-600"}
+                    `}
+                    >
+                      Sale Notes
+                    </label>
+                  </div>
+                </div>
+              </CollapsibleSection>
             </form>
+          </div>
+
+          {/* Enhanced Action Buttons */}
+          <div
+            className={`
+            sticky bottom-0 px-10 py-6 border-t backdrop-blur-xl
+            ${
+              mode === "dark"
+                ? "bg-gray-900/95 border-gray-700/50"
+                : "bg-white/95 border-gray-200/50"
+            }
+          `}
+            style={{ borderRadius: "0 0 32px 32px" }}
+          >
+            <div className="flex justify-end gap-6">
+              <ModernButton
+                onClick={onClose}
+                variant="secondary"
+                size="lg"
+                icon="mdi:close"
+                disabled={isLoading}
+                mode={mode}
+              >
+                Cancel
+              </ModernButton>
+              <ModernButton
+                onClick={handleSubmit}
+                variant="success"
+                size="lg"
+                icon={isLoading ? "mdi:loading" : "mdi:check-circle"}
+                loading={isLoading}
+                disabled={
+                  isLoading ||
+                  (paymentType === "split" && paymentData.remainingAmount > 0)
+                }
+                mode={mode}
+              >
+                {isLoading
+                  ? "Processing..."
+                  : isLayaway
+                  ? "Complete Layaway"
+                  : "Finalize Payment"}
+              </ModernButton>
+            </div>
           </div>
         </div>
       </div>
@@ -899,4 +1536,4 @@ const PaymentForm = ({
   );
 };
 
-export default PaymentForm; 
+export default PaymentForm;

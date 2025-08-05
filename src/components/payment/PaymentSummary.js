@@ -35,23 +35,30 @@ const PaymentSummary = ({
                 : "Walk In Customer"}
             </span>
           </div>
-          {customer && customer.id !== "__online__" && (
+          {/* Payment Type and Cashier on same row */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <span className="text-gray-600 dark:text-gray-300">Phone:</span>
-              <span className="font-semibold ml-2 text-gray-900 dark:text-white">{customer.phone}</span>
-            </div>
-          )}
-          {paymentData && paymentData.paymentReceiver && users && (
-            <div>
-              <span className="text-gray-600 dark:text-gray-300">Cashier:</span>
+              <span className="text-gray-600 dark:text-gray-300">Payment Type:</span>
               <span className="font-semibold ml-2 text-gray-900 dark:text-white">
-                {(() => {
-                  const receiver = users.find(u => u.id === paymentData.paymentReceiver);
-                  return receiver?.full_name || receiver?.name || receiver?.email || paymentData.paymentReceiver;
-                })()}
+                {paymentType === "momo" ? "Mobile Money" : 
+                 paymentType === "cash" ? "Cash" : 
+                 paymentType === "card" ? "Card" : 
+                 paymentType === "split" ? "Split Payment" : 
+                 paymentType}
               </span>
             </div>
-          )}
+            {paymentData && paymentData.paymentReceiver && users && (
+              <div>
+                <span className="text-gray-600 dark:text-gray-300">Cashier:</span>
+                <span className="font-semibold ml-2 text-gray-900 dark:text-white">
+                  {(() => {
+                    const receiver = users.find(u => u.id === paymentData.paymentReceiver);
+                    return receiver?.full_name || receiver?.name || receiver?.email || paymentData.paymentReceiver;
+                  })()}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="space-y-2">
           <div>
@@ -60,12 +67,6 @@ const PaymentSummary = ({
               GHS {total.toLocaleString()}
             </span>
           </div>
-          {customer && customer.id !== "__online__" && (
-            <div>
-              <span className="text-gray-600 dark:text-gray-300">Email:</span>
-              <span className="font-semibold ml-2 text-gray-900 dark:text-white">{customer.email}</span>
-            </div>
-          )}
         </div>
       </div>
       {paymentType === "split" &&
