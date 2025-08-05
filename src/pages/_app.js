@@ -215,11 +215,11 @@ function MyApp({ Component, pageProps }) {
         reverseOrder={false}
         toastOptions={{
           style: {
-            zIndex: 9999,
+            zIndex: 999999,
           },
         }}
         containerStyle={{
-          zIndex: 9999,
+          zIndex: 999999,
         }}
       />
         <AuthProvider>
