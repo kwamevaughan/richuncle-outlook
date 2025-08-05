@@ -699,40 +699,78 @@ const PosOrderList = ({
                     disabled={!discountValue || Number(discountValue) <= 0}
                     onClick={async () => {
                       try {
+                        // Try to find an existing discount with the same value/type
+                        const existing = discounts.find(
+                          d =>
+                            d.value === Number(discountValue) &&
+                            (d.discount_type || d.type) === newDiscountType
+                        );
+                        if (existing) {
+                          setSelectedDiscountId(existing.id);
+                          setShowAddDiscountModal(false);
+                          setDiscountValue("");
+                          setNewDiscountType("percentage");
+                          toast.success("Discount applied!");
+                          return;
+                        }
+                        // Otherwise, create a new discount as before
                         const discountData = {
                           name: `${newDiscountType === "percentage" ? discountValue + "%" : "GHS " + discountValue} Discount`,
                           value: Number(discountValue),
                           discount_type: newDiscountType,
                           store_id: user?.store_id || null,
                         };
-
                         const response = await fetch("/api/discounts", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(discountData),
                         });
                         const result = await response.json();
-
-                        if (result.success && result.data) {
+                        if (response.ok && result.success && result.data) {
                           setShowAddDiscountModal(false);
                           setDiscountValue("");
                           setNewDiscountType("percentage");
-
-                          // Add to discounts list
                           if (typeof setDiscounts === "function") {
                             setDiscounts((prev) => [result.data, ...prev]);
                           }
-
                           if (typeof setSelectedDiscountId === "function") {
                             setSelectedDiscountId(result.data.id);
                           }
-
                           toast.success("Discount applied!");
+                        } else if (result.error && result.error.toLowerCase().includes('duplicate')) {
+                          // Fetch all discounts again
+                          const fetchRes = await fetch('/api/discounts');
+                          const fetchJson = await fetchRes.json();
+                          const match = fetchJson.data.find(d => {
+                            const valueMatch = Number(d.value) === Number(discountValue);
+                            const typeMatch = ((d.discount_type || d.type || '').toLowerCase() === newDiscountType.toLowerCase());
+                            const storeMatch =
+                              !user?.store_id || // If user has no store, match any
+                              !d.store_id ||     // If discount is global, match any
+                              d.store_id === user.store_id; // Otherwise, must match
+                            return valueMatch && typeMatch && storeMatch;
+                          });
+                          if (match) {
+                            setShowAddDiscountModal(false);
+                            setDiscountValue('');
+                            setNewDiscountType('percentage');
+                            if (typeof setDiscounts === 'function') {
+                              setDiscounts(fetchJson.data);
+                            }
+                            if (typeof setSelectedDiscountId === 'function') {
+                              setSelectedDiscountId(match.id);
+                            }
+                            toast.success('Discount applied!');
+                            return;
+                          }
+                          toast.error('Discount exists but could not be found. Please refresh and try again.');
                         } else {
-                          toast.error(result.error || "Failed to apply discount");
+                          toast.error(result.error || result.message || 'Failed to apply discount');
                         }
                       } catch (err) {
-                        toast.error(err.message || "Failed to apply discount");
+                        // Only handle network errors here
+                        console.error('Discount creation error:', err);
+                        toast.error(err.message || 'Failed to apply discount');
                       }
                     }}
                   >
@@ -798,7 +836,7 @@ const PosOrderList = ({
               </span>
             </div>
 
-            {totalProfit > 0 && user?.role !== "cashier" && (
+            {/* {totalProfit > 0 && user?.role !== "cashier" && (
               <div className="flex justify-between items-center">
                 <span className="text-green-600 font-medium">
                   Estimated Profit
@@ -807,7 +845,7 @@ const PosOrderList = ({
                   GHS {totalProfit.toLocaleString()}
                 </span>
               </div>
-            )}
+            )} */}
           </div>
         </div>
         <div
