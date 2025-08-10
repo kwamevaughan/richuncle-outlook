@@ -996,13 +996,11 @@ export function GenericTable({
               </tr>
             </thead>
             <TableBody
-              items={enableDragDrop ? table.paged : undefined}
-              onReorder={
-                enableDragDrop
-                  ? (paged, fromIdx, toIdx) =>
-                      onReorder(paged, fromIdx, toIdx, table.page, table.pageSize)
-                  : undefined
-              }
+              {...(enableDragDrop && {
+                items: table.paged,
+                onReorder: (paged, fromIdx, toIdx) =>
+                  onReorder(paged, fromIdx, toIdx, table.page, table.pageSize)
+              })}
               className={`${
                 mode === "dark" 
                   ? "bg-gray-900 divide-gray-700" 
