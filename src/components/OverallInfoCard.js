@@ -101,27 +101,25 @@ export default function OverallInfoCard() {
             else if (stat.label === "Suppliers") href = "/suppliers";
             else if (stat.label === "Orders") href = "/sales";
             return (
-              <Link key={stat.label} href={href} legacyBehavior>
-                <a className="focus:outline-none">
-                  <div
-                    className={`flex flex-col items-center gap-2 p-3 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl rounded-lg border ${stat.color} shadow-sm cursor-pointer`}
-                    tabIndex={0}
-                    title={stat.tooltip}
-                  >
-                    <div className="relative">
-                      <Icon icon={stat.icon} className="text-2xl" />
-                      <span className="absolute -top-2 -right-2"></span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-sm font-medium text-gray-600">
-                        {stat.label}
-                      </span>
-                      <span className="text-xl font-bold">
-                        {statValues[idx] ?? "-"}
-                      </span>
-                    </div>
-                  </div>
-                </a>
+              <Link 
+                key={stat.label} 
+                href={href} 
+                className={`flex flex-col items-center gap-2 p-3 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl rounded-lg border ${stat.color} shadow-sm cursor-pointer focus:outline-none`}
+                tabIndex={0}
+                title={stat.tooltip}
+              >
+                <div className="relative">
+                  <Icon icon={stat.icon} className="text-2xl" />
+                  <span className="absolute -top-2 -right-2"></span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-medium text-gray-600">
+                    {stat.label}
+                  </span>
+                  <span className="text-xl font-bold">
+                    {statValues[idx] ?? "-"}
+                  </span>
+                </div>
               </Link>
             );
           })}

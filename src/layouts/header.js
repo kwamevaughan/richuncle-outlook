@@ -53,10 +53,16 @@ const Header = ({
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (storeDropdownRef.current && !storeDropdownRef.current.contains(e.target)) {
+      if (
+        storeDropdownRef.current &&
+        !storeDropdownRef.current.contains(e.target)
+      ) {
         setStoreDropdownOpen(false);
       }
-      if (addNewDropdownRef.current && !addNewDropdownRef.current.contains(e.target)) {
+      if (
+        addNewDropdownRef.current &&
+        !addNewDropdownRef.current.contains(e.target)
+      ) {
         setAddNewDropdownOpen(false);
       }
     };
@@ -72,13 +78,13 @@ const Header = ({
     // Fetch stores on mount
     const fetchStores = async () => {
       try {
-        const res = await fetch('/api/stores');
+        const res = await fetch("/api/stores");
         const data = await res.json();
         if (data.success && data.data && data.data.length > 0) {
           setStores(data.data);
           // Try to load last used store from localStorage
-          const last = localStorage.getItem('selected_store_id');
-          if (last && data.data.find(s => s.id === last)) {
+          const last = localStorage.getItem("selected_store_id");
+          if (last && data.data.find((s) => s.id === last)) {
             setSelectedStore(last);
           } else {
             setSelectedStore(""); // Default to All Stores
@@ -94,11 +100,11 @@ const Header = ({
   // Persist selected store
   useEffect(() => {
     if (selectedStore) {
-      localStorage.setItem('selected_store_id', selectedStore);
+      localStorage.setItem("selected_store_id", selectedStore);
     }
   }, [selectedStore]);
 
-    const isMobile = windowWidth !== null && windowWidth < 640;
+  const isMobile = windowWidth !== null && windowWidth < 640;
 
   return (
     <>
@@ -107,8 +113,8 @@ const Header = ({
         <button
           onClick={toggleHeader}
           className={`fixed top-2 right-2 z-50 p-2 rounded-full shadow-lg transition-all duration-300 ${
-            mode === "dark" 
-              ? "bg-gray-800 text-white hover:bg-gray-700" 
+            mode === "dark"
+              ? "bg-gray-800 text-white hover:bg-gray-700"
               : "bg-white text-gray-700 hover:bg-gray-100"
           }`}
           title="Show Header"
@@ -121,13 +127,13 @@ const Header = ({
         ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-10 transition-all duration-300 ${
           mode === "dark" ? "bg-[#101827]" : "bg-transparent"
-        } ${
-          isMobile && !isHeaderVisible ? "-translate-y-full" : ""
-        }`}
+        } ${isMobile && !isHeaderVisible ? "-translate-y-full" : ""}`}
       >
         <div
           className={`
-            ${isMobile ? "p-1 m-1" : "p-2 m-4"} transition-transform duration-300
+            ${
+              isMobile ? "p-1 m-1" : "p-2 m-4"
+            } transition-transform duration-300
             ${
               isMobile
                 ? "ml-0"
@@ -161,9 +167,13 @@ const Header = ({
                   className={`${isMobile ? "w-5 h-5" : "w-6 h-6"}`}
                 />
               </button>
-              
+
               {/* Search component - responsive */}
-              <div className={`${isMobile ? "flex-grow max-w-[120px]" : "flex-grow min-w-0"}`}>
+              <div
+                className={`${
+                  isMobile ? "flex-grow max-w-[120px]" : "flex-grow min-w-0"
+                }`}
+              >
                 <Search
                   mode={mode}
                   onSearchModalToggle={onSearchModalToggle}
@@ -172,11 +182,17 @@ const Header = ({
               </div>
             </div>
 
-            <div className={`flex justify-center items-center w-full ${isMobile ? "gap-1" : "gap-2"}`}>
+            <div
+              className={`flex justify-center items-center w-full ${
+                isMobile ? "gap-1" : "gap-2"
+              }`}
+            >
               {/* Store dropdown - always visible */}
               <div className="relative flex-shrink-0" ref={storeDropdownRef}>
                 <button
-                  className={`flex items-center gap-1 ${isMobile ? "text-xs px-1.5 py-1" : "text-sm px-3 py-1.5"} rounded-md hover:shadow-md transition-all duration-300
+                  className={`flex items-center gap-1 ${
+                    isMobile ? "text-xs px-1.5 py-1" : "text-sm px-3 py-1.5"
+                  } rounded-md hover:shadow-md transition-all duration-300
                     ${
                       mode === "dark"
                         ? "bg-gray-800 text-gray-100 hover:bg-gray-700"
@@ -193,7 +209,8 @@ const Header = ({
                   <span className={`${isMobile ? "text-xs" : ""}`}>
                     {stores.length > 0
                       ? selectedStore
-                        ? stores.find(s => s.id === selectedStore)?.name || "Select Store"
+                        ? stores.find((s) => s.id === selectedStore)?.name ||
+                          "Select Store"
                         : "All Stores"
                       : "Select Store"}
                   </span>
@@ -223,37 +240,51 @@ const Header = ({
                     {/* All Stores option */}
                     <li
                       key="all"
-                      className={`px-4 py-2 cursor-pointer ${!selectedStore ? 'font-bold bg-gray-200 dark:bg-gray-800' : ''}`}
+                      className={`px-4 py-2 cursor-pointer ${
+                        !selectedStore
+                          ? "font-bold bg-gray-200 dark:bg-gray-800"
+                          : ""
+                      }`}
                       onClick={() => {
                         setSelectedStore("");
-                        localStorage.setItem('selected_store_id', "");
+                        localStorage.setItem("selected_store_id", "");
                         setStoreDropdownOpen(false);
-                        console.log('Header: All Stores selected');
+                        console.log("Header: All Stores selected");
                       }}
                     >
                       All Stores
                     </li>
                     {/* Actual stores */}
                     {stores.length > 0 ? (
-                      stores.map(store => (
+                      stores.map((store) => (
                         <li
                           key={store.id}
                           className={`px-4 py-2 cursor-pointer ${
                             mode === "dark"
                               ? "hover:bg-gray-800 text-gray-100"
                               : "hover:bg-gray-50"
-                          } ${selectedStore === store.id ? 'font-bold bg-gray-200 dark:bg-gray-800' : ''}`}
+                          } ${
+                            selectedStore === store.id
+                              ? "font-bold bg-gray-200 dark:bg-gray-800"
+                              : ""
+                          }`}
                           onClick={() => {
                             setSelectedStore(store.id);
                             setStoreDropdownOpen(false);
-                            console.log('Header: Store selected:', store.name, store.id);
+                            console.log(
+                              "Header: Store selected:",
+                              store.name,
+                              store.id
+                            );
                           }}
                         >
                           {store.name}
                         </li>
                       ))
                     ) : (
-                      <li className="px-4 py-2 text-gray-400">No stores found</li>
+                      <li className="px-4 py-2 text-gray-400">
+                        No stores found
+                      </li>
                     )}
                   </ul>
                 </div>
@@ -302,18 +333,20 @@ const Header = ({
                         )}
 
                         {/* POS */}
-                        <Link href="/pos/" className="block">
-                          <button
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
-                              mode === "dark"
-                                ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
-                                : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
-                            }`}
-                            onClick={() => setAddNewDropdownOpen(false)}
-                          >
-                            <Icon icon="akar-icons:laptop-device" className="h-5 w-5" />
-                            <span>POS</span>
-                          </button>
+                        <Link
+                          href="/pos/"
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                            mode === "dark"
+                              ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                              : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                          }`}
+                          onClick={() => setAddNewDropdownOpen(false)}
+                        >
+                          <Icon
+                            icon="akar-icons:laptop-device"
+                            className="h-5 w-5"
+                          />
+                          <span>POS</span>
                         </Link>
 
                         {/* Language Switch */}
@@ -324,7 +357,11 @@ const Header = ({
                         {/* Notification Button - Only for non-cashiers */}
                         {user?.role !== "cashier" && (
                           <div className="px-3">
-                            <NotificationButton mode={mode} user={user} showLabel={true} />
+                            <NotificationButton
+                              mode={mode}
+                              user={user}
+                              showLabel={true}
+                            />
                           </div>
                         )}
 
@@ -340,8 +377,17 @@ const Header = ({
                               : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
                           }`}
                         >
-                          <Icon icon={mode === "dark" ? "line-md:sunny-filled-loop-to-moon-filled-alt-loop-transition" : "line-md:moon-alt-to-sunny-outline-loop-transition"} className="h-5 w-5" />
-                          <span>{mode === "dark" ? "Light Mode" : "Dark Mode"}</span>
+                          <Icon
+                            icon={
+                              mode === "dark"
+                                ? "line-md:sunny-filled-loop-to-moon-filled-alt-loop-transition"
+                                : "line-md:moon-alt-to-sunny-outline-loop-transition"
+                            }
+                            className="h-5 w-5"
+                          />
+                          <span>
+                            {mode === "dark" ? "Light Mode" : "Dark Mode"}
+                          </span>
                         </button>
 
                         {/* Fullscreen Toggle */}
@@ -357,12 +403,18 @@ const Header = ({
                 <>
                   {/* Add New dropdown - desktop - Only for non-cashiers */}
                   {user?.role !== "cashier" && (
-                    <div className="relative flex-shrink-0" ref={addNewDropdownRef}>
+                    <div
+                      className="relative flex-shrink-0"
+                      ref={addNewDropdownRef}
+                    >
                       <button
                         className={`flex items-center justify-center gap-1 bg-blue-900 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500`}
                         onClick={() => setAddNewDropdownOpen((prev) => !prev)}
                       >
-                        <Icon icon="icons8:plus" className="h-3 w-3 text-white" />
+                        <Icon
+                          icon="icons8:plus"
+                          className="h-3 w-3 text-white"
+                        />
                         <span>Add New</span>
                       </button>
                       <div
@@ -381,64 +433,109 @@ const Header = ({
                         <div className="grid grid-cols-6 gap-2 p-3">
                           {[
                             // Setup & Configuration (Most used for initial setup)
-                            { label: "Store", icon: "mdi:store-outline", href: "/business-locations" },
-                            { label: "Category", icon: "mdi:folder-outline", href: "/category" },
-                            { label: "Product", icon: "mdi:package-variant", href: "/products" },
-                            
+                            {
+                              label: "Store",
+                              icon: "mdi:store-outline",
+                              href: "/business-locations",
+                            },
+                            {
+                              label: "Category",
+                              icon: "mdi:folder-outline",
+                              href: "/category",
+                            },
+                            {
+                              label: "Product",
+                              icon: "mdi:package-variant",
+                              href: "/products",
+                            },
+
                             // People & Relationships
-                            { label: "User", icon: "mdi:account-outline", href: "/users" },
-                            { label: "Customer", icon: "mdi:account-group-outline", href: "/customers" },
-                            { label: "Supplier", icon: "mdi:truck-outline", href: "/suppliers" },
-                            
+                            {
+                              label: "User",
+                              icon: "mdi:account-outline",
+                              href: "/users",
+                            },
+                            {
+                              label: "Customer",
+                              icon: "mdi:account-group-outline",
+                              href: "/customers",
+                            },
+                            {
+                              label: "Supplier",
+                              icon: "mdi:truck-outline",
+                              href: "/suppliers",
+                            },
+
                             // Core Business Operations (Most frequently used)
-                            { label: "Sale", icon: "mdi:cart-arrow-up", href: "/sales" },
-                            { label: "Purchase", icon: "mdi:cart-arrow-down", href: "/purchases" },
-                            { label: "Expense", icon: "mdi:cash-minus", href: "/expenses" },
-                            
+                            {
+                              label: "Sale",
+                              icon: "mdi:cart-arrow-up",
+                              href: "/sales",
+                            },
+                            {
+                              label: "Purchase",
+                              icon: "mdi:cart-arrow-down",
+                              href: "/purchases",
+                            },
+                            {
+                              label: "Expense",
+                              icon: "mdi:cash-minus",
+                              href: "/expenses",
+                            },
+
                             // Inventory Management
-                            { label: "Transfer", icon: "mdi:bank-transfer", href: "/stock-operations" },
-                            { label: "Return", icon: "mdi:undo-variant", href: "/sales-return" },
+                            {
+                              label: "Transfer",
+                              icon: "mdi:bank-transfer",
+                              href: "/stock-operations",
+                            },
+                            {
+                              label: "Return",
+                              icon: "mdi:undo-variant",
+                              href: "/sales-return",
+                            },
                           ].map((item) => (
-                            <Link key={item.label} href={item.href} legacyBehavior passHref>
-                              <a
-                                className={`flex flex-col items-center justify-center rounded-lg p-2 text-xs font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 border ${
+                            <Link
+                              key={item.label}
+                              href={item.href}
+                              className={`flex flex-col items-center justify-center rounded-lg p-2 text-xs font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 border ${
+                                mode === "dark"
+                                  ? "bg-gray-800 border-gray-700 text-gray-100 hover:bg-gray-700"
+                                  : "bg-white border-gray-200 hover:bg-orange-50"
+                              } hover:border-orange-400`}
+                              tabIndex={0}
+                              onClick={() => setAddNewDropdownOpen(false)}
+                            >
+                              <span
+                                className={`flex items-center justify-center h-8 w-8 rounded-full mb-1 ${
                                   mode === "dark"
-                                    ? "bg-gray-800 border-gray-700 text-gray-100 hover:bg-gray-700"
-                                    : "bg-white border-gray-200 hover:bg-orange-50"
-                                } hover:border-orange-400`}
-                                tabIndex={0}
-                                onClick={() => setAddNewDropdownOpen(false)}
+                                    ? "bg-gray-900 hover:bg-gray-700"
+                                    : "bg-gray-100 hover:bg-orange-50"
+                                } transition-all duration-200`}
                               >
-                                <span
-                                  className={`flex items-center justify-center h-8 w-8 rounded-full mb-1 ${
-                                    mode === "dark"
-                                      ? "bg-gray-900 hover:bg-gray-700"
-                                      : "bg-gray-100 hover:bg-orange-50"
-                                  } transition-all duration-200`}
-                                >
-                                  <Icon
-                                    icon={item.icon}
-                                    className="h-5 w-5 text-blue-950"
-                                  />
-                                </span>
-                                <span className="text-xs">{item.label}</span>
-                              </a>
+                                <Icon
+                                  icon={item.icon}
+                                  className="h-5 w-5 text-blue-950"
+                                />
+                              </span>
+                              <span className="text-xs">{item.label}</span>
                             </Link>
                           ))}
                         </div>
                       </div>
                     </div>
                   )}
-                  
+
                   {/* POS button - desktop */}
-                  <Link href="/pos/" className="flex-shrink-0">
-                    <button className="flex items-center justify-center gap-1 bg-blue-900 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500">
-                      <Icon
-                        icon="akar-icons:laptop-device"
-                        className="h-3 w-3 text-white"
-                      />
-                      <span>POS</span>
-                    </button>
+                  <Link
+                    href="/pos/"
+                    className="flex items-center justify-center gap-1 bg-blue-900 font-semibold text-white text-sm px-3 py-1.5 rounded-md hover:shadow-xl hover:-mt-1 transition-all duration-500 flex-shrink-0"
+                  >
+                    <Icon
+                      icon="akar-icons:laptop-device"
+                      className="h-3 w-3 text-white"
+                    />
+                    <span>POS</span>
                   </Link>
 
                   {/* Language and notification buttons - desktop */}
@@ -454,7 +551,9 @@ const Header = ({
                   <TooltipIconButton
                     label={
                       <span
-                        className={mode === "dark" ? "text-white" : "text-black"}
+                        className={
+                          mode === "dark" ? "text-white" : "text-black"
+                        }
                       >
                         {mode === "dark"
                           ? "Switch to Light Mode"
@@ -498,22 +597,31 @@ const Header = ({
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
                   <div className="flex items-center">
-                    <div className={`overflow-hidden rounded-full ${isMobile ? "w-5 h-5" : "w-6 h-6"}`}>
+                    <div
+                      className={`overflow-hidden rounded-full ${
+                        isMobile ? "w-5 h-5" : "w-6 h-6"
+                      }`}
+                    >
                       {user && user.avatar_url ? (
-                        <img 
-                          src={user.avatar_url} 
-                          alt={user.name || "User"} 
+                        <img
+                          src={user.avatar_url}
+                          alt={user.name || "User"}
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Icon icon="hugeicons:ai-user" className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`} />
+                        <Icon
+                          icon="hugeicons:ai-user"
+                          className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`}
+                        />
                       )}
                     </div>
                   </div>
 
                   {dropdownOpen && (
                     <div
-                      className={`absolute top-full mt-2 right-0 ${isMobile ? "w-64" : "w-80"} rounded-2xl shadow-lg z-10 ${
+                      className={`absolute top-full mt-2 right-0 ${
+                        isMobile ? "w-64" : "w-80"
+                      } rounded-2xl shadow-lg z-10 ${
                         mode === "dark"
                           ? "bg-gray-900 text-gray-100"
                           : "bg-white/95 text-black"
@@ -521,45 +629,67 @@ const Header = ({
                     >
                       <div className="p-4">
                         <div className="flex items-center gap-2 w-full">
-                          <div className={`overflow-hidden flex-shrink-0 rounded-full ${isMobile ? "w-5 h-5" : "w-6 h-6"}`}>
+                          <div
+                            className={`overflow-hidden flex-shrink-0 rounded-full ${
+                              isMobile ? "w-5 h-5" : "w-6 h-6"
+                            }`}
+                          >
                             {user && user.avatar_url ? (
-                              <img 
-                                src={user.avatar_url} 
-                                alt={user.name || "User"} 
+                              <img
+                                src={user.avatar_url}
+                                alt={user.name || "User"}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
                               <Icon
                                 icon="hugeicons:ai-user"
-                                className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`}
+                                className={`${
+                                  isMobile ? "h-5 w-5" : "h-6 w-6"
+                                }`}
                               />
                             )}
                           </div>
                           <div className="flex flex-col min-w-0 flex-1">
-                            <div className={`flex ${isMobile ? "flex-col gap-1" : "gap-2"}`}>
-                              <span className={`${isMobile ? "text-sm" : "text-md"} font-semibold truncate ${
-                                mode === "dark" ? "text-white" : "text-black"
-                              }`}>
+                            <div
+                              className={`flex ${
+                                isMobile ? "flex-col gap-1" : "gap-2"
+                              }`}
+                            >
+                              <span
+                                className={`${
+                                  isMobile ? "text-sm" : "text-md"
+                                } font-semibold truncate ${
+                                  mode === "dark" ? "text-white" : "text-black"
+                                }`}
+                              >
                                 {user.name}
                               </span>
-                              <span className={`rounded-md capitalize px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-                                mode === "dark" 
-                                  ? "bg-green-900/30 text-green-300 ring-green-600/30" 
-                                  : "bg-green-50 text-green-700 ring-green-600/20"
-                              }`}>
+                              <span
+                                className={`rounded-md capitalize px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                                  mode === "dark"
+                                    ? "bg-green-900/30 text-green-300 ring-green-600/30"
+                                    : "bg-green-50 text-green-700 ring-green-600/20"
+                                }`}
+                              >
                                 {user.role}
                               </span>
                             </div>
-                            <span className={`text-xs truncate ${
-                              mode === "dark" ? "text-gray-300" : "text-gray-600"
-                            }`}>{user.agencyName}</span>
+                            <span
+                              className={`text-xs truncate ${
+                                mode === "dark"
+                                  ? "text-gray-300"
+                                  : "text-gray-600"
+                              }`}
+                            >
+                              {user.agencyName}
+                            </span>
                           </div>
                         </div>
                         <ul className="py-4 space-y-2">
                           <li
                             onClick={() => {
                               setDropdownOpen(false);
-                              router.push('/profile');
+                              router.push("/profile");
                             }}
                             className={`flex items-center w-full gap-2 text-sm transition-all cursor-pointer ${
                               mode === "dark"
@@ -573,7 +703,6 @@ const Header = ({
                             />
                             <span className="">Profile</span>
                           </li>
-
                         </ul>
 
                         <button
@@ -597,7 +726,16 @@ const Header = ({
           </div>
         </div>
       </header>
-      <div className={`${isMobile && !isHeaderVisible ? "h-0" : isMobile ? "h-[60px]" : "h-[72px]"}`} aria-hidden="true"></div>
+      <div
+        className={`${
+          isMobile && !isHeaderVisible
+            ? "h-0"
+            : isMobile
+            ? "h-[60px]"
+            : "h-[72px]"
+        }`}
+        aria-hidden="true"
+      ></div>
     </>
   );
 };

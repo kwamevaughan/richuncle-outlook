@@ -81,9 +81,10 @@ const DashboardStatsGrid = ({
                   <span className="text-lg font-bold">{stat.value}</span>
                   <span
                     className={`flex items-center text-xs font-normal rounded-md px-2 py-1
-                      ${stat.changeType === "up"
-                        ? "text-green-700 bg-green-100"
-                        : "text-red-700 bg-red-100"
+                      ${
+                        stat.changeType === "up"
+                          ? "text-green-700 bg-green-100"
+                          : "text-red-700 bg-red-100"
                       }`}
                   >
                     <Icon
@@ -102,8 +103,12 @@ const DashboardStatsGrid = ({
           </div>
         );
         return stat.link ? (
-          <Link href={stat.link} key={stat.label} legacyBehavior>
-            <a style={{ textDecoration: "none" }}>{card}</a>
+          <Link
+            href={stat.link}
+            key={stat.label}
+            style={{ textDecoration: "none" }}
+          >
+            {card}
           </Link>
         ) : (
           card
@@ -113,4 +118,4 @@ const DashboardStatsGrid = ({
   );
 };
 
-export default DashboardStatsGrid; 
+export default DashboardStatsGrid;

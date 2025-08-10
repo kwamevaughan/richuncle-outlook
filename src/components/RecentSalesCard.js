@@ -73,7 +73,6 @@ export default function RecentSalesCard({ selectedStore }) {
           const ts = new Date(order.timestamp);
           return ts >= start && ts <= end;
         });
-        console.log('RecentSalesCard: selectedStore =', selectedStore, 'filtered sales count =', filtered.length);
         // Sort by date descending
         filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         setSales(filtered.slice(0, 4));

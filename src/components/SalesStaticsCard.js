@@ -66,7 +66,6 @@ export default function SalesStaticsCard({ selectedStore }) {
             monthlyExpense[idx] += Number(p.total) || 0;
           }
         });
-        console.log('SalesStaticsCard: selectedStore =', selectedStore, 'order items count =', orderItemCount, 'purchases count =', purchaseCount);
         // Prepare chart data
         const chartData = monthLabels.map((month, i) => ({
           month,
