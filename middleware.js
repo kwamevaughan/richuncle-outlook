@@ -2,22 +2,20 @@ import { NextResponse } from 'next/server';
 
 export function middleware(request) {
   const url = request.nextUrl.clone();
-  const userCookie = request.cookies.get('user');
-  let user = null;
-
-  if (userCookie) {
-    try {
-      user = JSON.parse(decodeURIComponent(userCookie.value));
-    } catch (e) {}
+  
+  // Skip middleware for API routes, static files, and auth callback
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/_next/') ||
+    url.pathname.startsWith('/static/') ||
+    url.pathname === '/auth/callback' ||
+    url.pathname.includes('.')
+  ) {
+    return NextResponse.next();
   }
 
-  // If user is a cashier and not on /pos, redirect to /pos
-  if (user && user.role === 'cashier' && url.pathname !== '/pos') {
-    url.pathname = '/pos';
-    return NextResponse.redirect(url);
-  }
-
-  // Allow all other requests
+  // Let client-side routing handle authentication and role-based access
+  // The RoleBasedAccess component will handle redirects properly
   return NextResponse.next();
 }
 

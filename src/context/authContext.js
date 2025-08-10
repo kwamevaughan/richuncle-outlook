@@ -127,12 +127,24 @@ export const AuthProvider = ({ children }) => {
         "AuthContext: User authenticated, navigating to appropriate page:",
         user
       );
+      
+      // Set flag to indicate user just logged in
+      sessionStorage.setItem('just_logged_in', 'true');
+      
+      toast.success("Login successful! Redirecting...");
+      
       if (user.role === 'cashier') {
         await router.push('/pos');
       } else {
         // For admins and managers, redirect to dashboard
         await router.push('/dashboard');
       }
+      
+      // Clear the flag after a short delay
+      setTimeout(() => {
+        sessionStorage.removeItem('just_logged_in');
+      }, 2000);
+      
       toast.dismiss("route-loading");
     } catch (error) {
       console.error("AuthContext: Login error:", error);
@@ -312,15 +324,26 @@ export const AuthProvider = ({ children }) => {
             store_id: existingUser.store_id,
           });
 
-          toast.success("Social login successful! Redirecting...");
           console.log(
             "AuthContext: Social login successful, navigating to appropriate page"
           );
+          
+          // Set flag to indicate user just logged in
+          sessionStorage.setItem('just_logged_in', 'true');
+          
+          toast.success("Login successful! Redirecting...");
+          
           if (existingUser.role === 'cashier') {
             await router.push('/pos');
           } else {
             await router.push('/dashboard');
           }
+          
+          // Clear the flag after a short delay
+          setTimeout(() => {
+            sessionStorage.removeItem('just_logged_in');
+          }, 2000);
+          
           toast.dismiss("route-loading");
         } else {
           console.log("AuthContext: No session user, redirecting to login");

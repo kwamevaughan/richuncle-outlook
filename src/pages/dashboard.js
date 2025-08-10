@@ -19,6 +19,19 @@ import TopCategoriesCard from "@/components/TopCategoriesCard";
 import OrderStatisticsHeatmap from "@/components/OrderStatisticsHeatmap";
 import toast from 'react-hot-toast';
 
+// Debounce function to prevent multiple toast messages
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
 export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
@@ -40,6 +53,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
   const [showLowStock, setShowLowStock] = useState(true);
   const [selectedStore, setSelectedStore] = useState("");
   const [stores, setStores] = useState([]);
+  const [hasShownInitialToast, setHasShownInitialToast] = useState(false);
 
   // Fetch stores on mount
   useEffect(() => {
@@ -48,44 +62,42 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       .then(({ data }) => setStores(data || []));
   }, []);
 
+  // Debounced toast function
+  const showStoreToast = debounce((storeId, stores) => {
+    if (storeId) {
+      const store = stores.find(s => s.id === storeId);
+      if (store) {
+        toast.success(`Now viewing dashboard for: ${store.name}`);
+      }
+    } else {
+      toast.success('Now viewing dashboard for: All Stores');
+    }
+  }, 500);
+
   // Listen for store selection changes
   useEffect(() => {
-    const updateStore = () => {
-      const storeId = localStorage.getItem('selected_store_id') || "";
-      setSelectedStore(storeId);
-      if (storeId) {
-        const store = stores.find(s => s.id === storeId);
-        if (store) {
-          toast.success(`Now viewing dashboard for: ${store.name}`);
-        }
-      } else {
-        toast.success('Now viewing dashboard for: All Stores');
+    const storeId = localStorage.getItem('selected_store_id') || "";
+    setSelectedStore(storeId);
+    
+    // Only show toast on initial load if stores are loaded and haven't shown it yet
+    if (stores.length > 0 && !hasShownInitialToast) {
+      showStoreToast(storeId, stores);
+      setHasShownInitialToast(true);
+    }
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'selected_store_id') {
+        const newStoreId = e.newValue || "";
+        setSelectedStore(newStoreId);
+        showStoreToast(newStoreId, stores);
       }
     };
-    updateStore();
-    window.addEventListener('storage', updateStore);
-    const interval = setInterval(() => {
-      const storeId = localStorage.getItem('selected_store_id') || "";
-      setSelectedStore(prev => {
-        if (prev !== storeId) {
-          if (storeId) {
-            const store = stores.find(s => s.id === storeId);
-            if (store) {
-              toast.success(`Now viewing dashboard for: ${store.name}`);
-            }
-          } else {
-            toast.success('Now viewing dashboard for: All Stores');
-          }
-          return storeId;
-        }
-        return prev;
-      });
-    }, 300);
+
+    window.addEventListener('storage', handleStorageChange);
     return () => {
-      window.removeEventListener('storage', updateStore);
-      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
     };
-  }, [stores]);
+  }, [stores, hasShownInitialToast]);
 
   useEffect(() => {
     const fetchOrders = async () => {

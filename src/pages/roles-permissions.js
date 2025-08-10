@@ -668,7 +668,7 @@ export default function RolesPermissionsPage({
                                 key={pagePath}
                                 className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                               >
-                                {pagePath === '/' ? 'Home' : pagePath}
+                                {pagePath === '/' ? '' : pagePath}
                               </span>
                             ))}
                             {rolePagePermissions[role.id]?.length > 8 && (
