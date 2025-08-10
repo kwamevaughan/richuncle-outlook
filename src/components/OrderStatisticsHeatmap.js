@@ -179,7 +179,7 @@ export default function OrderStatisticsHeatmap({ selectedStore }) {
                 transition: "left 0.18s cubic-bezier(.4,1,.7,1), top 0.18s cubic-bezier(.4,1,.7,1)",
               }}
             >
-              <div className="bg-white rounded-xl shadow-lg px-4 py-2 text-gray-900 text-base font-semibold flex flex-col items-center relative">
+              <div className="uppercase bg-white rounded-xl shadow-lg px-4 py-2 text-gray-900 text-base font-semibold flex flex-col items-center relative">
                 <span>{HOURS[hovered.row]}: <span className="font-bold">{data[hovered.row][hovered.col]}</span></span>
                 {/* Arrow */}
                 <span className="absolute left-1/2 -bottom-2.5 -translate-x-1/2 w-4 h-4">
