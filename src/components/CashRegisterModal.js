@@ -51,7 +51,13 @@ const CashRegisterModal = ({ isOpen, onClose, user, onSessionChanged, selectedRe
   // Auto-select the register for the cashier's store
   useEffect(() => {
     if (user?.role === 'cashier' && user?.store_id && filteredRegisters.length > 0) {
-      setSelectedRegister(filteredRegisters[0].id);
+      const autoSelectedRegister = filteredRegisters[0];
+      setSelectedRegister(autoSelectedRegister.id);
+      
+      // Show toast for auto-selection
+      import('react-hot-toast').then(({ toast }) => {
+        toast.success(`Auto-selected register: ${autoSelectedRegister.name || `Register ${autoSelectedRegister.id}`}`);
+      });
     }
   }, [user, filteredRegisters]);
 

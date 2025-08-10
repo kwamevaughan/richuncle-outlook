@@ -9,11 +9,27 @@ import SalesProfitModal from "@/components/SalesProfitModal";
 import NotificationButton from "@/components/NotificationButton";
 // import { useModal } from "@/components/ModalContext";
 import SessionDuration from "@/components/SessionDuration";
+import RegisterSelector from "@/components/RegisterSelector";
 import SimpleModal from "@/components/SimpleModal";
 import SalesReturnModals from "@/components/SalesReturnModals";
 import { useRouter } from "next/router";
 
-const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrderData, onOpenOrderHistory, showCashRegister, setShowCashRegister, showSalesReturnModal, setShowSalesReturnModal }) => {
+const PosHeader = ({
+  mode,
+  toggleMode,
+  onLogout,
+  user,
+  printLastReceipt,
+  lastOrderData,
+  onOpenOrderHistory,
+  showCashRegister,
+  setShowCashRegister,
+  showSalesReturnModal,
+  setShowSalesReturnModal,
+  selectedStoreId,
+  setSelectedStoreId,
+  stores: allStores,
+}) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const headerRef = useRef(null);
@@ -25,6 +41,22 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
   const [showProfitModal, setShowProfitModal] = useState(false);
   const [sessionRefreshKey, setSessionRefreshKey] = useState(0);
   const handleSessionChanged = () => setSessionRefreshKey((k) => k + 1);
+  const [selectedRegister, setSelectedRegister] = useState(null);
+
+  // Persist selected register
+  useEffect(() => {
+    if (selectedRegister) {
+      localStorage.setItem("pos_selected_register", selectedRegister);
+    }
+  }, [selectedRegister]);
+
+  // Load persisted register on mount
+  useEffect(() => {
+    const savedRegister = localStorage.getItem("pos_selected_register");
+    if (savedRegister) {
+      setSelectedRegister(savedRegister);
+    }
+  }, []);
   const [userStoreName, setUserStoreName] = useState("");
   const [stores, setStores] = useState([]);
   // Demo state for SalesReturnModals
@@ -43,11 +75,25 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
   }, [showCashRegister]);
 
   useEffect(() => {
-    if (user && user.store_id && stores.length > 0) {
+    // For cashiers, use their assigned store
+    if (user && user.role === "cashier" && user.store_id && stores.length > 0) {
       const store = stores.find((s) => String(s.id) === String(user.store_id));
       setUserStoreName(store ? store.name : "");
     }
-  }, [user, stores]);
+    // For admin/manager, use selected store
+    else if (
+      user &&
+      (user.role === "admin" || user.role === "manager") &&
+      selectedStoreId &&
+      allStores &&
+      allStores.length > 0
+    ) {
+      const store = allStores.find(
+        (s) => String(s.id) === String(selectedStoreId)
+      );
+      setUserStoreName(store ? store.name : "");
+    }
+  }, [user, stores, selectedStoreId, allStores]);
 
   useEffect(() => {
     // Fetch all stores
@@ -145,7 +191,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
             backdrop-blur-sm shadow-lg rounded-2xl
           `}
         >
-          <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-0">
             <div className="flex items-center w-full ">
               {user?.role !== "cashier" && (
                 <TooltipIconButton
@@ -164,33 +210,136 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
               )}
 
               <div className="flex-1 min-w-0 overflow-visible">
-                <SessionDuration
-                  mode={mode}
-                  user={user}
-                  sessionRefreshKey={sessionRefreshKey}
-                />
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full">
+                  <RegisterSelector
+                    mode={mode}
+                    user={user}
+                    selectedRegister={selectedRegister}
+                    onRegisterChange={setSelectedRegister}
+                  />
+                  <SessionDuration
+                    mode={mode}
+                    selectedRegister={selectedRegister}
+                    sessionRefreshKey={sessionRefreshKey}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center w-full gap-2 sm:gap-4">
-              <div
-                className={
-                  `flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 ` +
-                  (mode === "dark"
-                    ? "bg-gray-800/80 text-white hover:bg-gray-700/80"
-                    : "bg-white/80 text-gray-700 hover:bg-white/95") +
-                  " backdrop-blur-sm border border-white/20"
-                }
-                disabled
-              >
-                <span className="flex gap-1 font-semibold text-sm sm:text-base">
-                  Store :<span className="text-gray-500">{userStoreName}</span>
-                </span>
-              </div>
+            <div className="flex items-center w-full gap-0">
+              {/* Store Display/Selector */}
+              {user?.role === "cashier" ? (
+                // Cashier: Show assigned store (read-only)
+                <div
+                  className={
+                    `flex items-center gap-1 sm:gap-2 px-2 py-2 rounded-xl transition-all duration-300 ` +
+                    (mode === "dark"
+                      ? "bg-gray-800/80 text-white"
+                      : "bg-white/80 text-gray-700") +
+                    " backdrop-blur-sm border border-white/20"
+                  }
+                >
+                  <span className="flex gap-1 font-semibold text-sm sm:text-base">
+                    Store:<span className="text-gray-500">{userStoreName}</span>
+                  </span>
+                </div>
+              ) : (
+                // Admin/Manager: Show store selector
+                <div className="relative" ref={storeDropdownRef}>
+                  <div
+                    className={
+                      `flex items-center gap-1 sm:gap-2 px-2 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 cursor-pointer ` +
+                      (mode === "dark"
+                        ? "bg-gray-800/80 text-white hover:bg-gray-700/80"
+                        : "bg-white/80 text-gray-700 hover:bg-white/95") +
+                      " backdrop-blur-sm border border-white/20"
+                    }
+                    onClick={() => setStoreDropdownOpen(!storeDropdownOpen)}
+                  >
+                    <span className="flex gap-1 font-semibold text-sm">
+                      Store:
+                      <span className="text-gray-500">{userStoreName}</span>
+                    </span>
+                    <Icon
+                      icon="mdi:chevron-down"
+                      className={`h-4 w-4 transition-transform ${
+                        storeDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+
+                  {storeDropdownOpen && (
+                    <div
+                      className={`absolute top-full mt-2 right-0 w-64 rounded-xl shadow-lg z-20 max-h-60 overflow-y-auto ${
+                        mode === "dark"
+                          ? "bg-gray-900 text-gray-100"
+                          : "bg-white/95 text-black"
+                      }`}
+                    >
+                      <div className="p-2">
+                        <div className="text-sm font-semibold text-gray-500 px-3 py-2">
+                          Select Store for Sales
+                        </div>
+                        {allStores && allStores.length > 0 ? (
+                          allStores.map((store) => (
+                            <button
+                              key={store.id}
+                              onClick={async () => {
+                                setSelectedStoreId(store.id);
+                                setStoreDropdownOpen(false);
+                                const { toast } = await import(
+                                  "react-hot-toast"
+                                );
+                                toast.success(
+                                  `Store switched to: ${store.name}`
+                                );
+                              }}
+                              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                                selectedStoreId === store.id
+                                  ? mode === "dark"
+                                    ? "bg-blue-900 text-blue-300"
+                                    : "bg-blue-50 text-blue-800"
+                                  : mode === "dark"
+                                  ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                                  : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                              }`}
+                            >
+                              <Icon
+                                icon="mdi:store"
+                                className="h-5 w-5 flex-shrink-0"
+                              />
+                              <div className="flex flex-col items-start">
+                                <span className="font-medium">
+                                  {store.name}
+                                </span>
+                                {store.address && (
+                                  <span className="text-xs opacity-75">
+                                    {store.address}
+                                  </span>
+                                )}
+                              </div>
+                              {selectedStoreId === store.id && (
+                                <Icon
+                                  icon="mdi:check"
+                                  className="h-4 w-4 ml-auto text-green-500"
+                                />
+                              )}
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-sm text-gray-500">
+                            No stores available
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div
                 className={
-                  `flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 ` +
+                  `flex items-center gap-1 sm:gap-2 px-2 py-2 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 ` +
                   (mode === "dark"
                     ? "bg-gray-800/80 text-white hover:bg-gray-700/80"
                     : "bg-white/80 text-gray-700 hover:bg-white/95") +
@@ -198,8 +347,8 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 }
                 disabled
               >
-                <div className="flex gap-1 font-semibold text-sm sm:text-base">
-                  <span className="text-gray-500">Cashier :</span>{" "}
+                <div className="flex gap-1 font-semibold text-sm">
+                  <span className="text-gray-500">Cashier:</span>{" "}
                   <span className="text-gray-500">{user.name}</span>
                 </div>
               </div>
@@ -241,7 +390,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 label="Messages"
                 mode={mode}
                 className="select-none px-2 py-2 sm:px-1 sm:py-1 rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 relative"
-                onClick={() => router.push('/messages')}
+                onClick={() => router.push("/messages")}
               >
                 <Icon
                   icon="mdi:message-text"
@@ -249,7 +398,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                 />
                 {unreadMessageCount > 0 && (
                   <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                    {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                    {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
                   </div>
                 )}
               </TooltipIconButton>
@@ -307,7 +456,10 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                                 : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
                             }`}
                           >
-                            <Icon icon="material-symbols-light:order-approve-outline" className="h-5 w-5" />
+                            <Icon
+                              icon="material-symbols-light:order-approve-outline"
+                              className="h-5 w-5"
+                            />
                             <span>View Orders</span>
                           </button>
 
@@ -337,7 +489,10 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                                 : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
                             }`}
                           >
-                            <Icon icon="hugeicons:chart-increase" className="h-5 w-5" />
+                            <Icon
+                              icon="hugeicons:chart-increase"
+                              className="h-5 w-5"
+                            />
                             <span>Today's Profit</span>
                           </button>
                         </>
@@ -345,31 +500,44 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
 
                       {/* System Actions */}
                       <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-                      
+
                       <div className="px-3">
                         <LanguageSwitch mode={mode} showLabel={true} />
                       </div>
 
                       {user?.role !== "cashier" && (
                         <div className="px-3">
-                          <NotificationButton mode={mode} user={user} showLabel={true} />
+                          <NotificationButton
+                            mode={mode}
+                            user={user}
+                            showLabel={true}
+                          />
                         </div>
                       )}
 
-                                                <button
-                            onClick={() => {
-                              setAddNewDropdownOpen(false);
-                              toggleMode();
-                            }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
-                              mode === "dark"
-                                ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
-                                : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
-                            }`}
-                          >
-                            <Icon icon={mode === "dark" ? "line-md:sunny-filled-loop-to-moon-filled-alt-loop-transition" : "line-md:moon-alt-to-sunny-outline-loop-transition"} className="h-5 w-5" />
-                            <span>{mode === "dark" ? "Light Mode" : "Dark Mode"}</span>
-                          </button>
+                      <button
+                        onClick={() => {
+                          setAddNewDropdownOpen(false);
+                          toggleMode();
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                          mode === "dark"
+                            ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                            : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Icon
+                          icon={
+                            mode === "dark"
+                              ? "line-md:sunny-filled-loop-to-moon-filled-alt-loop-transition"
+                              : "line-md:moon-alt-to-sunny-outline-loop-transition"
+                          }
+                          className="h-5 w-5"
+                        />
+                        <span>
+                          {mode === "dark" ? "Light Mode" : "Dark Mode"}
+                        </span>
+                      </button>
 
                       <div className="px-3">
                         <FullscreenToggle mode={mode} showLabel={true} />
@@ -398,9 +566,9 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                   <div className="flex items-center">
                     <div className="overflow-hidden rounded-full w-6 h-6 sm:w-6 sm:h-6">
                       {user && user.avatar_url ? (
-                        <img 
-                          src={user.avatar_url} 
-                          alt={user.name || "User"} 
+                        <img
+                          src={user.avatar_url}
+                          alt={user.name || "User"}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -421,9 +589,9 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                         <div className="flex items-center gap-2 w-full">
                           <div className="overflow-hidden flex-shrink-0 rounded-full w-6 h-6">
                             {user && user.avatar_url ? (
-                              <img 
-                                src={user.avatar_url} 
-                                alt={user.name || "User"} 
+                              <img
+                                src={user.avatar_url}
+                                alt={user.name || "User"}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -449,7 +617,7 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                           <li
                             onClick={() => {
                               setDropdownOpen(false);
-                              router.push('/profile');
+                              router.push("/profile");
                             }}
                             className={`select-none flex items-center w-full gap-2 text-sm transition-all cursor-pointer p-2 rounded-lg min-h-[44px] ${
                               mode === "dark"
@@ -463,7 +631,6 @@ const PosHeader = ({ mode, toggleMode, onLogout, user, printLastReceipt, lastOrd
                             />
                             <span className="">Profile</span>
                           </li>
-
                         </ul>
                         <button
                           onClick={onLogout}

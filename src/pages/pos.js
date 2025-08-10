@@ -38,6 +38,9 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [roundoffEnabled, setRoundoffEnabled] = useState(true);
   const [customers, setCustomers] = useState([]);
   const [reloadProducts, setReloadProducts] = useState(0);
+  const [selectedStoreId, setSelectedStoreId] = useState(null);
+  const [stores, setStores] = useState([]);
+  const [registers, setRegisters] = useState([]);
   const [lastOrderData, setLastOrderData] = useState(null);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
   const [showRecentTransactions, setShowRecentTransactions] = useState(false);
@@ -249,9 +252,15 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         setShowCashRegister={setShowCashRegister}
         showSalesReturnModal={showSalesReturnModal}
         setShowSalesReturnModal={setShowSalesReturnModal}
+        selectedStoreId={selectedStoreId}
+        setSelectedStoreId={setSelectedStoreId}
+        stores={stores}
+        selectedRegister={selectedRegister}
+        setSelectedRegister={setSelectedRegister}
+        registers={registers}
       />
     );
-  }, [handlePrintLastReceipt, lastOrderData, setShowOrderHistory, showCashRegister, setShowCashRegister, showSalesReturnModal, setShowSalesReturnModal]);
+  }, [handlePrintLastReceipt, lastOrderData, setShowOrderHistory, showCashRegister, setShowCashRegister, showSalesReturnModal, setShowSalesReturnModal, selectedStoreId, setSelectedStoreId, stores, selectedRegister, setSelectedRegister, registers]);
 
   // Memoize the onOrderComplete callback
   // When an order is finalized (in handleOrderComplete), generate a new orderId for the next order:
@@ -282,6 +291,10 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     }
     if (selectedProducts.length === 0) {
       import('react-hot-toast').then(({ toast }) => toast.error('Please add products to the order'));
+      return;
+    }
+    if (!selectedStoreId) {
+      import('react-hot-toast').then(({ toast }) => toast.error('Please select a store first'));
       return;
     }
     let orderData = null;
@@ -392,9 +405,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         };
       });
       console.log('Order items being built:', items);
-      // Find the selected register's store_id
-      const selectedRegisterObj = registers.find(r => r.id === selectedRegister);
-      const storeId = selectedRegisterObj ? selectedRegisterObj.store_id : undefined;
+      // Use the selected store ID (for admin/manager) or register's store (for cashier)
+      const storeId = selectedStoreId;
       orderData = {
         id: orderId,
         customer_id: customerId || '',
@@ -619,22 +631,33 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     : [];
 
   // At the top of POS component, add:
-  const [registers, setRegisters] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    // Fetch registers on mount
+    // Fetch registers and stores on mount
     (async () => {
       try {
-        const response = await fetch("/api/registers");
-        const result = await response.json();
-        console.log('[POS] Registers fetched:', result.data);
-        if (result.success) {
-          setRegisters(result.data || []);
+        const [registersResponse, storesResponse] = await Promise.all([
+          fetch("/api/registers"),
+          fetch("/api/stores")
+        ]);
+        
+        const registersResult = await registersResponse.json();
+        const storesResult = await storesResponse.json();
+        
+        console.log('[POS] Registers fetched:', registersResult.data);
+        console.log('[POS] Stores fetched:', storesResult.data);
+        
+        if (registersResult.success) {
+          setRegisters(registersResult.data || []);
+        }
+        
+        if (storesResult.success) {
+          setStores(storesResult.data || []);
         }
       } catch (err) {
-        console.error('[POS] Failed to fetch registers:', err);
+        console.error('[POS] Failed to fetch data:', err);
       }
     })();
   }, []);
@@ -645,12 +668,45 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       .then(({ data }) => setOrders(data || []));
   }, []);
 
-  // After fetching registers (wherever you load them in pos.js):
+  // Initialize store selection based on user role
   useEffect(() => {
-    if (registers && registers.length > 0 && !selectedRegister) {
-      setSelectedRegister(registers[0].id);
+    if (user && stores.length > 0) {
+      if (user.role === 'cashier' && user.store_id) {
+        // Cashier: use assigned store
+        setSelectedStoreId(user.store_id);
+        
+        // Show toast for cashier's assigned store
+        const assignedStore = stores.find(s => s.id === user.store_id);
+        if (assignedStore) {
+          import('react-hot-toast').then(({ toast }) => {
+            toast.success(`Working on assigned store: ${assignedStore.name}`);
+          });
+        }
+      } else if ((user.role === 'admin' || user.role === 'manager') && !selectedStoreId) {
+        // Admin/Manager: default to first store if none selected
+        const defaultStore = stores[0];
+        setSelectedStoreId(defaultStore?.id);
+        
+        // Show toast for default store selection
+        if (defaultStore) {
+          import('react-hot-toast').then(({ toast }) => {
+            toast.success(`Default store selected: ${defaultStore.name}`);
+          });
+        }
+      }
     }
-  }, [registers]);
+  }, [user, stores, selectedStoreId]);
+
+  // After fetching registers, filter by selected store:
+  useEffect(() => {
+    if (registers && registers.length > 0 && selectedStoreId && !selectedRegister) {
+      // Filter registers by selected store
+      const storeRegisters = registers.filter(r => r.store_id === selectedStoreId);
+      if (storeRegisters.length > 0) {
+        setSelectedRegister(storeRegisters[0].id);
+      }
+    }
+  }, [registers, selectedStoreId, selectedRegister]);
 
   // Add this effect in pos.js:
   useEffect(() => {
@@ -1227,13 +1283,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                       total: product.price * qty,
                     };
                   });
-                  // Find the selected register's store_id
-                  const selectedRegisterObj = registers.find(
-                    (r) => r.id === selectedRegister
-                  );
-                  const storeId = selectedRegisterObj
-                    ? selectedRegisterObj.store_id
-                    : undefined;
+                  // Use the selected store ID
+                  const storeId = selectedStoreId;
                   const orderData = {
                     id: orderId,
                     customer_id: holdLayawayCustomer || "",
