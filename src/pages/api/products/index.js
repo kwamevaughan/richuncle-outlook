@@ -5,7 +5,8 @@ export default async function handler(req, res) {
     try {
       const { data, error } = await supabaseAdmin
         .from("products")
-        .select(`
+        .select(
+          `
           id,
           name,
           description,
@@ -31,36 +32,37 @@ export default async function handler(req, res) {
           units(name),
           stores(name),
           warehouses(name)
-        `)
+        `
+        )
         .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching products:", error);
-        return res.status(500).json({ 
-          success: false, 
-          error: "Failed to fetch products" 
+        return res.status(500).json({
+          success: false,
+          error: "Failed to fetch products",
         });
       }
 
       // Transform the data to flatten the nested join results
-      const transformedData = (data || []).map(product => ({
+      const transformedData = (data || []).map((product) => ({
         ...product,
         category_name: product.categories?.name || null,
         brand_name: product.brands?.name || null,
         unit_name: product.units?.name || null,
         store_name: product.stores?.name || null,
-        warehouse_name: product.warehouses?.name || null
+        warehouse_name: product.warehouses?.name || null,
       }));
 
-      return res.status(200).json({ 
-        success: true, 
-        data: transformedData
+      return res.status(200).json({
+        success: true,
+        data: transformedData,
       });
     } catch (error) {
       console.error("Products API error:", error);
-      return res.status(500).json({ 
-        success: false, 
-        error: "Internal server error" 
+      return res.status(500).json({
+        success: false,
+        error: "Internal server error",
       });
     }
   } else if (req.method === "POST") {
@@ -75,27 +77,27 @@ export default async function handler(req, res) {
 
       if (error) {
         console.error("Error creating product:", error);
-        return res.status(400).json({ 
-          success: false, 
-          error: error.message 
+        return res.status(400).json({
+          success: false,
+          error: error.message,
         });
       }
 
-      return res.status(201).json({ 
-        success: true, 
-        data 
+      return res.status(201).json({
+        success: true,
+        data,
       });
     } catch (error) {
       console.error("Products API error:", error);
-      return res.status(500).json({ 
-        success: false, 
-        error: "Internal server error" 
+      return res.status(500).json({
+        success: false,
+        error: "Internal server error",
       });
     }
   } else {
-    return res.status(405).json({ 
-      success: false, 
-      error: "Method not allowed" 
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed",
     });
   }
-} 
+}

@@ -2,22 +2,48 @@ import { useState, useEffect, useRef } from "react";
 import CategoryImageUpload from "./CategoryImageUpload";
 import SimpleModal from "./SimpleModal";
 import { Icon } from "@iconify/react";
-import { DateRange } from 'react-date-range';
-import 'react-date-range/dist/styles.css';
-import 'react-date-range/dist/theme/default.css';
-import { format } from 'date-fns';
-import Barcode from 'react-barcode';
+import { DateRange } from "react-date-range";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
+import { format } from "date-fns";
+import Barcode from "react-barcode";
 
-export function AddEditModal({ type, mode = "light", item, categories = [], onClose, onSave }) {
+export function AddEditModal({
+  type,
+  mode = "light",
+  item,
+  categories = [],
+  onClose,
+  onSave,
+}) {
   const [localCategories, setLocalCategories] = useState([]);
   const [name, setName] = useState(item?.name || "");
   const [description, setDescription] = useState(item?.description || "");
-  const [code, setCode] = useState(type === "categories" ? (item?.code || "") : "");
-  const [symbol, setSymbol] = useState(type === "units" ? (item?.symbol || "") : "");
-  const [address, setAddress] = useState((type === "stores" || type === "customers") ? (item?.address || "") : "");
-  const [phone, setPhone] = useState((type === "stores" || type === "customers") ? (item?.phone || "") : "");
-  const [email, setEmail] = useState((type === "stores" || type === "customers") ? (item?.email || "") : "");
-  const [values, setValues] = useState(item?.values ? (Array.isArray(item.values) ? item.values : item.values.split(',').map(v => v.trim()).filter(Boolean)) : []);
+  const [code, setCode] = useState(
+    type === "categories" ? item?.code || "" : ""
+  );
+  const [symbol, setSymbol] = useState(
+    type === "units" ? item?.symbol || "" : ""
+  );
+  const [address, setAddress] = useState(
+    type === "stores" || type === "customers" ? item?.address || "" : ""
+  );
+  const [phone, setPhone] = useState(
+    type === "stores" || type === "customers" ? item?.phone || "" : ""
+  );
+  const [email, setEmail] = useState(
+    type === "stores" || type === "customers" ? item?.email || "" : ""
+  );
+  const [values, setValues] = useState(
+    item?.values
+      ? Array.isArray(item.values)
+        ? item.values
+        : item.values
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean)
+      : []
+  );
   const [valueInput, setValueInput] = useState("");
   const [imageUrl, setImageUrl] = useState(item?.image_url || "");
   const [isActive, setIsActive] = useState(item?.is_active ?? true);
@@ -25,25 +51,47 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   const [error, setError] = useState("");
   const [codeManuallyEdited, setCodeManuallyEdited] = useState(false);
   // Track selected category for subcategories
-  const [categoryId, setCategoryId] = useState(item?.category_id || (categories[0]?.id ?? ""));
-  const [contactPerson, setContactPerson] = useState(type === "warehouses" ? (item?.contact_person || "") : "");
-  const [warehouseEmail, setWarehouseEmail] = useState(type === "warehouses" ? (item?.email || "") : "");
-  const [warehouseAddress, setWarehouseAddress] = useState(type === "warehouses" ? (item?.address || "") : "");
+  const [categoryId, setCategoryId] = useState(
+    item?.category_id || (categories[0]?.id ?? "")
+  );
+  const [contactPerson, setContactPerson] = useState(
+    type === "warehouses" ? item?.contact_person || "" : ""
+  );
+  const [warehouseEmail, setWarehouseEmail] = useState(
+    type === "warehouses" ? item?.email || "" : ""
+  );
+  const [warehouseAddress, setWarehouseAddress] = useState(
+    type === "warehouses" ? item?.address || "" : ""
+  );
   const [usersList, setUsersList] = useState([]);
   const [value, setValue] = useState(item?.value || "");
-  const [planId, setPlanId] = useState(item?.plan_id || (categories[0]?.id ?? ""));
+  const [planId, setPlanId] = useState(
+    item?.plan_id || (categories[0]?.id ?? "")
+  );
   const [dateRange, setDateRange] = useState(() => {
-    if (type === 'discounts' && item?.validity && item.validity.includes('to')) {
-      const [start, end] = item.validity.split('to').map(s => s.trim());
-      return [{ startDate: new Date(start), endDate: new Date(end), key: 'selection' }];
+    if (
+      type === "discounts" &&
+      item?.validity &&
+      item.validity.includes("to")
+    ) {
+      const [start, end] = item.validity.split("to").map((s) => s.trim());
+      return [
+        {
+          startDate: new Date(start),
+          endDate: new Date(end),
+          key: "selection",
+        },
+      ];
     }
-    return [{ startDate: new Date(), endDate: new Date(), key: 'selection' }];
+    return [{ startDate: new Date(), endDate: new Date(), key: "selection" }];
   });
   const [validity, setValidity] = useState(item?.validity || "");
   // Add discount code field
   const [discountCode, setDiscountCode] = useState(item?.discount_code || "");
   // Add discount type and store selection
-  const [discountType, setDiscountType] = useState(item?.discount_type || "percentage");
+  const [discountType, setDiscountType] = useState(
+    item?.discount_type || "percentage"
+  );
   const [storeId, setStoreId] = useState(item?.store_id || "all");
   const [stores, setStores] = useState([]);
   // --- PRODUCTS MODAL STATE ---
@@ -53,13 +101,17 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   const [price, setPrice] = useState(item?.price || "");
   const [costPrice, setCostPrice] = useState(item?.cost_price || "");
   const [taxType, setTaxType] = useState(item?.tax_type || "exclusive");
-  const [taxPercentage, setTaxPercentage] = useState(item?.tax_percentage || "");
+  const [taxPercentage, setTaxPercentage] = useState(
+    item?.tax_percentage || ""
+  );
   const [chargeTax, setChargeTax] = useState(
     item?.tax_percentage > 0 || item?.tax_type ? true : false
   );
   const [sku, setSku] = useState(item?.sku || "");
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
-  const [subcategoryId, setSubcategoryId] = useState(item?.subcategory_id || "");
+  const [subcategoryId, setSubcategoryId] = useState(
+    item?.subcategory_id || ""
+  );
   const [brandId, setBrandId] = useState(item?.brand_id || "");
   const [unitId, setUnitId] = useState(item?.unit_id || "");
   const [barcode, setBarcode] = useState(item?.barcode || "");
@@ -70,12 +122,19 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [variantAttributes, setVariantAttributes] = useState([]);
-  const [selectedVariantAttributes, setSelectedVariantAttributes] = useState(item?.variant_attributes || {});
+  const [selectedVariantAttributes, setSelectedVariantAttributes] = useState(
+    item?.variant_attributes || {}
+  );
   const [showVariantAttributes, setShowVariantAttributes] = useState(false);
   const [showBarcode, setShowBarcode] = useState(false);
   const [sellingType, setSellingType] = useState(() => {
     let val = item?.selling_type;
-    if (Array.isArray(val) && val.length === 1 && typeof val[0] === "string" && val[0].startsWith("[")) {
+    if (
+      Array.isArray(val) &&
+      val.length === 1 &&
+      typeof val[0] === "string" &&
+      val[0].startsWith("[")
+    ) {
       try {
         val = JSON.parse(val[0]);
       } catch {}
@@ -97,11 +156,19 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   // --- EXPENSES MODAL STATE ---
   const [expenseTitle, setExpenseTitle] = useState(item?.title || "");
   const [expenseAmount, setExpenseAmount] = useState(item?.amount || "");
-  const [expenseDate, setExpenseDate] = useState(item?.expense_date || new Date().toISOString().split('T')[0]);
-  const [expenseCategoryId, setExpenseCategoryId] = useState(item?.expense_category_id || "");
-  const [paymentMethod, setPaymentMethod] = useState(item?.payment_method || "cash");
+  const [expenseDate, setExpenseDate] = useState(
+    item?.expense_date || new Date().toISOString().split("T")[0]
+  );
+  const [expenseCategoryId, setExpenseCategoryId] = useState(
+    item?.expense_category_id || ""
+  );
+  const [paymentMethod, setPaymentMethod] = useState(
+    item?.payment_method || "cash"
+  );
   const [expenseStatus, setExpenseStatus] = useState(item?.status || "paid");
-  const [expenseDescription, setExpenseDescription] = useState(item?.description || "");
+  const [expenseDescription, setExpenseDescription] = useState(
+    item?.description || ""
+  );
   const [expenseCategories, setExpenseCategories] = useState([]);
 
   // Helper to generate a code suggestion
@@ -112,11 +179,14 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
     if (words.length === 1) {
       base = words[0].substring(0, 5).toUpperCase();
     } else {
-      base = words.map(w => w[0].toUpperCase()).join("").substring(0, 5);
+      base = words
+        .map((w) => w[0].toUpperCase())
+        .join("")
+        .substring(0, 5);
     }
     let suggestion = base;
     let suffix = 1;
-    const codesSet = new Set(existingCodes.map(c => c.toUpperCase()));
+    const codesSet = new Set(existingCodes.map((c) => c.toUpperCase()));
     while (codesSet.has(suggestion)) {
       suggestion = base + suffix;
       suffix++;
@@ -134,14 +204,14 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   // Fetch stores for discount modal
   useEffect(() => {
     if (type === "discounts") {
-      fetch('/api/stores')
-        .then(response => response.json())
-        .then(result => {
+      fetch("/api/stores")
+        .then((response) => response.json())
+        .then((result) => {
           if (result.success) {
             setStores(result.data || []);
           }
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("Failed to fetch stores:", err);
         });
     }
@@ -150,7 +220,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   // Suggest a code from name if user hasn't manually edited code and type is categories
   useEffect(() => {
     if (type === "categories" && !item && !codeManuallyEdited) {
-      const existingCodes = categories.map(cat => cat.code || "");
+      const existingCodes = categories.map((cat) => cat.code || "");
       const suggested = suggestCategoryCode(name, existingCodes);
       setCode(suggested);
     }
@@ -159,14 +229,14 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
 
   useEffect(() => {
     if (type === "warehouses") {
-      fetch('/api/users')
-        .then(response => response.json())
-        .then(result => {
+      fetch("/api/users")
+        .then((response) => response.json())
+        .then((result) => {
           if (result.success) {
             setUsersList(result.data || []);
           }
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("Failed to fetch users:", err);
         });
     }
@@ -182,9 +252,12 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   }, [item, type]);
 
   useEffect(() => {
-    if (type === 'discounts') {
+    if (type === "discounts") {
       setValidity(
-        `${format(dateRange[0].startDate, 'yyyy-MM-dd')} to ${format(dateRange[0].endDate, 'yyyy-MM-dd')}`
+        `${format(dateRange[0].startDate, "yyyy-MM-dd")} to ${format(
+          dateRange[0].endDate,
+          "yyyy-MM-dd"
+        )}`
       );
     }
     // eslint-disable-next-line
@@ -194,53 +267,272 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
     if (type === "products") {
       // Fetch all dropdown data
       Promise.all([
-        fetch('/api/stores'),
-        fetch('/api/warehouses'),
-        fetch('/api/categories'),
-        fetch('/api/subcategories'),
-        fetch('/api/brands'),
-        fetch('/api/units'),
-        fetch('/api/variant-attributes')
+        fetch("/api/stores"),
+        fetch("/api/warehouses"),
+        fetch("/api/categories"),
+        fetch("/api/subcategories"),
+        fetch("/api/brands"),
+        fetch("/api/units"),
+        fetch("/api/variant-attributes"),
       ])
-      .then(responses => Promise.all(responses.map(r => r.json())))
-      .then(results => {
-        if (results[0].success) setStores(results[0].data || []);
-        if (results[1].success) setWarehouses(results[1].data || []);
-        if (results[2].success) setLocalCategories(results[2].data || []);
-        if (results[3].success) setSubcategories(results[3].data || []);
-        if (results[4].success) setBrands(results[4].data || []);
-        if (results[5].success) setUnits(results[5].data || []);
-        if (results[6].success) setVariantAttributes(results[6].data || []);
-      })
-      .catch(err => {
-        console.error("Failed to fetch dropdown data:", err);
-      });
+        .then((responses) => Promise.all(responses.map((r) => r.json())))
+        .then((results) => {
+          if (results[0].success) setStores(results[0].data || []);
+          if (results[1].success) setWarehouses(results[1].data || []);
+          if (results[2].success) setLocalCategories(results[2].data || []);
+          if (results[3].success) setSubcategories(results[3].data || []);
+          if (results[4].success) setBrands(results[4].data || []);
+          if (results[5].success) setUnits(results[5].data || []);
+          if (results[6].success) setVariantAttributes(results[6].data || []);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch dropdown data:", err);
+        });
     } else if (type === "expenses") {
       // Fetch expense categories
-      fetch('/api/expense-categories')
-        .then(response => response.json())
-        .then(result => {
+      fetch("/api/expense-categories")
+        .then((response) => response.json())
+        .then((result) => {
           if (result.success) {
             setExpenseCategories(result.data || []);
           }
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("Failed to fetch expense categories:", err);
         });
     }
   }, [type]);
 
-  // Auto-generate SKU from product name if not manually edited
+  // State for SKU validation
+  const [skuValidation, setSkuValidation] = useState({
+    isValid: true,
+    message: "",
+  });
+  const [lastSequentialNumber, setLastSequentialNumber] = useState(1000);
+  const [skuCache, setSkuCache] = useState(new Map());
+  const [validationTimeout, setValidationTimeout] = useState(null);
+  const [sequenceCache, setSequenceCache] = useState(new Map());
+
+  // Cleanup timeouts on unmount
   useEffect(() => {
-    if (type === "products" && !skuManuallyEdited && productName) {
-      const base = productName.trim().toUpperCase().replace(/\s+/g, "-").substring(0, 10);
-      setSku(base + "-" + Math.floor(1000 + Math.random() * 9000));
+    return () => {
+      if (validationTimeout) {
+        clearTimeout(validationTimeout);
+      }
+    };
+  }, [validationTimeout]);
+
+  // Helper function to generate professional SKU with improvements
+  const generateSKU = async (includeVariants = false) => {
+    console.log("generateSKU called with:", { productName, includeVariants });
+
+    if (!productName.trim()) {
+      console.log("No product name, returning empty");
+      return "";
     }
-    // Auto-generate barcode if not present and not editing an item
+
+    // Get store prefix (first 2 letters of store name)
+    const selectedStore = stores.find((store) => store.id === storeId);
+    const storePrefix =
+      selectedStore?.name?.substring(0, 2).toUpperCase() || "ST";
+
+    console.log("Store info:", {
+      selectedStore: selectedStore?.name,
+      storePrefix,
+    });
+
+    // Get category code (first 2-3 letters)
+    const selectedCategory = localCategories.find(
+      (cat) => cat.id === categoryId
+    );
+    const categoryCode =
+      selectedCategory?.code?.substring(0, 3) ||
+      selectedCategory?.name?.substring(0, 3).toUpperCase() ||
+      "GEN";
+
+    console.log("Category info:", {
+      selectedCategory: selectedCategory?.name,
+      categoryCode,
+    });
+
+    // Get brand code (first 2 letters)
+    const selectedBrand = brands.find((brand) => brand.id === brandId);
+    const brandCode =
+      selectedBrand?.name?.substring(0, 2).toUpperCase() || "XX";
+
+    // Get product name code (first 4 letters, remove spaces/special chars)
+    const productCode = productName
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .substring(0, 4)
+      .padEnd(4, "X");
+
+    // Generate variant code if variants are selected
+    let variantCode = "";
+    if (includeVariants && Object.keys(selectedVariantAttributes).length > 0) {
+      const variantParts = Object.values(selectedVariantAttributes)
+        .map((value) => value.substring(0, 1).toUpperCase())
+        .join("");
+      variantCode = variantParts ? `-${variantParts}` : "";
+    }
+
+    // Get next sequential number from database
+    let sequentialNumber;
+    try {
+      const response = await fetch("/api/products/next-sku-sequence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryCode,
+          brandCode,
+          productCode,
+          storePrefix,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        sequentialNumber = result.nextSequence || lastSequentialNumber + 1;
+        setLastSequentialNumber(sequentialNumber);
+      } else {
+        // Fallback to incremental number
+        sequentialNumber = lastSequentialNumber + 1;
+        setLastSequentialNumber(sequentialNumber);
+      }
+    } catch (error) {
+      console.warn(
+        "Failed to get sequence from server, using local increment:",
+        error
+      );
+      sequentialNumber = lastSequentialNumber + 1;
+      setLastSequentialNumber(sequentialNumber);
+    }
+
+    // Format: STORE-CATEGORY-BRAND-PRODUCT-VARIANT-NUMBER
+    // Example: ST-ELE-SA-PHON-RL-1001 (Store-Electronics-Samsung-Phone-Red/Large-1001)
+    return `${storePrefix}-${categoryCode}-${brandCode}-${productCode}${variantCode}-${sequentialNumber
+      .toString()
+      .padStart(4, "0")}`;
+  };
+
+  // Function to validate SKU uniqueness with caching and debouncing
+  const validateSKU = (skuValue) => {
+    // Clear existing timeout
+    if (validationTimeout) {
+      clearTimeout(validationTimeout);
+    }
+
+    if (!skuValue.trim()) {
+      setSkuValidation({ isValid: true, message: "" });
+      return;
+    }
+
+    // Check cache first
+    if (skuCache.has(skuValue.trim())) {
+      const cachedResult = skuCache.get(skuValue.trim());
+      setSkuValidation(cachedResult);
+      return;
+    }
+
+    // Set loading state
+    setSkuValidation({ isValid: true, message: "Checking availability..." });
+
+    // Debounce the API call
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch("/api/products/validate-sku", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sku: skuValue.trim(),
+            excludeId: item?.id, // Exclude current item when editing
+          }),
+        });
+
+        const result = await response.json();
+
+        const validationResult = result.exists
+          ? {
+              isValid: false,
+              message: "SKU already exists. Please use a different SKU.",
+            }
+          : { isValid: true, message: "SKU is available." };
+
+        // Cache the result
+        setSkuCache(
+          (prev) => new Map(prev.set(skuValue.trim(), validationResult))
+        );
+        setSkuValidation(validationResult);
+      } catch (error) {
+        console.warn("Failed to validate SKU:", error);
+        setSkuValidation({ isValid: true, message: "" });
+      }
+    }, 800); // Increased debounce to 800ms
+
+    setValidationTimeout(timeoutId);
+  };
+
+  // Auto-generate SKU from product details if not manually edited (with debouncing)
+  useEffect(() => {
+    // Debug logging
+    console.log("SKU Generation Check:", {
+      type,
+      skuManuallyEdited,
+      productName: productName?.substring(0, 20) + "...",
+      categoryId,
+      storeId,
+      hasStores: stores.length,
+      hasCategories: localCategories.length,
+      shouldGenerate:
+        type === "products" && !skuManuallyEdited && productName.trim(),
+    });
+
+    // Generate SKU when we have product name (other fields will use defaults)
+    if (type === "products" && !skuManuallyEdited && productName.trim()) {
+      // Debounce SKU generation to avoid too many API calls
+      const timeoutId = setTimeout(async () => {
+        console.log("Generating SKU for:", productName);
+        const newSku = await generateSKU(true); // Include variants
+        console.log("Generated SKU:", newSku);
+        setSku(newSku);
+      }, 300); // 300ms debounce
+
+      return () => clearTimeout(timeoutId);
+    }
+
+    // Auto-generate barcode if not present and not editing an item (but don't auto-show)
     if (type === "products" && !item && productName && !barcode) {
-      setBarcode('BC' + Math.floor(100000000 + Math.random() * 900000000));
+      const newBarcode =
+        "BC" + Math.floor(100000000 + Math.random() * 900000000);
+      setBarcode(newBarcode);
     }
-  }, [productName, type, skuManuallyEdited]);
+  }, [
+    productName,
+    categoryId,
+    brandId,
+    storeId,
+    selectedVariantAttributes,
+    type,
+    skuManuallyEdited,
+    stores,
+    localCategories,
+  ]);
+
+  // Generate barcode when barcode section is toggled on and no barcode exists
+  useEffect(() => {
+    if (
+      type === "products" &&
+      !item &&
+      showBarcode &&
+      productName &&
+      !barcode
+    ) {
+      const newBarcode =
+        "BC" + Math.floor(100000000 + Math.random() * 900000000);
+      setBarcode(newBarcode);
+    }
+  }, [showBarcode, type, item, productName, barcode]);
 
   // Auto-select single options in dropdowns for products
   useEffect(() => {
@@ -249,75 +541,122 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
       if (stores.length === 1 && !storeId) {
         setStoreId(stores[0].id);
       }
-      
+
       // Auto-select warehouse if only one available
       if (warehouses.length === 1 && !warehouseId) {
         setWarehouseId(warehouses[0].id);
       }
-      
+
       // Auto-select unit - default to "Pieces" if available, otherwise auto-select if only one available
       if (!unitId) {
-        const piecesUnit = units.find(unit => unit.name.toLowerCase() === 'pieces' || unit.name.toLowerCase() === 'piece');
+        const piecesUnit = units.find(
+          (unit) =>
+            unit.name.toLowerCase() === "pieces" ||
+            unit.name.toLowerCase() === "piece"
+        );
         if (piecesUnit) {
           setUnitId(piecesUnit.id);
         } else if (units.length === 1) {
           setUnitId(units[0].id);
         }
       }
-      
+
       // Auto-select category if only one available
       if (localCategories.length === 1 && !categoryId) {
         setCategoryId(localCategories[0].id);
       }
-      
+
       // Auto-select brand if only one available
       if (brands.length === 1 && !brandId) {
         setBrandId(brands[0].id);
       }
-      
+
       // Auto-select variant attributes if only one option available
-      variantAttributes.forEach(attr => {
+      variantAttributes.forEach((attr) => {
         if (attr.values) {
-          const values = attr.values.split(',').map(v => v.trim()).filter(Boolean);
+          const values = attr.values
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean);
           if (values.length === 1 && !selectedVariantAttributes[attr.id]) {
-            setSelectedVariantAttributes(prev => ({
+            setSelectedVariantAttributes((prev) => ({
               ...prev,
-              [attr.id]: values[0]
+              [attr.id]: values[0],
             }));
           }
         }
       });
     }
-    
+
     // Auto-select for other modal types
-    if (type === "warehouses" && !item && usersList.length === 1 && !contactPerson) {
+    if (
+      type === "warehouses" &&
+      !item &&
+      usersList.length === 1 &&
+      !contactPerson
+    ) {
       setContactPerson(usersList[0].id);
     }
-    
-    if (type === "discounts" && !item && localCategories.length === 1 && !planId) {
+
+    if (
+      type === "discounts" &&
+      !item &&
+      localCategories.length === 1 &&
+      !planId
+    ) {
       setPlanId(localCategories[0].id);
     }
-    
-    if (type === "expenses" && !item && expenseCategories.length === 1 && !expenseCategoryId) {
+
+    if (
+      type === "expenses" &&
+      !item &&
+      expenseCategories.length === 1 &&
+      !expenseCategoryId
+    ) {
       setExpenseCategoryId(expenseCategories[0].id);
     }
-    
-    if (type === "subcategories" && !item && localCategories.length === 1 && !categoryId) {
+
+    if (
+      type === "subcategories" &&
+      !item &&
+      localCategories.length === 1 &&
+      !categoryId
+    ) {
       setCategoryId(localCategories[0].id);
     }
-  }, [type, item, stores, warehouses, units, localCategories, brands, variantAttributes, usersList, expenseCategories, storeId, warehouseId, unitId, categoryId, brandId, selectedVariantAttributes, contactPerson, planId, expenseCategoryId]);
+  }, [
+    type,
+    item,
+    stores,
+    warehouses,
+    units,
+    localCategories,
+    brands,
+    variantAttributes,
+    usersList,
+    expenseCategories,
+    storeId,
+    warehouseId,
+    unitId,
+    categoryId,
+    brandId,
+    selectedVariantAttributes,
+    contactPerson,
+    planId,
+    expenseCategoryId,
+  ]);
 
   // Handle Add New Category
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
     setLoading(true);
     try {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
+      const response = await fetch("/api/categories", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: newCategoryName.trim() })
+        body: JSON.stringify({ name: newCategoryName.trim() }),
       });
       const result = await response.json();
       if (result.success) {
@@ -482,13 +821,21 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           setError("Tax Percentage is required");
           return;
         }
-        if (isNaN(Number(taxPercentage)) || Number(taxPercentage) < 0 || Number(taxPercentage) > 100) {
+        if (
+          isNaN(Number(taxPercentage)) ||
+          Number(taxPercentage) < 0 ||
+          Number(taxPercentage) > 100
+        ) {
           setError("Tax Percentage must be a number between 0 and 100");
           return;
         }
       }
       if (!sku.trim()) {
         setError("SKU is required");
+        return;
+      }
+      if (!skuValidation.isValid) {
+        setError("Please fix the SKU error before saving");
         return;
       }
       if (!categoryId) {
@@ -591,7 +938,11 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           price: price === "" ? null : Number(price),
           cost_price: costPrice === "" ? null : Number(costPrice),
           tax_type: chargeTax ? taxType : null,
-          tax_percentage: chargeTax ? (taxPercentage === "" ? null : Number(taxPercentage)) : null,
+          tax_percentage: chargeTax
+            ? taxPercentage === ""
+              ? null
+              : Number(taxPercentage)
+            : null,
           sku: sku.trim(),
           store_id: storeId || null,
           warehouse_id: warehouseId || null,
@@ -601,7 +952,10 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           unit_id: unitId || null,
           barcode: barcode.trim(),
           image_url: imageUrl,
-          variant_attributes: Object.keys(selectedVariantAttributes).length > 0 ? selectedVariantAttributes : null,
+          variant_attributes:
+            Object.keys(selectedVariantAttributes).length > 0
+              ? selectedVariantAttributes
+              : null,
           is_active: isActive,
         };
         await onSave(cleanedProduct);
@@ -627,25 +981,38 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
           ...(type === "subcategories" ? { category_id: categoryId } : {}),
           image_url: imageUrl,
           is_active: isActive,
-          ...(type === "variant_attributes" ? { values: values.join(",") } : {}),
+          ...(type === "variant_attributes"
+            ? { values: values.join(",") }
+            : {}),
           ...(type === "units" ? { symbol: symbol.trim() } : {}),
-          ...(type === "stores" ? { 
-            address: address.trim(),
-            phone: phone.trim(),
-            email: email.trim()
-          } : {}),
-          ...(type === "warehouses" ? {
-            contact_person: contactPerson.trim(),
-            phone: phone.trim(),
-            email: warehouseEmail.trim(),
-            address: warehouseAddress.trim(),
-          } : {}),
-          ...(type === "customers" ? {
-            email: email.trim(),
-            phone: phone.trim(),
-            address: address.trim(),
-          } : {}),
-          ...(type !== "units" && type !== "stores" && type !== "warehouses" && type !== "customers" ? { description: description.trim() } : {}),
+          ...(type === "stores"
+            ? {
+                address: address.trim(),
+                phone: phone.trim(),
+                email: email.trim(),
+              }
+            : {}),
+          ...(type === "warehouses"
+            ? {
+                contact_person: contactPerson.trim(),
+                phone: phone.trim(),
+                email: warehouseEmail.trim(),
+                address: warehouseAddress.trim(),
+              }
+            : {}),
+          ...(type === "customers"
+            ? {
+                email: email.trim(),
+                phone: phone.trim(),
+                address: address.trim(),
+              }
+            : {}),
+          ...(type !== "units" &&
+          type !== "stores" &&
+          type !== "warehouses" &&
+          type !== "customers"
+            ? { description: description.trim() }
+            : {}),
         });
       }
     } catch (err) {
@@ -656,25 +1023,27 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
   };
 
   // Helper to get entity label for modal title
-  const typeLabel = {
-    categories: "Category",
-    subcategories: "Sub Category",
-    brands: "Brand",
-    units: "Unit",
-    stores: "Store",
-    warehouses: "Warehouse",
-    customers: "Customer",
-    discounts: "Discount",
-    plans: "Discount Plan",
-    products: "Product",
-    expenses: "Expense",
-    "expense-categories": "Expense Category",
-  }[type] || "Item";
+  const typeLabel =
+    {
+      categories: "Category",
+      subcategories: "Sub Category",
+      brands: "Brand",
+      units: "Unit",
+      stores: "Store",
+      warehouses: "Warehouse",
+      customers: "Customer",
+      discounts: "Discount",
+      plans: "Discount Plan",
+      products: "Product",
+      expenses: "Expense",
+      "expense-categories": "Expense Category",
+    }[type] || "Item";
 
   // Custom modal title for discounts
-  const modalTitle = type === "discounts"
-    ? `${item ? "Edit" : "Add"} Discount`
-    : `${item ? "Edit" : "Add New"} ${typeLabel}`;
+  const modalTitle =
+    type === "discounts"
+      ? `${item ? "Edit" : "Add"} Discount`
+      : `${item ? "Edit" : "Add New"} ${typeLabel}`;
 
   return (
     <>
@@ -1474,7 +1843,12 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   value={productName}
                   onChange={(e) => {
                     setProductName(e.target.value);
-                    if (!skuManuallyEdited) setSku("");
+                    console.log("Product name changed to:", e.target.value);
+                    // Reset SKU manual edit flag when product name changes
+                    if (!item) {
+                      // Only for new products, not when editing
+                      setSkuManuallyEdited(false);
+                    }
                   }}
                   disabled={loading}
                   placeholder="Product name"
@@ -1733,13 +2107,63 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
               <div className="mb-6">
                 <div>
                   <label className="block mb-1 font-medium">SKU</label>
-                  <input
-                    className="w-full border rounded px-3 py-2"
-                    value={sku}
-                    onChange={(e) => setSku(e.target.value)}
-                    disabled={loading}
-                    placeholder="SKU"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      className={`w-full border rounded px-3 py-2 font-mono ${
+                        !skuValidation.isValid
+                          ? "border-red-500 bg-red-50"
+                          : skuValidation.message === "SKU is available."
+                          ? "border-green-500 bg-green-50"
+                          : ""
+                      }`}
+                      value={sku}
+                      onChange={(e) => {
+                        setSku(e.target.value);
+                        setSkuManuallyEdited(true);
+                        // Use optimized validation with built-in debouncing
+                        validateSKU(e.target.value);
+                      }}
+                      disabled={loading}
+                      placeholder="Auto-generated or enter custom SKU"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        console.log("Manual SKU generation clicked");
+                        const newSku = await generateSKU(
+                          Object.keys(selectedVariantAttributes).length > 0
+                        );
+                        console.log("Manual generated SKU:", newSku);
+                        setSku(newSku);
+                        setSkuManuallyEdited(false);
+                        validateSKU(newSku);
+                      }}
+                      className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm whitespace-nowrap"
+                      disabled={loading}
+                    >
+                      Generate
+                    </button>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-xs text-gray-500">
+                      Format: STORE-CATEGORY-BRAND-PRODUCT-VARIANT-NUMBER
+                    </p>
+                    {skuValidation.message && (
+                      <p
+                        className={`text-xs ${
+                          skuValidation.isValid
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {skuValidation.message}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Example: ST-ELE-SA-PHON-RL-1001
+                    (Store-Electronics-Samsung-Phone-Red/Large-1001)
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -1888,7 +2312,7 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
 
               {/* Barcode Toggle */}
               <div className="mb-6 flex items-center gap-3">
-                <span className="font-medium">View Barcode</span>
+                <span className="font-medium">Barcode Settings</span>
                 <button
                   type="button"
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
@@ -1904,33 +2328,74 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
                   />
                 </button>
                 <span className="text-sm text-gray-500">
-                  {showBarcode ? "Show" : "Hide"}
+                  {showBarcode ? "Hide" : "Show"} barcode section
                 </span>
+                {barcode && (
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                    Generated: {barcode}
+                  </span>
+                )}
               </div>
 
               {/* Barcode Section */}
               {showBarcode && (
                 <div className="mb-6">
-                  <label className="block mb-1 font-medium">Item Barcode</label>
-                  <div className="flex gap-2">
-                    <input
-                      className="w-full border rounded px-3 py-2"
-                      value={barcode}
-                      onChange={(e) => setBarcode(e.target.value)}
-                      disabled={loading}
-                      placeholder="Barcode"
-                    />
-                  </div>
-                  {barcode && (
-                    <div className="mt-2 flex justify-center">
-                      <Barcode
-                        value={barcode}
-                        height={60}
-                        width={2}
-                        displayValue={false}
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Barcode Input */}
+                    <div>
+                      <label className="block mb-2 font-medium">
+                        Item Barcode
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          className="w-full border rounded px-3 py-2 font-mono"
+                          value={barcode}
+                          onChange={(e) => setBarcode(e.target.value)}
+                          disabled={loading}
+                          placeholder="Enter or scan barcode"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setBarcode(
+                              "BC" +
+                                Math.floor(
+                                  100000000 + Math.random() * 900000000
+                                )
+                            )
+                          }
+                          className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                          disabled={loading}
+                        >
+                          Generate
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Auto-generated or enter custom barcode
+                      </p>
                     </div>
-                  )}
+
+                    {/* Barcode Preview */}
+                    {barcode && (
+                      <div>
+                        <label className="block mb-2 font-medium text-center">
+                          Barcode Preview
+                        </label>
+                        <div className="flex justify-center items-center">
+                          <div className="border rounded p-3 bg-white">
+                            <Barcode
+                              value={barcode}
+                              height={60}
+                              width={2}
+                              displayValue={true}
+                              fontSize={14}
+                              textMargin={5}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               <div className="mb-6">
@@ -2266,4 +2731,4 @@ export function AddEditModal({ type, mode = "light", item, categories = [], onCl
       </SimpleModal>
     </>
   );
-} 
+}

@@ -241,12 +241,11 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   };
   const handleDelete = async () => {
     try {
-      const response = await fetch('/api/products', {
+      const response = await fetch(`/api/products/${deleteItem.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: deleteItem.id }),
       });
       const result = await response.json();
       if (result.error) throw new Error(result.error);
