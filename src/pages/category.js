@@ -78,20 +78,30 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
   const handleDelete = async () => {
     try {
       if (tab === "categories") {
-        const response = await fetch("/api/categories");
-        const { data, error } = await response.json();
-        if (error) throw error;
-        setCategories(data || []);
+        const response = await fetch(`/api/categories/${deleteItem.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        const result = await response.json();
+        if (result.error) throw new Error(result.error);
+        setCategories((prev) => prev.filter((cat) => cat.id !== deleteItem.id));
       } else {
-        const response = await fetch("/api/subcategories");
-        const { data, error } = await response.json();
-        if (error) throw error;
-        setSubCategories(data || []);
+        const response = await fetch(`/api/subcategories/${deleteItem.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        const result = await response.json();
+        if (result.error) throw new Error(result.error);
+        setSubCategories((prev) => prev.filter((sub) => sub.id !== deleteItem.id));
       }
       closeConfirm();
-      toast.success("Category deleted!");
+      toast.success(`${tab === "categories" ? "Category" : "Subcategory"} deleted!`);
     } catch (err) {
-      toast.error(err.message || "Failed to delete category");
+      toast.error(err.message || `Failed to delete ${tab === "categories" ? "category" : "subcategory"}`);
     }
   };
   // Drag-and-drop reorder
