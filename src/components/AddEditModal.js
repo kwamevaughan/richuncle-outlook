@@ -7,6 +7,7 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { format } from "date-fns";
 import Barcode from "react-barcode";
+import toast from "react-hot-toast";
 
 export function AddEditModal({
   type,
@@ -410,7 +411,7 @@ export function AddEditModal({
     }
 
     // Format: STORE-CATEGORY-BRAND-PRODUCT-VARIANT-NUMBER
-    // Example: ST-ELE-SA-PHON-RL-1001 (Store-Electronics-Samsung-Phone-Red/Large-1001)
+    // Example: MS-CLO-NI-TSHI-BL-1001 (MainStore-Clothing-Nike-TShirt-Black/Large-1001)
     return `${storePrefix}-${categoryCode}-${brandCode}-${productCode}${variantCode}-${sequentialNumber
       .toString()
       .padStart(4, "0")}`;
@@ -501,10 +502,11 @@ export function AddEditModal({
       return () => clearTimeout(timeoutId);
     }
 
-    // Auto-generate barcode if not present and not editing an item (but don't auto-show)
+    // Auto-generate barcode if not present and not editing an item (regardless of toggle state)
     if (type === "products" && !item && productName && !barcode) {
       const newBarcode =
         "BC" + Math.floor(100000000 + Math.random() * 900000000);
+      console.log("Auto-generating barcode (toggle independent):", newBarcode);
       setBarcode(newBarcode);
     }
   }, [
@@ -519,20 +521,25 @@ export function AddEditModal({
     localCategories,
   ]);
 
-  // Generate barcode when barcode section is toggled on and no barcode exists
+  // Separate useEffect specifically for barcode generation (independent of other fields)
   useEffect(() => {
-    if (
-      type === "products" &&
-      !item &&
-      showBarcode &&
-      productName &&
-      !barcode
-    ) {
+    console.log("Barcode generation check:", {
+      type,
+      item: !!item,
+      productName: productName?.substring(0, 20),
+      currentBarcode: barcode?.substring(0, 10),
+      shouldGenerate: type === "products" && !item && productName && !barcode,
+    });
+
+    if (type === "products" && !item && productName.trim() && !barcode) {
       const newBarcode =
         "BC" + Math.floor(100000000 + Math.random() * 900000000);
+      console.log("Generating barcode independently:", newBarcode);
       setBarcode(newBarcode);
     }
-  }, [showBarcode, type, item, productName, barcode]);
+  }, [type, item, productName, barcode]);
+
+  // Note: Barcode generation is now handled independently above, regardless of toggle state
 
   // Auto-select single options in dropdowns for products
   useEffect(() => {
@@ -793,32 +800,46 @@ export function AddEditModal({
       }
     } else if (type === "products") {
       if (!storeId) {
-        setError("Store is required");
+        const errorMsg = "Store is required";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
       if (!warehouseId) {
-        setError("Warehouse is required");
+        const errorMsg = "Warehouse is required";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
       if (!productName.trim()) {
-        setError("Product Name is required");
+        const errorMsg = "Product Name is required";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
       if (!quantity.trim()) {
-        setError("Quantity is required");
+        const errorMsg = "Quantity is required";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
       if (!price.trim()) {
-        setError("Price is required");
+        const errorMsg = "Price is required";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
       if (!costPrice || costPrice.toString().trim() === "") {
-        setError("Cost Price is required");
+        const errorMsg = "Cost Price is required";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
       if (chargeTax) {
         if (!taxPercentage || taxPercentage.toString().trim() === "") {
-          setError("Tax Percentage is required");
+          const errorMsg = "Tax Percentage is required";
+          setError(errorMsg);
+          toast.error(errorMsg);
           return;
         }
         if (
@@ -826,24 +847,34 @@ export function AddEditModal({
           Number(taxPercentage) < 0 ||
           Number(taxPercentage) > 100
         ) {
-          setError("Tax Percentage must be a number between 0 and 100");
+          const errorMsg = "Tax Percentage must be a number between 0 and 100";
+          setError(errorMsg);
+          toast.error(errorMsg);
           return;
         }
       }
       if (!sku.trim()) {
-        setError("SKU is required");
+        const errorMsg = "SKU is required";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
       if (!skuValidation.isValid) {
-        setError("Please fix the SKU error before saving");
+        const errorMsg = "Please fix the SKU error before saving";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
       if (!categoryId) {
-        setError("Category is required");
+        const errorMsg = "Category is required";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
       if (!unitId) {
-        setError("Unit is required");
+        const errorMsg = "Unit is required";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
     } else if (type === "expenses") {
@@ -2161,8 +2192,8 @@ export function AddEditModal({
                     )}
                   </div>
                   <p className="text-xs text-gray-400 mt-1">
-                    Example: ST-ELE-SA-PHON-RL-1001
-                    (Store-Electronics-Samsung-Phone-Red/Large-1001)
+                    Example: MS-CLO-NI-TSHI-BL-1001
+                    (MainStore-Clothing-Nike-TShirt-Black/Large-1001)
                   </p>
                 </div>
               </div>
