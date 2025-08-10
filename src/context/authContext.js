@@ -31,9 +31,7 @@ export const AuthProvider = ({ children }) => {
       const cachedUser = localStorage.getItem("ruo_user_data");
       if (cachedUser) {
         const parsedUser = JSON.parse(cachedUser);
-        console.log("[AuthProvider] Loaded cached user:", parsedUser);
         if (!parsedUser.name) {
-          console.log("[AuthProvider] Invalid cache, clearing");
           localStorage.removeItem("ruo_user_data");
           localStorage.removeItem("ruo_member_session");
           localStorage.removeItem("user_email");
@@ -126,12 +124,13 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("ruo_member_session", "authenticated");
       localStorage.setItem("user_email", email);
       console.log(
-        "AuthContext: User authenticated, navigating to /dashboard:",
+        "AuthContext: User authenticated, navigating to appropriate page:",
         user
       );
       if (user.role === 'cashier') {
         await router.push('/pos');
       } else {
+        // For admins and managers, redirect to dashboard
         await router.push('/dashboard');
       }
       toast.dismiss("route-loading");
@@ -315,7 +314,7 @@ export const AuthProvider = ({ children }) => {
 
           toast.success("Social login successful! Redirecting...");
           console.log(
-            "AuthContext: Social login successful, navigating to /dashboard"
+            "AuthContext: Social login successful, navigating to appropriate page"
           );
           if (existingUser.role === 'cashier') {
             await router.push('/pos');

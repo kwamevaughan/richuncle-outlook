@@ -5,7 +5,6 @@ import ReCAPTCHA from "react-google-recaptcha";
 import useLogin from "@/hooks/useLogin";
 import SimpleModal from "@/components/SimpleModal";
 
-
 const LoginPage = ({ mode = "light", toggleMode }) => {
   const router = useRouter();
   const {
@@ -28,24 +27,29 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
   const currentYear = new Date().getFullYear();
   const recaptchaRef = useRef(null);
 
-
   // Remove per-page cashier redirect logic
   // (No need for useEffect that redirects cashiers to /pos)
 
   return (
-    <div className={`flex flex-col md:flex-row min-h-screen ${
-      mode === "dark" ? "bg-gray-900" : "bg-login"
-    } pt-0`}>
-      <div className={`w-full md:w-2/5 flex flex-col justify-between overflow-y-auto gap-10 ${
-        mode === "dark" 
-          ? "bg-gray-800/70 backdrop-blur-lg border border-gray-700/30 shadow-xl" 
-          : "bg-white/70 backdrop-blur-lg border border-white/30 shadow-xl"
-      }`}>
+    <div
+      className={`flex flex-col md:flex-row min-h-screen ${
+        mode === "dark" ? "bg-gray-900" : "bg-login"
+      } pt-0`}
+    >
+      <div
+        className={`w-full md:w-2/5 flex flex-col justify-between overflow-y-auto gap-10 ${
+          mode === "dark"
+            ? "bg-gray-800/70 backdrop-blur-lg border border-gray-700/30 shadow-xl"
+            : "bg-white/70 backdrop-blur-lg border border-white/30 shadow-xl"
+        }`}
+      >
         <div className="flex-grow flex flex-col justify-center items-center">
           <div className="w-full max-w-md">
-            <div className={`py-4 px-4 mb-4 shadow-lg hover:shadow-none transition-all duration-500 rounded-lg ${
-              mode === "dark" ? "bg-gray-700/80" : "bg-white/80"
-            }`}>
+            <div
+              className={`py-4 px-4 mb-4 shadow-lg hover:shadow-none transition-all duration-500 rounded-lg ${
+                mode === "dark" ? "bg-gray-700/80" : "bg-white/80"
+              }`}
+            >
               <p
                 className={`text-4xl font-black text-center ${
                   mode === "dark" ? "text-white" : "text-blue-900"
@@ -58,10 +62,16 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
 
           <div className="w-full max-w-md py-4">
             <div className="pb-6 space-y-2">
-              <p className={`text-3xl font-bold ${
-                mode === "dark" ? "text-blue-300" : "text-blue-800"
-              }`}>Welcome back!</p>
-              <p className={mode === "dark" ? "text-gray-300" : "text-blue-900"}>
+              <p
+                className={`text-3xl font-bold ${
+                  mode === "dark" ? "text-blue-300" : "text-blue-800"
+                }`}
+              >
+                Welcome back!
+              </p>
+              <p
+                className={mode === "dark" ? "text-gray-300" : "text-blue-900"}
+              >
                 Access the store dashboard using your email and password.
               </p>
             </div>
@@ -80,14 +90,16 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                     placeholder="Enter your email"
                     onChange={handleLoginChange}
                     className={`w-full rounded-lg py-2.5 md:py-3 px-2 focus:outline-none focus:border-blue-500 ${
-                      mode === "dark" 
-                        ? "bg-gray-700 text-gray-100 placeholder-gray-400 border border-gray-600" 
+                      mode === "dark"
+                        ? "bg-gray-700 text-gray-100 placeholder-gray-400 border border-gray-600"
                         : "bg-white/80 text-blue-950 border border-gray-300"
                     }`}
                   />
-                  <span className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
-                    mode === "dark" ? "text-gray-400" : "text-blue-950"
-                  }`}>
+                  <span
+                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                      mode === "dark" ? "text-gray-400" : "text-blue-950"
+                    }`}
+                  >
                     <Icon icon="heroicons:envelope" className="w-5 h-5" />
                   </span>
                 </div>
@@ -106,8 +118,8 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                     placeholder="Enter your password"
                     onChange={handleLoginChange}
                     className={`w-full rounded-lg py-2.5 md:py-3 px-2 focus:outline-none focus:border-blue-500 ${
-                      mode === "dark" 
-                        ? "bg-gray-700 text-gray-100 placeholder-gray-400 border border-gray-600" 
+                      mode === "dark"
+                        ? "bg-gray-700 text-gray-100 placeholder-gray-400 border border-gray-600"
                         : "bg-white/80 text-blue-950 border border-gray-300"
                     }`}
                   />
@@ -128,9 +140,11 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
 
               <div className="mb-6">
                 <div className="flex flex-col items-center">
-                  <p className={`text-xs mb-2 text-center ${
-                    mode === "dark" ? "text-gray-400" : "text-gray-600"
-                  }`}>
+                  <p
+                    className={`text-xs mb-2 text-center ${
+                      mode === "dark" ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
                     Please verify that you're not a robot
                   </p>
                   <div
@@ -178,9 +192,7 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                       }))
                     }
                     className={`w-5 h-5 flex items-center justify-center border-2 rounded-full cursor-pointer transition-all duration-200 ease-in-out ${
-                      mode === "dark" 
-                        ? "border-gray-400" 
-                        : "border-blue-950"
+                      mode === "dark" ? "border-gray-400" : "border-blue-950"
                     } ${
                       loginData.rememberMe ? "bg-transparent" : "bg-transparent"
                     }`}
@@ -215,8 +227,8 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                     type="button"
                     onClick={() => setShowForgotPasswordModal(true)}
                     className={`font-light text-sm md:text-base hover:underline ${
-                      mode === "dark" 
-                        ? "text-blue-300 hover:text-red-400" 
+                      mode === "dark"
+                        ? "text-blue-300 hover:text-red-400"
                         : "text-blue-950 hover:text-red-600"
                     }`}
                   >
@@ -229,8 +241,8 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                 type="submit"
                 disabled={isRecaptchaLoading || !recaptchaToken}
                 className={`w-full font-bold py-3 rounded-full transform transition-transform duration-700 ease-in-out hover:scale-105 ${
-                  mode === "dark" 
-                    ? "bg-blue-600 text-white hover:bg-blue-700" 
+                  mode === "dark"
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
                     : "bg-blue-900 text-white hover:bg-blue-800"
                 } ${
                   isRecaptchaLoading || !recaptchaToken
@@ -268,7 +280,6 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                 Continue with Facebook
               </button>
             </div> */}
-
           </div>
           <span className={mode === "dark" ? "text-gray-400" : "text-gray-600"}>
             Copyright © {currentYear}, All rights reserved.
@@ -276,9 +287,11 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
         </div>
       </div>
 
-      <div className={`hidden md:block w-full md:w-3/5 ${
-        mode === "dark" ? "bg-gray-800/10" : "bg-blue-950/10"
-      }`}></div>
+      <div
+        className={`hidden md:block w-full md:w-3/5 ${
+          mode === "dark" ? "bg-gray-800/10" : "bg-blue-950/10"
+        }`}
+      ></div>
 
       <SimpleModal
         isOpen={showForgotPasswordModal}
@@ -288,9 +301,12 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
         width="max-w-md"
       >
         <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
-          <label htmlFor="reset-email" className={`text-sm font-medium ${
-            mode === "dark" ? "text-gray-200" : "text-gray-700"
-          }`}>
+          <label
+            htmlFor="reset-email"
+            className={`text-sm font-medium ${
+              mode === "dark" ? "text-gray-200" : "text-gray-700"
+            }`}
+          >
             Enter your email address to reset your password:
           </label>
           <input
@@ -300,8 +316,8 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
             required
             placeholder="Email address"
             className={`w-full rounded-lg py-2 px-3 focus:outline-none focus:border-blue-500 border ${
-              mode === "dark" 
-                ? "bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600" 
+              mode === "dark"
+                ? "bg-gray-700 text-gray-100 placeholder-gray-400 border-gray-600"
                 : "bg-white/80 text-blue-950 border-gray-200"
             }`}
             value={loginData.email}
@@ -310,8 +326,8 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
           <button
             type="submit"
             className={`w-full font-bold py-2 rounded-lg mt-2 transition-all duration-200 ${
-              mode === "dark" 
-                ? "bg-blue-600 text-white hover:bg-blue-700" 
+              mode === "dark"
+                ? "bg-blue-600 text-white hover:bg-blue-700"
                 : "bg-blue-900 text-white hover:bg-blue-800"
             }`}
           >

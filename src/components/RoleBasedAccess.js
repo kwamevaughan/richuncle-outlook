@@ -78,7 +78,7 @@ async function getRoleAllowedPages(roleName) {
   
   // Fallback to default permissions based on role
   if (roleName === 'admin') {
-    return ALL_PAGES;
+    return ['*']; // Admin has access to all pages
   } else if (roleName === 'manager') {
     return ALL_PAGES.filter(page => !['/users', '/roles-permissions'].includes(page));
   } else if (roleName === 'cashier') {
@@ -95,8 +95,17 @@ export default function RoleBasedAccess({ children }) {
   const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    // Skip check if still loading or no user
-    if (loading || !user) return;
+    // If still loading, wait
+    if (loading) {
+      return;
+    }
+    
+    // If no user and not loading, allow access (for login page)
+    if (!user) {
+      setAccessChecked(true);
+      setHasAccess(true);
+      return;
+    }
 
     const checkAccess = async () => {
       const userRole = user.role?.toLowerCase() || 'cashier';
@@ -122,19 +131,19 @@ export default function RoleBasedAccess({ children }) {
         userHasAccess = true;
       }
       
-          if (!userHasAccess) {
-      // Redirect to first allowed page
-      const firstAllowedPage = allowedPages[0] || '/pos';
-      const pageName = currentPath === '/' ? 'Home' : currentPath.replace('/', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      toast.error(`Access denied. You don't have permission to access the "${pageName}" page.`);
-      
-      // Immediate redirect
-      router.push(firstAllowedPage);
-      
-      setAccessChecked(true);
-      setHasAccess(false);
-      return;
-    }
+      if (!userHasAccess) {
+        // Redirect to first allowed page
+        const firstAllowedPage = allowedPages[0] || '/pos';
+        const pageName = currentPath === '/' ? 'Home' : currentPath.replace('/', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        toast.error(`Access denied. You don't have permission to access the "${pageName}" page.`);
+        
+        // Immediate redirect
+        router.push(firstAllowedPage);
+        
+        setAccessChecked(true);
+        setHasAccess(false);
+        return;
+      }
       
       // For cashiers, redirect from home page to POS
       if (userRole === 'cashier' && currentPath === '/') {
