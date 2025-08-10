@@ -8,10 +8,12 @@ import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import SalesReturnItemsEditor from "../components/SalesReturnItemsEditor";
 import toast from 'react-hot-toast';
+import { useRouter } from "next/router";
 
 export default function SalesReturnPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
+  const router = useRouter();
   const {
     salesReturns,
     loading,
@@ -25,6 +27,13 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
   useEffect(() => {
     fetchSalesReturns();
   }, [fetchSalesReturns]);
+
+  // Check for add query parameter to redirect to sales page
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      router.push('/sales');
+    }
+  }, [router.query.add]);
 
   const [expandedRows, setExpandedRows] = useState([]);
   const [rowLineItems, setRowLineItems] = useState({});

@@ -7,10 +7,12 @@ import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
+import { useRouter } from "next/router";
 
 export default function BusinessLocationsPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
+  const router = useRouter();
 
   // Tab state
   const [activeTab, setActiveTab] = useState("stores"); // 'stores' or 'warehouses'
@@ -85,6 +87,15 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
   useEffect(() => {
     fetchAllData();
   }, []);
+
+  // Check for add query parameter to open modal
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      openAddModal();
+      // Remove the query parameter
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [router.query.add]);
 
   // Modal helpers
   const openAddModal = () => {

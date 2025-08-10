@@ -10,8 +10,10 @@ import PurchaseItemsEditor from "../components/PurchaseItemsEditor";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import toast from "react-hot-toast";
+import { useRouter } from "next/router";
 
 export default function PurchasesPage({ mode = "light", toggleMode, ...props }) {
+  const router = useRouter();
   const {
     purchases,
     loading,
@@ -99,6 +101,15 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
     
     return matchesSearch && matchesStatus;
   });
+
+  // Check for add query parameter to open modal
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      openAddModal();
+      // Remove the query parameter
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [router.query.add]);
 
   const openAddModal = () => {
     setEditItem(null);

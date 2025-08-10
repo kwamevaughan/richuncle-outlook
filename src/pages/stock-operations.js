@@ -28,6 +28,15 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
   const [showReverseModal, setShowReverseModal] = useState(false);
   const [adjustmentToReverse, setAdjustmentToReverse] = useState(null);
 
+  // Check for add query parameter to open modal
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      handleOpenAdjustmentModal();
+      // Remove the query parameter
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [router.query.add]);
+
   // Handle opening adjustment modal
   const handleOpenAdjustmentModal = () => {
     setAdjustmentData({

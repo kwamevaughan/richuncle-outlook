@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CategoryCSVExport from "../components/CategoryCSVExport";
 import SimpleModal from "../components/SimpleModal";
 import toast from "react-hot-toast";
@@ -35,6 +35,15 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
     error,
   } = useCategories();
 
+  // Check for add query parameter to open modal
+  useEffect(() => {
+    if (router.query.add === "true") {
+      openAddModal("categories");
+      // Remove the query parameter
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [router.query.add]);
+
   // Filtered data
   const filteredCategories = categories.filter((cat) =>
     cat.name?.toLowerCase().includes(search.toLowerCase())
@@ -69,12 +78,12 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
   const handleDelete = async () => {
     try {
       if (tab === "categories") {
-        const response = await fetch('/api/categories');
+        const response = await fetch("/api/categories");
         const { data, error } = await response.json();
         if (error) throw error;
         setCategories(data || []);
       } else {
-        const response = await fetch('/api/subcategories');
+        const response = await fetch("/api/subcategories");
         const { data, error } = await response.json();
         if (error) throw error;
         setSubCategories(data || []);
@@ -123,7 +132,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
 
   // Fetch categories helper
   const fetchCategories = async () => {
-    const response = await fetch('/api/categories');
+    const response = await fetch("/api/categories");
     const { data, error } = await response.json();
     console.log("fetchCategories - response:", { data, error });
     if (!error) {
@@ -145,10 +154,10 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
     try {
       // Log what will be updated
       console.log("persistCategoryOrder - sending categories:", categories);
-      const response = await fetch('/api/categories', {
-        method: 'PUT',
+      const response = await fetch("/api/categories", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(categories),
       });
@@ -168,10 +177,10 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to add a new category
   const handleAddCategory = async (newCategory) => {
-    const response = await fetch('/api/categories', {
-      method: 'POST',
+    const response = await fetch("/api/categories", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify([newCategory]),
     });
@@ -183,10 +192,10 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to update a category
   const handleUpdateCategory = async (id, updatedFields) => {
-    const response = await fetch('/api/categories', {
-      method: 'PUT',
+    const response = await fetch("/api/categories", {
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify([{ id, ...updatedFields }]),
     });
@@ -199,10 +208,10 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to add a new subcategory
   const handleAddSubCategory = async (newSubCategory) => {
-    const response = await fetch('/api/subcategories', {
-      method: 'POST',
+    const response = await fetch("/api/subcategories", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify([newSubCategory]),
     });
@@ -213,10 +222,10 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
 
   // Add a helper to update a subcategory
   const handleUpdateSubCategory = async (id, updatedFields) => {
-    const response = await fetch('/api/subcategories', {
-      method: 'PUT',
+    const response = await fetch("/api/subcategories", {
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify([{ id, ...updatedFields }]),
     });
@@ -530,4 +539,3 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
     </MainLayout>
   );
 }
-

@@ -53,6 +53,15 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
     fetchCustomers();
   }, []);
 
+  // Check for add query parameter to open modal
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      openAddModal();
+      // Remove the query parameter
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [router.query.add]);
+
   // Modal open/close helpers
   const openAddModal = () => {
     setEditItem(null);

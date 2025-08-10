@@ -41,6 +41,13 @@ export default function SalesPage({ mode = "light", toggleMode, ...props }) {
     }
   }, [loading, sales, router.query.saleId]);
 
+  // Check for add query parameter to redirect to POS
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      router.push('/pos');
+    }
+  }, [router.query.add]);
+
   // Flatten sales data for export to prevent nested object errors
   const flattenedSales = sales.map(sale => ({
     id: String(sale.id || ''),

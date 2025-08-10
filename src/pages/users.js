@@ -20,6 +20,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
   const [stores, setStores] = useState([]);
   const [showExportModal, setShowExportModal] = useState(false);
   const router = useRouter();
+  
   useEffect(() => {
     async function fetchStores() {
       const res = await fetch("/api/stores");
@@ -28,6 +29,15 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
     }
     fetchStores();
   }, []);
+
+  // Check for add query parameter to open modal
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      setShowCreateModal(true);
+      // Remove the query parameter
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [router.query.add]);
   
   const {
     loading,

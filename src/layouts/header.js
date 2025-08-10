@@ -436,63 +436,63 @@ const Header = ({
                             {
                               label: "Store",
                               icon: "mdi:store-outline",
-                              href: "/business-locations",
+                              href: "/business-locations?add=true",
                             },
                             {
                               label: "Category",
                               icon: "mdi:folder-outline",
-                              href: "/category",
+                              href: "/category?add=true",
                             },
                             {
                               label: "Product",
                               icon: "mdi:package-variant",
-                              href: "/products",
+                              href: "/products?add=true",
                             },
 
                             // People & Relationships
                             {
                               label: "User",
                               icon: "mdi:account-outline",
-                              href: "/users",
+                              href: "/users?add=true",
                             },
                             {
                               label: "Customer",
                               icon: "mdi:account-group-outline",
-                              href: "/customers",
+                              href: "/customers?add=true",
                             },
                             {
                               label: "Supplier",
                               icon: "mdi:truck-outline",
-                              href: "/suppliers",
+                              href: "/suppliers?add=true",
                             },
 
                             // Core Business Operations (Most frequently used)
                             {
                               label: "Sale",
                               icon: "mdi:cart-arrow-up",
-                              href: "/sales",
+                              href: "/sales?add=true",
                             },
                             {
                               label: "Purchase",
                               icon: "mdi:cart-arrow-down",
-                              href: "/purchases",
+                              href: "/purchases?add=true",
                             },
                             {
                               label: "Expense",
                               icon: "mdi:cash-minus",
-                              href: "/expenses",
+                              href: "/expenses?add=true",
                             },
 
                             // Inventory Management
                             {
                               label: "Transfer",
                               icon: "mdi:bank-transfer",
-                              href: "/stock-operations",
+                              href: "/stock-operations?add=true",
                             },
                             {
                               label: "Return",
                               icon: "mdi:undo-variant",
-                              href: "/sales-return",
+                              href: "/sales-return?add=true",
                             },
                           ].map((item) => (
                             <Link

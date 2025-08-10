@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/layouts/MainLayout";
 import { Icon } from "@iconify/react";
 import useSuppliers from "../hooks/useSuppliers";
@@ -6,10 +6,12 @@ import SupplierModals from "../components/SupplierModals";
 import { GenericTable } from "../components/GenericTable";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
+import { useRouter } from "next/router";
 
 export default function SuppliersPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
+  const router = useRouter();
   const {
     suppliers,
     loading,
@@ -24,6 +26,15 @@ export default function SuppliersPage({ mode = "light", toggleMode, ...props }) 
   const [editItem, setEditItem] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
+
+  // Check for add query parameter to open modal
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      openAddModal();
+      // Remove the query parameter
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [router.query.add]);
 
   const openAddModal = () => {
     setEditItem(null);

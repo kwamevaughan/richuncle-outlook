@@ -96,6 +96,15 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
     fetchExpenses();
   }, []);
 
+  // Check for add query parameter to open modal
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      openAddModal();
+      // Remove the query parameter
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [router.query.add]);
+
   // Modal open/close helpers
   const openAddModal = () => {
     setEditItem(null);

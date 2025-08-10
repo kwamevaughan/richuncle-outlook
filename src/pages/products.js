@@ -30,6 +30,15 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   // View modal state
   const [viewItem, setViewItem] = useState(null);
 
+  // Check for add query parameter to open modal
+  useEffect(() => {
+    if (router.query.add === 'true') {
+      openAddModal();
+      // Remove the query parameter
+      router.replace(router.pathname, undefined, { shallow: true });
+    }
+  }, [router.query.add]);
+
   // Define columns for the products table
   const columns = [
     { Header: "SKU", accessor: "sku", sortable: true },
