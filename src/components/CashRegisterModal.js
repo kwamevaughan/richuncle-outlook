@@ -4,9 +4,6 @@ import { Icon } from "@iconify/react";
 import { useModal } from "./ModalContext";
 import TooltipIconButton from "./TooltipIconButton";
 import SalesSummary from "./SalesSummary";
-import MovementLog from "./MovementLog";
-import CashInForm from "./CashInForm";
-import CashOutForm from "./CashOutForm";
 import CashCountSection from "./CashCountSection";
 import AddRegisterForm from "./AddRegisterForm";
 import RegisterSelector from "./RegisterSelector";
@@ -32,14 +29,10 @@ const CashRegisterModal = ({
   const [movements, setMovements] = useState([]);
   const [openAmount, setOpenAmount] = useState();
   const [closeAmount, setCloseAmount] = useState();
-  const [cashInAmount, setCashInAmount] = useState();
-  const [cashInReason, setCashInReason] = useState("");
-  const [cashOutAmount, setCashOutAmount] = useState();
-  const [cashOutReason, setCashOutReason] = useState("");
+
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const [showLargeOutConfirm, setShowLargeOutConfirm] = useState(false);
   const [zReport, setZReport] = useState(null);
   const [userMap, setUserMap] = useState({});
   const [closeNote, setCloseNote] = useState("");
@@ -47,10 +40,7 @@ const CashRegisterModal = ({
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportType, setExportType] = useState("products");
 
-  // New state for progressive disclosure
-  const [showHistory, setShowHistory] = useState(false);
-  const [showQuickCashIn, setShowQuickCashIn] = useState(false);
-  const [showQuickCashOut, setShowQuickCashOut] = useState(false);
+
 
   // State to track if auto-selection toast has been shown
   const [autoSelectionToastShown, setAutoSelectionToastShown] = useState(false);
@@ -217,9 +207,38 @@ const CashRegisterModal = ({
               r.success && Array.isArray(r.data) ? r.data : []
             );
           }
-          // Aggregate products from allOrderItems
+          // Aggregate products from allOrderItems with payment method tracking
           allOrderItems.forEach((item) => {
-            const existing = productsSold.find((p) => p.id === item.product_id);
+            // Find the order this item belongs to
+            const order = orders.find(o => o.id === item.order_id);
+            let paymentMethod = 'other';
+            
+            if (order) {
+              let paymentData = order.payment_data;
+              // Parse if string
+              if (typeof paymentData === "string") {
+                try {
+                  paymentData = JSON.parse(paymentData);
+                } catch {}
+              }
+              
+              if (paymentData && Array.isArray(paymentData.payments)) {
+                // Split payment: use the first payment method or mark as 'mixed'
+                if (paymentData.payments.length === 1) {
+                  paymentMethod = (paymentData.payments[0].method || paymentData.payments[0].paymentType || 'other').toLowerCase();
+                } else {
+                  paymentMethod = 'mixed';
+                }
+              } else if (paymentData && (paymentData.paymentType || paymentData.method)) {
+                // Single payment
+                paymentMethod = (paymentData.paymentType || paymentData.method || 'other').toLowerCase();
+              } else if (order.payment_method) {
+                // Fallback to order.payment_method
+                paymentMethod = order.payment_method.toLowerCase();
+              }
+            }
+            
+            const existing = productsSold.find((p) => p.id === item.product_id && p.paymentMethod === paymentMethod);
             if (existing) {
               existing.quantity += item.quantity;
               existing.total += item.total;
@@ -229,6 +248,7 @@ const CashRegisterModal = ({
                 name: item.name,
                 quantity: item.quantity,
                 total: item.total,
+                paymentMethod: paymentMethod,
               });
             }
           });
@@ -279,6 +299,9 @@ const CashRegisterModal = ({
             }
             totalSales += totalOrderAmount;
           });
+          // Sort products by name for better readability
+          productsSold.sort((a, b) => a.name.localeCompare(b.name));
+          
           setSalesSummary({
             paymentBreakdown,
             totalSales,
@@ -362,86 +385,6 @@ const CashRegisterModal = ({
   };
 
   // Cash in
-  const handleCashIn = async () => {
-    if (!canOperate) return;
-    setActionLoading(true);
-    setError("");
-    try {
-      const response = await fetch("/api/cash-movements", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          session_id: session.id,
-          user_id: user.id,
-          type: "cash_in",
-          amount: cashInAmount,
-          reason: cashInReason,
-        }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        setCashInAmount(0);
-        setCashInReason("");
-        setShowQuickCashIn(false);
-        // Refresh movements
-        setActionLoading(true);
-      } else {
-        throw new Error(result.error || "Failed to add cash in");
-      }
-    } catch (err) {
-      setError(err.message || "Failed to add cash in");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Cash out
-  const handleCashOut = async () => {
-    if (!canOperate) return;
-    if (cashOutAmount > 1000) {
-      setShowLargeOutConfirm(true);
-      return;
-    }
-    await doCashOut();
-  };
-
-  const doCashOut = async () => {
-    setActionLoading(true);
-    setError("");
-    try {
-      const response = await fetch("/api/cash-movements", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          session_id: session.id,
-          user_id: user.id,
-          type: "cash_out",
-          amount: cashOutAmount,
-          reason: cashOutReason,
-        }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        setCashOutAmount(0);
-        setCashOutReason("");
-        setShowQuickCashOut(false);
-        setShowLargeOutConfirm(false);
-        // Refresh movements
-        setActionLoading(true);
-      } else {
-        throw new Error(result.error || "Failed to add cash out");
-      }
-    } catch (err) {
-      setError(err.message || "Failed to add cash out");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   // Close register
   const handleCloseRegister = async () => {
     if (!canOperate) return;
@@ -659,6 +602,7 @@ const CashRegisterModal = ({
               user?.role === "cashier" || filteredRegisters.length === 0
             }
             mode={mode}
+            user={user}
           />
           {error && <div className="text-red-600">{error}</div>}
           {loading ? (
@@ -801,209 +745,12 @@ const CashRegisterModal = ({
                   </div>
                 </div>
 
-                {/* Quick Action Buttons */}
-                <div className="grid grid-cols-3 gap-3">
-                  <button
-                    onClick={() => setShowQuickCashIn(true)}
-                    className={`flex items-center justify-center gap-2 text-white px-4 py-3 rounded-lg font-semibold transition-colors ${
-                      mode === "dark"
-                        ? "bg-green-500 hover:bg-green-600"
-                        : "bg-green-600 hover:bg-green-700"
-                    }`}
-                  >
-                    <Icon icon="mdi:plus-circle" className="w-5 h-5" />
-                    <span className="hidden sm:inline">Quick Cash In</span>
-                    <span className="sm:hidden">Cash In</span>
-                  </button>
-                  <button
-                    onClick={() => setShowQuickCashOut(true)}
-                    className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
-                  >
-                    <Icon icon="mdi:minus-circle" className="w-5 h-5" />
-                    <span className="hidden sm:inline">Quick Cash Out</span>
-                    <span className="sm:hidden">Cash Out</span>
-                  </button>
-                  <button
-                    onClick={() => setShowHistory(!showHistory)}
-                    className="flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
-                  >
-                    <Icon
-                      icon={showHistory ? "mdi:chevron-up" : "mdi:chevron-down"}
-                      className="w-5 h-5"
-                    />
-                    <span className="hidden sm:inline">
-                      {showHistory ? "Hide" : "Show"} History
-                    </span>
-                    <span className="sm:hidden">History</span>
-                  </button>
-                </div>
+
               </div>
 
-              {/* Quick Cash In Modal */}
-              {showQuickCashIn && (
-                <div
-                  className={`rounded-xl p-6 shadow-sm border ${
-                    mode === "dark"
-                      ? "bg-gray-800 border-gray-600"
-                      : "bg-white border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h4
-                      className={`font-semibold flex items-center gap-2 ${
-                        mode === "dark" ? "text-white" : "text-gray-900"
-                      }`}
-                    >
-                      <Icon
-                        icon="mdi:plus-circle"
-                        className="w-5 h-5 text-green-600"
-                      />
-                      Quick Cash In
-                    </h4>
-                    <button
-                      onClick={() => setShowQuickCashIn(false)}
-                      className={`${
-                        mode === "dark"
-                          ? "text-gray-400 hover:text-gray-200"
-                          : "text-gray-500 hover:text-gray-700"
-                      }`}
-                    >
-                      <Icon icon="mdi:close" className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input
-                      type="number"
-                      value={cashInAmount || ""}
-                      onChange={(e) => setCashInAmount(Number(e.target.value))}
-                      placeholder="Amount"
-                      className={`border rounded px-3 py-2 ${
-                        mode === "dark"
-                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400"
-                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                      }`}
-                    />
-                    <input
-                      type="text"
-                      value={cashInReason}
-                      onChange={(e) => setCashInReason(e.target.value)}
-                      placeholder="Reason"
-                      className={`border rounded px-3 py-2 ${
-                        mode === "dark"
-                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400"
-                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                      }`}
-                    />
-                    <button
-                      onClick={handleCashIn}
-                      disabled={actionLoading || !cashInAmount || !cashInReason}
-                      className={`text-white rounded px-4 py-2 font-semibold disabled:opacity-50 ${
-                        mode === "dark"
-                          ? "bg-green-500 hover:bg-green-600"
-                          : "bg-green-600 hover:bg-green-700"
-                      }`}
-                    >
-                      {actionLoading ? "Adding..." : "Add Cash In"}
-                    </button>
-                  </div>
-                </div>
-              )}
 
-              {/* Quick Cash Out Modal */}
-              {showQuickCashOut && (
-                <div
-                  className={`rounded-xl p-6 shadow-sm border ${
-                    mode === "dark"
-                      ? "bg-gray-800 border-gray-600"
-                      : "bg-white border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h4
-                      className={`font-semibold flex items-center gap-2 ${
-                        mode === "dark" ? "text-white" : "text-gray-900"
-                      }`}
-                    >
-                      <Icon
-                        icon="mdi:minus-circle"
-                        className="w-5 h-5 text-red-600"
-                      />
-                      Quick Cash Out
-                    </h4>
-                    <button
-                      onClick={() => setShowQuickCashOut(false)}
-                      className={`${
-                        mode === "dark"
-                          ? "text-gray-400 hover:text-gray-200"
-                          : "text-gray-500 hover:text-gray-700"
-                      }`}
-                    >
-                      <Icon icon="mdi:close" className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input
-                      type="number"
-                      value={cashOutAmount || ""}
-                      onChange={(e) => setCashOutAmount(Number(e.target.value))}
-                      placeholder="Amount"
-                      className={`border rounded px-3 py-2 ${
-                        mode === "dark"
-                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400"
-                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                      }`}
-                    />
-                    <input
-                      type="text"
-                      value={cashOutReason}
-                      onChange={(e) => setCashOutReason(e.target.value)}
-                      placeholder="Reason"
-                      className={`border rounded px-3 py-2 ${
-                        mode === "dark"
-                          ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400"
-                          : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
-                      }`}
-                    />
-                    <button
-                      onClick={handleCashOut}
-                      disabled={
-                        actionLoading || !cashOutAmount || !cashOutReason
-                      }
-                      className="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
-                    >
-                      {actionLoading ? "Adding..." : "Add Cash Out"}
-                    </button>
-                  </div>
-                </div>
-              )}
 
-              {/* History Section - Collapsible */}
-              {showHistory && (
-                <div
-                  className={`rounded-xl p-6 shadow-sm border ${
-                    mode === "dark"
-                      ? "bg-gray-800 border-gray-600"
-                      : "bg-white border-gray-200"
-                  }`}
-                >
-                  <h4
-                    className={`font-semibold mb-4 flex items-center gap-2 ${
-                      mode === "dark" ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    <Icon
-                      icon="mdi:history"
-                      className="w-5 h-5 text-gray-600"
-                    />
-                    Movement History
-                  </h4>
-                  <MovementLog
-                    movements={movements}
-                    userMap={userMap}
-                    mode={mode}
-                  />
-                </div>
-              )}
+
 
               {/* Sales Summary */}
               <SalesSummary
@@ -1208,45 +955,6 @@ const CashRegisterModal = ({
         </SimpleModal>
       )}
 
-      {showLargeOutConfirm && (
-        <SimpleModal
-          isOpen={true}
-          onClose={() => setShowLargeOutConfirm(false)}
-          title="Large Cash Out"
-          width="max-w-md"
-          disableOutsideClick={false}
-          mode={mode}
-        >
-          <div className="p-2">
-            <p
-              className={`mb-6 ${
-                mode === "dark" ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              You are about to remove GHS {cashOutAmount} from the register.
-              This is a large amount. Are you sure?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowLargeOutConfirm(false)}
-                className={`flex-1 px-4 py-2 border rounded ${
-                  mode === "dark"
-                    ? "border-gray-600 text-gray-200 bg-gray-700 hover:bg-gray-600"
-                    : "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
-                }`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={doCashOut}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                Confirm Cash Out
-              </button>
-            </div>
-          </div>
-        </SimpleModal>
-      )}
     </>
   );
 };
