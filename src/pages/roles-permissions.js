@@ -436,7 +436,7 @@ export default function RolesPermissionsPage({
     setSaving(true);
     try {
       // Save page permissions
-      const validPagePaths = Array.isArray(editingPagePerms) 
+      let validPagePaths = Array.isArray(editingPagePerms) 
         ? editingPagePerms.filter(path => 
             path && 
             typeof path === 'string' && 
@@ -445,6 +445,23 @@ export default function RolesPermissionsPage({
             path !== undefined
           )
         : [];
+
+      // Auto-include base paths for pages with query parameters
+      // This ensures compatibility with access control that checks base paths
+      const basePaths = new Set();
+      validPagePaths.forEach(path => {
+        if (path.includes('?')) {
+          const basePath = path.split('?')[0];
+          basePaths.add(basePath);
+        }
+      });
+      
+      // Add base paths to the valid paths if they're not already included
+      basePaths.forEach(basePath => {
+        if (!validPagePaths.includes(basePath)) {
+          validPagePaths.push(basePath);
+        }
+      });
 
       const pagePermsRes = await fetch("/api/role-page-permissions", {
         method: "POST",
@@ -943,6 +960,14 @@ export default function RolesPermissionsPage({
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Page Access</h3>
               <p className="text-sm text-gray-600">Select which pages this role can access and see in navigation</p>
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Icon icon="mdi:information" className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-blue-700">
+                    <strong>Note:</strong> When you select specific report tabs (like "Sales Report"), the base "/reports" page access is automatically included to ensure proper navigation.
+                  </div>
+                </div>
+              </div>
             </div>
             
             {/* Select All Pages Checkbox */}

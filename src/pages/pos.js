@@ -9,8 +9,6 @@ import { Icon } from "@iconify/react";
 import PosFooterActions from "@/components/PosFooterActions";
 import ModernOrderReceipt from "@/components/ModernOrderReceipt";
 
-
-
 import PrintReceipt from "@/components/PrintReceipt";
 import OrderHistoryModal from "@/components/OrderHistoryModal";
 import { ModalProvider, useModal } from "@/components/ModalContext";
@@ -20,7 +18,7 @@ import CashRegisterModal from "@/components/CashRegisterModal";
 import PaymentForm from "@/components/PaymentForm";
 import useUsers from "../hooks/useUsers";
 import ReceiptPreviewModal from "@/components/ReceiptPreviewModal";
-import Select from 'react-select';
+import Select from "react-select";
 import SalesReturnModals from "@/components/SalesReturnModals";
 import SalesReturnItemsEditor from "@/components/SalesReturnItemsEditor";
 import { useRouter } from "next/router";
@@ -57,26 +55,32 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const checkSession = async () => {
     setSessionCheckLoading(true);
     // Check for open session for all users (cashiers, managers, admins)
-    const res = await fetch('/api/cash-register-sessions?status=open');
+    const res = await fetch("/api/cash-register-sessions?status=open");
     const data = await res.json();
     setHasOpenSession(data.success && data.data && data.data.length > 0);
     if (!(data.success && data.data && data.data.length > 0)) {
-      import('react-hot-toast').then(({ toast }) => toast.error('You must open a cash register before making sales.'));
+      import("react-hot-toast").then(({ toast }) =>
+        toast.error("You must open a cash register before making sales.")
+      );
       setAutoShowRegister(true);
     } else {
       setAutoShowRegister(false);
     }
     setSessionCheckLoading(false);
   };
-  useEffect(() => { checkSession(); }, [user]);
+  useEffect(() => {
+    checkSession();
+  }, [user]);
 
   useEffect(() => {
     async function fetchDiscounts() {
       try {
-        const response = await fetch('/api/discounts');
+        const response = await fetch("/api/discounts");
         const result = await response.json();
         if (result.success) {
-          const activeDiscounts = (result.data || []).filter(d => d.is_active);
+          const activeDiscounts = (result.data || []).filter(
+            (d) => d.is_active
+          );
           setDiscounts(activeDiscounts);
         }
       } catch (err) {
@@ -89,10 +93,12 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   useEffect(() => {
     async function fetchCustomers() {
       try {
-        const response = await fetch('/api/customers');
+        const response = await fetch("/api/customers");
         const result = await response.json();
         if (result.success) {
-          const activeCustomers = (result.data || []).filter(c => c.is_active).sort((a, b) => a.name.localeCompare(b.name));
+          const activeCustomers = (result.data || [])
+            .filter((c) => c.is_active)
+            .sort((a, b) => a.name.localeCompare(b.name));
           setCustomers(activeCustomers);
         }
       } catch (err) {
@@ -105,17 +111,18 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   // Calculate total for footer
   const calculateTotal = () => {
     const subtotal = selectedProducts.reduce((sum, id) => {
-      const product = products.find(p => p.id === id);
+      const product = products.find((p) => p.id === id);
       const qty = quantities[id] || 1;
-      return product ? sum + (product.price * qty) : sum;
+      return product ? sum + product.price * qty : sum;
     }, 0);
-    
+
     // Calculate discount
     let discount = 0;
     if (selectedDiscountId) {
-      const discountObj = discounts.find(d => d.id === selectedDiscountId);
+      const discountObj = discounts.find((d) => d.id === selectedDiscountId);
       if (discountObj) {
-        const discountType = discountObj.discount_type || discountObj.type || "percentage";
+        const discountType =
+          discountObj.discount_type || discountObj.type || "percentage";
         if (discountType === "percentage") {
           discount = Math.round(subtotal * (Number(discountObj.value) / 100));
         } else {
@@ -123,30 +130,31 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         }
       }
     }
-    
+
     // Calculate tax based on product tax configuration
     const tax = selectedProducts.reduce((sum, id) => {
-      const product = products.find(p => p.id === id);
+      const product = products.find((p) => p.id === id);
       const qty = quantities[id] || 1;
-      if (!product || !product.tax_percentage || product.tax_percentage <= 0) return sum;
-      
+      if (!product || !product.tax_percentage || product.tax_percentage <= 0)
+        return sum;
+
       const taxPercentage = Number(product.tax_percentage);
       let itemTax = 0;
-      
-      if (product.tax_type === 'exclusive') {
+
+      if (product.tax_type === "exclusive") {
         // Tax is added on top of the price
-        itemTax = (product.price * taxPercentage / 100) * qty;
-      } else if (product.tax_type === 'inclusive') {
+        itemTax = ((product.price * taxPercentage) / 100) * qty;
+      } else if (product.tax_type === "inclusive") {
         // Tax is included in the price, so we need to extract it
         const priceWithoutTax = product.price / (1 + taxPercentage / 100);
         itemTax = (product.price - priceWithoutTax) * qty;
       }
-      
+
       return sum + itemTax;
     }, 0);
-    
+
     const roundoff = roundoffEnabled ? 0 : 0; // For now, roundoff is 0
-    
+
     // Calculate total
     const total = subtotal + tax - discount + roundoff;
     return total;
@@ -160,31 +168,35 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       setShowNoOrderModal(true);
       return;
     }
-    
-    console.log('Printing last receipt with data:', lastOrderData);
-    
+
+    console.log("Printing last receipt with data:", lastOrderData);
+
     // Prepare data for PrintReceipt
     const printReceipt = PrintReceipt({
       orderId: lastOrderData.id,
-      selectedProducts: lastOrderData.items?.map(item => item.productId) || [],
-      quantities: lastOrderData.items?.reduce((acc, item) => {
-        acc[item.productId] = item.quantity;
-        return acc;
-      }, {}) || {},
-      products: lastOrderData.items?.map(item => ({
-        id: item.productId,
-        name: item.name,
-        price: item.price
-      })) || [],
+      selectedProducts:
+        lastOrderData.items?.map((item) => item.productId) || [],
+      quantities:
+        lastOrderData.items?.reduce((acc, item) => {
+          acc[item.productId] = item.quantity;
+          return acc;
+        }, {}) || {},
+      products:
+        lastOrderData.items?.map((item) => ({
+          id: item.productId,
+          name: item.name,
+          price: item.price,
+        })) || [],
       subtotal: lastOrderData.subtotal || 0,
       tax: lastOrderData.tax || 0,
       discount: lastOrderData.discount || 0,
       total: lastOrderData.total || 0,
-      selectedCustomerId: lastOrderData.customer_id || lastOrderData.customerId || '',
+      selectedCustomerId:
+        lastOrderData.customer_id || lastOrderData.customerId || "",
       customers: customers,
       paymentData: lastOrderData.payment || lastOrderData.payment_data || {},
       order: lastOrderData,
-      originalTimestamp: lastOrderData.timestamp
+      originalTimestamp: lastOrderData.timestamp,
     });
     printReceipt.printOrder();
   }, [lastOrderData, customers]);
@@ -220,15 +232,15 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   useEffect(() => {
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 100);
-    setOrderId(`RUO${timestamp}${random.toString().padStart(2, '0')}`);
+    setOrderId(`RUO${timestamp}${random.toString().padStart(2, "0")}`);
   }, []);
 
   // On POS page load, restore lastOrderData from localStorage if available
   useEffect(() => {
-    const saved = localStorage.getItem('lastOrderData');
+    const saved = localStorage.getItem("lastOrderData");
     if (saved) {
       const parsedData = JSON.parse(saved);
-      console.log('Loaded lastOrderData from localStorage:', parsedData);
+      console.log("Loaded lastOrderData from localStorage:", parsedData);
       setLastOrderData(parsedData);
     }
   }, []);
@@ -238,7 +250,10 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [salesReturnReference, setSalesReturnReference] = useState("");
   const [salesReturnLineItems, setSalesReturnLineItems] = useState([]);
   const [salesReturnProducts, setSalesReturnProducts] = useState([]);
-  const [salesReturnReferenceOrderProducts, setSalesReturnReferenceOrderProducts] = useState([]);
+  const [
+    salesReturnReferenceOrderProducts,
+    setSalesReturnReferenceOrderProducts,
+  ] = useState([]);
 
   // Memoize the header component to prevent unnecessary re-renders
   const headerComponent = useMemo(() => {
@@ -260,18 +275,32 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         registers={registers}
       />
     );
-  }, [handlePrintLastReceipt, lastOrderData, setShowOrderHistory, showCashRegister, setShowCashRegister, showSalesReturnModal, setShowSalesReturnModal, selectedStoreId, setSelectedStoreId, stores, selectedRegister, setSelectedRegister, registers]);
+  }, [
+    handlePrintLastReceipt,
+    lastOrderData,
+    setShowOrderHistory,
+    showCashRegister,
+    setShowCashRegister,
+    showSalesReturnModal,
+    setShowSalesReturnModal,
+    selectedStoreId,
+    setSelectedStoreId,
+    stores,
+    selectedRegister,
+    setSelectedRegister,
+    registers,
+  ]);
 
   // Memoize the onOrderComplete callback
   // When an order is finalized (in handleOrderComplete), generate a new orderId for the next order:
   const handleOrderComplete = useCallback((orderData) => {
-    setReloadProducts(r => r + 1);
+    setReloadProducts((r) => r + 1);
     setLastOrderData(orderData);
-    localStorage.setItem('lastOrderData', JSON.stringify(orderData));
+    localStorage.setItem("lastOrderData", JSON.stringify(orderData));
     // Generate new orderId for next order
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 100);
-    setOrderId(`RUO${timestamp}${random.toString().padStart(2, '0')}`);
+    setOrderId(`RUO${timestamp}${random.toString().padStart(2, "0")}`);
   }, []);
 
   const { users: allUsers } = useUsers();
@@ -286,28 +315,34 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   // Update processCompleteTransaction to accept paymentInfo
   const processCompleteTransaction = async (paymentInfo) => {
     if (!paymentInfo) {
-      import('react-hot-toast').then(({ toast }) => toast.error('Please complete payment details first'));
+      import("react-hot-toast").then(({ toast }) =>
+        toast.error("Please complete payment details first")
+      );
       return;
     }
     if (selectedProducts.length === 0) {
-      import('react-hot-toast').then(({ toast }) => toast.error('Please add products to the order'));
+      import("react-hot-toast").then(({ toast }) =>
+        toast.error("Please add products to the order")
+      );
       return;
     }
     if (!selectedStoreId) {
-      import('react-hot-toast').then(({ toast }) => toast.error('Please select a store first'));
+      import("react-hot-toast").then(({ toast }) =>
+        toast.error("Please select a store first")
+      );
       return;
     }
     let orderData = null;
     let paymentResult = null;
     let processingToast = null;
     try {
-      const { toast } = await import('react-hot-toast');
-      processingToast = toast.loading('Processing order...');
-      if (paymentInfo.paymentType === 'split') {
+      const { toast } = await import("react-hot-toast");
+      processingToast = toast.loading("Processing order...");
+      if (paymentInfo.paymentType === "split") {
         paymentResult = {
           success: true,
-          method: 'split',
-          paymentType: 'split',
+          method: "split",
+          paymentType: "split",
           totalPaid: paymentInfo.total - paymentInfo.remainingAmount,
           payments: paymentInfo.splitPayments,
           splitPayments: paymentInfo.splitPayments,
@@ -315,7 +350,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           remainingAmount: paymentInfo.remainingAmount,
           payingAmount: paymentInfo.payingAmount,
           receivedAmount: paymentInfo.receivedAmount,
-          change: paymentInfo.change || 0
+          change: paymentInfo.change || 0,
         };
       } else {
         paymentResult = {
@@ -326,68 +361,78 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           payingAmount: paymentInfo.payingAmount,
           receivedAmount: paymentInfo.receivedAmount,
           change: paymentInfo.change,
-          reference: paymentInfo.referenceNumber || null
+          reference: paymentInfo.referenceNumber || null,
         };
       }
-      let paymentReceiverName = 'Unknown';
+      let paymentReceiverName = "Unknown";
       if (paymentInfo.paymentReceiver && allUsers && allUsers.length > 0) {
-        const receiverUser = allUsers.find(u => u.id === paymentInfo.paymentReceiver);
-        paymentReceiverName = receiverUser?.full_name || receiverUser?.name || receiverUser?.email || paymentInfo.paymentReceiver;
+        const receiverUser = allUsers.find(
+          (u) => u.id === paymentInfo.paymentReceiver
+        );
+        paymentReceiverName =
+          receiverUser?.full_name ||
+          receiverUser?.name ||
+          receiverUser?.email ||
+          paymentInfo.paymentReceiver;
       } else {
-        paymentReceiverName = user?.full_name || user?.email || 'Unknown';
+        paymentReceiverName = user?.full_name || user?.email || "Unknown";
       }
       // Find selected customer
-      let customerId = '';
-      let selectedCustomerName = '';
-      
+      let customerId = "";
+      let selectedCustomerName = "";
+
       // First check if customer info is in paymentInfo
       if (paymentInfo.customerId) {
         customerId = paymentInfo.customerId;
-        selectedCustomerName = customers.find(c => c.id === paymentInfo.customerId)?.name || 'Walk In Customer';
+        selectedCustomerName =
+          customers.find((c) => c.id === paymentInfo.customerId)?.name ||
+          "Walk In Customer";
       } else if (paymentInfo.customer && paymentInfo.customer.id) {
         customerId = paymentInfo.customer.id;
-        selectedCustomerName = paymentInfo.customer.name || 'Walk In Customer';
+        selectedCustomerName = paymentInfo.customer.name || "Walk In Customer";
       } else {
         // Fall back to the selectedCustomerId state variable
-        customerId = selectedCustomerId || '';
-        if (selectedCustomerId === '__online__') {
-          selectedCustomerName = 'Online Purchase';
-        } else if (selectedCustomerId && selectedCustomerId.startsWith('db_')) {
+        customerId = selectedCustomerId || "";
+        if (selectedCustomerId === "__online__") {
+          selectedCustomerName = "Online Purchase";
+        } else if (selectedCustomerId && selectedCustomerId.startsWith("db_")) {
           // Handle database customer selection (remove db_ prefix for lookup)
-          const actualCustomerId = selectedCustomerId.replace('db_', '');
-          const customer = customers.find(c => c.id === actualCustomerId);
-          selectedCustomerName = customer?.name || 'Walk In Customer';
+          const actualCustomerId = selectedCustomerId.replace("db_", "");
+          const customer = customers.find((c) => c.id === actualCustomerId);
+          selectedCustomerName = customer?.name || "Walk In Customer";
           customerId = actualCustomerId; // Use the actual customer ID without prefix
         } else if (selectedCustomerId) {
-          selectedCustomerName = customers.find(c => c.id === selectedCustomerId)?.name || 'Walk In Customer';
+          selectedCustomerName =
+            customers.find((c) => c.id === selectedCustomerId)?.name ||
+            "Walk In Customer";
         } else {
-          selectedCustomerName = 'Walk In Customer';
+          selectedCustomerName = "Walk In Customer";
         }
       }
-      
-      console.log('Customer processing:', {
+
+      console.log("Customer processing:", {
         paymentInfoCustomerId: paymentInfo.customerId,
         paymentInfoCustomer: paymentInfo.customer,
         selectedCustomerId: selectedCustomerId,
         finalCustomerId: customerId,
         finalCustomerName: selectedCustomerName,
-        customers: customers.length
+        customers: customers.length,
       });
       // Debug logs for product selection and order item building
-      console.log('selectedProducts:', selectedProducts);
-      console.log('products:', products);
+      console.log("selectedProducts:", selectedProducts);
+      console.log("products:", products);
 
-      const items = selectedProducts.map(id => {
-        const product = products.find(p => p.id === id);
-        console.log('Building order item for:', id, product);
+      const items = selectedProducts.map((id) => {
+        const product = products.find((p) => p.id === id);
+        console.log("Building order item for:", id, product);
         const qty = quantities[id] || 1;
         const itemSubtotal = product.price * qty;
         let itemTax = 0;
         if (product && product.tax_percentage && product.tax_percentage > 0) {
           const taxPercentage = Number(product.tax_percentage);
-          if (product.tax_type === 'exclusive') {
-            itemTax = (product.price * taxPercentage / 100) * qty;
-          } else if (product.tax_type === 'inclusive') {
+          if (product.tax_type === "exclusive") {
+            itemTax = ((product.price * taxPercentage) / 100) * qty;
+          } else if (product.tax_type === "inclusive") {
             const priceWithoutTax = product.price / (1 + taxPercentage / 100);
             itemTax = (product.price - priceWithoutTax) * qty;
           }
@@ -398,19 +443,19 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           quantity: qty,
           price: product.price,
           costPrice: product.cost_price || 0,
-          taxType: product.tax_type || 'exclusive',
+          taxType: product.tax_type || "exclusive",
           taxPercentage: product.tax_percentage || 0,
           itemTax: itemTax,
-          total: itemSubtotal
+          total: itemSubtotal,
         };
       });
-      console.log('Order items being built:', items);
+      console.log("Order items being built:", items);
       // Use the selected store ID (for admin/manager) or register's store (for cashier)
       const storeId = selectedStoreId;
       orderData = {
         id: orderId,
-        customer_id: customerId || '',
-        customer_name: selectedCustomerName || 'Walk In Customer',
+        customer_id: customerId || "",
+        customer_name: selectedCustomerName || "Walk In Customer",
         subtotal: 0, // You may want to calculate this
         tax: 0, // You may want to calculate this
         discount: 0, // You may want to calculate this
@@ -423,17 +468,17 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         staff_note: paymentInfo.staffNote,
         timestamp: new Date().toISOString(),
         payment_receiver_name: paymentReceiverName,
-        order_type: 'pos',
-        status: 'Completed',
+        order_type: "pos",
+        status: "Completed",
         register_id: selectedRegister,
         session_id: currentSessionId,
         store_id: storeId,
         // Add other columns as needed
       };
       // Insert or update order in 'orders' table
-      const response = await fetch('/api/orders', {
-        method: isResumingOrder ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/orders", {
+        method: isResumingOrder ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
       });
       const orderResJson = await response.json();
@@ -441,18 +486,24 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       // Handle order items - delete existing items for resumed orders, then insert new ones
       if (isResumingOrder) {
         // Delete existing order items for this order
-        const deleteResponse = await fetch(`/api/order-items?order_id=${orderData.id}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-        });
+        const deleteResponse = await fetch(
+          `/api/order-items?order_id=${orderData.id}`,
+          {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
         const deleteResult = await deleteResponse.json();
         if (deleteResult.error) {
-          console.warn('Failed to delete existing order items:', deleteResult.error);
+          console.warn(
+            "Failed to delete existing order items:",
+            deleteResult.error
+          );
         }
       }
-      
+
       // Insert order items into 'order_items' table
-      const itemsToInsert = items.map(item => ({
+      const itemsToInsert = items.map((item) => ({
         order_id: orderData.id,
         product_id: item.productId,
         name: item.name,
@@ -463,78 +514,93 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         tax_type: item.taxType,
         tax_percentage: item.taxPercentage,
         item_tax: item.itemTax,
-        total: item.total
+        total: item.total,
       }));
-      const itemsResponse = await fetch('/api/order-items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const itemsResponse = await fetch("/api/order-items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(itemsToInsert),
       });
       const itemsResJson = await itemsResponse.json();
       if (itemsResJson.error) throw itemsResJson.error;
       // Update stock quantities for each product
       for (const item of items) {
-        const product = products.find(p => p.id === item.productId);
+        const product = products.find((p) => p.id === item.productId);
         const newQty = (product?.quantity || 0) - item.quantity;
         const updateResponse = await fetch(`/api/products/${item.productId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ quantity: newQty }),
         });
         const updateResJson = await updateResponse.json();
         if (updateResJson.error) {
-          console.error(`Failed to update stock for product ${item.productId}:`, updateResJson.error.message);
+          console.error(
+            `Failed to update stock for product ${item.productId}:`,
+            updateResJson.error.message
+          );
         }
       }
       // Play success sound
-      const { playBellBeep } = await import('../utils/posSounds');
+      const { playBellBeep } = await import("../utils/posSounds");
       playBellBeep();
       // Dismiss processing toast
       toast.dismiss(processingToast);
-      
+
       // Auto-print receipt instead of showing preview modal
-      console.log('Attempting to print receipt with data:', {
+      console.log("Attempting to print receipt with data:", {
         orderId: orderData.id,
         selectedProducts,
         quantities,
         products: products.length,
-        subtotal: calculateTotal() - (selectedDiscountId ? discounts.find(d => d.id === selectedDiscountId)?.value || 0 : 0),
+        subtotal:
+          calculateTotal() -
+          (selectedDiscountId
+            ? discounts.find((d) => d.id === selectedDiscountId)?.value || 0
+            : 0),
         tax: 0,
-        discount: selectedDiscountId ? discounts.find(d => d.id === selectedDiscountId)?.value || 0 : 0,
+        discount: selectedDiscountId
+          ? discounts.find((d) => d.id === selectedDiscountId)?.value || 0
+          : 0,
         total: totalPayable,
-        selectedCustomerId: customerId || '',
+        selectedCustomerId: customerId || "",
         customers: customers.length,
         paymentData: paymentResult,
       });
-      
+
       const printReceipt = PrintReceipt({
         orderId: orderData.id,
         selectedProducts: selectedProducts,
         quantities: quantities,
         products: products,
-        subtotal: calculateTotal() - (selectedDiscountId ? discounts.find(d => d.id === selectedDiscountId)?.value || 0 : 0),
+        subtotal:
+          calculateTotal() -
+          (selectedDiscountId
+            ? discounts.find((d) => d.id === selectedDiscountId)?.value || 0
+            : 0),
         tax: 0, // Calculate if needed
-        discount: selectedDiscountId ? discounts.find(d => d.id === selectedDiscountId)?.value || 0 : 0,
+        discount: selectedDiscountId
+          ? discounts.find((d) => d.id === selectedDiscountId)?.value || 0
+          : 0,
         total: totalPayable,
-        selectedCustomerId: customerId || '',
+        selectedCustomerId: customerId || "",
         customers: customers,
         paymentData: paymentResult,
         order: { ...orderData, items },
       });
-      
-      console.log('PrintReceipt instance created:', printReceipt);
+
+      console.log("PrintReceipt instance created:", printReceipt);
       const printSuccess = printReceipt.printOrder();
-      console.log('Print result:', printSuccess);
-      
+      console.log("Print result:", printSuccess);
+
       if (printSuccess) {
         toast.success("Order completed and receipt printed!");
       } else {
         toast.success("Order completed successfully!");
       }
-      
+
       setShowSuccessModal(false);
       setSuccessOrderData(null);
-      setReloadProducts(r => r + 1);
+      setReloadProducts((r) => r + 1);
       // Set lastOrderData for Print Last Receipt
       const paymentInfoWithName = {
         ...paymentInfo,
@@ -544,7 +610,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         ...orderData,
         items,
         payment: paymentInfoWithName,
-        customerId: customerId || '',
+        customerId: customerId || "",
       });
       // Reset order state
       setSelectedProducts([]);
@@ -557,13 +623,17 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       // Generate new order ID
       const timestamp = Date.now().toString().slice(-6);
       const random = Math.floor(Math.random() * 100);
-      setOrderId(`RUO${timestamp}${random.toString().padStart(2, '0')}`);
+      setOrderId(`RUO${timestamp}${random.toString().padStart(2, "0")}`);
     } catch (error) {
       if (processingToast) {
-        import('react-hot-toast').then(({ toast }) => toast.dismiss(processingToast));
+        import("react-hot-toast").then(({ toast }) =>
+          toast.dismiss(processingToast)
+        );
       }
-      import('react-hot-toast').then(({ toast }) => toast.error('Transaction failed. Please try again.'));
-      console.error('Transaction failed:', error);
+      import("react-hot-toast").then(({ toast }) =>
+        toast.error("Transaction failed. Please try again.")
+      );
+      console.error("Transaction failed:", error);
     }
   };
 
@@ -572,14 +642,21 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     if (selectedProducts.length === 0) return;
     // Block printing if no payment info
     const payment = lastPaymentData || paymentData;
-    if (!payment || !payment.paymentType || isNaN(payment.payingAmount) || payment.payingAmount === undefined) {
-      import('react-hot-toast').then(({ toast }) => toast.error('Complete payment before printing the receipt.'));
+    if (
+      !payment ||
+      !payment.paymentType ||
+      isNaN(payment.payingAmount) ||
+      payment.payingAmount === undefined
+    ) {
+      import("react-hot-toast").then(({ toast }) =>
+        toast.error("Complete payment before printing the receipt.")
+      );
       return;
     }
     const subtotal = selectedProducts.reduce((sum, id) => {
-      const product = products.find(p => p.id === id);
+      const product = products.find((p) => p.id === id);
       const qty = quantities[id] || 1;
-      return product ? sum + (product.price * qty) : sum;
+      return product ? sum + product.price * qty : sum;
     }, 0);
     const printReceipt = PrintReceipt({
       orderId,
@@ -590,7 +667,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       tax: 0,
       discount: 0,
       total: totalPayable,
-      selectedCustomerId: selectedCustomerId || '', // Use the actual selected customer
+      selectedCustomerId: selectedCustomerId || "", // Use the actual selected customer
       customers,
       paymentData: payment,
       order: lastOrderData,
@@ -627,7 +704,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
 
   // Build orderedProducts for the current order (quantity > 0)
   const orderedProducts = Array.isArray(products)
-    ? products.filter(p => selectedProducts.includes(p.id))
+    ? products.filter((p) => selectedProducts.includes(p.id))
     : [];
 
   // At the top of POS component, add:
@@ -640,56 +717,59 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       try {
         const [registersResponse, storesResponse] = await Promise.all([
           fetch("/api/registers"),
-          fetch("/api/stores")
+          fetch("/api/stores"),
         ]);
-        
+
         const registersResult = await registersResponse.json();
         const storesResult = await storesResponse.json();
-        
-        console.log('[POS] Registers fetched:', registersResult.data);
-        console.log('[POS] Stores fetched:', storesResult.data);
-        
+
+        console.log("[POS] Registers fetched:", registersResult.data);
+        console.log("[POS] Stores fetched:", storesResult.data);
+
         if (registersResult.success) {
           setRegisters(registersResult.data || []);
         }
-        
+
         if (storesResult.success) {
           setStores(storesResult.data || []);
         }
       } catch (err) {
-        console.error('[POS] Failed to fetch data:', err);
+        console.error("[POS] Failed to fetch data:", err);
       }
     })();
   }, []);
 
   useEffect(() => {
-    fetch('/api/orders')
-      .then(res => res.json())
+    fetch("/api/orders")
+      .then((res) => res.json())
       .then(({ data }) => setOrders(data || []));
   }, []);
 
   // Initialize store selection based on user role
   useEffect(() => {
     if (user && stores.length > 0) {
-      if (user.role === 'cashier' && user.store_id) {
+      if (user.role === "cashier" && user.store_id) {
         // Cashier: use assigned store
         setSelectedStoreId(user.store_id);
-        
+
         // Show toast for cashier's assigned store
-        const assignedStore = stores.find(s => s.id === user.store_id);
+        const assignedStore = stores.find((s) => s.id === user.store_id);
         if (assignedStore) {
-          import('react-hot-toast').then(({ toast }) => {
+          import("react-hot-toast").then(({ toast }) => {
             toast.success(`Working on assigned store: ${assignedStore.name}`);
           });
         }
-      } else if ((user.role === 'admin' || user.role === 'manager') && !selectedStoreId) {
+      } else if (
+        (user.role === "admin" || user.role === "manager") &&
+        !selectedStoreId
+      ) {
         // Admin/Manager: default to first store if none selected
         const defaultStore = stores[0];
         setSelectedStoreId(defaultStore?.id);
-        
+
         // Show toast for default store selection
         if (defaultStore) {
-          import('react-hot-toast').then(({ toast }) => {
+          import("react-hot-toast").then(({ toast }) => {
             toast.success(`Default store selected: ${defaultStore.name}`);
           });
         }
@@ -699,9 +779,16 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
 
   // After fetching registers, filter by selected store:
   useEffect(() => {
-    if (registers && registers.length > 0 && selectedStoreId && !selectedRegister) {
+    if (
+      registers &&
+      registers.length > 0 &&
+      selectedStoreId &&
+      !selectedRegister
+    ) {
       // Filter registers by selected store
-      const storeRegisters = registers.filter(r => r.store_id === selectedStoreId);
+      const storeRegisters = registers.filter(
+        (r) => r.store_id === selectedStoreId
+      );
       if (storeRegisters.length > 0) {
         setSelectedRegister(storeRegisters[0].id);
       }
@@ -710,7 +797,12 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
 
   // Add this effect in pos.js:
   useEffect(() => {
-    if ((showCashRegister || autoShowRegister) && !selectedRegister && registers && registers.length > 0) {
+    if (
+      (showCashRegister || autoShowRegister) &&
+      !selectedRegister &&
+      registers &&
+      registers.length > 0
+    ) {
       setSelectedRegister(registers[0].id);
     }
   }, [showCashRegister, autoShowRegister, selectedRegister, registers]);
@@ -733,13 +825,20 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   }, [salesReturnReference]);
 
   useEffect(() => {
-    function handleLayaways() { setShowRetrieveLayaways(true); }
-    function handleOrders() { setShowRetrieveSales(true); }
-    window.addEventListener('open-retrieve-layaways-modal', handleLayaways);
-    window.addEventListener('open-retrieve-orders-modal', handleOrders);
+    function handleLayaways() {
+      setShowRetrieveLayaways(true);
+    }
+    function handleOrders() {
+      setShowRetrieveSales(true);
+    }
+    window.addEventListener("open-retrieve-layaways-modal", handleLayaways);
+    window.addEventListener("open-retrieve-orders-modal", handleOrders);
     return () => {
-      window.removeEventListener('open-retrieve-layaways-modal', handleLayaways);
-      window.removeEventListener('open-retrieve-orders-modal', handleOrders);
+      window.removeEventListener(
+        "open-retrieve-layaways-modal",
+        handleLayaways
+      );
+      window.removeEventListener("open-retrieve-orders-modal", handleOrders);
     };
   }, []);
 
@@ -747,10 +846,24 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     if (!router.isReady) return;
     if (router.query.open === "layaways") {
       setShowRetrieveLayaways(true);
-      router.replace({ pathname: router.pathname, query: { ...router.query, open: undefined } }, undefined, { shallow: true });
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { ...router.query, open: undefined },
+        },
+        undefined,
+        { shallow: true }
+      );
     } else if (router.query.open === "orders") {
       setShowRetrieveSales(true);
-      router.replace({ pathname: router.pathname, query: { ...router.query, open: undefined } }, undefined, { shallow: true });
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { ...router.query, open: undefined },
+        },
+        undefined,
+        { shallow: true }
+      );
     }
   }, [router.isReady, router.query.open]);
 
@@ -824,7 +937,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             setSelectedCustomerId={setSelectedCustomerId}
             mode={mode}
           />
-          
+
           <PosProductList
             user={user}
             className="w-full lg:w-2/5 min-h-0 overflow-auto order-1 lg:order-2"
@@ -1118,7 +1231,10 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                 splitPayments: paymentData.splitPayments || [],
                 total: paymentData.total || modernReceiptData.total,
                 remainingAmount: paymentData.remainingAmount || 0,
-                receivedAmount: paymentData.receivedAmount || paymentData.amount || modernReceiptData.total,
+                receivedAmount:
+                  paymentData.receivedAmount ||
+                  paymentData.amount ||
+                  modernReceiptData.total,
                 change: paymentData.change || 0,
               };
               const printReceipt = PrintReceipt({
@@ -1187,8 +1303,8 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
                 }
                 isClearable
                 placeholder={
-                  holdLayawayType === "layaway" 
-                    ? "Search customer..." 
+                  holdLayawayType === "layaway"
+                    ? "Search customer..."
                     : "Search customer (optional)..."
                 }
                 classNamePrefix="react-select"

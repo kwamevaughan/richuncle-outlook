@@ -35,6 +35,12 @@ let rolePagePermissionsCache = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Function to clear cache (useful for testing)
+export function clearRolePermissionsCache() {
+  rolePagePermissionsCache = null;
+  cacheTimestamp = 0;
+}
+
 // Fetch role page permissions from database
 async function fetchRolePagePermissions() {
   const now = Date.now();
@@ -131,7 +137,25 @@ export default function RoleBasedAccess({ children }) {
           userHasAccess = true;
         } else {
           // User has specific allowed pages
+          // Check for exact path match first
           userHasAccess = allowedPages.includes(currentPath);
+          
+          // If no exact match, check if any allowed page starts with current path
+          // This handles cases where permissions are set for specific tabs like /reports?tab=sales
+          // but user is accessing the base /reports page
+          if (!userHasAccess) {
+            userHasAccess = allowedPages.some(allowedPath => {
+              // Extract base path from allowed path (remove query parameters)
+              const basePath = allowedPath.split('?')[0];
+              return basePath === currentPath;
+            });
+          }
+          
+          // Also check the reverse - if current path has query params but allowed path is base
+          if (!userHasAccess && router.asPath.includes('?')) {
+            const currentBasePath = currentPath;
+            userHasAccess = allowedPages.includes(currentBasePath);
+          }
         }
       } catch (error) {
         console.error("Error checking page access:", error);
