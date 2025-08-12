@@ -59,12 +59,16 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     const data = await res.json();
     setHasOpenSession(data.success && data.data && data.data.length > 0);
     if (!(data.success && data.data && data.data.length > 0)) {
-      import("react-hot-toast").then(({ toast }) =>
-        toast.error("You must open a cash register before making sales.")
-      );
+      if (!cashRegisterToastShown) {
+        import("react-hot-toast").then(({ toast }) =>
+          toast.error("You must open a cash register before making sales.")
+        );
+        setCashRegisterToastShown(true);
+      }
       setAutoShowRegister(true);
     } else {
       setAutoShowRegister(false);
+      setCashRegisterToastShown(false); // Reset when session is available
     }
     setSessionCheckLoading(false);
   };
@@ -698,6 +702,12 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [showRetrieveLayaways, setShowRetrieveLayaways] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [saleNote, setSaleNote] = useState("");
+  
+  // State to track if store assignment toasts have been shown
+  const [storeAssignmentToastShown, setStoreAssignmentToastShown] = useState(false);
+  
+  // State to track if cash register toast has been shown
+  const [cashRegisterToastShown, setCashRegisterToastShown] = useState(false);
   const [showLayawayPaymentForm, setShowLayawayPaymentForm] = useState(false);
   const [layawayOutstanding, setLayawayOutstanding] = useState(0);
   const [layawayOrder, setLayawayOrder] = useState(null);
@@ -747,17 +757,20 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
 
   // Initialize store selection based on user role
   useEffect(() => {
-    if (user && stores.length > 0) {
+    if (user && stores.length > 0 && !storeAssignmentToastShown) {
       if (user.role === "cashier" && user.store_id) {
         // Cashier: use assigned store
-        setSelectedStoreId(user.store_id);
-
-        // Show toast for cashier's assigned store
-        const assignedStore = stores.find((s) => s.id === user.store_id);
-        if (assignedStore) {
-          import("react-hot-toast").then(({ toast }) => {
-            toast.success(`Working on assigned store: ${assignedStore.name}`);
-          });
+        if (selectedStoreId !== user.store_id) {
+          setSelectedStoreId(user.store_id);
+          
+          // Show toast for cashier's assigned store only once
+          const assignedStore = stores.find((s) => s.id === user.store_id);
+          if (assignedStore) {
+            import("react-hot-toast").then(({ toast }) => {
+              toast.success(`Working on assigned store: ${assignedStore.name}`);
+            });
+            setStoreAssignmentToastShown(true);
+          }
         }
       } else if (
         (user.role === "admin" || user.role === "manager") &&
@@ -767,11 +780,12 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         const defaultStore = stores[0];
         setSelectedStoreId(defaultStore?.id);
 
-        // Show toast for default store selection
+        // Show toast for default store selection only once
         if (defaultStore) {
           import("react-hot-toast").then(({ toast }) => {
             toast.success(`Default store selected: ${defaultStore.name}`);
           });
+          setStoreAssignmentToastShown(true);
         }
       }
     }

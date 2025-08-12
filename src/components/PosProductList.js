@@ -28,6 +28,9 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   const [productsPerPage, setProductsPerPage] = useState(12); // Start with 20 products
   const [currentProductPage, setCurrentProductPage] = useState(1);
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  
+  // State to track if refresh toast has been shown for current reload
+  const [lastReloadFlag, setLastReloadFlag] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Prepare options for react-select
@@ -170,11 +173,13 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   useEffect(() => {
     if (!prodLoading) {
       toast.dismiss("reload-products");
-      if (reloadFlag > 0) {
+      // Only show refresh toast if this is a new reload (reloadFlag changed)
+      if (reloadFlag > 0 && reloadFlag !== lastReloadFlag) {
         toast.success("Products refreshed!", { id: "reload-products-success" });
+        setLastReloadFlag(reloadFlag);
       }
     }
-  }, [prodLoading]);
+  }, [prodLoading, reloadFlag, lastReloadFlag]);
 
   // Add this useEffect to reload products when reloadProducts changes
   useEffect(() => {
