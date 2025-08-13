@@ -31,15 +31,21 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
     setLoading(true);
     try {
       // Fetch all types of stock changes
-      const [adjustmentsRes, transfersRes, salesRes] = await Promise.all([
+      const [adjustmentsRes, transfersRes, salesRes, saleItemsRes] = await Promise.all([
         fetch('/api/stock-adjustments'),
         fetch('/api/stock-transfers'),
-        fetch('/api/orders') // For sales data
+        fetch('/api/orders'), // For sales data
+        fetch('/api/order-items').catch(() => ({ json: () => ({ data: [] }) })) // Try to get individual sale items
       ]);
 
       const adjustmentsData = await adjustmentsRes.json();
       const transfersData = await transfersRes.json();
       const salesData = await salesRes.json();
+      const saleItemsData = await saleItemsRes.json();
+
+      // Debug: Log the structure of sales data
+      console.log('Sales data structure:', salesData.data?.[0]);
+      console.log('Sale items data structure:', saleItemsData.data?.[0]);
 
       // Combine and format all history data
       const allHistory = [
@@ -96,27 +102,76 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
           created_at: String(item.created_at || ''),
           updated_at: String(item.updated_at || '')
         })),
-        ...(salesData.data || []).map(item => ({
-          // Only include primitive fields, no nested objects
-          id: String(item.id || ''),
-          type: 'sale',
-          date: String(item.timestamp || ''),
-          description: `Sale #${item.reference || ''}`,
-          quantity: String(item.items?.length || '0'),
-          user: String(item.created_by || ''),
-          // Flatten nested data for export
-          reference: String(item.reference || ''),
-          timestamp: String(item.timestamp || ''),
-          total_amount: String(item.total_amount || ''),
-          payment_method: String(item.payment_method || ''),
-          status: String(item.status || ''),
-          customer_name: String(item.customer_name || ''),
-          customer_email: String(item.customer_email || ''),
-          customer_phone: String(item.customer_phone || ''),
-          items_count: String(item.items?.length || '0'),
-          created_at: String(item.created_at || ''),
-          updated_at: String(item.updated_at || '')
-        }))
+        // Process sale items if available, otherwise use sale transactions
+        ...(saleItemsData.data && saleItemsData.data.length > 0 
+          ? saleItemsData.data.map(saleItem => {
+              // Find the corresponding sale transaction
+              const saleTransaction = salesData.data?.find(sale => sale.id === saleItem.order_id);
+              return {
+                id: String(`${saleItem.order_id}-${saleItem.id}` || saleItem.id || ''),
+                type: 'sale',
+                date: String(saleTransaction?.timestamp || saleItem.created_at || ''),
+                description: `Sale #${saleItem.order_id} - ${saleItem.name || saleItem.product_name || 'Product'}`,
+                quantity: String(saleItem.quantity || '1'),
+                user: String(saleTransaction?.payment_receiver_name || saleItem.created_by || ''),
+                // Flatten nested data for export
+                reference: String(saleItem.order_id || ''),
+                timestamp: String(saleTransaction?.timestamp || saleItem.created_at || ''),
+                total_amount: String(saleTransaction?.total || ''),
+                subtotal: String(saleTransaction?.subtotal || ''),
+                tax: String(saleTransaction?.tax || ''),
+                discount: String(saleTransaction?.discount || ''),
+                payment_method: String(saleTransaction?.payment_method || ''),
+                status: String(saleTransaction?.status || saleItem.status || ''),
+                customer_name: String(saleTransaction?.customer_name || ''),
+                customer_id: String(saleTransaction?.customer_id || ''),
+                product_name: String(saleItem.name || saleItem.product_name || ''),
+                product_sku: String(saleItem.sku || saleItem.product_sku || ''),
+                unit_price: String(saleItem.price || saleItem.unit_price || ''),
+                cost_price: String(saleItem.cost_price || ''),
+                item_tax: String(saleItem.item_tax || ''),
+                tax_percentage: String(saleItem.tax_percentage || ''),
+                product_id: String(saleItem.product_id || ''),
+                order_type: String(saleTransaction?.order_type || ''),
+                register_id: String(saleTransaction?.register_id || ''),
+                store_id: String(saleTransaction?.store_id || saleItem.store_id || ''),
+                payment_receiver_name: String(saleTransaction?.payment_receiver_name || ''),
+                sale_note: String(saleTransaction?.sale_note || ''),
+                staff_note: String(saleTransaction?.staff_note || ''),
+                created_at: String(saleItem.created_at || saleTransaction?.timestamp || ''),
+                updated_at: String(saleItem.updated_at || '')
+              };
+            })
+          : (salesData.data || []).map(item => ({
+              // Fallback to sale transactions if no individual items
+              id: String(item.id || ''),
+              type: 'sale',
+              date: String(item.timestamp || item.created_at || ''),
+              description: `Sale Transaction #${item.id}`,
+              quantity: '1', // Sale transaction count
+              user: String(item.payment_receiver_name || item.created_by || ''),
+              reference: String(item.id || ''),
+              timestamp: String(item.timestamp || item.created_at || ''),
+              total_amount: String(item.total || item.total_amount || ''),
+              subtotal: String(item.subtotal || ''),
+              tax: String(item.tax || ''),
+              discount: String(item.discount || ''),
+              payment_method: String(item.payment_method || ''),
+              status: String(item.status || ''),
+              customer_name: String(item.customer_name || ''),
+              customer_id: String(item.customer_id || ''),
+              product_name: `Sale (GHS ${item.total || '0'})`,
+              unit_price: String(item.total || item.total_amount || ''),
+              order_type: String(item.order_type || ''),
+              register_id: String(item.register_id || ''),
+              store_id: String(item.store_id || ''),
+              payment_receiver_name: String(item.payment_receiver_name || ''),
+              sale_note: String(item.sale_note || ''),
+              staff_note: String(item.staff_note || ''),
+              created_at: String(item.created_at || item.timestamp || ''),
+              updated_at: String(item.updated_at || '')
+            }))
+        )
       ];
 
       // Sort by date (newest first)
@@ -198,7 +253,7 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
       sortable: true,
       render: (row) => (
         <div className="text-sm text-gray-900">
-          {row.product_name}
+          {row.product_name || 'N/A'}
         </div>
       )
     },
@@ -208,7 +263,7 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
       sortable: true,
       render: (row) => (
         <div className="text-sm font-semibold text-gray-900">
-          {row.quantity} {row.type === 'adjustment' ? 'units' : 'items'}
+          {row.quantity || '0'} {row.type === 'adjustment' ? 'units' : row.type === 'sale' ? 'sold' : 'items'}
         </div>
       )
     },
@@ -626,11 +681,44 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                         />
                         <div>
                           <div className="text-lg font-semibold text-gray-900">
-                            {selectedRecord.quantity} items
+                            {selectedRecord.quantity} {selectedRecord.product_name?.includes('Sale (') ? 'transaction' : 'items'}
                           </div>
-                          <div className="text-sm text-gray-500">Sold</div>
+                          <div className="text-sm text-gray-500">
+                            {selectedRecord.product_name?.includes('Sale (') ? 'Sale Transaction' : 'Sold'}
+                          </div>
                         </div>
                       </div>
+                      {selectedRecord.total_amount && (
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="text-sm text-gray-600 mb-1">
+                            Transaction Details
+                          </div>
+                          <div className="space-y-1">
+                            {selectedRecord.subtotal && (
+                              <div className="flex justify-between text-sm">
+                                <span>Subtotal:</span>
+                                <span>GHS {parseFloat(selectedRecord.subtotal).toFixed(2)}</span>
+                              </div>
+                            )}
+                            {selectedRecord.tax && parseFloat(selectedRecord.tax) > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span>Tax:</span>
+                                <span>GHS {parseFloat(selectedRecord.tax).toFixed(2)}</span>
+                              </div>
+                            )}
+                            {selectedRecord.discount && parseFloat(selectedRecord.discount) > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span>Discount:</span>
+                                <span>-GHS {parseFloat(selectedRecord.discount).toFixed(2)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between text-sm font-semibold border-t pt-1">
+                              <span>Total:</span>
+                              <span>GHS {parseFloat(selectedRecord.total_amount).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -643,7 +731,7 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                         icon="mdi:account"
                         className="w-5 h-5 text-indigo-600"
                       />
-                      User Information
+                      {selectedRecord.type === 'sale' ? 'Staff Information' : 'User Information'}
                     </h3>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -657,8 +745,42 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                           {selectedRecord.user}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Performed this action
+                          {selectedRecord.type === 'sale' ? 'Payment Receiver' : 'Performed this action'}
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Customer Info for Sales */}
+                {selectedRecord.type === 'sale' && selectedRecord.customer_name && (
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Icon
+                        icon="mdi:account-group"
+                        className="w-5 h-5 text-green-600"
+                      />
+                      Customer Information
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <Icon
+                          icon="mdi:account-group"
+                          className="w-5 h-5 text-green-600"
+                        />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900">
+                          {selectedRecord.customer_name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Customer
+                        </div>
+                        {selectedRecord.payment_method && (
+                          <div className="text-sm text-gray-500 mt-1">
+                            Payment: {selectedRecord.payment_method.toUpperCase()}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
