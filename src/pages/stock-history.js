@@ -514,25 +514,23 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
               </div>
               <div className="flex-1 flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-3">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-sm">
+                    <Icon icon="mdi:calendar" className="w-4 h-4" />
+                    {new Date(selectedRecord.date).toLocaleString()}
+                  </div>
                   {selectedRecord.reference && (
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-sm font-mono">
                       <Icon icon="mdi:identifier" className="w-4 h-4" />
                       {selectedRecord.reference}
                     </div>
                   )}
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-sm">
-                    <Icon icon="mdi:calendar" className="w-4 h-4" />
-                    {new Date(selectedRecord.date).toLocaleString()}
-                  </div>
-                  {selectedRecord.status && (
+                  {selectedRecord.status && selectedRecord.status.toLowerCase() !== 'completed' && (
                     <div
                       className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-semibold ${
                         selectedRecord.status === "void" ||
                         selectedRecord.status === "cancelled"
                           ? "bg-red-100 text-red-700"
-                          : selectedRecord.status === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-blue-100 text-blue-700"
+                          : "bg-yellow-100 text-yellow-700"
                       }`}
                     >
                       <Icon icon="mdi:information" className="w-4 h-4" />
@@ -688,72 +686,27 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                           </div>
                         </div>
                       </div>
-                      {selectedRecord.total_amount && (
+                      {selectedRecord.total_amount && parseFloat(selectedRecord.total_amount) > 0 && (
                         <div className="bg-gray-50 rounded-lg p-3">
                           <div className="text-sm text-gray-600 mb-1">
-                            Transaction Details
+                            Sale Total
                           </div>
-                          <div className="space-y-1">
-                            {selectedRecord.subtotal && (
-                              <div className="flex justify-between text-sm">
-                                <span>Subtotal:</span>
-                                <span>GHS {parseFloat(selectedRecord.subtotal).toFixed(2)}</span>
-                              </div>
-                            )}
-                            {selectedRecord.tax && parseFloat(selectedRecord.tax) > 0 && (
-                              <div className="flex justify-between text-sm">
-                                <span>Tax:</span>
-                                <span>GHS {parseFloat(selectedRecord.tax).toFixed(2)}</span>
-                              </div>
-                            )}
-                            {selectedRecord.discount && parseFloat(selectedRecord.discount) > 0 && (
-                              <div className="flex justify-between text-sm">
-                                <span>Discount:</span>
-                                <span>-GHS {parseFloat(selectedRecord.discount).toFixed(2)}</span>
-                              </div>
-                            )}
-                            <div className="flex justify-between text-sm font-semibold border-t pt-1">
-                              <span>Total:</span>
-                              <span>GHS {parseFloat(selectedRecord.total_amount).toFixed(2)}</span>
+                          <div className="text-lg font-semibold text-gray-900">
+                            GHS {parseFloat(selectedRecord.total_amount).toFixed(2)}
+                          </div>
+                          {selectedRecord.payment_method && (
+                            <div className="text-sm text-gray-500 mt-1">
+                              via {selectedRecord.payment_method.toUpperCase()}
                             </div>
-                          </div>
+                          )}
                         </div>
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* User Info */}
-                {selectedRecord.user && (
-                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Icon
-                        icon="mdi:account"
-                        className="w-5 h-5 text-indigo-600"
-                      />
-                      {selectedRecord.type === 'sale' ? 'Staff Information' : 'User Information'}
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <Icon
-                          icon="mdi:account"
-                          className="w-5 h-5 text-indigo-600"
-                        />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900">
-                          {selectedRecord.user}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {selectedRecord.type === 'sale' ? 'Payment Receiver' : 'Performed this action'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Customer Info for Sales */}
-                {selectedRecord.type === 'sale' && selectedRecord.customer_name && (
+                {selectedRecord.type === 'sale' && selectedRecord.customer_name && selectedRecord.customer_name !== 'Walk In Customer' && (
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                       <Icon
@@ -776,11 +729,6 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                         <div className="text-sm text-gray-500">
                           Customer
                         </div>
-                        {selectedRecord.payment_method && (
-                          <div className="text-sm text-gray-500 mt-1">
-                            Payment: {selectedRecord.payment_method.toUpperCase()}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -788,76 +736,107 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
               </div>
 
               {/* Financial Information */}
-              <div className="space-y-6">
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Icon
-                      icon="mdi:currency-ghs"
-                      className="w-5 h-5 text-green-600"
-                    />
-                    Financial Details
-                  </h3>
-                  <div className="space-y-4">
-                    {selectedRecord.unit_price && (
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-gray-600">Unit Price</span>
-                        <span className="font-semibold text-gray-900">
-                          GHS {parseFloat(selectedRecord.unit_price).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                    {selectedRecord.cost_price && (
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-gray-600">Cost Price</span>
-                        <span className="font-semibold text-gray-900">
-                          GHS {parseFloat(selectedRecord.cost_price).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                    {selectedRecord.unit_price && selectedRecord.quantity && (
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-gray-600">Total Value</span>
-                        <span className="font-semibold text-gray-900">
-                          GHS{" "}
-                          {(
-                            parseFloat(selectedRecord.unit_price) *
-                            parseFloat(selectedRecord.quantity)
-                          ).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                    {selectedRecord.unit_price &&
-                      selectedRecord.cost_price &&
-                      selectedRecord.quantity && (
-                        <div className="flex justify-between items-center py-2">
-                          <span className="text-gray-600">Profit Impact</span>
-                          <span
-                            className={`font-semibold ${
-                              (parseFloat(selectedRecord.unit_price) -
-                                parseFloat(selectedRecord.cost_price)) *
-                                parseFloat(selectedRecord.quantity) >=
-                              0
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
+              {(selectedRecord.unit_price || selectedRecord.cost_price) && (
+                <div className="space-y-6">
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Icon
+                        icon="mdi:currency-ghs"
+                        className="w-5 h-5 text-green-600"
+                      />
+                      Financial Details
+                    </h3>
+                    <div className="space-y-4">
+                      {selectedRecord.unit_price && (
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                          <span className="text-gray-600">Unit Price</span>
+                          <span className="font-semibold text-gray-900">
+                            GHS {parseFloat(selectedRecord.unit_price).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {selectedRecord.cost_price && (
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                          <span className="text-gray-600">Cost Price</span>
+                          <span className="font-semibold text-gray-900">
+                            GHS {parseFloat(selectedRecord.cost_price).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {selectedRecord.unit_price && selectedRecord.quantity && parseFloat(selectedRecord.quantity) > 1 && (
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                          <span className="text-gray-600">Total Value ({selectedRecord.quantity} × {parseFloat(selectedRecord.unit_price).toFixed(2)})</span>
+                          <span className="font-semibold text-gray-900">
                             GHS{" "}
                             {(
-                              (parseFloat(selectedRecord.unit_price) -
-                                parseFloat(selectedRecord.cost_price)) *
+                              parseFloat(selectedRecord.unit_price) *
                               parseFloat(selectedRecord.quantity)
                             ).toFixed(2)}
                           </span>
                         </div>
                       )}
+                      {selectedRecord.unit_price &&
+                        selectedRecord.cost_price &&
+                        selectedRecord.quantity && (
+                          <div className="flex justify-between items-center py-2">
+                            <span className="text-gray-600">Profit Impact</span>
+                            <span
+                              className={`font-semibold ${
+                                (parseFloat(selectedRecord.unit_price) -
+                                  parseFloat(selectedRecord.cost_price)) *
+                                  parseFloat(selectedRecord.quantity) >=
+                                0
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              GHS{" "}
+                              {(
+                                (parseFloat(selectedRecord.unit_price) -
+                                  parseFloat(selectedRecord.cost_price)) *
+                                parseFloat(selectedRecord.quantity)
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                    </div>
                   </div>
+
+                  {/* User/Staff Info */}
+                  {selectedRecord.user && (
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Icon
+                          icon="mdi:account"
+                          className="w-5 h-5 text-indigo-600"
+                        />
+                        {selectedRecord.type === 'sale' ? 'Staff Information' : 'User Information'}
+                      </h3>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                          <Icon
+                            icon="mdi:account"
+                            className="w-5 h-5 text-indigo-600"
+                          />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {selectedRecord.user}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {selectedRecord.type === 'sale' ? 'Payment Receiver' : 'Performed this action'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
 
               {/* Notes & Audit Trail */}
               <div className="space-y-6">
                 {/* Reason & Notes */}
-                {(selectedRecord.reason || selectedRecord.notes) && (
+                {(selectedRecord.reason || selectedRecord.notes || selectedRecord.sale_note || selectedRecord.staff_note) && (
                   <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                       <Icon
@@ -892,6 +871,34 @@ export default function StockHistoryPage({ mode = "light", toggleMode, ...props 
                           </div>
                           <div className="text-gray-900 bg-gray-50 p-3 rounded-lg">
                             {selectedRecord.notes}
+                          </div>
+                        </div>
+                      )}
+                      {selectedRecord.sale_note && selectedRecord.sale_note.trim() && (
+                        <div>
+                          <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                            <Icon
+                              icon="mdi:note-outline"
+                              className="w-4 h-4 text-blue-500"
+                            />
+                            Sale Note
+                          </div>
+                          <div className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                            {selectedRecord.sale_note}
+                          </div>
+                        </div>
+                      )}
+                      {selectedRecord.staff_note && selectedRecord.staff_note.trim() && (
+                        <div>
+                          <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                            <Icon
+                              icon="mdi:account-edit"
+                              className="w-4 h-4 text-purple-500"
+                            />
+                            Staff Note
+                          </div>
+                          <div className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                            {selectedRecord.staff_note}
                           </div>
                         </div>
                       )}
