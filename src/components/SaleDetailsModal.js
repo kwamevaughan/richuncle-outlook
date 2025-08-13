@@ -10,6 +10,17 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
   const [items, setItems] = useState(sale?.items || []);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
 
+  const formatCurrency = (value) => {
+    if (value === undefined || value === null) return '0.00';
+    // If value is already a string with GHS, just return the number part
+    if (typeof value === 'string' && value.includes('GHS')) {
+      return value.replace('GHS', '').trim();
+    }
+    // Otherwise format the number
+    const num = Number(value);
+    return isNaN(num) ? '0.00' : num.toFixed(2);
+  };
+
   useEffect(() => {
     let ignore = false;
     async function fetchItems() {
@@ -28,6 +39,7 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
   }, [isOpen, sale]);
 
   if (!isOpen || !sale) return null;
+
 
   const getStatusStyle = (status) => {
     switch (status?.toLowerCase()) {
@@ -223,28 +235,28 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
                     }`}>Subtotal</span>
                     <span className={`font-semibold ${
                       mode === "dark" ? "text-white" : "text-gray-900"
-                    }`}>GHS {Number(sale.subtotal || sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    }`}>
+                      {`GHS ${Number(sale.subtotal || sale.total).toFixed(2)}`}
+                    </span>
                   </div>
-                  {sale.tax && (
+                  {((sale.tax !== undefined && sale.tax !== null && sale.tax !== '' && Number(sale.tax) > 0) || 
+                    (sale.discount !== undefined && sale.discount !== null && sale.discount !== '' && Number(sale.discount) > 0)) && (
                     <div className={`flex justify-between items-center py-2 border-b ${
                       mode === "dark" ? "border-gray-700" : "border-gray-100"
                     }`}>
                       <span className={`${
                         mode === "dark" ? "text-gray-300" : "text-gray-600"
-                      }`}>Tax</span>
+                      }`}>
+                        {sale.tax ? 'Tax' : 'Discount'}
+                      </span>
                       <span className={`font-semibold ${
-                        mode === "dark" ? "text-white" : "text-gray-900"
-                      }`}>GHS {Number(sale.tax).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                  )}
-                  {sale.discount && (
-                    <div className={`flex justify-between items-center py-2 border-b ${
-                      mode === "dark" ? "border-gray-700" : "border-gray-100"
-                    }`}>
-                      <span className={`${
-                        mode === "dark" ? "text-gray-300" : "text-gray-600"
-                      }`}>Discount</span>
-                      <span className="font-semibold text-red-600">-GHS {Number(sale.discount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        sale.discount ? 'text-red-600' : mode === "dark" ? "text-white" : "text-gray-900"
+                      }`}>
+                        {sale.tax 
+                          ? `GHS ${Number(sale.tax).toFixed(2)}`
+                          : `-GHS ${Number(sale.discount).toFixed(2)}`
+                        }
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between items-center py-2">
@@ -253,7 +265,9 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
                     }`}>Total</span>
                     <span className={`text-xl font-bold ${
                       mode === "dark" ? "text-white" : "text-gray-900"
-                    }`}>GHS {Number(sale.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    }`}>
+                      {`GHS ${Number(sale.total).toFixed(2)}`}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -328,14 +342,14 @@ export default function SaleDetailsModal({ sale, isOpen, onClose, mode, products
                           <div className={`text-sm ${
                             mode === "dark" ? "text-gray-400" : "text-gray-500"
                           }`}>
-                            {item.quantity} × GHS {Number(item.price || item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {item.quantity} × GHS {formatCurrency(item.price || item.unit_price)}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className={`font-semibold ${
                             mode === "dark" ? "text-white" : "text-gray-900"
                           }`}>
-                            GHS {Number(item.total || ((Number(item.quantity) || 0) * (Number(item.price || item.unit_price) || 0))).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            GHS {formatCurrency(item.total || ((Number(item.quantity) || 0) * (Number(item.price || item.unit_price) || 0)))}
                           </div>
                         </div>
                       </div>
