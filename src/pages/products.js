@@ -329,11 +329,21 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   // When closing the modal, remove viewProductId from the URL
   const closeViewModal = () => {
     setViewItem(null);
+    
+    // Update URL without scrolling
     const { viewProductId, ...rest } = router.query;
-    router.replace({
+    const url = {
       pathname: router.pathname,
       query: rest,
-    }, undefined, { shallow: true });
+    };
+    
+    // Use history.replaceState to avoid Next.js router scroll behavior
+    const newUrl = router.asPath.split('?')[0] + (Object.keys(rest).length > 0 ? '?' + new URLSearchParams(rest).toString() : '');
+    window.history.replaceState(
+      { ...window.history.state, as: newUrl, url: newUrl },
+      '',
+      newUrl
+    );
   };
 
   return (

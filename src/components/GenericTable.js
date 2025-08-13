@@ -473,7 +473,15 @@ export function GenericTable({
                   key={label || i}
                   icon={icon || "mdi:help"}
                   label={tooltip || label || ""}
-                  onClick={isDisabled ? undefined : () => action.onClick(row)}
+                  onClick={
+                    isDisabled
+                      ? undefined
+                      : (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          action.onClick(row, e);
+                        }
+                  }
                   mode={mode}
                   className={`${action.className || ""} ${
                     isDisabled ? "opacity-50 cursor-not-allowed" : ""
@@ -487,7 +495,11 @@ export function GenericTable({
               <TooltipIconButton
                 icon="cuida:edit-outline"
                 label="Edit"
-                onClick={() => onEdit(row)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit(row);
+                }}
                 mode={mode}
                 className="bg-blue-50 text-blue-600 text-xs"
               />
@@ -496,7 +508,11 @@ export function GenericTable({
               <TooltipIconButton
                 icon="mynaui:trash"
                 label="Delete"
-                onClick={() => onDelete(row)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete(row);
+                }}
                 mode={mode}
                 className="bg-red-50 text-red-600 text-xs"
               />
@@ -606,7 +622,11 @@ export function GenericTable({
               <TooltipIconButton
                 icon="cuida:edit-outline"
                 label="Edit"
-                onClick={() => onEdit(row)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit(row);
+                }}
                 mode={mode}
                 className="bg-blue-50 text-blue-600 text-xs"
               />
@@ -615,7 +635,11 @@ export function GenericTable({
               <TooltipIconButton
                 icon="mynaui:trash"
                 label="Delete"
-                onClick={() => onDelete(row)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete(row);
+                }}
                 mode={mode}
                 className="bg-red-50 text-red-600 text-xs"
               />
@@ -714,7 +738,15 @@ export function GenericTable({
                   key={label || i}
                   icon={icon || "mdi:help"}
                   label={label || ""}
-                  onClick={isDisabled ? undefined : () => action.onClick(row)}
+                  onClick={
+                    isDisabled
+                      ? undefined
+                      : (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          action.onClick(row, e);
+                        }
+                  }
                   mode={mode}
                   className={`${action.className || ""} ${
                     isDisabled ? "opacity-50 cursor-not-allowed" : ""
@@ -865,7 +897,15 @@ export function GenericTable({
                   key={label || i}
                   icon={icon || "mdi:help"}
                   label={tooltip || label || ""}
-                  onClick={isDisabled ? undefined : () => action.onClick(row)}
+                  onClick={
+                    isDisabled
+                      ? undefined
+                      : (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          action.onClick(row, e);
+                        }
+                  }
                   mode={mode}
                   className={`${action.className || ""} ${
                     isDisabled ? "opacity-50 cursor-not-allowed" : ""
@@ -878,7 +918,11 @@ export function GenericTable({
               <TooltipIconButton
                 icon="cuida:edit-outline"
                 label="Edit"
-                onClick={() => onEdit(row)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit(row);
+                }}
                 mode={mode}
                 className="bg-blue-50 text-blue-600 text-xs"
               />
@@ -887,7 +931,11 @@ export function GenericTable({
               <TooltipIconButton
                 icon="mynaui:trash"
                 label="Delete"
-                onClick={() => onDelete(row)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete(row);
+                }}
                 mode={mode}
                 className="bg-red-50 text-red-600 text-xs"
               />

@@ -419,7 +419,9 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
           {/* Action Buttons */}
           <div className="space-y-2">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 setSelectedProduct(product);
                 setQuickUpdateType("add");
                 setQuickUpdateQuantity("");
@@ -431,7 +433,9 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
               Add Stock
             </button>
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 setSelectedProduct(product);
                 setQuickUpdateType("set");
                 setQuickUpdateQuantity(quantity.toString());
@@ -540,7 +544,11 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
       label: "Add Stock",
       icon: "mdi:plus-circle-outline",
       className: "bg-blue-500/10 text-blue-600",
-      onClick: (row) => {
+      onClick: (row, e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         setSelectedProduct(row);
         setQuickUpdateType("add");
         setQuickUpdateQuantity("");
@@ -551,7 +559,11 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
       label: "Edit Stock",
       icon: "cuida:edit-outline",
       className: "bg-blue-500/10 text-blue-600",
-      onClick: (row) => {
+      onClick: (row, e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         setSelectedProduct(row);
         setQuickUpdateType("set");
         setQuickUpdateQuantity(row.quantity.toString());
@@ -599,7 +611,11 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
                 <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                   
                   <button
-                    onClick={() => setShowImportModal(true)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowImportModal(true);
+                    }}
                     className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
                   >
                     <Icon icon="mdi:file-import" className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -607,7 +623,11 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
                   </button>
                   {selectedProducts.length > 0 && (
                     <button
-                      onClick={() => setShowBulkUpdateModal(true)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowBulkUpdateModal(true);
+                      }}
                       className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
                     >
                       <Icon icon="mdi:plus-box" className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -770,7 +790,11 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
                 </select>
                 <div className="flex bg-gray-100 rounded-lg p-1">
                   <button
-                    onClick={() => setViewMode("table")}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setViewMode("table");
+                    }}
                     className={`px-3 py-2 rounded-md transition-colors ${
                       viewMode === "table"
                         ? "bg-white text-gray-900 shadow-sm"
@@ -780,7 +804,11 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
                     <Icon icon="mdi:table" className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setViewMode("grid")}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setViewMode("grid");
+                    }}
                     className={`px-3 py-2 rounded-md transition-colors ${
                       viewMode === "grid"
                         ? "bg-white text-gray-900 shadow-sm"

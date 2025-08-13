@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const SimpleModal = ({ 
   isOpen, 
@@ -13,26 +13,34 @@ const SimpleModal = ({
   disableOutsideClick = false
 }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const scrollPositionRef = useRef(0);
 
   // Prevent background scrolling and interaction when modal is open
   useEffect(() => {
     if (isOpen) {
+      // Save current scroll position
+      scrollPositionRef.current = window.scrollY;
+      
       // Prevent background scrolling and interaction
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none';
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
-      document.body.style.top = `-${window.scrollY}px`;
+      document.body.style.top = `-${scrollPositionRef.current}px`;
     } else {
       // Restore background scrolling and interaction
-      const scrollY = document.body.style.top;
       document.body.style.overflow = '';
       document.body.style.touchAction = '';
       document.body.style.position = '';
       document.body.style.width = '';
       document.body.style.top = '';
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      
+      // Restore scroll position using the saved reference
+      if (scrollPositionRef.current > 0) {
+        // Use requestAnimationFrame to ensure DOM is ready
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollPositionRef.current);
+        });
       }
     }
     
