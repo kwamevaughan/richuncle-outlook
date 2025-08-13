@@ -171,7 +171,9 @@ const Header = ({
               {/* Sidebar toggle button: always visible */}
               <button
                 onClick={toggleSidebar}
-                className="text-gray-500 hover:scale-110 transition-transform flex-shrink-0"
+                className={`text-gray-500 hover:scale-110 transition-transform flex-shrink-0 ${
+                  isTablet ? "p-2 rounded-md" : ""
+                }`}
                 title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
                 aria-label={
                   isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"
@@ -182,7 +184,7 @@ const Header = ({
                     isSidebarOpen ? "dashicons:arrow-left-alt" : "ri:menu-line"
                   }
                   className={`${
-                    isMobile ? "w-5 h-5" : isTablet ? "w-6 h-6" : "w-6 h-6"
+                    isMobile ? "w-5 h-5" : isTablet ? "w-8 h-8" : "w-6 h-6"
                   }`}
                 />
               </button>
