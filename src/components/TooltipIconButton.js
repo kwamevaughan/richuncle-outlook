@@ -68,20 +68,22 @@ const TooltipIconButton = ({
             top: coords.top + 8, // 8px gap
             left: coords.left,
             transform: "translateX(-50%)",
-            zIndex: 9999,
+            zIndex: 999999,
             pointerEvents: "none",
           }}
         >
           <div
             className={`
-              text-xs py-2 px-3 rounded-full shadow-lg
-              text-center w-max
+              text-xs py-2 px-3 rounded-lg shadow-lg
+              text-center
               ${mode === "dark" ? "text-gray-200 bg-gray-900 border border-gray-700" : "text-gray-900 bg-white border border-gray-200"}
             `}
             style={{
               opacity: 1,
               transition: "opacity 0.2s",
-              whiteSpace: "nowrap",
+              whiteSpace: "pre-line",
+              maxWidth: "250px",
+              wordWrap: "break-word",
             }}
           >
             {label}

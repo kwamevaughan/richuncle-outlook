@@ -336,14 +336,7 @@ const CashRegisterModal = ({
     sessionDurationSeconds = Math.floor((ms % 60000) / 1000); // seconds
   }
 
-  // Calculate current cash
-  const currentCash = session
-    ? Number(session.opening_cash) +
-      movements.reduce(
-        (sum, m) => sum + (m.type === "cash_in" ? m.amount : -m.amount),
-        0
-      )
-    : 0;
+
 
   // Open register
   const handleOpenRegister = async () => {
@@ -384,7 +377,6 @@ const CashRegisterModal = ({
     }
   };
 
-  // Cash in
   // Close register
   const handleCloseRegister = async () => {
     if (!canOperate) return;
@@ -526,7 +518,7 @@ const CashRegisterModal = ({
           <div class="section">
             <h3>Products Sold</h3>
             <table>
-              <thead><tr><th>Product</th><th>Quantity</th><th>Total</th></tr></thead>
+              <thead><tr><th>Product</th><th>Quantity</th><th>Payment Method</th><th>Total</th></tr></thead>
               <tbody>
                 ${
                   productsSold.length > 0
@@ -535,12 +527,18 @@ const CashRegisterModal = ({
                           (prod) =>
                             `<tr><td>${prod.name}</td><td>${
                               prod.quantity
+                            }</td><td>${
+                              prod.paymentMethod === "momo"
+                                ? "Mobile Money"
+                                : prod.paymentMethod === "mixed"
+                                ? "Split Payment"
+                                : prod.paymentMethod || "Other"
                             }</td><td>GHS ${Number(prod.total).toFixed(
                               2
                             )}</td></tr>`
                         )
                         .join("")
-                    : `<tr><td colspan="3" style="text-align:center;color:#888;">No products sold</td></tr>`
+                    : `<tr><td colspan="4" style="text-align:center;color:#888;">No products sold</td></tr>`
                 }
               </tbody>
             </table>
@@ -636,39 +634,41 @@ const CashRegisterModal = ({
             <>
               {/* Session Overview - Always Visible */}
               <div
-                className={`rounded-xl p-6 border ${
+                className={`rounded-xl p-6 border mb-6 ${
                   mode === "dark"
                     ? "bg-gray-800 border-gray-600"
-                    : "bg-green-50 border-green-200"
+                    : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200"
                 }`}
               >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-3 h-3 rounded-full animate-pulse ${
+                      className={`w-4 h-4 rounded-full animate-pulse ${
                         mode === "dark" ? "bg-green-400" : "bg-green-500"
                       }`}
                     ></div>
                     <h3
-                      className={`text-xl font-bold ${
+                      className={`text-2xl font-bold ${
                         mode === "dark" ? "text-white" : "text-gray-800"
                       }`}
                     >
-                      Register Open
+                      Register Active
                     </h3>
                   </div>
                   <div
-                    className={`text-sm ${
-                      mode === "dark" ? "text-gray-300" : "text-gray-600"
+                    className={`text-sm px-3 py-2 rounded-full font-medium ${
+                      mode === "dark" 
+                        ? "bg-gray-700 text-gray-300" 
+                        : "bg-white/70 text-gray-700 shadow-sm"
                     }`}
                   >
-                    Session Duration: {Math.floor(sessionDuration / 60)}h{" "}
+                    {Math.floor(sessionDuration / 60)}h{" "}
                     {sessionDuration % 60}m {sessionDurationSeconds}s
                   </div>
                 </div>
 
-                {/* Cash Overview Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                {/* Key Metrics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div
                     className={`rounded-lg p-4 shadow-sm ${
                       mode === "dark" ? "bg-gray-800" : "bg-white"
@@ -695,52 +695,13 @@ const CashRegisterModal = ({
                         mode === "dark" ? "text-gray-300" : "text-gray-600"
                       }`}
                     >
-                      Current Cash
+                      Total Sales
                     </div>
                     <div className="font-bold text-lg text-green-600">
-                      GHS {Number(currentCash).toLocaleString()}
-                    </div>
-                  </div>
-                  <div
-                    className={`rounded-lg p-4 shadow-sm ${
-                      mode === "dark" ? "bg-gray-800" : "bg-white"
-                    }`}
-                  >
-                    <div
-                      className={`text-sm ${
-                        mode === "dark" ? "text-gray-300" : "text-gray-600"
-                      }`}
-                    >
-                      Cash In
-                    </div>
-                    <div className="font-bold text-lg text-emerald-600">
                       GHS{" "}
-                      {Number(
-                        movements
-                          .filter((m) => m.type === "cash_in")
-                          .reduce((sum, m) => sum + m.amount, 0)
-                      ).toLocaleString()}
-                    </div>
-                  </div>
-                  <div
-                    className={`rounded-lg p-4 shadow-sm ${
-                      mode === "dark" ? "bg-gray-800" : "bg-white"
-                    }`}
-                  >
-                    <div
-                      className={`text-sm ${
-                        mode === "dark" ? "text-gray-300" : "text-gray-600"
-                      }`}
-                    >
-                      Cash Out
-                    </div>
-                    <div className="font-bold text-lg text-red-600">
-                      GHS{" "}
-                      {Number(
-                        movements
-                          .filter((m) => m.type === "cash_out")
-                          .reduce((sum, m) => sum + m.amount, 0)
-                      ).toLocaleString()}
+                      {salesSummary
+                        ? Math.round(Number(salesSummary.totalSales)).toLocaleString()
+                        : "0"}
                     </div>
                   </div>
                 </div>
@@ -886,7 +847,7 @@ const CashRegisterModal = ({
           // Custom fields for Z-Report
           getDefaultFields={() =>
             exportType === "products"
-              ? { name: true, quantity: true, total: true }
+              ? { name: true, quantity: true, paymentMethod: true, total: true }
               : { type: true, amount: true }
           }
           getFieldsOrder={() =>
@@ -898,6 +859,7 @@ const CashRegisterModal = ({
                     icon: "mdi:package-variant",
                   },
                   { label: "Quantity", key: "quantity", icon: "mdi:counter" },
+                  { label: "Payment Method", key: "paymentMethod", icon: "mdi:credit-card-outline" },
                   { label: "Total", key: "total", icon: "mdi:currency-cedi" },
                 ]
               : [

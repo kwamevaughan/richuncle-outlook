@@ -81,14 +81,49 @@ export default async function handler(req, res) {
       let totalSales = 0, totalRefund = 0, totalExpense = 0;
       let paymentBreakdown = {};
       let productsSold = [];
-      // Aggregate products sold
+      // Aggregate products sold with payment method tracking
       const productMap = {};
       for (const item of orderItems) {
-        if (!productMap[item.product_id]) {
-          productMap[item.product_id] = { name: item.name, quantity: 0, total: 0 };
+        // Find the order this item belongs to
+        const order = orders.find(o => o.id === item.order_id);
+        let paymentMethod = 'other';
+        
+        if (order) {
+          let paymentData = order.payment_data;
+          // Parse if string
+          if (typeof paymentData === 'string') {
+            try {
+              paymentData = JSON.parse(paymentData);
+            } catch {}
+          }
+          
+          if (paymentData && Array.isArray(paymentData.payments)) {
+            // Split payment: use the first payment method or mark as 'mixed'
+            if (paymentData.payments.length === 1) {
+              paymentMethod = (paymentData.payments[0].method || paymentData.payments[0].paymentType || 'other').toLowerCase();
+            } else {
+              paymentMethod = 'mixed';
+            }
+          } else if (paymentData && (paymentData.paymentType || paymentData.method)) {
+            // Single payment
+            paymentMethod = (paymentData.paymentType || paymentData.method || 'other').toLowerCase();
+          } else if (order.payment_method) {
+            // Fallback to order.payment_method
+            paymentMethod = order.payment_method.toLowerCase();
+          }
         }
-        productMap[item.product_id].quantity += Number(item.quantity || 0);
-        productMap[item.product_id].total += Number(item.total || 0);
+        
+        const key = `${item.product_id}_${paymentMethod}`;
+        if (!productMap[key]) {
+          productMap[key] = { 
+            name: item.name, 
+            quantity: 0, 
+            total: 0, 
+            paymentMethod: paymentMethod 
+          };
+        }
+        productMap[key].quantity += Number(item.quantity || 0);
+        productMap[key].total += Number(item.total || 0);
       }
       productsSold = Object.values(productMap);
       // Streamlined payment breakdown: sum all cash, momo, card, other (including split)
@@ -151,6 +186,9 @@ export default async function handler(req, res) {
       cashInHand = Math.round(cashInHand);
       Object.keys(groupedBreakdown).forEach(k => groupedBreakdown[k] = Math.round(groupedBreakdown[k]));
       productsSold = productsSold.map(p => ({ ...p, total: Math.round(p.total) }));
+      
+      // Sort products by name for better readability
+      productsSold.sort((a, b) => a.name.localeCompare(b.name));
       // --- RESPONSE ---
       return res.status(200).json({
         success: true,
