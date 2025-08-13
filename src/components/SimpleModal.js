@@ -15,42 +15,19 @@ const SimpleModal = ({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const scrollPositionRef = useRef(0);
 
-  // Prevent background scrolling and interaction when modal is open
+  // Prevent background scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
-      // Save current scroll position
-      scrollPositionRef.current = window.scrollY;
-      
-      // Prevent background scrolling and interaction
+      // Simply prevent scrolling on the body
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.top = `-${scrollPositionRef.current}px`;
     } else {
-      // Restore background scrolling and interaction
+      // Re-enable scrolling
       document.body.style.overflow = '';
-      document.body.style.touchAction = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.top = '';
-      
-      // Restore scroll position using the saved reference
-      if (scrollPositionRef.current > 0) {
-        // Use requestAnimationFrame to ensure DOM is ready
-        requestAnimationFrame(() => {
-          window.scrollTo(0, scrollPositionRef.current);
-        });
-      }
     }
     
     // Cleanup function to restore scrolling when component unmounts
     return () => {
       document.body.style.overflow = '';
-      document.body.style.touchAction = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.top = '';
     };
   }, [isOpen]);
 
