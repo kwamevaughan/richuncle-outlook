@@ -1080,7 +1080,7 @@ const Header = ({
                   <div className="flex items-center">
                     <div
                       className={`overflow-hidden rounded-full ${
-                        isMobile ? "w-5 h-5" : isTablet ? "w-7 h-7" : "w-6 h-6"
+                        isMobile ? "w-8 h-8" : isTablet ? "w-10 h-10" : "w-6 h-6"
                       }`}
                     >
                       {user && user.avatar_url ? (
@@ -1094,9 +1094,9 @@ const Header = ({
                           icon="hugeicons:ai-user"
                           className={`${
                             isMobile
-                              ? "h-5 w-5"
+                              ? "h-8 w-8"
                               : isTablet
-                              ? "h-7 w-7"
+                              ? "h-10 w-10"
                               : "h-6 w-6"
                           }`}
                         />
@@ -1119,9 +1119,9 @@ const Header = ({
                           <div
                             className={`overflow-hidden flex-shrink-0 rounded-full ${
                               isMobile
-                                ? "w-5 h-5"
+                                ? "w-10 h-10"
                                 : isTablet
-                                ? "w-7 h-7"
+                                ? "w-12 h-12"
                                 : "w-6 h-6"
                             }`}
                           >
@@ -1136,9 +1136,9 @@ const Header = ({
                                 icon="hugeicons:ai-user"
                                 className={`${
                                   isMobile
-                                    ? "h-5 w-5"
+                                    ? "h-10 w-10"
                                     : isTablet
-                                    ? "h-7 w-7"
+                                    ? "h-12 w-12"
                                     : "h-6 w-6"
                                 }`}
                               />
