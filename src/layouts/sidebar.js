@@ -16,6 +16,7 @@ const Sidebar = ({
   isHeaderVisible = true,
   toggleHeader = null,
   isMobile = false,
+  isTablet = false,
 }) => {
   const [windowWidth, setWindowWidth] = useState(null);
   const router = !disableRouter ? useRouter() : null;
@@ -199,9 +200,9 @@ const Sidebar = ({
         await router.push(href);
       }
       
-      // Close sidebar on mobile after navigation
-      if (isMobile && isOpen) {
-        console.log("[Sidebar] Closing sidebar on mobile navigation");
+      // Close sidebar on mobile/tablet after navigation
+      if ((isMobile || isTablet) && isOpen) {
+        console.log("[Sidebar] Closing sidebar on mobile/tablet navigation");
         // Close immediately for better UX
         toggleSidebar();
       }
@@ -212,7 +213,7 @@ const Sidebar = ({
 
   // Add this handler to expand sidebar on hover/click of category
   const handleCategoryInteraction = (category) => {
-    if (!isOpen && !isMobile) {
+    if (!isOpen && !isMobile && !isTablet) {
       toggleSidebar();
       // Optionally, you can also expand the clicked category after expanding
       setTimeout(() => toggleCategory(category), 200);
@@ -226,8 +227,8 @@ const Sidebar = ({
 
   return (
     <div className="relative z-[20]">
-      {/* Mobile backdrop/overlay */}
-      {isMobile && isOpen && (
+      {/* Mobile/Tablet backdrop/overlay */}
+      {(isMobile || isTablet) && isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={toggleSidebar}
@@ -235,13 +236,14 @@ const Sidebar = ({
       )}
       <div
         ref={sidebarRef}
-        className={`fixed left-0 top-0 z-50 rounded-xl m-0 md:m-3 transition-all duration-300
-          ${isMobile ? (isOpen ? "block" : "hidden") : "block"}
+        className={`fixed left-0 top-0 z-50 rounded-xl transition-all duration-300
+          ${isMobile ? "m-0" : "m-0 md:m-3"}
+          ${(isMobile || isTablet) ? (isOpen ? "block" : "hidden") : "block"}
           ${mode === "dark" ? "" : "bg-white"}
           group shadow-lg shadow-black/20 custom-scrollbar
         `}
         style={{
-          width: isMobile ? "100vw" : isOpen ? "240px" : "64px",
+          width: isMobile ? "100vw" : isTablet ? (isOpen ? "280px" : "64px") : isOpen ? "240px" : "64px",
           height: isMobile ? "100vh" : "calc(100vh - 48px)",
           maxHeight: isMobile ? "100vh" : "calc(100vh - 48px)",
         }}
@@ -249,21 +251,21 @@ const Sidebar = ({
         <div className="flex flex-col h-full relative">
           <div
             className={`flex items-center justify-between ${
-              !isOpen && !isMobile ? "justify-center" : "justify-between"
+              !isOpen && !isMobile && !isTablet ? "justify-center" : "justify-between"
             } py-4 px-4 shadow-sm bg-blue-900 rounded-t-md`}
           >
             <div className="flex items-center gap-2 ">
               <p
-                className={`text-xl font-bold transition-all duration-300 ${
+                className={`${isTablet ? "text-lg" : "text-xl"} font-bold transition-all duration-300 ${
                   mode === "dark" ? "text-white" : "text-white"
                 }`}
               >
-                {!isOpen && !isMobile ? "R" : "RichUncle Outlook"}
+                {!isOpen && !isMobile && !isTablet ? "R" : "RichUncle Outlook"}
               </p>
             </div>
             
-            {/* Mobile close button */}
-            {isMobile && (
+            {/* Mobile/Tablet close button */}
+            {(isMobile || isTablet) && (
               <button
                 onClick={toggleSidebar}
                 className="text-white hover:scale-110 transition-transform p-1 rounded"
@@ -281,7 +283,7 @@ const Sidebar = ({
 
           <div
             className={`flex-grow px-2 overflow-y-auto flex flex-col scrollbar-thin pb-4 ${
-              !isOpen && !isMobile ? "items-center" : ""
+              !isOpen && !isMobile && !isTablet ? "items-center" : ""
             }`}
           >
             {/* Render standalone nav items (e.g., Home) */}
@@ -294,7 +296,7 @@ const Sidebar = ({
                     mode === "dark"
                       ? "bg-gray-800/20 text-gray-200 hover:bg-gray-700 hover:text-white"
                       : "bg-white text-gray-500 hover:bg-orange-50 hover:text-gray-700"
-                  } ${!isOpen && !isMobile ? "justify-center" : ""}`}
+                  } ${!isOpen && !isMobile && !isTablet ? "justify-center" : ""}`}
                   onClick={() => handleNavigation(item.href, item.label)}
                 >
                   {item.icon && (
@@ -303,13 +305,13 @@ const Sidebar = ({
                       className={`${
                         item.href === "/dashboard" ? "h-7 w-7" : "h-5 w-5"
                       } text-gray-500 transition-all duration-300 ${
-                        !isOpen && !isMobile ? "mx-auto" : "mr-2"
+                        !isOpen && !isMobile && !isTablet ? "mx-auto" : "mr-2"
                       }`}
                     />
                   )}
                   <span
                     className={`transition-all duration-300${
-                      !isOpen && !isMobile ? " hidden" : ""
+                      !isOpen && !isMobile && !isTablet ? " hidden" : ""
                     }`}
                   >
                     {item.label}
@@ -323,7 +325,7 @@ const Sidebar = ({
                 <div
                   key={category}
                   className={`w-full mb-1 relative ${
-                    !isOpen && !isMobile ? "flex flex-col items-center" : ""
+                    !isOpen && !isMobile && !isTablet ? "flex flex-col items-center" : ""
                   }`}
                 >
                   {index !== 0 && <div className="my-2" />}
@@ -333,11 +335,11 @@ const Sidebar = ({
                         ? "text-gray-200 hover:bg-gray-700 hover:text-white"
                         : "text-gray-600 hover:bg-orange-50 hover:text-gray-700"
                     } ${
-                      !isOpen && !isMobile ? "justify-center" : ""
+                      !isOpen && !isMobile && !isTablet ? "justify-center" : ""
                     }`}
                     onClick={() => handleCategoryInteraction(category)}
                     onMouseEnter={() => {
-                      if (!isOpen && !isMobile) toggleSidebar();
+                      if (!isOpen && !isMobile && !isTablet) toggleSidebar();
                     }}
                   >
                     <span
@@ -347,13 +349,13 @@ const Sidebar = ({
                         <Icon
                           icon={icon}
                           className={`h-5 w-5 text-gray-500 transition-all duration-300 ${
-                            !isOpen && !isMobile ? "mx-auto" : "mr-2"
+                            !isOpen && !isMobile && !isTablet ? "mx-auto" : "mr-2"
                           }`}
                         />
                       )}
                       <span
                         className={`transition-all duration-300${
-                          !isOpen && !isMobile ? " hidden" : ""
+                          !isOpen && !isMobile && !isTablet ? " hidden" : ""
                         }`}
                       >
                         {category}
@@ -410,9 +412,9 @@ const Sidebar = ({
                                         "open-retrieve-layaways-modal"
                                       )
                                     );
-                                    // Close sidebar on mobile for special events
-                                    if (isMobile && isOpen) {
-                                      console.log("[Sidebar] Closing sidebar on mobile for layaways event");
+                                    // Close sidebar on mobile/tablet for special events
+                                    if ((isMobile || isTablet) && isOpen) {
+                                      console.log("[Sidebar] Closing sidebar on mobile/tablet for layaways event");
                                       // Close immediately for better UX
                                       toggleSidebar();
                                     }
@@ -424,9 +426,9 @@ const Sidebar = ({
                                         "open-retrieve-orders-modal"
                                       )
                                     );
-                                    // Close sidebar on mobile for special events
-                                    if (isMobile && isOpen) {
-                                      console.log("[Sidebar] Closing sidebar on mobile for orders event");
+                                    // Close sidebar on mobile/tablet for special events
+                                    if ((isMobile || isTablet) && isOpen) {
+                                      console.log("[Sidebar] Closing sidebar on mobile/tablet for orders event");
                                       // Close immediately for better UX
                                       toggleSidebar();
                                     }
@@ -439,7 +441,7 @@ const Sidebar = ({
                                   }
                                 }}
                                 className={`relative py-2 px-2 flex items-center justify-between font-medium text-sm w-full cursor-pointer rounded-lg hover:shadow-md transition-all duration-200 group mb-1 ${isActiveItem} ${
-                                  !isOpen && !isMobile ? "justify-center" : ""
+                                  !isOpen && !isMobile && !isTablet ? "justify-center" : ""
                                 } ${
                                   mode === "dark"
                                     ? "bg-gray-800/20 text-gray-200 hover:bg-gray-700 hover:text-white"
@@ -448,14 +450,14 @@ const Sidebar = ({
                               >
                                 <div
                                   className={`flex items-center ${
-                                    !isOpen && !isMobile
+                                    !isOpen && !isMobile && !isTablet
                                       ? "justify-center w-full"
                                       : ""
                                   }`}
                                 >
                                   <span
                                     className={`text-sm transition-all duration-300 ${
-                                      !isOpen && !isMobile
+                                      !isOpen && !isMobile && !isTablet
                                         ? "opacity-0 w-0 overflow-hidden"
                                         : ""
                                     } ${
@@ -517,12 +519,12 @@ const Sidebar = ({
         ? "bg-gray-800/20 text-gray-200 hover:bg-blue-900/60 hover:text-white"
         : "text-gray-600 hover:bg-orange-100 hover:text-blue-900")
   }
-  ${!isOpen && !isMobile ? "justify-center" : ""}
+  ${!isOpen && !isMobile && !isTablet ? "justify-center" : ""}
 `}
                                           >
                                             <span
                                               className={`text-sm transition-all duration-300 ${
-                                                !isOpen && !isMobile
+                                                !isOpen && !isMobile && !isTablet
                                                   ? "opacity-0 w-0 overflow-hidden"
                                                   : ""
                                               } ${
@@ -582,7 +584,7 @@ const Sidebar = ({
                   <Icon icon="hugeicons:ai-user" className="h-6 w-6" />
                 )}
               </div>
-              {isOpen || isMobile ? (
+              {isOpen || isMobile || isTablet ? (
                 <div className="flex items-center gap-2 transition-all duration-300">
                   <span className={`text-sm font-medium ${
                     mode === "dark" ? "text-white" : "text-black"
@@ -620,7 +622,7 @@ const Sidebar = ({
                       <Icon icon="mdi:account-outline" className="h-6 w-6" />
                     )}
                   </div>
-                  {isOpen || isMobile ? (
+                  {isOpen || isMobile || isTablet ? (
                     <div className="flex items-center gap-2 transition-all duration-300">
                       <span className={`text-sm font-medium ${
                         mode === "dark" ? "text-white" : "text-black"
@@ -668,7 +670,7 @@ const Sidebar = ({
                   <Icon icon="mdi:logout" className="h-5 w-5" />
                   <span
                     className={`transition-all duration-300 ${
-                      !isOpen && !isMobile
+                      !isOpen && !isMobile && !isTablet
                         ? "opacity-0 w-0 overflow-hidden"
                         : ""
                     }`}

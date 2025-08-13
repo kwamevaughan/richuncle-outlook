@@ -105,11 +105,12 @@ const Header = ({
   }, [selectedStore]);
 
   const isMobile = windowWidth !== null && windowWidth < 640;
+  const isTablet = windowWidth !== null && windowWidth >= 640 && windowWidth < 1024;
 
   return (
     <>
-      {/* Floating toggle button for mobile when header is hidden */}
-      {isMobile && !isHeaderVisible && (
+      {/* Floating toggle button for mobile/tablet when header is hidden */}
+      {(isMobile || isTablet) && !isHeaderVisible && (
         <button
           onClick={toggleHeader}
           className={`fixed top-2 right-2 z-50 p-2 rounded-full shadow-lg transition-all duration-300 ${
@@ -119,7 +120,7 @@ const Header = ({
           }`}
           title="Show Header"
         >
-          <Icon icon="mdi:menu" className="w-5 h-5" />
+          <Icon icon="mdi:menu" className={`${isTablet ? "w-6 h-6" : "w-5 h-5"}`} />
         </button>
       )}
 
@@ -127,15 +128,15 @@ const Header = ({
         ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-10 transition-all duration-300 ${
           mode === "dark" ? "bg-[#101827]" : "bg-transparent"
-        } ${isMobile && !isHeaderVisible ? "-translate-y-full" : ""}`}
+        } ${(isMobile || isTablet) && !isHeaderVisible ? "-translate-y-full" : ""}`}
       >
         <div
           className={`
             ${
-              isMobile ? "p-1 m-1" : "p-2 m-4"
+              isMobile ? "p-1 m-1" : isTablet ? "p-2 m-2" : "p-2 m-4"
             } transition-transform duration-300
             ${
-              isMobile
+              isMobile || isTablet
                 ? "ml-0"
                 : isSidebarOpen
                 ? "md:ml-[272px]"
@@ -150,11 +151,11 @@ const Header = ({
           `}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center w-full gap-2">
+            <div className="flex items-center gap-2">
               {/* Sidebar toggle button: always visible */}
               <button
                 onClick={toggleSidebar}
-                className="text-gray-500 hover:scale-110 transition-transform md:inline-flex mr-2 flex-shrink-0"
+                className="text-gray-500 hover:scale-110 transition-transform flex-shrink-0"
                 title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
                 aria-label={
                   isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"
@@ -164,34 +165,101 @@ const Header = ({
                   icon={
                     isSidebarOpen ? "dashicons:arrow-left-alt" : "ri:menu-line"
                   }
-                  className={`${isMobile ? "w-5 h-5" : "w-6 h-6"}`}
+                  className={`${isMobile ? "w-5 h-5" : isTablet ? "w-6 h-6" : "w-6 h-6"}`}
                 />
               </button>
-
-              {/* Search component - responsive */}
-              <div
-                className={`${
-                  isMobile ? "flex-grow max-w-[120px]" : "flex-grow min-w-0"
-                }`}
-              >
-                <Search
-                  mode={mode}
-                  onSearchModalToggle={onSearchModalToggle}
-                  user={user}
-                />
-              </div>
             </div>
 
             <div
-              className={`flex justify-center items-center w-full ${
-                isMobile ? "gap-1" : "gap-2"
+              className={`flex justify-end items-center w-full ${
+                isMobile ? "gap-1" : isTablet ? "gap-1.5" : "gap-2"
               }`}
             >
+              {/* Search icon - opens modal when clicked */}
+              {(isMobile || isTablet) && (
+                <button
+                  onClick={() => {
+                    // Trigger search modal by creating a fake input event
+                    const searchInput = document.querySelector('input[placeholder*="Search across all sections"]');
+                    if (searchInput) {
+                      searchInput.focus();
+                      // Trigger the search modal by simulating typing
+                      const event = new Event('input', { bubbles: true });
+                      searchInput.value = ' ';
+                      searchInput.dispatchEvent(event);
+                      // Clear the space immediately
+                      setTimeout(() => {
+                        searchInput.value = '';
+                        const clearEvent = new Event('input', { bubbles: true });
+                        searchInput.dispatchEvent(clearEvent);
+                      }, 10);
+                    }
+                  }}
+                  className={`flex items-center justify-center ${
+                    isMobile ? "p-1.5" : "p-2"
+                  } rounded-md hover:shadow-md transition-all duration-300 flex-shrink-0 ${
+                    mode === "dark"
+                      ? "bg-gray-800 text-gray-100 hover:bg-gray-700"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                  title="Search"
+                >
+                  <Icon
+                    icon="material-symbols:search-rounded"
+                    className={`${isMobile ? "h-4 w-4" : "h-5 w-5"} ${
+                      mode === "dark" ? "text-gray-300" : "text-blue-900"
+                    }`}
+                  />
+                </button>
+              )}
+
+              {/* Theme toggle - visible on mobile/tablet */}
+              {(isMobile || isTablet) && (
+                <button
+                  onClick={toggleMode}
+                  className={`flex items-center justify-center ${
+                    isMobile ? "p-1.5" : "p-2"
+                  } rounded-md hover:shadow-md transition-all duration-300 flex-shrink-0 ${
+                    mode === "dark"
+                      ? "bg-gray-800 text-gray-100 hover:bg-gray-700"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                  title={mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                >
+                  <Icon
+                    icon={
+                      mode === "dark"
+                        ? "line-md:sunny-filled-loop-to-moon-filled-alt-loop-transition"
+                        : "line-md:moon-alt-to-sunny-outline-loop-transition"
+                    }
+                    className={`${isMobile ? "h-4 w-4" : "h-5 w-5"} ${
+                      mode === "dark" ? "text-blue-400" : "text-yellow-500"
+                    }`}
+                  />
+                </button>
+              )}
+
+              {/* POS button - always visible on mobile/tablet for quick access */}
+              {(isMobile || isTablet) && (
+                <Link
+                  href="/pos/"
+                  className={`flex items-center justify-center gap-1 bg-blue-900 font-semibold text-white ${
+                    isMobile ? "text-xs px-2 py-1" : "text-sm px-2.5 py-1.5"
+                  } rounded-md hover:shadow-xl hover:-mt-0.5 transition-all duration-300 flex-shrink-0`}
+                >
+                  <Icon
+                    icon="akar-icons:laptop-device"
+                    className={`${isMobile ? "h-3 w-3" : "h-4 w-4"} text-white`}
+                  />
+                  <span>POS</span>
+                </Link>
+              )}
+
               {/* Store dropdown - always visible */}
               <div className="relative flex-shrink-0" ref={storeDropdownRef}>
                 <button
                   className={`flex items-center gap-1 ${
-                    isMobile ? "text-xs px-1.5 py-1" : "text-sm px-3 py-1.5"
+                    isMobile ? "text-xs px-1.5 py-1" : isTablet ? "text-sm px-2 py-1" : "text-sm px-3 py-1.5"
                   } rounded-md hover:shadow-md transition-all duration-300
                     ${
                       mode === "dark"
@@ -202,29 +270,29 @@ const Header = ({
                 >
                   <Icon
                     icon="mdi:store-outline"
-                    className={`${isMobile ? "h-3 w-3" : "h-4 w-4"} ${
+                    className={`${isMobile ? "h-3 w-3" : isTablet ? "h-4 w-4" : "h-4 w-4"} ${
                       mode === "dark" ? "text-gray-200" : ""
                     }`}
                   />
-                  <span className={`${isMobile ? "text-xs" : ""}`}>
+                  <span className={`${isMobile ? "text-xs" : isTablet ? "text-sm" : ""} ${isMobile ? "hidden" : ""}`}>
                     {stores.length > 0
                       ? selectedStore
                         ? stores.find((s) => s.id === selectedStore)?.name ||
-                          "Select Store"
+                          "Store"
                         : "All Stores"
-                      : "Select Store"}
+                      : "Store"}
                   </span>
                   <Icon
                     icon={
                       storeDropdownOpen ? "mdi:chevron-up" : "mdi:chevron-down"
                     }
-                    className={`${isMobile ? "h-3 w-3" : "h-4 w-4"} ${
+                    className={`${isMobile ? "h-3 w-3" : isTablet ? "h-4 w-4" : "h-4 w-4"} ${
                       mode === "dark" ? "text-gray-200" : ""
                     }`}
                   />
                 </button>
                 <div
-                  className={`absolute left-0 mt-2 w-40 rounded-lg shadow-lg overflow-hidden transition-all duration-300 z-20
+                  className={`absolute left-0 mt-2 ${isTablet ? "w-48" : "w-40"} rounded-lg shadow-lg overflow-hidden transition-all duration-300 z-20
                     ${
                       mode === "dark"
                         ? "bg-gray-900 text-gray-100"
@@ -290,8 +358,8 @@ const Header = ({
                 </div>
               </div>
 
-              {/* Mobile: More Actions Dropdown */}
-              {isMobile ? (
+              {/* Mobile/Tablet: More Actions Dropdown */}
+              {isMobile || isTablet ? (
                 <div className="relative" ref={addNewDropdownRef}>
                   <TooltipIconButton
                     label="More Actions"
@@ -307,7 +375,7 @@ const Header = ({
 
                   {addNewDropdownOpen && (
                     <div
-                      className={`absolute top-full mt-2 right-0 w-56 rounded-xl shadow-lg z-20 ${
+                      className={`absolute top-full mt-2 right-0 ${isTablet ? "w-64" : "w-56"} rounded-xl shadow-lg z-20 ${
                         mode === "dark"
                           ? "bg-gray-900 text-gray-100"
                           : "bg-white/95 text-black"
@@ -321,33 +389,16 @@ const Header = ({
                               setAddNewDropdownOpen(false);
                               // This will trigger the Add New dropdown
                             }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg ${isTablet ? "text-base" : "text-sm"} transition-all cursor-pointer ${isTablet ? "min-h-[48px]" : "min-h-[44px]"} ${
                               mode === "dark"
                                 ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
                                 : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
                             }`}
                           >
-                            <Icon icon="icons8:plus" className="h-5 w-5" />
+                            <Icon icon="icons8:plus" className={`${isTablet ? "h-6 w-6" : "h-5 w-5"}`} />
                             <span>Add New</span>
                           </button>
                         )}
-
-                        {/* POS */}
-                        <Link
-                          href="/pos/"
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
-                            mode === "dark"
-                              ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
-                              : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
-                          }`}
-                          onClick={() => setAddNewDropdownOpen(false)}
-                        >
-                          <Icon
-                            icon="akar-icons:laptop-device"
-                            className="h-5 w-5"
-                          />
-                          <span>POS</span>
-                        </Link>
 
                         {/* Language Switch */}
                         <div className="px-3">
@@ -365,30 +416,7 @@ const Header = ({
                           </div>
                         )}
 
-                        {/* Theme Toggle */}
-                        <button
-                          onClick={() => {
-                            setAddNewDropdownOpen(false);
-                            toggleMode();
-                          }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] ${
-                            mode === "dark"
-                              ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
-                              : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
-                          }`}
-                        >
-                          <Icon
-                            icon={
-                              mode === "dark"
-                                ? "line-md:sunny-filled-loop-to-moon-filled-alt-loop-transition"
-                                : "line-md:moon-alt-to-sunny-outline-loop-transition"
-                            }
-                            className="h-5 w-5"
-                          />
-                          <span>
-                            {mode === "dark" ? "Light Mode" : "Dark Mode"}
-                          </span>
-                        </button>
+
 
                         {/* Fullscreen Toggle */}
                         <div className="px-3">
@@ -418,7 +446,7 @@ const Header = ({
                         <span>Add New</span>
                       </button>
                       <div
-                        className={`absolute right-0 mt-2 w-[620px] rounded-xl shadow-lg overflow-hidden transition-all duration-300 z-30
+                        className={`absolute right-0 mt-2 ${isTablet ? "w-[500px]" : "w-[620px]"} rounded-xl shadow-lg overflow-hidden transition-all duration-300 z-30
                           ${
                             mode === "dark"
                               ? "bg-gray-900 text-gray-100"
@@ -430,7 +458,7 @@ const Header = ({
                               : "max-h-0 opacity-0 scale-95"
                           }`}
                       >
-                        <div className="grid grid-cols-6 gap-2 p-3">
+                        <div className={`grid ${isTablet ? "grid-cols-5" : "grid-cols-6"} gap-2 p-3`}>
                           {[
                             // Setup & Configuration (Most used for initial setup)
                             {
@@ -574,10 +602,53 @@ const Header = ({
                     />
                   </TooltipIconButton>
 
+                  {/* Search icon - desktop */}
+                  <button
+                    onClick={() => {
+                      // Trigger search modal by creating a fake input event
+                      const searchInput = document.querySelector('input[placeholder*="Search across all sections"]');
+                      if (searchInput) {
+                        searchInput.focus();
+                        // Trigger the search modal by simulating typing
+                        const event = new Event('input', { bubbles: true });
+                        searchInput.value = ' ';
+                        searchInput.dispatchEvent(event);
+                        // Clear the space immediately
+                        setTimeout(() => {
+                          searchInput.value = '';
+                          const clearEvent = new Event('input', { bubbles: true });
+                          searchInput.dispatchEvent(clearEvent);
+                        }, 10);
+                      }
+                    }}
+                    className={`flex items-center justify-center p-2 rounded-md hover:shadow-md transition-all duration-300 flex-shrink-0 ${
+                      mode === "dark"
+                        ? "bg-gray-800 text-gray-100 hover:bg-gray-700"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                    title="Search"
+                  >
+                    <Icon
+                      icon="material-symbols:search-rounded"
+                      className={`h-6 w-6 ${
+                        mode === "dark" ? "text-gray-300" : "text-blue-900"
+                      }`}
+                    />
+                  </button>
+
                   {/* Fullscreen toggle - desktop */}
                   <FullscreenToggle mode={mode} />
                 </>
               )}
+
+              {/* Hidden search component for functionality */}
+              <div className="hidden">
+                <Search
+                  mode={mode}
+                  onSearchModalToggle={onSearchModalToggle}
+                  user={user}
+                />
+              </div>
 
               {/* Profile dropdown - always visible */}
               <TooltipIconButton
@@ -599,7 +670,7 @@ const Header = ({
                   <div className="flex items-center">
                     <div
                       className={`overflow-hidden rounded-full ${
-                        isMobile ? "w-5 h-5" : "w-6 h-6"
+                        isMobile ? "w-5 h-5" : isTablet ? "w-7 h-7" : "w-6 h-6"
                       }`}
                     >
                       {user && user.avatar_url ? (
@@ -611,7 +682,7 @@ const Header = ({
                       ) : (
                         <Icon
                           icon="hugeicons:ai-user"
-                          className={`${isMobile ? "h-5 w-5" : "h-6 w-6"}`}
+                          className={`${isMobile ? "h-5 w-5" : isTablet ? "h-7 w-7" : "h-6 w-6"}`}
                         />
                       )}
                     </div>
@@ -620,7 +691,7 @@ const Header = ({
                   {dropdownOpen && (
                     <div
                       className={`absolute top-full mt-2 right-0 ${
-                        isMobile ? "w-64" : "w-80"
+                        isMobile ? "w-64" : isTablet ? "w-72" : "w-80"
                       } rounded-2xl shadow-lg z-10 ${
                         mode === "dark"
                           ? "bg-gray-900 text-gray-100"
@@ -631,7 +702,7 @@ const Header = ({
                         <div className="flex items-center gap-2 w-full">
                           <div
                             className={`overflow-hidden flex-shrink-0 rounded-full ${
-                              isMobile ? "w-5 h-5" : "w-6 h-6"
+                              isMobile ? "w-5 h-5" : isTablet ? "w-7 h-7" : "w-6 h-6"
                             }`}
                           >
                             {user && user.avatar_url ? (
@@ -644,7 +715,7 @@ const Header = ({
                               <Icon
                                 icon="hugeicons:ai-user"
                                 className={`${
-                                  isMobile ? "h-5 w-5" : "h-6 w-6"
+                                  isMobile ? "h-5 w-5" : isTablet ? "h-7 w-7" : "h-6 w-6"
                                 }`}
                               />
                             )}
@@ -652,12 +723,12 @@ const Header = ({
                           <div className="flex flex-col min-w-0 flex-1">
                             <div
                               className={`flex ${
-                                isMobile ? "flex-col gap-1" : "gap-2"
+                                isMobile ? "flex-col gap-1" : isTablet ? "flex-col gap-1" : "gap-2"
                               }`}
                             >
                               <span
                                 className={`${
-                                  isMobile ? "text-sm" : "text-md"
+                                  isMobile ? "text-sm" : isTablet ? "text-base" : "text-md"
                                 } font-semibold truncate ${
                                   mode === "dark" ? "text-white" : "text-black"
                                 }`}
@@ -665,7 +736,7 @@ const Header = ({
                                 {user.name}
                               </span>
                               <span
-                                className={`rounded-md capitalize px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                                className={`rounded-md capitalize px-2 py-1 ${isTablet ? "text-sm" : "text-xs"} font-medium ring-1 ring-inset ${
                                   mode === "dark"
                                     ? "bg-green-900/30 text-green-300 ring-green-600/30"
                                     : "bg-green-50 text-green-700 ring-green-600/20"
@@ -675,7 +746,7 @@ const Header = ({
                               </span>
                             </div>
                             <span
-                              className={`text-xs truncate ${
+                              className={`${isTablet ? "text-sm" : "text-xs"} truncate ${
                                 mode === "dark"
                                   ? "text-gray-300"
                                   : "text-gray-600"
@@ -691,7 +762,7 @@ const Header = ({
                               setDropdownOpen(false);
                               router.push("/profile");
                             }}
-                            className={`flex items-center w-full gap-2 text-sm transition-all cursor-pointer ${
+                            className={`flex items-center w-full gap-2 ${isTablet ? "text-base" : "text-sm"} transition-all cursor-pointer ${
                               mode === "dark"
                                 ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
                                 : "text-gray-500 hover:text-blue-800"
@@ -699,7 +770,7 @@ const Header = ({
                           >
                             <Icon
                               icon="fluent-mdl2:radio-bullet"
-                              className="h-5 w-5 "
+                              className={`${isTablet ? "h-6 w-6" : "h-5 w-5"}`}
                             />
                             <span className="">Profile</span>
                           </li>
@@ -707,14 +778,14 @@ const Header = ({
 
                         <button
                           onClick={onLogout}
-                          className={`flex items-center w-full gap-2 border-t h-10 font-thin text-sm transition-colors rounded-lg p-2
+                          className={`flex items-center w-full gap-2 border-t ${isTablet ? "h-12" : "h-10"} font-thin ${isTablet ? "text-base" : "text-sm"} transition-colors rounded-lg p-2
                             ${
                               mode === "dark"
                                 ? "text-red-400 hover:text-red-300 hover:bg-gray-800 border-gray-700"
                                 : "text-red-500 hover:text-red-600 hover:bg-gray-100 border-gray-200"
                             }`}
                         >
-                          <Icon icon="mdi:logout" className="h-5 w-5" />
+                          <Icon icon="mdi:logout" className={`${isTablet ? "h-6 w-6" : "h-5 w-5"}`} />
                           <span>Sign Out</span>
                         </button>
                       </div>
@@ -728,10 +799,12 @@ const Header = ({
       </header>
       <div
         className={`${
-          isMobile && !isHeaderVisible
+          (isMobile || isTablet) && !isHeaderVisible
             ? "h-0"
             : isMobile
             ? "h-[60px]"
+            : isTablet
+            ? "h-[68px]"
             : "h-[72px]"
         }`}
         aria-hidden="true"

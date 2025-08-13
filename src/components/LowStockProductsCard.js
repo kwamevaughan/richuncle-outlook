@@ -16,9 +16,15 @@ export default function LowStockProductsCard({ selectedStore }) {
       try {
         const res = await fetch("/api/products");
         const json = await res.json();
-        if (!json.success) throw new Error(json.error || "Failed to fetch products");
+        if (!json.success)
+          throw new Error(json.error || "Failed to fetch products");
         // Low stock: quantity <= 20 (adjust as needed)
-        const lowStock = (json.data || []).filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 20 && (!selectedStore || String(p.store_id) === String(selectedStore)));
+        const lowStock = (json.data || []).filter(
+          (p) =>
+            parseInt(p.quantity) > 0 &&
+            parseInt(p.quantity) <= 20 &&
+            (!selectedStore || String(p.store_id) === String(selectedStore))
+        );
         setProducts(lowStock);
       } catch (err) {
         setError(err.message || "Failed to load products");
@@ -28,7 +34,7 @@ export default function LowStockProductsCard({ selectedStore }) {
       }
     }
     fetchProducts();
-  }, []);
+  }, [selectedStore]);
 
   return (
     <div className="">
@@ -60,7 +66,7 @@ export default function LowStockProductsCard({ selectedStore }) {
             No low stock products.
           </div>
         ) : (
-          products.map((product) => (
+          products.slice(0, 4).map((product) => (
             <div
               key={product.id}
               className="flex items-center gap-4 px-2 py-3 border-b last:border-b-0 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-sm rounded-lg bg-white hover:bg-gray-50"
@@ -75,7 +81,10 @@ export default function LowStockProductsCard({ selectedStore }) {
                 />
               ) : (
                 <span className="w-14 h-14 flex items-center justify-center rounded-lg border bg-gray-50">
-                  <Icon icon="mdi:image-off-outline" className="text-2xl text-gray-400" />
+                  <Icon
+                    icon="mdi:image-off-outline"
+                    className="text-2xl text-gray-400"
+                  />
                 </span>
               )}
               <div className="flex-1 min-w-0">
@@ -100,4 +109,4 @@ export default function LowStockProductsCard({ selectedStore }) {
       </div>
     </div>
   );
-} 
+}

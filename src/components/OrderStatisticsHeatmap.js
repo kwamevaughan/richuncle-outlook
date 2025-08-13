@@ -148,7 +148,7 @@ export default function OrderStatisticsHeatmap({ selectedStore }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow p-0 w-full max-w-xl">
+    <div className="bg-white rounded-2xl shadow p-0 w-full ">
       <div className="flex items-center justify-between border-b px-6 py-4">
         <div className="flex items-center gap-2">
           <span className="bg-violet-100 p-2 rounded-lg">

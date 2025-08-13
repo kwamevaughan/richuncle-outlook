@@ -10,10 +10,15 @@ const useSidebar = () => {
     offset: 0,
   });
 
-  // Fix: Move isMobile calculation inside useMemo to prevent hydration mismatches
+  // Fix: Move isMobile and isTablet calculation inside useMemo to prevent hydration mismatches
   const isMobile = useMemo(() => {
     if (windowWidth === null) return false; // Default to false during SSR
     return windowWidth < 640;
+  }, [windowWidth]);
+
+  const isTablet = useMemo(() => {
+    if (windowWidth === null) return false; // Default to false during SSR
+    return windowWidth >= 640 && windowWidth < 1024; // sm to lg breakpoint
   }, [windowWidth]);
 
   const getInitialSidebarState = () => {
@@ -87,6 +92,7 @@ const useSidebar = () => {
     sidebarState,
     updateDragOffset,
     isMobile,
+    isTablet,
   };
 };
 
