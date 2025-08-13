@@ -404,7 +404,7 @@ const CashRegisterModal = ({
       const result = await response.json();
       if (result.success) {
         setSession(null);
-        setCloseAmount(0);
+        setCloseAmount(undefined);
         setCloseNote("");
         setShowCloseConfirm(false);
         if (onSessionChanged) await onSessionChanged();
