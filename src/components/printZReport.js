@@ -11,7 +11,7 @@ export default function printZReport(zReport) {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Z-Report</title>
+      <title>End of Day Report</title>
       <style>
         @media print {
           body { margin: 0; padding: 20px; font-family: 'Courier New', monospace; }
@@ -47,7 +47,7 @@ export default function printZReport(zReport) {
     <body>
       <div class="zreport">
         <div class="header">
-          <div class="title">Z-Report</div>
+          <div class="title">End of Day Report</div>
           <div class="info">Register: ${registerName}</div>
         </div>
         <div class="section">
