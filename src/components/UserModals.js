@@ -180,7 +180,7 @@ export default function UserModals({
             </div>
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Address
             </label>
@@ -532,7 +532,7 @@ export default function UserModals({
               )}
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Address
               </label>
@@ -550,7 +550,7 @@ export default function UserModals({
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Emergency Contact Name

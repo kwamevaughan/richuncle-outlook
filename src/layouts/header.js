@@ -35,6 +35,7 @@ const Header = ({
   const [selectedStore, setSelectedStore] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showAllAddOptions, setShowAllAddOptions] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -106,6 +107,33 @@ const Header = ({
     };
     fetchStores();
   }, []);
+
+  // Messages: fetch unread count
+  const fetchUnreadMessageCount = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user }),
+      });
+      const data = await res.json();
+      if (data.conversations) {
+        const totalUnread = data.conversations.reduce((total, conv) => {
+          return total + (conv.unread_count || 0);
+        }, 0);
+        setUnreadMessageCount(totalUnread);
+      }
+    } catch (err) {
+      console.error("Failed to fetch unread message count:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadMessageCount();
+    const interval = setInterval(fetchUnreadMessageCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Persist selected store
   useEffect(() => {
@@ -273,6 +301,36 @@ const Header = ({
                 >
                   <NotificationButton mode={mode} user={user} />
                 </div>
+              )}
+
+              {/* Messages - visible on mobile/tablet */}
+              {(isMobile || isTablet) && (
+                <TooltipIconButton
+                  label="Messages"
+                  mode={mode}
+                  className={`select-none ${
+                    isMobile
+                      ? "px-2.5 py-2 min-h-[44px] min-w-[44px]"
+                      : "px-3.5 py-3.5 min-h-[48px] min-w-[48px]"
+                  } rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 relative`}
+                  onClick={() => router.push("/messages")}
+                >
+                  <Icon
+                    icon="mdi:message-text"
+                    className={`${
+                      isMobile ? "h-5 w-5" : "h-7 w-7"
+                    } text-gray-500`}
+                  />
+                  {unreadMessageCount > 0 && (
+                    <div
+                      className={`absolute -top-1 -right-1 bg-red-500 text-white ${
+                        isMobile ? "text-xs h-4 w-4" : "text-xs h-5 w-5"
+                      } rounded-full flex items-center justify-center font-bold`}
+                    >
+                      {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+                    </div>
+                  )}
+                </TooltipIconButton>
               )}
 
               {/* Add New - visible on tablet for non-cashiers */}
@@ -1021,6 +1079,23 @@ const Header = ({
                     {user?.role !== "cashier" && (
                       <NotificationButton mode={mode} user={user} />
                     )}
+                    {/* Messages - desktop */}
+                    <TooltipIconButton
+                      label="Messages"
+                      mode={mode}
+                      className="bg-white/50 relative"
+                      onClick={() => router.push("/messages")}
+                    >
+                      <Icon
+                        icon="mdi:message-text"
+                        className="h-6 w-6 text-gray-500"
+                      />
+                      {unreadMessageCount > 0 && (
+                        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs h-5 w-5 rounded-full flex items-center justify-center font-bold">
+                          {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+                        </div>
+                      )}
+                    </TooltipIconButton>
                   </div>
 
                   {/* Theme toggle - desktop */}

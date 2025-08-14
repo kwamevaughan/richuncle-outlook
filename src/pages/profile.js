@@ -39,11 +39,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
   const [originalImageUrl, setOriginalImageUrl] = useState(null);
   
   // Form states
-  const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    avatar_url: ""
-  });
+  const [formData, setFormData] = useState(null);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -88,7 +84,13 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
             updated_at: result.data.updated_at,
             avatar_file_id: result.data.avatar_file_id,
             crop_transform: result.data.crop_transform,
-            store_id: result.data.store_id
+            store_id: result.data.store_id,
+            phone_number: result.data.phone_number,
+            date_of_birth: result.data.date_of_birth,
+            address: result.data.address,
+            emergency_contact_name: result.data.emergency_contact_name,
+            emergency_contact_phone: result.data.emergency_contact_phone,
+            emergency_contact_relationship: result.data.emergency_contact_relationship
           };
           setUser(freshUserData);
           setCurrentAvatarFileId(result.data.avatar_file_id);
@@ -119,7 +121,13 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
           setFormData({
             full_name: freshUserData.name || "",
             email: freshUserData.email || "",
-            avatar_url: freshUserData.avatar_url || ""
+            avatar_url: freshUserData.avatar_url || "",
+            phone_number: freshUserData.phone_number || "",
+            date_of_birth: freshUserData.date_of_birth || "",
+            address: freshUserData.address || "",
+            emergency_contact_name: freshUserData.emergency_contact_name || "",
+            emergency_contact_phone: freshUserData.emergency_contact_phone || "",
+            emergency_contact_relationship: freshUserData.emergency_contact_relationship || ""
           });
         } else {
           setUser(cachedUser);
@@ -127,7 +135,13 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
           setFormData({
             full_name: cachedUser.name || "",
             email: cachedUser.email || "",
-            avatar_url: cachedUser.avatar_url || ""
+            avatar_url: cachedUser.avatar_url || "",
+            phone_number: cachedUser.phone_number || "",
+            date_of_birth: cachedUser.date_of_birth || "",
+            address: cachedUser.address || "",
+            emergency_contact_name: cachedUser.emergency_contact_name || "",
+            emergency_contact_phone: cachedUser.emergency_contact_phone || "",
+            emergency_contact_relationship: cachedUser.emergency_contact_relationship || ""
           });
         }
       } catch (error) {
@@ -137,7 +151,13 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
         setFormData({
           full_name: cachedUser.name || "",
           email: cachedUser.email || "",
-          avatar_url: cachedUser.avatar_url || ""
+          avatar_url: cachedUser.avatar_url || "",
+          phone_number: cachedUser.phone_number || "",
+          date_of_birth: cachedUser.date_of_birth || "",
+          address: cachedUser.address || "",
+          emergency_contact_name: cachedUser.emergency_contact_name || "",
+          emergency_contact_phone: cachedUser.emergency_contact_phone || "",
+          emergency_contact_relationship: cachedUser.emergency_contact_relationship || ""
         });
       } finally {
         setLoadingUserData(false);
@@ -196,7 +216,13 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
         body: JSON.stringify({
           full_name: formData.full_name,
           avatar_url: formData.avatar_url,
-          avatar_file_id: currentAvatarFileId
+          avatar_file_id: currentAvatarFileId,
+          phone_number: formData.phone_number,
+          date_of_birth: formData.date_of_birth,
+          address: formData.address,
+          emergency_contact_name: formData.emergency_contact_name,
+          emergency_contact_phone: formData.emergency_contact_phone,
+          emergency_contact_relationship: formData.emergency_contact_relationship
         })
       });
       
@@ -205,16 +231,38 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
       if (result.success) {
         toast.success("Profile updated successfully");
         setIsEditing(false);
-        // Update local user data
+        // Update local user data and state
         const updatedUser = { 
           ...user, 
           name: formData.full_name, 
           avatar_url: formData.avatar_url,
-          avatar_file_id: currentAvatarFileId
+          avatar_file_id: currentAvatarFileId,
+          phone_number: formData.phone_number,
+          date_of_birth: formData.date_of_birth,
+          address: formData.address,
+          emergency_contact_name: formData.emergency_contact_name,
+          emergency_contact_phone: formData.emergency_contact_phone,
+          emergency_contact_relationship: formData.emergency_contact_relationship
         };
+        
+        // Update localStorage
         localStorage.setItem("ruo_user_data", JSON.stringify(updatedUser));
-        // Force page reload to update user context
-        window.location.reload();
+        
+        // Update local state to reflect changes immediately
+        setUser(updatedUser);
+        
+        // Update form data to reflect the saved values
+        setFormData({
+          ...formData,
+          full_name: formData.full_name,
+          avatar_url: formData.avatar_url,
+          phone_number: formData.phone_number,
+          date_of_birth: formData.date_of_birth,
+          address: formData.address,
+          emergency_contact_name: formData.emergency_contact_name,
+          emergency_contact_phone: formData.emergency_contact_phone,
+          emergency_contact_relationship: formData.emergency_contact_relationship
+        });
       } else {
         throw new Error(result.error || "Failed to update profile");
       }
