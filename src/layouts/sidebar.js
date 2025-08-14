@@ -229,12 +229,7 @@ const Sidebar = ({
   const handleNavigation = async (href, label) => {
     if (!router) return;
     try {
-      console.log("[Sidebar] Navigation started:", {
-        href,
-        label,
-        isMobile,
-        isOpen,
-      });
+      
 
       // Check if we're navigating to the same pathname but different query params
       const [pathname, queryString] = href.split("?");
