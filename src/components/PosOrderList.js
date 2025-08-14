@@ -161,7 +161,9 @@ const PosOrderList = ({
     // Show the scanned barcode briefly
     toast.success(`Scanned: ${barcode}`, { duration: 1000 });
 
-    const found = products.find((p) => p.barcode === barcode);
+    const found = products.find(
+      (p) => p.barcode === barcode || p.sku === barcode,
+    );
 
     if (!found) {
       // Barcode not found - show error and keep input for manual search
