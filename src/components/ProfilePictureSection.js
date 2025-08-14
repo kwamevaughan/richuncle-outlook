@@ -16,7 +16,7 @@ export default function ProfilePictureSection({
 }) {
   return (
     <div
-      className={`rounded-xl p-6 border ${
+      className={`rounded-xl p-6 border mb-6 ${
         mode === "dark"
           ? "bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-800"
           : "bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100"
