@@ -123,9 +123,33 @@ export function AddEditModal({
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [variantAttributes, setVariantAttributes] = useState([]);
-  const [selectedVariantAttributes, setSelectedVariantAttributes] = useState(
-    item?.variant_attributes || {}
-  );
+  const [selectedVariantAttributes, setSelectedVariantAttributes] = useState(() => {
+    // Safely initialize variant attributes, ensuring they're valid
+    if (item?.variant_attributes) {
+      try {
+        // If it's a string, parse it
+        const parsed = typeof item.variant_attributes === 'string' 
+          ? JSON.parse(item.variant_attributes) 
+          : item.variant_attributes;
+        
+        // Validate that the keys are proper UUIDs (not corrupted)
+        const isValid = Object.keys(parsed).every(key => 
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)
+        );
+        
+        if (isValid) {
+          return parsed;
+        } else {
+          console.warn('Corrupted variant_attributes detected, resetting to empty');
+          return {};
+        }
+      } catch (e) {
+        console.warn('Failed to parse variant_attributes, resetting to empty:', e);
+        return {};
+      }
+    }
+    return {};
+  });
   const [showVariantAttributes, setShowVariantAttributes] = useState(false);
   const [showBarcode, setShowBarcode] = useState(false);
   const [sellingType, setSellingType] = useState(() => {
@@ -580,16 +604,23 @@ export function AddEditModal({
 
       // Auto-select variant attributes if only one option available
       variantAttributes.forEach((attr) => {
-        if (attr.values) {
-          const values = attr.values
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean);
-          if (values.length === 1 && !selectedVariantAttributes[attr.id]) {
-            setSelectedVariantAttributes((prev) => ({
-              ...prev,
-              [attr.id]: values[0],
-            }));
+        if (attr.values && attr.id) {
+          // Validate that attr.id is a proper UUID
+          const isValidId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(attr.id);
+          
+          if (isValidId) {
+            const values = attr.values
+              .split(",")
+              .map((v) => v.trim())
+              .filter(Boolean);
+            if (values.length === 1 && !selectedVariantAttributes[attr.id]) {
+              setSelectedVariantAttributes((prev) => ({
+                ...prev,
+                [attr.id]: values[0],
+              }));
+            }
+          } else {
+            console.warn('Invalid variant attribute ID detected:', attr.id);
           }
         }
       });
@@ -817,13 +848,13 @@ export function AddEditModal({
         toast.error(errorMsg);
         return;
       }
-      if (!quantity.trim()) {
+      if (!quantity || quantity.toString().trim() === "") {
         const errorMsg = "Quantity is required";
         setError(errorMsg);
         toast.error(errorMsg);
         return;
       }
-      if (!price.trim()) {
+      if (!price || price.toString().trim() === "") {
         const errorMsg = "Price is required";
         setError(errorMsg);
         toast.error(errorMsg);
@@ -2314,12 +2345,17 @@ export function AddEditModal({
                           <select
                             className="w-full border rounded px-3 py-2 text-sm"
                             value={selectedVariantAttributes[attr.id] || ""}
-                            onChange={(e) =>
-                              setSelectedVariantAttributes((prev) => ({
-                                ...prev,
-                                [attr.id]: e.target.value,
-                              }))
-                            }
+                            onChange={(e) => {
+                              // Validate that attr.id is a proper UUID before setting
+                              if (attr.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(attr.id)) {
+                                setSelectedVariantAttributes((prev) => ({
+                                  ...prev,
+                                  [attr.id]: e.target.value,
+                                }));
+                              } else {
+                                console.warn('Invalid variant attribute ID in onChange:', attr.id);
+                              }
+                            }}
                             disabled={loading}
                           >
                             <option value="">Select {attr.name}</option>

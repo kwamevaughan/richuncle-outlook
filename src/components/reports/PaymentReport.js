@@ -42,6 +42,7 @@ export default function PaymentReport({ dateRange, selectedStore, stores, mode }
         const ordersRes = await fetch("/api/orders");
         const ordersJson = await ordersRes.json();
         let ordersData = ordersJson.data || [];
+        
         if (dateRange.startDate && dateRange.endDate) {
           ordersData = ordersData.filter(order => {
             const orderDate = new Date(order.timestamp || order.created_at);
@@ -66,17 +67,25 @@ export default function PaymentReport({ dateRange, selectedStore, stores, mode }
     const paymentBreakdown = {};
     const paymentMethods = {};
     let totalRevenue = 0;
+    
     orders.forEach(order => {
       const orderAmount = parseFloat(order.total) || 0;
       totalRevenue += orderAmount;
+      
       let paymentData = order.payment_data;
       if (typeof paymentData === 'string') {
-        try { paymentData = JSON.parse(paymentData); } catch {}
+        try { 
+          paymentData = JSON.parse(paymentData); 
+        } catch (e) {
+          paymentData = null;
+        }
       }
+      
       if (paymentData && Array.isArray(paymentData.payments)) {
         paymentData.payments.forEach(payment => {
           const method = (payment.method || payment.paymentType || 'other').toLowerCase();
           const amount = parseFloat(payment.amount) || 0;
+          
           if (!paymentBreakdown[method]) {
             paymentBreakdown[method] = 0;
             paymentMethods[method] = { total: 0, count: 0 };
@@ -87,6 +96,7 @@ export default function PaymentReport({ dateRange, selectedStore, stores, mode }
         });
       } else if (paymentData && (paymentData.paymentType || paymentData.method)) {
         const method = (paymentData.paymentType || paymentData.method || 'other').toLowerCase();
+        
         if (!paymentBreakdown[method]) {
           paymentBreakdown[method] = 0;
           paymentMethods[method] = { total: 0, count: 0 };
@@ -96,6 +106,7 @@ export default function PaymentReport({ dateRange, selectedStore, stores, mode }
         paymentMethods[method].count++;
       } else if (order.payment_method) {
         const method = order.payment_method.toLowerCase();
+        
         if (!paymentBreakdown[method]) {
           paymentBreakdown[method] = 0;
           paymentMethods[method] = { total: 0, count: 0 };
@@ -113,6 +124,8 @@ export default function PaymentReport({ dateRange, selectedStore, stores, mode }
         paymentMethods['other'].count++;
       }
     });
+
+    
     return { paymentBreakdown, paymentMethods, totalRevenue };
   };
 
@@ -242,6 +255,8 @@ export default function PaymentReport({ dateRange, selectedStore, stores, mode }
 
   return (
     <div className="p-6">
+
+      
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Analytics</h2>
         <p className="text-gray-600">
