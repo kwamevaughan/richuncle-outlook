@@ -3,8 +3,19 @@ import { Icon } from '@iconify/react';
 import { format } from 'date-fns';
 import { useUser } from '@/hooks/useUser';
 import MessageReactions from './MessageReactions';
+import UserStatus from './UserStatus';
 
-export default function MessageList({ messages, loading, participants, onReaction, shouldAutoScroll = true, scrollContainerRef }) {
+export default function MessageList({ 
+  messages, 
+  loading, 
+  participants, 
+  onReaction, 
+  shouldAutoScroll = true, 
+  scrollContainerRef,
+  isUserOnline,
+  formatLastSeen,
+  getUserLastSeen
+}) {
   const { user } = useUser();
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -154,8 +165,19 @@ export default function MessageList({ messages, loading, participants, onReactio
               {/* Sender Info */}
               {!isOwnMessage && showSenderInfo && (
                 <div className="flex items-center space-x-2 mb-1">
-                  <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
-                    <Icon icon="mdi:account" className="w-3 h-3 text-gray-600" />
+                  <div className="relative">
+                    <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
+                      <Icon icon="mdi:account" className="w-3 h-3 text-gray-600" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1">
+                      <UserStatus
+                        userId={message.sender_id}
+                        isOnline={isUserOnline && isUserOnline(message.sender_id)}
+                        lastSeen={getUserLastSeen && getUserLastSeen(message.sender_id)}
+                        formatLastSeen={formatLastSeen}
+                        size="xs"
+                      />
+                    </div>
                   </div>
                   <span className="text-xs font-medium text-gray-700">
                     {message.sender?.full_name || getParticipantName(message.sender_id)}

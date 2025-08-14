@@ -47,6 +47,12 @@ export default async function handler(req, res) {
           const messages = conv.messages || [];
           const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
           
+          // For direct conversations, find the other participant
+          let otherParticipantId = null;
+          if (conv.type === 'direct' && participants.length === 2) {
+            otherParticipantId = participants.find(p => p.user_id !== user.id)?.user_id;
+          }
+          
           return {
             id: conv.id,
             title: conv.title,
@@ -54,6 +60,7 @@ export default async function handler(req, res) {
             created_at: conv.created_at,
             updated_at: conv.updated_at,
             participants: participants.length,
+            other_participant_id: otherParticipantId,
             last_message: lastMessage,
             unread_count: participants.find(p => p.user_id === user.id)?.last_read_at 
               ? messages.filter(m => new Date(m.created_at) > new Date(participants.find(p => p.user_id === user.id).last_read_at)).length

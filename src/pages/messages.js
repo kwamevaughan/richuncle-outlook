@@ -6,6 +6,7 @@ import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import useMessaging from "@/hooks/useMessaging";
+import useUserPresence from "@/hooks/useUserPresence";
 import ConversationList from "@/components/messaging/ConversationList";
 import MessageList from "@/components/messaging/MessageList";
 import MessageInput from "@/components/messaging/MessageInput";
@@ -14,6 +15,7 @@ import MessageSearch from "@/components/messaging/MessageSearch";
 import ConversationActions from "@/components/messaging/ConversationActions";
 import PushNotificationService from "@/components/messaging/PushNotificationService";
 import TypingIndicator from "@/components/messaging/TypingIndicator";
+
 
 export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -52,6 +54,16 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
     checkTypingStatus,
     refreshCurrentConversation,
   } = useMessaging(soundEnabled);
+
+  const {
+    onlineUsers,
+    lastSeen,
+    isUserOnline,
+    getUserLastSeen,
+    formatLastSeen,
+    updatePresence,
+    fetchOnlineUsers,
+  } = useUserPresence();
 
   const permissions = getRolePermissions();
 
@@ -373,6 +385,9 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
                 onSelectConversation={handleSelectConversation}
                 onCreateNew={() => setShowNewConversationModal(true)}
                 loading={loading}
+                isUserOnline={isUserOnline}
+                formatLastSeen={formatLastSeen}
+                getUserLastSeen={getUserLastSeen}
               />
             </div>
           </div>
@@ -401,11 +416,32 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
                         />
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold text-gray-900">
+                        <h2 className="text-lg font-semibold text-gray-900 flex items-center">
                           {currentConversation.title}
+                          {/* Show online status for direct conversations */}
+                          {currentConversation.type === 'direct' && currentConversation.other_participant_id && (
+                            <div className="ml-2 relative">
+                              <div className={`w-3 h-3 rounded-full ${
+                                isUserOnline(currentConversation.other_participant_id) 
+                                  ? 'bg-green-500' 
+                                  : 'bg-gray-400'
+                              }`} />
+                              {isUserOnline(currentConversation.other_participant_id) && (
+                                <div className="absolute inset-0 w-3 h-3 rounded-full bg-green-500 animate-ping opacity-75" />
+                              )}
+                            </div>
+                          )}
                         </h2>
                         <p className="text-sm text-gray-500">
                           {participants?.length || 0} participants
+                          {currentConversation.type === 'direct' && currentConversation.other_participant_id && (
+                            <span className="ml-2">
+                              • {isUserOnline(currentConversation.other_participant_id) 
+                                ? 'Online' 
+                                : formatLastSeen(getUserLastSeen(currentConversation.other_participant_id))
+                              }
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -483,6 +519,9 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
                       onReaction={handleMessageReaction}
                       shouldAutoScroll={!isUserTyping}
                       scrollContainerRef={scrollContainerRef}
+                      isUserOnline={isUserOnline}
+                      formatLastSeen={formatLastSeen}
+                      getUserLastSeen={getUserLastSeen}
                     />
                   </div>
                   <TypingIndicator typingUsers={typingUsers} />
@@ -539,6 +578,7 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
         messages={messages}
         onSelectMessage={handleMessageSearch}
       />
+
     </MainLayout>
   );
 } 
