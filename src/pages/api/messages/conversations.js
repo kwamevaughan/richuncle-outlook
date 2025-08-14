@@ -14,7 +14,7 @@ export default async function handler(req, res) {
 
       // If this is a GET request (fetching conversations)
       if (!title && !participant_ids) {
-        // Get conversations where user is a participant
+        // Get conversations where user is a participant with all participants
         const { data: conversations, error } = await supabaseAdmin
           .from('conversations')
           .select(`
@@ -41,16 +41,55 @@ export default async function handler(req, res) {
           return res.status(500).json({ error: "Failed to fetch conversations" });
         }
 
+        // Early return if no conversations
+        if (!conversations || conversations.length === 0) {
+          return res.status(200).json({ conversations: [] });
+        }
+
+        // Get all conversation IDs
+        const conversationIds = conversations.map(conv => conv.id);
+
+        // Fetch all participants for all conversations in a single query
+        const { data: allParticipants, error: participantsError } = await supabaseAdmin
+          .from('conversation_participants')
+          .select('conversation_id, user_id, role, last_read_at')
+          .in('conversation_id', conversationIds)
+          .eq('is_active', true);
+
+        if (participantsError) {
+          console.error('Error fetching participants:', participantsError);
+          return res.status(500).json({ error: "Failed to fetch participants" });
+        }
+
+        // Group participants by conversation_id
+        const participantsByConversation = {};
+        allParticipants.forEach(participant => {
+          if (!participantsByConversation[participant.conversation_id]) {
+            participantsByConversation[participant.conversation_id] = [];
+          }
+          participantsByConversation[participant.conversation_id].push(participant);
+        });
+
+        // Merge participants with conversations
+        const conversationsWithAllParticipants = conversations.map(conv => ({
+          ...conv,
+          conversation_participants: participantsByConversation[conv.id] || []
+        }));
+
         // Process conversations to include participant info and last message
-        const processedConversations = conversations.map(conv => {
+        const processedConversations = conversationsWithAllParticipants.map(conv => {
           const participants = conv.conversation_participants || [];
           const messages = conv.messages || [];
           const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
           
           // For direct conversations, find the other participant
           let otherParticipantId = null;
-          if (conv.type === 'direct' && participants.length === 2) {
-            otherParticipantId = participants.find(p => p.user_id !== user.id)?.user_id;
+          if (conv.type === 'direct' && participants.length >= 1) {
+            // Find any participant that is not the current user
+            const otherParticipant = participants.find(p => p.user_id !== user.id);
+            if (otherParticipant) {
+              otherParticipantId = otherParticipant.user_id;
+            }
           }
 
           const currentParticipant = participants.find(p => p.user_id === user.id);

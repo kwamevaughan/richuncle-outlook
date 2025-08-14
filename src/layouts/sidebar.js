@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import { Icon } from "@iconify/react";
 import { sidebarNav } from "@/data/nav";
 import { filterNavigationByRole } from "@/utils/navigationFilter";
+import UserStatus from "@/components/messaging/UserStatus";
+import useUserPresence from "@/hooks/useUserPresence";
 
 const Sidebar = ({
   mode,
@@ -25,6 +27,11 @@ const Sidebar = ({
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedItems, setExpandedItems] = useState({});
   const [filteredNav, setFilteredNav] = useState([]);
+
+  // Get user presence data
+  const {
+    isUserOnline,
+  } = useUserPresence();
 
   // Fetch filtered navigation
   useEffect(() => {
@@ -692,7 +699,12 @@ const Sidebar = ({
                   >
                     {user && user.name ? user.name : "Guest"}
                   </span>
-                  <div className="w-3 h-3 bg-green-400 rounded-full border border-green-400 flex items-center justify-center aspect-square"></div>
+                  <UserStatus
+                    userId={user?.id}
+                    isOnline={isUserOnline && isUserOnline(user?.id)}
+                    size="sm"
+                    className="border border-white rounded-full shadow-sm"
+                  />
                 </div>
               ) : null}
             </div>

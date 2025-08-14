@@ -51,7 +51,7 @@ export default function OnlineUsersList({
                       <UserStatus
                         userId={user.id}
                         isOnline={true}
-                        size="xs"
+                        size="sm"
                       />
                     </div>
                   </div>
@@ -93,7 +93,7 @@ export default function OnlineUsersList({
                         isOnline={false}
                         lastSeen={getUserLastSeen(user.id)}
                         formatLastSeen={formatLastSeen}
-                        size="xs"
+                        size="sm"
                       />
                     </div>
                   </div>

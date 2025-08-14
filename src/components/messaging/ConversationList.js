@@ -139,17 +139,18 @@ export default function ConversationList({
                       </div>
                       {/* Show online status for direct conversations */}
                       {conversation.type === 'direct' && conversation.other_participant_id && (
-                        <div className="absolute -bottom-0.5 -right-0.5">
+                        <div className="absolute -bottom-0.5 -right-0.5 z-10">
                           <UserStatus
                             userId={conversation.other_participant_id}
                             isOnline={isUserOnline && isUserOnline(conversation.other_participant_id)}
                             lastSeen={getUserLastSeen && getUserLastSeen(conversation.other_participant_id)}
                             formatLastSeen={formatLastSeen}
-                            size="md"
-                            className="border-2 border-white rounded-full"
+                            size="sm"
+                            className="border border-white rounded-full shadow-sm"
                           />
                         </div>
                       )}
+
                     </div>
 
                   </div>

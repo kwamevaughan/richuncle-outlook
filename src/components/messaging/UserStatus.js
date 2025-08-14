@@ -8,10 +8,10 @@ export default function UserStatus({
   className = ""
 }) {
   const sizeClasses = {
-    xs: "w-2 h-2",
-    sm: "w-3 h-3",
-    md: "w-4 h-4",
-    lg: "w-5 h-5"
+    xs: "w-1.5 h-1.5",
+    sm: "w-2 h-2",
+    md: "w-2.5 h-2.5",
+    lg: "w-3 h-3"
   };
 
   const textSizeClasses = {
@@ -25,7 +25,7 @@ export default function UserStatus({
     <div className={`flex items-center ${className}`}>
       <div className="relative">
         <div 
-          className={`${sizeClasses[size]} rounded-full ${
+          className={`${sizeClasses[size]} rounded-full border border-white shadow-sm ${
             isOnline 
               ? 'bg-green-500' 
               : 'bg-gray-400'
@@ -35,6 +35,7 @@ export default function UserStatus({
         {isOnline && (
           <div 
             className={`absolute inset-0 ${sizeClasses[size]} rounded-full bg-green-500 animate-ping opacity-75`}
+            style={{ animationDuration: '2s' }}
           />
         )}
       </div>

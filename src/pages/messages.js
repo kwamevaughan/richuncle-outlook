@@ -15,6 +15,7 @@ import MessageSearch from "@/components/messaging/MessageSearch";
 import ConversationActions from "@/components/messaging/ConversationActions";
 import PushNotificationService from "@/components/messaging/PushNotificationService";
 import TypingIndicator from "@/components/messaging/TypingIndicator";
+import UserStatus from "@/components/messaging/UserStatus";
 
 
 export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
@@ -421,14 +422,14 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
                           {/* Show online status for direct conversations */}
                           {currentConversation.type === 'direct' && currentConversation.other_participant_id && (
                             <div className="ml-2 relative">
-                              <div className={`w-3 h-3 rounded-full ${
-                                isUserOnline(currentConversation.other_participant_id) 
-                                  ? 'bg-green-500' 
-                                  : 'bg-gray-400'
-                              }`} />
-                              {isUserOnline(currentConversation.other_participant_id) && (
-                                <div className="absolute inset-0 w-2 h-2 rounded-full bg-green-500 animate-ping opacity-75" />
-                              )}
+                              <UserStatus
+                                userId={currentConversation.other_participant_id}
+                                isOnline={isUserOnline && isUserOnline(currentConversation.other_participant_id)}
+                                lastSeen={getUserLastSeen && getUserLastSeen(currentConversation.other_participant_id)}
+                                formatLastSeen={formatLastSeen}
+                                size="sm"
+                                className="border border-white rounded-full shadow-sm"
+                              />
                             </div>
                           )}
                         </h2>

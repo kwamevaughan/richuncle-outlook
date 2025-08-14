@@ -27,7 +27,6 @@ export default function MessageList({
     
     if (scrollContainerRef?.current) {
       scrollTarget = scrollContainerRef.current;
-      console.log('Using passed scroll container ref');
     } else if (messagesContainerRef.current) {
       const parent = messagesContainerRef.current.closest('.overflow-y-auto');
       if (parent) {
@@ -37,7 +36,6 @@ export default function MessageList({
     }
     
     if (scrollTarget) {
-      console.log('Scrolling container to bottom');
       scrollTarget.scrollTop = scrollTarget.scrollHeight;
       
       // Force scroll again after a short delay
@@ -48,7 +46,6 @@ export default function MessageList({
     
     // Method 2: Try scrolling the last message into view
     if (messagesEndRef.current) {
-      console.log('Scrolling last message into view');
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   };
