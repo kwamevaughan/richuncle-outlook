@@ -55,7 +55,7 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                   mode === "dark" ? "text-white" : "text-blue-900"
                 }`}
               >
-                RichUncle Outlook
+                RichUncle
               </p>
             </div>
           </div>

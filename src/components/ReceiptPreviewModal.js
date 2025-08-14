@@ -1,12 +1,8 @@
-import React from 'react';
+import React from "react";
 import { Icon } from "@iconify/react";
-import SimpleModal from './SimpleModal';
+import SimpleModal from "./SimpleModal";
 
-const ReceiptPreviewModal = ({ 
-  isOpen, 
-  onClose, 
-  receiptData 
-}) => {
+const ReceiptPreviewModal = ({ isOpen, onClose, receiptData }) => {
   if (!isOpen || !receiptData) return null;
 
   const handlePrint = () => {
@@ -67,17 +63,17 @@ const ReceiptPreviewModal = ({
       <body>
         <div class="receipt">
           <div class="header">
-            <div class="store-name">RICHUNCLE OUTLOOK</div>
+            <div class="store-name">RICHUNCLE</div>
             <div class="store-info">Accra, Ghana</div>
             <div class="store-info">Tel: +233 059 861 2130</div>
           </div>
-          
+
           <div class="order-info">
             <div class="order-id">Order ID: ${receiptData.orderId}</div>
             <div>Date: ${receiptData.date}</div>
             <div>Time: ${receiptData.time}</div>
           </div>
-          
+
           <div class="customer-info">
             <div>Customer: ${receiptData.customer}</div>
             ${
@@ -86,7 +82,7 @@ const ReceiptPreviewModal = ({
                 : ""
             }
           </div>
-          
+
           <table class="items-table">
             <thead>
               <tr>
@@ -104,12 +100,12 @@ const ReceiptPreviewModal = ({
                   <td class="item-qty">${item.qty}</td>
                   <td class="item-price">GHS ${item.price.toLocaleString()}</td>
                 </tr>
-              `
+              `,
                 )
                 .join("")}
             </tbody>
           </table>
-          
+
           <div class="summary">
             <div class="summary-row">
               <span>Subtotal:</span>
@@ -130,7 +126,7 @@ const ReceiptPreviewModal = ({
               <span>GHS ${receiptData.total.toLocaleString()}</span>
             </div>
           </div>
-          
+
           ${
             receiptData.paymentData
               ? `
@@ -139,10 +135,10 @@ const ReceiptPreviewModal = ({
                 receiptData.paymentData.paymentType === "momo"
                   ? "Mobile Money"
                   : receiptData.paymentData.paymentType === "cash"
-                  ? "Cash"
-                  : receiptData.paymentData.paymentType === "split"
-                  ? "Split Payment"
-                  : receiptData.paymentData.paymentType
+                    ? "Cash"
+                    : receiptData.paymentData.paymentType === "split"
+                      ? "Split Payment"
+                      : receiptData.paymentData.paymentType
               }</div>
               ${
                 receiptData.paymentData.paymentType === "split"
@@ -152,21 +148,26 @@ const ReceiptPreviewModal = ({
                   receiptData.paymentData.remainingAmount
                 ).toLocaleString()}</div>
                 ${
-                  receiptData.paymentData.splitPayments && receiptData.paymentData.splitPayments.length > 0
-                    ? receiptData.paymentData.splitPayments.map((payment, index) => `
-                      <div>${payment.method || payment.paymentType || 'Payment'}: GHS ${parseFloat(payment.amount || 0).toLocaleString()}</div>
-                    `).join('')
-                    : '<div>Payment Methods: Split Payment</div>'
+                  receiptData.paymentData.splitPayments &&
+                  receiptData.paymentData.splitPayments.length > 0
+                    ? receiptData.paymentData.splitPayments
+                        .map(
+                          (payment, index) => `
+                      <div>${payment.method || payment.paymentType || "Payment"}: GHS ${parseFloat(payment.amount || 0).toLocaleString()}</div>
+                    `,
+                        )
+                        .join("")
+                    : "<div>Payment Methods: Split Payment</div>"
                 }
               `
                   : `
                 <div>Amount Paid: GHS ${parseFloat(
-                  receiptData.paymentData.payingAmount
+                  receiptData.paymentData.payingAmount,
                 ).toLocaleString()}</div>
                 ${
                   receiptData.paymentData.change > 0
                     ? `<div>Change: GHS ${receiptData.paymentData.change.toFixed(
-                        2
+                        2,
                       )}</div>`
                     : ""
                 }
@@ -190,12 +191,12 @@ const ReceiptPreviewModal = ({
             </div>
           `
           }
-          
+
           <div class="footer">
             <div class="thank-you">Thank You!</div>
             <div>Please come again</div>
             <div class="timestamp">Printed: ${new Date().toLocaleString(
-              "en-GH"
+              "en-GH",
             )}</div>
           </div>
         </div>
@@ -204,33 +205,33 @@ const ReceiptPreviewModal = ({
     `;
 
     // Create a temporary div with the print content
-    const printDiv = document.createElement('div');
+    const printDiv = document.createElement("div");
     printDiv.innerHTML = printContent;
-    printDiv.style.position = 'absolute';
-    printDiv.style.left = '-9999px';
-    printDiv.style.top = '-9999px';
-    
+    printDiv.style.position = "absolute";
+    printDiv.style.left = "-9999px";
+    printDiv.style.top = "-9999px";
+
     // Add to document temporarily
     document.body.appendChild(printDiv);
-    
+
     // Store current page content
     const originalContent = document.body.innerHTML;
     const originalTitle = document.title;
-    
+
     // Replace page content with print content
     document.body.innerHTML = printDiv.innerHTML;
     document.title = `Order Receipt - ${receiptData.orderId}`;
-    
+
     // Print
     window.print();
-    
+
     // Restore original content
     document.body.innerHTML = originalContent;
     document.title = originalTitle;
-    
+
     // Remove temporary div
     document.body.removeChild(printDiv);
-    
+
     // Close the modal
     onClose();
   };
@@ -247,7 +248,7 @@ const ReceiptPreviewModal = ({
         {/* Receipt Preview */}
         <div className="bg-gray-50 rounded-lg p-6 font-mono text-sm">
           <div className="text-center border-b border-dashed border-gray-400 pb-3 mb-4">
-            <div className="text-lg font-bold">RICHUNCLE OUTLOOK</div>
+            <div className="text-lg font-bold">RICHUNCLE</div>
             <div className="text-xs">Accra, Ghana</div>
             <div className="text-xs">Tel: +233 059 861 2130</div>
           </div>
@@ -310,10 +311,10 @@ const ReceiptPreviewModal = ({
                 {receiptData.paymentData.paymentType === "momo"
                   ? "Mobile Money"
                   : receiptData.paymentData.paymentType === "cash"
-                  ? "Cash"
-                  : receiptData.paymentData.paymentType === "split"
-                  ? "Split Payment"
-                  : receiptData.paymentData.paymentType}
+                    ? "Cash"
+                    : receiptData.paymentData.paymentType === "split"
+                      ? "Split Payment"
+                      : receiptData.paymentData.paymentType}
               </div>
               {receiptData.paymentData.paymentType === "split" ? (
                 <>
@@ -334,7 +335,7 @@ const ReceiptPreviewModal = ({
                   <div>
                     Amount Paid: GHS{" "}
                     {parseFloat(
-                      receiptData.paymentData.payingAmount
+                      receiptData.paymentData.payingAmount,
                     ).toLocaleString()}
                   </div>
                   {receiptData.paymentData.change > 0 && (
@@ -389,4 +390,4 @@ const ReceiptPreviewModal = ({
   );
 };
 
-export default ReceiptPreviewModal; 
+export default ReceiptPreviewModal;

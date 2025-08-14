@@ -4,7 +4,15 @@ import Header from "@/layouts/header";
 import useSidebar from "@/hooks/useSidebar";
 import { useState } from "react";
 
-export default function MainLayout({ children, mode, HeaderComponent = Header, showSidebar = true, user, onLogout, ...props }) {
+export default function MainLayout({
+  children,
+  mode,
+  HeaderComponent = Header,
+  showSidebar = true,
+  user,
+  onLogout,
+  ...props
+}) {
   const { isSidebarOpen, toggleSidebar, isMobile, isTablet } = useSidebar();
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
@@ -13,24 +21,50 @@ export default function MainLayout({ children, mode, HeaderComponent = Header, s
   };
 
   // Determine margin-left based on sidebar state and device type
-  const contentMargin = !showSidebar 
-    ? "ml-0" 
-    : (isMobile || isTablet) 
-      ? "ml-0" 
-      : isSidebarOpen 
-        ? "ml-60" 
+  const contentMargin = !showSidebar
+    ? "ml-0"
+    : isMobile || isTablet
+      ? "ml-0"
+      : isSidebarOpen
+        ? "ml-60"
         : "ml-16";
 
+  // Additional padding for mobile/tablet when sidebar is open to prevent overlap
+  const contentPadding = (isMobile || isTablet) && isSidebarOpen ? "pr-4" : "";
+
   return (
-    <div className={`min-h-screen flex flex-col ${mode === "dark" ? "bg-gray-900 text-white" : "text-gray-900"}`}>
-      <HeaderComponent {...props} isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} mode={mode} user={user} onLogout={onLogout} isHeaderVisible={isHeaderVisible} toggleHeader={toggleHeader} />
-      <div className="flex flex-1">
+    <div
+      className={`min-h-screen flex flex-col overflow-hidden ${mode === "dark" ? "bg-gray-900 text-white" : "text-gray-900"}`}
+    >
+      <HeaderComponent
+        {...props}
+        isSidebarOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        mode={mode}
+        user={user}
+        onLogout={onLogout}
+        isHeaderVisible={isHeaderVisible}
+        toggleHeader={toggleHeader}
+      />
+      <div className="flex flex-1 overflow-hidden">
         {showSidebar && (
-          <Sidebar isOpen={isSidebarOpen} mode={mode} toggleSidebar={toggleSidebar} user={user} onLogout={onLogout} isHeaderVisible={isHeaderVisible} toggleHeader={toggleHeader} isMobile={isMobile} isTablet={isTablet} />
+          <Sidebar
+            isOpen={isSidebarOpen}
+            mode={mode}
+            toggleSidebar={toggleSidebar}
+            user={user}
+            onLogout={onLogout}
+            isHeaderVisible={isHeaderVisible}
+            toggleHeader={toggleHeader}
+            isMobile={isMobile}
+            isTablet={isTablet}
+          />
         )}
-        <div className={`flex-1 flex flex-col transition-all ${contentMargin}`}>
-          <div className="flex flex-col flex-1">
-            <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col">
+        <div
+          className={`flex-1 flex flex-col transition-all overflow-hidden ${contentMargin} ${contentPadding}`}
+        >
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col overflow-hidden">
               {children}
             </div>
             <div className="p-4 md:p-6 lg:p-8">
@@ -41,4 +75,4 @@ export default function MainLayout({ children, mode, HeaderComponent = Header, s
       </div>
     </div>
   );
-} 
+}

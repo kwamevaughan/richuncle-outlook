@@ -29,9 +29,7 @@ const Sidebar = ({
   const [filteredNav, setFilteredNav] = useState([]);
 
   // Get user presence data
-  const {
-    isUserOnline,
-  } = useUserPresence();
+  const { isUserOnline } = useUserPresence();
 
   // Fetch filtered navigation
   useEffect(() => {
@@ -63,7 +61,7 @@ const Sidebar = ({
           if (!entry.items) continue; // skip standalone items
           if (
             entry.items.some(
-              ({ href }) => href.split("?")[0] === router.pathname
+              ({ href }) => href.split("?")[0] === router.pathname,
             )
           ) {
             activeCategory = entry.category;
@@ -96,7 +94,7 @@ const Sidebar = ({
       if (isOpen && (isMobile || isTablet)) {
         console.log(
           "[Sidebar] Route change completed, ensuring sidebar is closed:",
-          url
+          url,
         );
         toggleSidebar();
       }
@@ -142,7 +140,7 @@ const Sidebar = ({
         }
       }
     },
-    [router && router.pathname]
+    [router && router.pathname],
   );
 
   const handleResize = useCallback(() => {
@@ -187,7 +185,7 @@ const Sidebar = ({
 
     // For other query parameters, check if they match
     const isActive = Object.keys(hrefParams).every(
-      (key) => router.query[key] === hrefParams.get(key)
+      (key) => router.query[key] === hrefParams.get(key),
     );
     return isActive
       ? "bg-orange-100 text-blue-900 shadow-md"
@@ -219,7 +217,7 @@ const Sidebar = ({
     // If href has a tab parameter, only active if it matches current tab exactly
     const isActive = hrefTab === currentTab;
     console.log(
-      `[isSubItemActive] hrefTab: ${hrefTab}, currentTab: ${currentTab}, isActive: ${isActive}`
+      `[isSubItemActive] hrefTab: ${hrefTab}, currentTab: ${currentTab}, isActive: ${isActive}`,
     );
     return isActive
       ? "bg-orange-50 text-blue-800 shadow-sm ml-0"
@@ -229,8 +227,6 @@ const Sidebar = ({
   const handleNavigation = async (href, label) => {
     if (!router) return;
     try {
-      
-
       // Check if we're navigating to the same pathname but different query params
       const [pathname, queryString] = href.split("?");
       const isSamePath = router.pathname === pathname;
@@ -248,7 +244,7 @@ const Sidebar = ({
             query: queryObj,
           },
           undefined,
-          { shallow: true }
+          { shallow: true },
         );
       } else if (isSamePath && !queryString) {
         // If navigating to same path but no query string, clear all query params
@@ -258,7 +254,7 @@ const Sidebar = ({
             query: {},
           },
           undefined,
-          { shallow: true }
+          { shallow: true },
         );
       } else {
         // Use push for different pathnames
@@ -310,22 +306,22 @@ const Sidebar = ({
       )}
       <div
         ref={sidebarRef}
-        className={`fixed left-0 top-0 z-50 rounded-xl transition-all duration-300
-          ${isMobile ? "m-0" : "m-0 md:m-3"}
+        className={`fixed left-0 top-0 z-50 transition-all duration-300
+          ${isMobile ? "m-0 rounded-none" : "m-0 md:m-3 rounded-xl"}
           ${isMobile || isTablet ? (isOpen ? "block" : "hidden") : "block"}
           ${mode === "dark" ? "" : "bg-white"}
           group shadow-lg shadow-black/20 custom-scrollbar
         `}
         style={{
           width: isMobile
-            ? "100vw"
+            ? "85vw"
             : isTablet
-            ? isOpen
-              ? "280px"
-              : "64px"
-            : isOpen
-            ? "240px"
-            : "64px",
+              ? isOpen
+                ? "280px"
+                : "64px"
+              : isOpen
+                ? "240px"
+                : "64px",
           height: isMobile ? "100vh" : "calc(100vh - 48px)",
           maxHeight: isMobile ? "100vh" : "calc(100vh - 48px)",
         }}
@@ -336,7 +332,7 @@ const Sidebar = ({
               !isOpen && !isMobile && !isTablet
                 ? "justify-center"
                 : "justify-between"
-            } py-4 px-4 shadow-sm bg-blue-900 rounded-t-md`}
+            } py-4 px-4 shadow-sm bg-blue-900 ${isMobile ? "rounded-none" : "rounded-t-md"}`}
           >
             <div className="flex items-center gap-2 ">
               <p
@@ -346,7 +342,7 @@ const Sidebar = ({
                   mode === "dark" ? "text-white" : "text-white"
                 }`}
               >
-                {!isOpen && !isMobile && !isTablet ? "R" : "RichUncle Outlook"}
+                {!isOpen && !isMobile && !isTablet ? "R" : "RichUncle"}
               </p>
             </div>
 
@@ -497,13 +493,13 @@ const Sidebar = ({
                                   if (isRetrieveLayaways) {
                                     window.dispatchEvent(
                                       new CustomEvent(
-                                        "open-retrieve-layaways-modal"
-                                      )
+                                        "open-retrieve-layaways-modal",
+                                      ),
                                     );
                                     // Close sidebar on mobile/tablet for special events
                                     if ((isMobile || isTablet) && isOpen) {
                                       console.log(
-                                        "[Sidebar] Closing sidebar on mobile/tablet for layaways event"
+                                        "[Sidebar] Closing sidebar on mobile/tablet for layaways event",
                                       );
                                       // Close immediately for better UX
                                       toggleSidebar();
@@ -513,13 +509,13 @@ const Sidebar = ({
                                   if (isRetrieveOrders) {
                                     window.dispatchEvent(
                                       new CustomEvent(
-                                        "open-retrieve-orders-modal"
-                                      )
+                                        "open-retrieve-orders-modal",
+                                      ),
                                     );
                                     // Close sidebar on mobile/tablet for special events
                                     if ((isMobile || isTablet) && isOpen) {
                                       console.log(
-                                        "[Sidebar] Closing sidebar on mobile/tablet for orders event"
+                                        "[Sidebar] Closing sidebar on mobile/tablet for orders event",
                                       );
                                       // Close immediately for better UX
                                       toggleSidebar();
@@ -603,7 +599,7 @@ const Sidebar = ({
                                             onClick={() =>
                                               handleNavigation(
                                                 subHref,
-                                                subLabel
+                                                subLabel,
                                               )
                                             }
                                             className={`relative py-2 px-2 pl-2 flex items-center font-normal text-sm w-full cursor-pointer rounded-lg hover:shadow-sm transition-all duration-200 group mb-1
@@ -613,8 +609,8 @@ const Sidebar = ({
         ? "bg-gray-800 text-white"
         : "bg-orange-50 text-blue-800 shadow-sm ml-0"
       : mode === "dark"
-      ? "bg-gray-800/20 text-gray-200 hover:bg-blue-900/60 hover:text-white"
-      : "text-gray-600 hover:bg-orange-100 hover:text-blue-900"
+        ? "bg-gray-800/20 text-gray-200 hover:bg-blue-900/60 hover:text-white"
+        : "text-gray-600 hover:bg-orange-100 hover:text-blue-900"
   }
   ${!isOpen && !isMobile && !isTablet ? "justify-center" : ""}
 `}
@@ -636,7 +632,7 @@ const Sidebar = ({
                                             </span>
                                           </li>
                                         );
-                                      }
+                                      },
                                     )}
                                   </ul>
                                 </div>

@@ -1,5 +1,5 @@
 {
-  "name": "RichUncle Outlook - Business Management System",
+  "name": "RichUncle - Business Management System",
   "short_name": "RichUncle",
   "description": "Comprehensive business management system for inventory, sales, purchases, and financial tracking",
   "start_url": "/",
@@ -140,4 +140,4 @@
   "launch_handler": {
     "client_mode": "navigate-existing"
   }
-} 
+}

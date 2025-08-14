@@ -113,11 +113,11 @@ const PrintReceipt = ({
       <body>
         <div class="receipt">
           <div class="header">
-            <div class="store-name">RICHUNCLE OUTLOOK</div>
+            <div class="store-name">RICHUNCLE</div>
             <div class="store-info">Accra, Ghana</div>
             <div class="store-info">Tel: +233 059 861 2130</div>
           </div>
-          
+
           <div class="order-info">
             <div class="order-id">Order ID: ${orderId}</div>
             <div>Date: ${
@@ -131,30 +131,37 @@ const PrintReceipt = ({
                 : new Date().toLocaleTimeString("en-GH")
             }</div>
           </div>
-          
+
           <div class="customer-info">
             <div>Customer: ${
-              selectedCustomerId === '__online__' 
+              selectedCustomerId === "__online__"
                 ? "Online Purchase"
-                : selectedCustomerId && selectedCustomerId.startsWith('db_')
-                ? customers.find((c) => c.id === selectedCustomerId.replace('db_', ''))?.name || "Walk In Customer"
-                : customers.find((c) => c.id === selectedCustomerId)?.name ||
-                  "Walk In Customer"
+                : selectedCustomerId && selectedCustomerId.startsWith("db_")
+                  ? customers.find(
+                      (c) => c.id === selectedCustomerId.replace("db_", ""),
+                    )?.name || "Walk In Customer"
+                  : customers.find((c) => c.id === selectedCustomerId)?.name ||
+                    "Walk In Customer"
             }</div>
             ${
-              selectedCustomerId !== '__online__' && 
-              (selectedCustomerId && selectedCustomerId.startsWith('db_')
-                ? customers.find((c) => c.id === selectedCustomerId.replace('db_', ''))?.phone
+              selectedCustomerId !== "__online__" &&
+              (selectedCustomerId && selectedCustomerId.startsWith("db_")
+                ? customers.find(
+                    (c) => c.id === selectedCustomerId.replace("db_", ""),
+                  )?.phone
                 : customers.find((c) => c.id === selectedCustomerId)?.phone)
                 ? `<div>Phone: ${
-                    selectedCustomerId && selectedCustomerId.startsWith('db_')
-                      ? customers.find((c) => c.id === selectedCustomerId.replace('db_', ''))?.phone
-                      : customers.find((c) => c.id === selectedCustomerId)?.phone
+                    selectedCustomerId && selectedCustomerId.startsWith("db_")
+                      ? customers.find(
+                          (c) => c.id === selectedCustomerId.replace("db_", ""),
+                        )?.phone
+                      : customers.find((c) => c.id === selectedCustomerId)
+                          ?.phone
                   }</div>`
                 : ""
             }
           </div>
-          
+
           <table class="items-table">
             <thead>
               <tr>
@@ -183,7 +190,7 @@ const PrintReceipt = ({
                 .join("")}
             </tbody>
           </table>
-          
+
           <div class="summary">
             <div class="summary-row">
               <span>Subtotal:</span>
@@ -204,7 +211,7 @@ const PrintReceipt = ({
               <span>GHS ${safeTotal.toLocaleString()}</span>
             </div>
           </div>
-          
+
           ${
             safePaymentData
               ? `
@@ -213,10 +220,10 @@ const PrintReceipt = ({
                 safePaymentData?.paymentType === "momo"
                   ? "Mobile Money"
                   : safePaymentData?.paymentType === "cash"
-                  ? "Cash"
-                  : safePaymentData?.paymentType === "split"
-                  ? "Split Payment"
-                  : safePaymentData?.paymentType || "Unknown"
+                    ? "Cash"
+                    : safePaymentData?.paymentType === "split"
+                      ? "Split Payment"
+                      : safePaymentData?.paymentType || "Unknown"
               }</div>
               ${
                 safePaymentData?.paymentType === "split"
@@ -234,9 +241,9 @@ const PrintReceipt = ({
                       <div>${
                         payment.method || payment.paymentType || "Payment"
                       }: GHS ${parseFloat(
-                            payment.amount || 0
-                          ).toLocaleString()}</div>
-                    `
+                        payment.amount || 0,
+                      ).toLocaleString()}</div>
+                    `,
                         )
                         .join("")
                     : "<div>Payment Methods: Split Payment</div>"
@@ -244,7 +251,7 @@ const PrintReceipt = ({
               `
                   : `
                 <div>Amount Paid: GHS ${parseFloat(
-                  safePaymentData?.payingAmount || 0
+                  safePaymentData?.payingAmount || 0,
                 ).toLocaleString()}</div>
                 ${
                   (safePaymentData?.change || 0) > 0
@@ -264,7 +271,7 @@ const PrintReceipt = ({
             </div>
           `
           }
-          
+
           <div class="footer">
             <div class="thank-you">Thank You!</div>
             <div>Please come again</div>
@@ -284,7 +291,7 @@ const PrintReceipt = ({
       const printWindow = window.open(
         "",
         "PrintWindow",
-        "width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no"
+        "width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no",
       );
 
       if (printWindow) {

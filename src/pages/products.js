@@ -11,6 +11,7 @@ import { GenericTable } from "../components/GenericTable";
 import MainLayout from "@/layouts/MainLayout";
 import Image from "next/image";
 import ViewProductModal from "../components/ViewProductModal";
+import useResponsive from "../hooks/useResponsive";
 
 export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
@@ -21,6 +22,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
+  const { isMobile, isTablet, getTableContainerClass } = useResponsive();
 
   // Products state
   const [products, setProducts] = useState([]);
@@ -32,20 +34,26 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
 
   // Check for add query parameter to open modal
   useEffect(() => {
-    if (router.query.add === 'true') {
+    if (router.query.add === "true") {
       openAddModal();
       // Remove the query parameter
       router.replace(router.pathname, undefined, { shallow: true });
     }
   }, [router.query.add]);
 
-  // Define columns for the products table
+  // Define columns for the products table with responsive handling
   const columns = [
-    { Header: "SKU", accessor: "sku", sortable: true },
+    {
+      Header: "SKU",
+      accessor: "sku",
+      sortable: true,
+      className: isMobile ? "max-w-20 truncate" : isTablet ? "max-w-28" : "",
+    },
     {
       Header: "Product Name",
       accessor: "name",
       sortable: true,
+      className: isMobile ? "max-w-32" : isTablet ? "max-w-48" : "",
       render: (row) => (
         <span className="flex items-center gap-2">
           {row.image_url ? (
@@ -54,15 +62,17 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
               alt={row.name}
               width={32}
               height={32}
-              className="rounded object-cover border w-8 h-8"
+              className="rounded object-cover border w-8 h-8 flex-shrink-0"
             />
           ) : (
             <Icon
               icon="mdi:image-off-outline"
-              className="rounded border w-8 h-8 text-gray-400 bg-gray-100 object-cover"
+              className="rounded border w-8 h-8 text-gray-400 bg-gray-100 object-cover flex-shrink-0"
             />
           )}
-          <span>{row.name}</span>
+          <span className={`${isMobile || isTablet ? "truncate" : ""}`}>
+            {row.name}
+          </span>
         </span>
       ),
     },
@@ -70,25 +80,43 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
       Header: "Category",
       accessor: "category_id",
       sortable: false,
-      render: (row) => row.category_name || "-",
+      className: isMobile ? "max-w-20 truncate" : isTablet ? "max-w-28" : "",
+      render: (row) => (
+        <span className={`${isMobile || isTablet ? "truncate" : ""}`}>
+          {row.category_name || "-"}
+        </span>
+      ),
     },
     {
       Header: "Brand",
       accessor: "brand_id",
       sortable: false,
-      render: (row) => row.brand_name || "-",
+      className: isMobile ? "max-w-20 truncate" : isTablet ? "max-w-28" : "",
+      render: (row) => (
+        <span className={`${isMobile || isTablet ? "truncate" : ""}`}>
+          {row.brand_name || "-"}
+        </span>
+      ),
     },
     {
       Header: "Selling Price",
       accessor: "price",
       sortable: true,
-      render: (row) => `GHS ${row.price}`,
+      className: isMobile ? "max-w-20" : isTablet ? "max-w-28" : "",
+      render: (row) => (
+        <span className={`${isMobile ? "text-xs" : ""}`}>GHS {row.price}</span>
+      ),
     },
     {
       Header: "Cost Price",
       accessor: "cost_price",
       sortable: true,
-      render: (row) => `GHS ${row.cost_price || 0}`,
+      className: isMobile ? "max-w-20" : isTablet ? "max-w-28" : "",
+      render: (row) => (
+        <span className={`${isMobile ? "text-xs" : ""}`}>
+          GHS {row.cost_price || 0}
+        </span>
+      ),
     },
     {
       Header: "Tax",
@@ -107,13 +135,9 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                   : "bg-green-100 text-green-800"
               }`}
             >
-              {row.tax_type === "inclusive"
-                ? "Inclusive"
-                : "Exclusive"}
+              {row.tax_type === "inclusive" ? "Inclusive" : "Exclusive"}
             </span>
-            <span className="text-xs text-gray-600">
-              {row.tax_percentage}%
-            </span>
+            <span className="text-xs text-gray-600">{row.tax_percentage}%</span>
           </div>
         );
       },
@@ -122,9 +146,19 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
       Header: "Unit",
       accessor: "unit_id",
       sortable: false,
-      render: (row) => row.unit_name || "-",
+      className: isMobile ? "max-w-16 truncate" : isTablet ? "max-w-24" : "",
+      render: (row) => (
+        <span className={`${isMobile || isTablet ? "truncate" : ""}`}>
+          {row.unit_name || "-"}
+        </span>
+      ),
     },
-    { Header: "Qty", accessor: "quantity", sortable: true },
+    {
+      Header: "Qty",
+      accessor: "quantity",
+      sortable: true,
+      className: isMobile ? "max-w-16" : isTablet ? "max-w-24" : "",
+    },
     {
       Header: "Specs",
       accessor: "variant_attributes",
@@ -138,10 +172,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
           try {
             variantData = JSON.parse(variantData);
           } catch (e) {
-            console.error(
-              "Failed to parse variant_attributes:",
-              e
-            );
+            console.error("Failed to parse variant_attributes:", e);
             variantData = null;
           }
         }
@@ -149,38 +180,76 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
         if (
           !variantData ||
           Object.keys(variantData).length === 0 ||
-          Object.values(variantData).every(value => !value || value === "")
+          Object.values(variantData).every((value) => !value || value === "")
         ) {
           return <span className="text-gray-400">-</span>;
         }
 
         // Check if the data is malformed (contains very long keys or corrupted data)
-        const hasMalformedData = Object.entries(variantData).some(([key, value]) => {
-          return key.length > 50 || (typeof value === 'string' && value.length > 100);
-        });
+        const hasMalformedData = Object.entries(variantData).some(
+          ([key, value]) => {
+            return (
+              key.length > 50 ||
+              (typeof value === "string" && value.length > 100)
+            );
+          },
+        );
 
         if (hasMalformedData) {
-          console.warn('Malformed variant_attributes detected:', variantData);
+          console.warn("Malformed variant_attributes detected:", variantData);
           return (
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-red-600 font-medium">Data Error</span>
-              <span className="text-xs text-gray-500">Check console for details</span>
+              <span className="text-xs text-red-600 font-medium">
+                Data Error
+              </span>
+              <span className="text-xs text-gray-500">
+                Check console for details
+              </span>
             </div>
           );
         }
 
         return (
-          <div className="flex flex-wrap gap-1">
+          <div
+            className={`flex flex-wrap gap-1 ${isMobile || isTablet ? "max-w-36 overflow-hidden" : ""}`}
+          >
             {Object.entries(variantData)
               .filter(([attrId, value]) => value && value !== "")
+              .slice(0, isMobile ? 2 : isTablet ? 3 : undefined)
               .map(([attrId, value]) => (
                 <span
                   key={attrId}
-                  className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                  className={`px-2 py-1 bg-blue-100 text-blue-800 rounded-full ${isMobile ? "text-xs" : "text-xs"}`}
                 >
-                  {value}
+                  {isMobile || isTablet
+                    ? value.length > 8
+                      ? value.substring(0, 8) + "..."
+                      : value
+                    : value}
                 </span>
               ))}
+            {isMobile &&
+              Object.entries(variantData).filter(
+                ([attrId, value]) => value && value !== "",
+              ).length > 2 && (
+                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                  +
+                  {Object.entries(variantData).filter(
+                    ([attrId, value]) => value && value !== "",
+                  ).length - 2}
+                </span>
+              )}
+            {isTablet &&
+              Object.entries(variantData).filter(
+                ([attrId, value]) => value && value !== "",
+              ).length > 3 && (
+                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                  +
+                  {Object.entries(variantData).filter(
+                    ([attrId, value]) => value && value !== "",
+                  ).length - 3}
+                </span>
+              )}
           </div>
         );
       },
@@ -191,15 +260,15 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   const fetchProducts = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch("/api/products");
       const { data, error } = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(error || 'Failed to load products');
+        throw new Error(error || "Failed to load products");
       }
-      
+
       setProducts(data || []);
     } catch (err) {
       setError(err.message || "Failed to load products");
@@ -220,11 +289,11 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
     const { viewProductId } = router.query;
     if (viewProductId) {
       // Try to find the product in the loaded products
-      let product = products.find(p => p.id === viewProductId);
+      let product = products.find((p) => p.id === viewProductId);
       if (!product) {
         // If not found, fetch it
         fetch(`/api/products/${viewProductId}`)
-          .then(res => res.json())
+          .then((res) => res.json())
           .then(({ data }) => {
             if (data) setViewItem(data);
           });
@@ -258,9 +327,9 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   const handleDelete = async () => {
     try {
       const response = await fetch(`/api/products/${deleteItem.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       const result = await response.json();
@@ -276,21 +345,21 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   // Add a helper to add a new product
   const handleAddProduct = async (newProduct) => {
     // Insert the product
-    const response = await fetch('/api/products', {
-      method: 'POST',
+    const response = await fetch("/api/products", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(newProduct),
     });
     const { data, error } = await response.json();
     if (error) throw error;
-    
+
     // Fetch the full product row with joins using the correct select string
     const selectResponse = await fetch(`/api/products/${data.id}`);
     const { data: fullData, error: fetchError } = await selectResponse.json();
     if (fetchError) throw fetchError;
-    
+
     // Add the new product with joined fields to the state
     const newProductWithJoins = {
       ...fullData,
@@ -298,39 +367,40 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
       brand_name: fullData.brand_name || "",
       unit_name: fullData.unit_name || "",
     };
-    
-    setProducts((prev) => [
-      newProductWithJoins,
-      ...prev,
-    ]);
+
+    setProducts((prev) => [newProductWithJoins, ...prev]);
   };
 
   // Add a helper to update a product
   const handleUpdateProduct = async (id, updatedFields) => {
     const response = await fetch(`/api/products/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(updatedFields),
     });
     const { data, error } = await response.json();
     if (error) throw error;
-    
+
     // Fetch the full product row with joins to get updated category, unit, brand names
     const selectResponse = await fetch(`/api/products/${id}`);
     const { data: fullData, error: fetchError } = await selectResponse.json();
     if (fetchError) throw fetchError;
-    
+
     // Update the product with joined fields
     setProducts((prev) =>
-      prev.map((p) => (p.id === id ? {
-        ...p,
-        ...updatedFields,
-        category_name: fullData.category_name || "",
-        brand_name: fullData.brand_name || "",
-        unit_name: fullData.unit_name || "",
-      } : p))
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              ...updatedFields,
+              category_name: fullData.category_name || "",
+              brand_name: fullData.brand_name || "",
+              unit_name: fullData.unit_name || "",
+            }
+          : p,
+      ),
     );
   };
 
@@ -345,20 +415,24 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   // When closing the modal, remove viewProductId from the URL
   const closeViewModal = () => {
     setViewItem(null);
-    
+
     // Update URL without scrolling
     const { viewProductId, ...rest } = router.query;
     const url = {
       pathname: router.pathname,
       query: rest,
     };
-    
+
     // Use history.replaceState to avoid Next.js router scroll behavior
-    const newUrl = router.asPath.split('?')[0] + (Object.keys(rest).length > 0 ? '?' + new URLSearchParams(rest).toString() : '');
+    const newUrl =
+      router.asPath.split("?")[0] +
+      (Object.keys(rest).length > 0
+        ? "?" + new URLSearchParams(rest).toString()
+        : "");
     window.history.replaceState(
       { ...window.history.state, as: newUrl, url: newUrl },
-      '',
-      newUrl
+      "",
+      newUrl,
     );
   };
 
@@ -370,9 +444,13 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-1">
-        <div className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+      <div className="flex flex-1 overflow-hidden">
+        <div
+          className={`flex-1 overflow-hidden ${isMobile ? "p-2" : isTablet ? "p-4" : "p-4 md:p-6 lg:p-8"}`}
+        >
+          <div
+            className={`${isMobile || isTablet ? "w-full" : "max-w-7xl"} mx-auto overflow-hidden`}
+          >
             <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">
                 <Icon
@@ -395,27 +473,29 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
             {error && <div className="text-red-600 mb-4">{error}</div>}
 
             <div
-              className={`rounded-xl ${
+              className={`${isMobile ? "rounded-lg" : "rounded-xl"} ${
                 mode === "dark" ? "bg-gray-900" : "bg-white"
-              }`}
+              } overflow-hidden`}
             >
-              <GenericTable
-                mode={mode}
-                data={products}
-                columns={columns}
-                onEdit={openEditModal}
-                onDelete={openConfirm}
-                onAddNew={openAddModal}
-                onRefresh={fetchProducts}
-                addNewLabel="Add New Product"
-                actions={[
-                  {
-                    label: "View",
-                    icon: "mdi:eye-outline",
-                    onClick: (item) => setViewItem(item),
-                  },
-                ]}
-              />
+              <div className={`w-full ${getTableContainerClass()}`}>
+                <GenericTable
+                  mode={mode}
+                  data={products}
+                  columns={columns}
+                  onEdit={openEditModal}
+                  onDelete={openConfirm}
+                  onAddNew={openAddModal}
+                  onRefresh={fetchProducts}
+                  addNewLabel="Add New Product"
+                  actions={[
+                    {
+                      label: "View",
+                      icon: "mdi:eye-outline",
+                      onClick: (item) => setViewItem(item),
+                    },
+                  ]}
+                />
+              </div>
             </div>
 
             {showModal && (
@@ -514,4 +594,4 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
       </div>
     </MainLayout>
   );
-} 
+}

@@ -1,15 +1,22 @@
-import React from 'react';
+import React from "react";
 import { Icon } from "@iconify/react";
 
-const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => {
+const MomoPayment = ({
+  paymentData,
+  setPaymentData,
+  total,
+  mode = "light",
+}) => {
   return (
     <div className="space-y-4">
       {/* Mobile Money Provider Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={`block text-sm font-medium mb-2 ${
-            mode === "dark" ? "text-gray-200" : "text-gray-700"
-          }`}>
+          <label
+            className={`block text-sm font-medium mb-2 ${
+              mode === "dark" ? "text-gray-200" : "text-gray-700"
+            }`}
+          >
             Mobile Money Provider
           </label>
           <select
@@ -21,8 +28,8 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
               }))
             }
             className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              mode === "dark" 
-                ? "border-gray-600 bg-gray-700 text-gray-100" 
+              mode === "dark"
+                ? "border-gray-600 bg-gray-700 text-gray-100"
                 : "border-gray-300 bg-white text-gray-900"
             }`}
           >
@@ -33,9 +40,11 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
           </select>
         </div>
         <div>
-          <label className={`block text-sm font-medium mb-2 ${
-            mode === "dark" ? "text-gray-200" : "text-gray-700"
-          }`}>
+          <label
+            className={`block text-sm font-medium mb-2 ${
+              mode === "dark" ? "text-gray-200" : "text-gray-700"
+            }`}
+          >
             Customer Phone Number
           </label>
           <input
@@ -48,8 +57,8 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
               }))
             }
             className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              mode === "dark" 
-                ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+              mode === "dark"
+                ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400"
                 : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
             }`}
             placeholder="e.g., 0241234567"
@@ -70,13 +79,17 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-600 dark:text-gray-300">Account Name:</span>
+            <span className="text-gray-600 dark:text-gray-300">
+              Account Name:
+            </span>
             <span className="font-semibold ml-2 text-yellow-800 dark:text-yellow-300">
-              RICHUNCLE OUTLOOK
+              RICHUNCLE
             </span>
           </div>
           <div>
-            <span className="text-gray-600 dark:text-gray-300">Account Number:</span>
+            <span className="text-gray-600 dark:text-gray-300">
+              Account Number:
+            </span>
             <span className="font-semibold ml-2 text-yellow-800 dark:text-yellow-300">
               0598612130
             </span>
@@ -91,9 +104,11 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
       {/* Transaction Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={`block text-sm font-medium mb-2 ${
-            mode === "dark" ? "text-gray-200" : "text-gray-700"
-          }`}>
+          <label
+            className={`block text-sm font-medium mb-2 ${
+              mode === "dark" ? "text-gray-200" : "text-gray-700"
+            }`}
+          >
             Transaction Reference
           </label>
           <input
@@ -106,17 +121,19 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
               }))
             }
             className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              mode === "dark" 
-                ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+              mode === "dark"
+                ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400"
                 : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
             }`}
             placeholder="Enter transaction reference"
           />
         </div>
         <div>
-          <label className={`block text-sm font-medium mb-2 ${
-            mode === "dark" ? "text-gray-200" : "text-gray-700"
-          }`}>
+          <label
+            className={`block text-sm font-medium mb-2 ${
+              mode === "dark" ? "text-gray-200" : "text-gray-700"
+            }`}
+          >
             Transaction ID
           </label>
           <input
@@ -129,8 +146,8 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
               }))
             }
             className={`w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              mode === "dark" 
-                ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400" 
+              mode === "dark"
+                ? "border-gray-600 bg-gray-700 text-gray-100 placeholder-gray-400"
                 : "border-gray-300 bg-white text-gray-900 placeholder-gray-500"
             }`}
             placeholder="Optional transaction ID"
@@ -176,4 +193,4 @@ const MomoPayment = ({ paymentData, setPaymentData, total, mode = "light" }) => 
   );
 };
 
-export default MomoPayment; 
+export default MomoPayment;

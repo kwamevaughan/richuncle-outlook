@@ -12,6 +12,7 @@ import useUsers from "../hooks/useUsers";
 import Select, { components } from "react-select";
 import { paymentMethods } from "@/constants/paymentMethods";
 import TooltipIconButton from "./TooltipIconButton";
+import CameraBarcodeScanner from "./CameraBarcodeScanner";
 
 const dummyOrder = {
   id: "ORD123",
@@ -96,7 +97,10 @@ const PosOrderList = ({
   const [discountPlans, setDiscountPlans] = useState([]);
   const [discountValue, setDiscountValue] = useState("");
   const [newDiscountType, setNewDiscountType] = useState("percentage");
-  
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
+  const [cameraSupported, setCameraSupported] = useState(false);
+  const [scannerMode, setScannerMode] = useState("manual"); // "manual" or "camera"
+
   // Enhanced barcode detection state
   const [searchInput, setSearchInput] = useState("");
   const [isBarcodeMode, setIsBarcodeMode] = useState(false);
@@ -109,43 +113,44 @@ const PosOrderList = ({
     /Google Inc/.test(navigator.vendor);
 
   // Detect operating system for keyboard shortcuts
-  const isMac = typeof window !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+  const isMac =
+    typeof window !== "undefined" &&
+    /Mac|iPhone|iPad|iPod/.test(navigator.platform);
   const keyboardShortcut = isMac ? "Cmd+B" : "Ctrl+B";
 
   // Barcode detection and handling
   const handleSearchInputChange = (value) => {
     setSearchInput(value);
-    
+
     // Clear any existing timeout
     if (barcodeTimeout) {
       clearTimeout(barcodeTimeout);
     }
-    
+
     // If input is empty, reset barcode mode
     if (!value.trim()) {
       setIsBarcodeMode(false);
       setBarcodeError("");
       return;
     }
-    
+
     // Check if this looks like a barcode scan
     // Common barcode formats: EAN-8 (8 digits), EAN-13 (13 digits), UPC-A (12 digits), Code 128 (variable)
-    const isLikelyBarcode = (
+    const isLikelyBarcode =
       /^\d{8,13}$/.test(value.trim()) || // Standard EAN/UPC formats
       /^\d{12,14}$/.test(value.trim()) || // UPC-E and extended formats
       /^[A-Z0-9]{8,20}$/.test(value.trim()) || // Alphanumeric codes
-      (value.length >= 8 && value.length <= 20) // General length check
-    );
-    
+      (value.length >= 8 && value.length <= 20); // General length check
+
     if (isLikelyBarcode && value.length >= 8) {
       setIsBarcodeMode(true);
-      
+
       // Set a timeout to process the barcode after a short delay
       // This allows for complete barcode input from scanners
       const timeout = setTimeout(() => {
         processBarcodeInput(value.trim());
       }, 150); // 150ms delay for better scanner compatibility
-      
+
       setBarcodeTimeout(timeout);
     } else {
       setIsBarcodeMode(false);
@@ -155,39 +160,39 @@ const PosOrderList = ({
   const processBarcodeInput = (barcode) => {
     // Show the scanned barcode briefly
     toast.success(`Scanned: ${barcode}`, { duration: 1000 });
-    
+
     const found = products.find((p) => p.barcode === barcode);
-    
+
     if (!found) {
       // Barcode not found - show error and keep input for manual search
       setBarcodeError(`No product found with barcode: ${barcode}`);
       setIsBarcodeMode(false);
       return;
     }
-    
+
     // Barcode found - add product to order
     const qty = quantities[found.id] || 1;
-    
+
     // Check stock availability
     if (qty > found.quantity) {
       toast.error(
         user?.role === "cashier"
           ? "Cannot add items. Insufficient stock."
-          : `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`
+          : `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`,
       );
       setIsBarcodeMode(false);
       return;
     }
-    
+
     // Add product to order if not already selected
     if (!selectedProducts.includes(found.id)) {
       setSelectedProducts([...selectedProducts, found.id]);
       setQuantities((q) => ({ ...q, [found.id]: qty }));
-      
+
       // Play success sound
       playBellBeep();
       toast.success(`Added ${found.name} to order list!`);
-      
+
       // Clear search input after successful barcode scan
       setSearchInput("");
       setIsBarcodeMode(false);
@@ -197,22 +202,22 @@ const PosOrderList = ({
       const newQty = (quantities[found.id] || 1) + qty;
       if (newQty > found.quantity) {
         toast.error(
-          `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`
+          `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`,
         );
         setIsBarcodeMode(false);
         return;
       }
-      
+
       setQuantities((q) => ({ ...q, [found.id]: newQty }));
       playBellBeep();
       toast.success(`Updated quantity for ${found.name}!`);
-      
+
       // Clear search input after successful barcode scan
       setSearchInput("");
       setIsBarcodeMode(false);
       setBarcodeError("");
     }
-    
+
     // Auto-focus back to search field for continuous scanning
     setTimeout(() => {
       const searchInput = document.querySelector('input[type="text"]');
@@ -222,39 +227,156 @@ const PosOrderList = ({
     }, 100);
   };
 
+  // Check for camera support on component mount
+  useEffect(() => {
+    const checkCameraSupport = async () => {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const hasCamera = devices.some(
+            (device) => device.kind === "videoinput",
+          );
+          setCameraSupported(hasCamera);
+        }
+      } catch (error) {
+        console.log("Camera not supported:", error);
+        setCameraSupported(false);
+      }
+    };
+
+    checkCameraSupport();
+  }, []);
+
+  // Enhanced scan button handler - handles both camera and manual modes
+  const handleScanButtonClick = async () => {
+    if (isBarcodeMode) {
+      // Exit barcode mode
+      setIsBarcodeMode(false);
+      setShowCameraScanner(false);
+      setScannerMode("manual");
+      setSearchInput("");
+      setBarcodeError("");
+      toast("Scanner deactivated");
+      return;
+    }
+
+    // Check camera availability first
+    if (cameraSupported) {
+      try {
+        // Request camera permission
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }, // Prefer back camera
+        });
+        stream.getTracks().forEach((track) => track.stop()); // Stop the stream immediately
+
+        // Camera is available, offer choice or go directly to camera
+        setShowCameraScanner(true);
+        setScannerMode("camera");
+        setIsBarcodeMode(true);
+        toast.success("Camera scanner activated - point at barcode");
+      } catch (error) {
+        // Camera permission denied or not available, fall back to manual
+        console.log("Camera access denied, falling back to manual:", error);
+        setIsBarcodeMode(true);
+        setScannerMode("manual");
+        setSearchInput("");
+        setBarcodeError("");
+        toast.success("Manual scanner activated - enter barcode");
+
+        // Auto-focus the search input
+        setTimeout(() => {
+          const searchInput = document.querySelector(
+            '[data-testid="search-input"] input',
+          );
+          if (searchInput) {
+            searchInput.focus();
+          }
+        }, 100);
+      }
+    } else {
+      // No camera support, use manual mode
+      setIsBarcodeMode(true);
+      setScannerMode("manual");
+      setSearchInput("");
+      setBarcodeError("");
+      toast.success("Manual scanner activated - enter barcode");
+
+      // Auto-focus the search input
+      setTimeout(() => {
+        const searchInput = document.querySelector(
+          '[data-testid="search-input"] input',
+        );
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }, 100);
+    }
+  };
+
+  // Handle successful barcode scan from camera
+  const handleCameraScanSuccess = (barcode) => {
+    console.log("Camera scan success:", barcode);
+
+    // Validate barcode format
+    const cleanBarcode = barcode.trim();
+    if (!cleanBarcode || cleanBarcode.length < 4) {
+      setBarcodeError("Invalid barcode format - too short");
+      toast.error("Invalid barcode format");
+      return;
+    }
+
+    // Process the barcode
+    processBarcodeInput(cleanBarcode);
+
+    // Close camera scanner
+    setShowCameraScanner(false);
+    setScannerMode("manual");
+
+    // Reset barcode mode after successful scan
+    setTimeout(() => {
+      setIsBarcodeMode(false);
+      setBarcodeError("");
+    }, 1000);
+  };
+
+  // Handle camera scan error or close
+  const handleCameraScanClose = () => {
+    setShowCameraScanner(false);
+    setScannerMode("manual");
+    // Keep barcode mode active so user can switch to manual input
+    toast("Camera closed - switch to manual input or try again");
+  };
+
+  // Keyboard shortcuts for barcode mode
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (barcodeTimeout) {
-        clearTimeout(barcodeTimeout);
-      }
+      if (barcodeTimeout) clearTimeout(barcodeTimeout);
     };
   }, [barcodeTimeout]);
 
-  // Keyboard shortcuts for barcode mode
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ctrl/Cmd + B to toggle barcode mode
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      // Toggle scanner mode with Ctrl+B or Cmd+B
+      if ((e.ctrlKey || e.metaKey) && e.key === "b") {
         e.preventDefault();
-        setIsBarcodeMode(!isBarcodeMode);
-        setSearchInput("");
-        setBarcodeError("");
-        if (!isBarcodeMode) {
-          toast.success("Barcode mode activated - scan a product");
-        }
+        handleScanButtonClick();
       }
-      
-      // Escape to exit barcode mode
-      if (e.key === 'Escape' && isBarcodeMode) {
+
+      // Exit scanner mode with Escape
+      if (e.key === "Escape" && (isBarcodeMode || showCameraScanner)) {
         setIsBarcodeMode(false);
+        setShowCameraScanner(false);
+        setScannerMode("manual");
         setSearchInput("");
         setBarcodeError("");
+        toast("Scanner deactivated");
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isBarcodeMode]);
 
   // Generate a unique order ID when component mounts
@@ -288,7 +410,7 @@ const PosOrderList = ({
       toast.error(
         user?.role === "cashier"
           ? "Cannot exceed available stock."
-          : `Cannot exceed available stock of ${product.quantity} units.`
+          : `Cannot exceed available stock of ${product.quantity} units.`,
       );
       return;
     }
@@ -321,7 +443,7 @@ const PosOrderList = ({
         label: product.name,
         product,
       })),
-    [products]
+    [products],
   );
 
   const ProductOption = (props) => {
@@ -360,7 +482,7 @@ const PosOrderList = ({
       toast.error(
         user?.role === "cashier"
           ? "Insufficient stock!"
-          : `Insufficient stock! Only ${product.quantity} units available.`
+          : `Insufficient stock! Only ${product.quantity} units available.`,
       );
       return;
     }
@@ -481,16 +603,14 @@ const PosOrderList = ({
             </TooltipIconButton>
             <select
               className={`px-3 w-full bg-transparent border-none outline-none ${
-                mode === "dark"
-                  ? "text-white"
-                  : "text-black"
+                mode === "dark" ? "text-white" : "text-black"
               }`}
               value={
                 selectedCustomerId === "__online__"
                   ? "__online__"
                   : selectedCustomerId.startsWith("db_")
-                  ? "customer_db"
-                  : selectedCustomerId || ""
+                    ? "customer_db"
+                    : selectedCustomerId || ""
               }
               onChange={(e) => {
                 console.log("Customer selection changed:", e.target.value);
@@ -514,7 +634,7 @@ const PosOrderList = ({
               <option value="customer_db">
                 {selectedCustomerId.startsWith("db_")
                   ? customers.find(
-                      (c) => c.id === selectedCustomerId.replace("db_", "")
+                      (c) => c.id === selectedCustomerId.replace("db_", ""),
                     )?.name || "Customer Database"
                   : "Customer Database"}
               </option>
@@ -546,7 +666,7 @@ const PosOrderList = ({
                   }))}
                   onChange={(option) => {
                     setSelectedCustomerId(
-                      option ? `db_${option.value}` : "customer_db"
+                      option ? `db_${option.value}` : "customer_db",
                     );
                   }}
                   isClearable
@@ -584,39 +704,59 @@ const PosOrderList = ({
                 />
               </span>
 
-              {/* Manual barcode mode toggle button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsBarcodeMode(!isBarcodeMode);
-                  setSearchInput("");
-                  setBarcodeError("");
-                  if (!isBarcodeMode) {
-                    toast.success(
-                      `Barcode mode activated - scan a product (or press ${keyboardShortcut})`
-                    );
+              <div className="w-full relative" data-testid="search-input">
+                {/* Unified Scan Button - Handles both camera and manual scanning */}
+                <button
+                  type="button"
+                  onClick={handleScanButtonClick}
+                  className={`group absolute right-3 top-1/2 -translate-y-1/2 z-10 flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                    isBarcodeMode
+                      ? scannerMode === "camera"
+                        ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-200"
+                        : "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-200"
+                      : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-md"
+                  }`}
+                  title={
+                    isBarcodeMode
+                      ? `Exit scanner mode (Press ${keyboardShortcut})`
+                      : cameraSupported
+                        ? `Activate scanner - Camera or Manual (Press ${keyboardShortcut})`
+                        : `Activate manual scanner (Press ${keyboardShortcut})`
                   }
-                }}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded transition-colors ${
-                  isBarcodeMode
-                    ? "bg-green-100 text-green-600 hover:bg-green-200"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}
-                title={
-                  isBarcodeMode
-                    ? "Exit barcode mode"
-                    : `Enter barcode mode (${keyboardShortcut})`
-                }
-              >
-                <Icon icon="tabler:barcode" className="w-4 h-4" />
-              </button>
-              <div className="w-full">
+                >
+                  <Icon
+                    icon={
+                      isBarcodeMode
+                        ? scannerMode === "camera"
+                          ? "material-symbols:camera-alt-rounded"
+                          : "material-symbols:qr-code-scanner"
+                        : cameraSupported
+                          ? "material-symbols:qr-code-scanner-rounded"
+                          : "material-symbols:qr-code-scanner-rounded"
+                    }
+                    className={`w-4 h-4 ${isBarcodeMode ? "animate-pulse" : ""}`}
+                  />
+                  <span className="text-xs font-medium hidden sm:inline">
+                    {isBarcodeMode
+                      ? scannerMode === "camera"
+                        ? "Camera..."
+                        : "Manual..."
+                      : "Scan"}
+                  </span>
+                  {!isBarcodeMode && (
+                    <span className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                      {cameraSupported
+                        ? "📷 Camera or ⌨️ Manual"
+                        : keyboardShortcut}
+                    </span>
+                  )}
+                </button>
                 <Select
                   options={productOptions}
                   components={{ Option: ProductOption }}
                   placeholder={
                     isBarcodeMode
-                      ? "Scanning barcode..."
+                      ? "🔍 Scanning barcode... Point camera at barcode"
                       : "Search / select product or scan barcode..."
                   }
                   isClearable
@@ -654,14 +794,24 @@ const PosOrderList = ({
                       borderRadius: "1rem",
                       minHeight: "38px",
                       paddingLeft: "2.5rem",
+                      paddingRight: "5rem",
                       fontSize: "1rem",
                       boxShadow: "none",
                       borderColor: isBarcodeMode
                         ? "#10b981"
                         : mode === "dark"
-                        ? "#4b5563"
-                        : "#cbd5e1",
-                      border: isBarcodeMode ? "2px solid #10b981" : base.border,
+                          ? "#4b5563"
+                          : "#cbd5e1",
+                      border: isBarcodeMode
+                        ? "2px solid #10b981"
+                        : barcodeError
+                          ? "2px solid #ef4444"
+                          : base.border,
+                      boxShadow: isBarcodeMode
+                        ? "0 0 0 3px rgba(16, 185, 129, 0.1)"
+                        : barcodeError
+                          ? "0 0 0 3px rgba(239, 68, 68, 0.1)"
+                          : "none",
                       backgroundColor: mode === "dark" ? "transparent" : "#fff",
                       color: mode === "dark" ? "#f9fafb" : "#222",
                     }),
@@ -682,8 +832,8 @@ const PosOrderList = ({
                           ? "#4b5563"
                           : "#e0f2fe"
                         : mode === "dark"
-                        ? "#374151"
-                        : "#fff",
+                          ? "#374151"
+                          : "#fff",
                       color: mode === "dark" ? "#f9fafb" : "#222",
                       cursor: "pointer",
                       padding: "12px 16px",
@@ -711,36 +861,103 @@ const PosOrderList = ({
                 </span>
               </div>
 
-              {/* Barcode status indicator */}
+              {/* Enhanced Scanner status indicator with mode-specific styling */}
               {isBarcodeMode && (
-                <div className="absolute -bottom-6 left-0 text-xs text-green-600 font-medium">
-                  📱 Barcode mode active - scan a product
+                <div
+                  className={`flex items-center gap-2 absolute -bottom-6 left-0 text-xs font-medium animate-fade-in ${
+                    scannerMode === "camera"
+                      ? "text-purple-600"
+                      : "text-green-600"
+                  }`}
+                >
+                  <div className="relative">
+                    <Icon
+                      icon={
+                        scannerMode === "camera"
+                          ? "material-symbols:camera-alt-rounded"
+                          : "material-symbols:qr-code-scanner-rounded"
+                      }
+                      className="w-5 h-5 animate-pulse"
+                    />
+                    <div
+                      className={`absolute inset-0 rounded-full opacity-25 animate-ping ${
+                        scannerMode === "camera"
+                          ? "bg-purple-400"
+                          : "bg-green-400"
+                      }`}
+                    ></div>
+                  </div>
+                  <span className="animate-pulse">
+                    {scannerMode === "camera"
+                      ? "Camera scanner active - point at barcode"
+                      : "Manual scanner active - enter barcode"}
+                  </span>
+                  <div className="flex space-x-1">
+                    <div
+                      className={`w-1 h-1 rounded-full animate-bounce ${
+                        scannerMode === "camera"
+                          ? "bg-purple-500"
+                          : "bg-green-500"
+                      }`}
+                    ></div>
+                    <div
+                      className={`w-1 h-1 rounded-full animate-bounce ${
+                        scannerMode === "camera"
+                          ? "bg-purple-500"
+                          : "bg-green-500"
+                      }`}
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className={`w-1 h-1 rounded-full animate-bounce ${
+                        scannerMode === "camera"
+                          ? "bg-purple-500"
+                          : "bg-green-500"
+                      }`}
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                  </div>
                 </div>
               )}
-              
-              {/* Barcode error display */}
+
+              {/* Barcode Error State */}
               {barcodeError && (
-                <div className="absolute -bottom-6 left-0 text-xs text-red-600 font-medium">
-                  ❌ {barcodeError}
+                <div className="flex items-center gap-2 absolute -bottom-6 left-0 text-xs text-red-600 font-medium animate-fade-in">
+                  <Icon
+                    icon="material-symbols:error-outline"
+                    className="w-4 h-4"
+                  />
+                  <span>{barcodeError}</span>
+                  <button
+                    onClick={() => setBarcodeError("")}
+                    className="ml-2 text-red-400 hover:text-red-600"
+                  >
+                    <Icon icon="material-symbols:close" className="w-3 h-3" />
+                  </button>
                 </div>
               )}
-              
-              {/* Help text - positioned below barcode indicators */}
-              <div className={`absolute text-xs text-gray-500 flex items-center gap-2 ${
-                isBarcodeMode || barcodeError ? '-bottom-12' : '-bottom-6'
-              } left-0`}>
+
+              {/* Help text - positioned below scanner indicators */}
+              <div
+                className={`absolute text-xs text-gray-500 flex items-center gap-2 ${
+                  isBarcodeMode || barcodeError ? "-bottom-12" : "-bottom-6"
+                } left-0`}
+              >
                 <Icon icon="mdi:information-outline" className="w-4 h-4" />
                 <span>
-                  Tip: Scan barcode or press {keyboardShortcut} for barcode
-                  mode.
+                  Tip: Click "Scan" for{" "}
+                  {cameraSupported ? "camera/manual" : "manual"} barcode
+                  scanning or press {keyboardShortcut}.
                 </span>
               </div>
 
               {/* Manual barcode input when in barcode mode */}
               {isBarcodeMode && (
-                <div className={`absolute left-0 right-0 ${
-                  barcodeError ? '-bottom-20' : '-bottom-16'
-                }`}>
+                <div
+                  className={`absolute left-0 right-0 ${
+                    barcodeError ? "-bottom-20" : "-bottom-16"
+                  }`}
+                >
                   <div className="flex gap-2 items-center">
                     <input
                       type="text"
@@ -871,8 +1088,8 @@ const PosOrderList = ({
                         ? "bg-gray-800"
                         : "bg-white"
                       : mode === "dark"
-                      ? "bg-gray-750"
-                      : "bg-blue-50"
+                        ? "bg-gray-750"
+                        : "bg-blue-50"
                   } hover:${
                     mode === "dark" ? "bg-gray-700" : "bg-blue-100"
                   } transition-colors`}
@@ -1023,7 +1240,7 @@ const PosOrderList = ({
                             {" "}
                             -GHS{" "}
                             {((subtotal * Number(discountValue)) / 100).toFixed(
-                              2
+                              2,
                             )}
                           </span>
                           <div className="text-xs text-gray-500 mt-1">
@@ -1048,7 +1265,7 @@ const PosOrderList = ({
                             New total: GHS{" "}
                             {Math.max(
                               0,
-                              subtotal - Number(discountValue)
+                              subtotal - Number(discountValue),
                             ).toFixed(2)}
                           </div>
                         </>
@@ -1140,7 +1357,7 @@ const PosOrderList = ({
                           toast.error(
                             result.error ||
                               result.message ||
-                              "Failed to create discount"
+                              "Failed to create discount",
                           );
                         }
                       } catch (err) {
@@ -1348,7 +1565,7 @@ const PosOrderList = ({
                     toast.error(
                       user?.role === "cashier"
                         ? "Cannot add items. Insufficient stock."
-                        : `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`
+                        : `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`,
                     );
                     return;
                   }
@@ -1363,7 +1580,7 @@ const PosOrderList = ({
                         toast.error(
                           user?.role === "cashier"
                             ? "Cannot add more items. Insufficient stock."
-                            : `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`
+                            : `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`,
                         );
                         return currentQuantities; // Return unchanged quantities
                       }
@@ -1420,7 +1637,7 @@ const PosOrderList = ({
                   className="px-2 py-1 bg-gray-200 rounded"
                   onClick={() =>
                     setBarcodeQty((q) =>
-                      Math.min(barcodeProduct.quantity, q + 1)
+                      Math.min(barcodeProduct.quantity, q + 1),
                     )
                   }
                 >
@@ -1434,7 +1651,7 @@ const PosOrderList = ({
                     toast.error(
                       user?.role === "cashier"
                         ? "Cannot add items. Insufficient stock."
-                        : `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
+                        : `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`,
                     );
                     return;
                   }
@@ -1452,7 +1669,7 @@ const PosOrderList = ({
                     const newQty = (q[barcodeProduct.id] || 1) + barcodeQty;
                     if (newQty > barcodeProduct.quantity) {
                       toast.error(
-                        `Cannot add ${barcodeQty} more units. Total would exceed available stock of ${barcodeProduct.quantity} units.`
+                        `Cannot add ${barcodeQty} more units. Total would exceed available stock of ${barcodeProduct.quantity} units.`,
                       );
                       return;
                     }
@@ -1494,12 +1711,12 @@ const PosOrderList = ({
             selectedCustomerId === "__online__"
               ? { id: "__online__", name: "Online Purchase" }
               : selectedCustomerId.startsWith("db_")
-              ? customers.find(
-                  (c) => c.id === selectedCustomerId.replace("db_", "")
-                )
-              : selectedCustomerId
-              ? { id: selectedCustomerId, name: selectedCustomerId }
-              : null;
+                ? customers.find(
+                    (c) => c.id === selectedCustomerId.replace("db_", ""),
+                  )
+                : selectedCustomerId
+                  ? { id: selectedCustomerId, name: selectedCustomerId }
+                  : null;
           console.log("PaymentForm customer prop:", {
             selectedCustomerId,
             customerInfo,
@@ -1524,6 +1741,14 @@ const PosOrderList = ({
           setReceiptData(null);
         }}
         receiptData={receiptData}
+      />
+
+      {/* Camera Barcode Scanner Modal */}
+      <CameraBarcodeScanner
+        isOpen={showCameraScanner}
+        onClose={handleCameraScanClose}
+        onScanSuccess={handleCameraScanSuccess}
+        mode={mode}
       />
     </div>
   );

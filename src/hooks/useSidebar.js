@@ -18,7 +18,7 @@ const useSidebar = () => {
 
   const isTablet = useMemo(() => {
     if (windowWidth === null) return false; // Default to false during SSR
-    return windowWidth >= 640 && windowWidth < 1024; // sm to lg breakpoint
+    return windowWidth >= 768 && windowWidth < 1024; // md to lg breakpoint - standard tablet range
   }, [windowWidth]);
 
   const getInitialSidebarState = () => {
@@ -26,7 +26,7 @@ const useSidebar = () => {
     const savedState = localStorage.getItem("sidebarOpen");
     return savedState !== null
       ? JSON.parse(savedState)
-      : window.innerWidth > 768;
+      : window.innerWidth >= 1024; // Only auto-open on desktop and larger
   };
 
   useEffect(() => {
@@ -65,7 +65,7 @@ const useSidebar = () => {
     return () =>
       document.removeEventListener(
         "sidebarVisibilityChange",
-        handleSidebarChange
+        handleSidebarChange,
       );
   }, []);
 

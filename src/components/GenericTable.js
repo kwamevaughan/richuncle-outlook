@@ -33,6 +33,7 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
     const checkDeviceType = () => {
       const width = window.innerWidth;
       setIsMobile(width < 768);
+      // Standard tablet breakpoint
       setIsTablet(width >= 768 && width < 1024);
     };
 
@@ -365,77 +366,11 @@ export function GenericTable({
                 key={col.accessor}
                 className={`px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm capitalize ${
                   mode === "dark" ? "text-white" : "text-gray-900"
-                }`}
+                } ${col.className || ""}`}
               >
                 {col.render(row, value, index)}
               </td>
             );
-          }
-
-          // Only render StatusPill if explicitly enabled
-          if (enableStatusPills && !col.render) {
-            const isStatusColumn =
-              col.accessor === "status" ||
-              col.accessor === "stock_status" ||
-              col.accessor === "order_status" ||
-              col.accessor === "payment_status" ||
-              col.accessor === "user_status" ||
-              col.accessor === "account_status" ||
-              col.accessor === "is_active" ||
-              col.accessor === "active" ||
-              (col.accessor && col.accessor.toLowerCase().includes("status"));
-
-            if (isStatusColumn) {
-              let detectedContext = statusContext; // use prop default
-              let statusValue = value;
-
-              // Override context based on column name if more specific
-              if (
-                col.accessor === "stock_status" ||
-                col.accessor.includes("stock")
-              ) {
-                detectedContext = "inventory";
-              } else if (
-                col.accessor === "payment_status" ||
-                col.accessor.includes("payment")
-              ) {
-                detectedContext = "payment";
-              } else if (
-                col.accessor === "user_status" ||
-                col.accessor === "is_active" ||
-                col.accessor === "active"
-              ) {
-                detectedContext = "user";
-                // Convert boolean values for user status
-                if (typeof value === "boolean") {
-                  statusValue = value ? "active" : "inactive";
-                }
-              } else if (
-                col.accessor.includes("inventory") ||
-                col.accessor.includes("product")
-              ) {
-                detectedContext = "inventory";
-                // Auto-determine stock status based on current_stock
-                if (row.current_stock !== undefined) {
-                  statusValue = getInventoryStatus(row);
-                }
-              }
-
-              return (
-                <td
-                  key={col.accessor}
-                  className={`px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm ${
-                    mode === "dark" ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  <StatusPill
-                    status={statusValue}
-                    context={detectedContext}
-                    size="sm"
-                  />
-                </td>
-              );
-            }
           }
 
           if (col.type === "image") {
@@ -495,7 +430,7 @@ export function GenericTable({
               key={col.accessor}
               className={`px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm ${
                 mode === "dark" ? "text-white" : "text-gray-900"
-              }`}
+              } ${col.className || ""}`}
             >
               <div className="truncate max-w-[120px] sm:max-w-none">
                 {displayValue}
@@ -852,7 +787,7 @@ export function GenericTable({
           )}
 
           {/* Main content in a grid layout for tablet */}
-          <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-2">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 overflow-hidden">
             {filteredColumns.slice(0, 4).map((col) => {
               let value = row[col.accessor];
 
@@ -892,7 +827,7 @@ export function GenericTable({
               }
 
               return (
-                <div key={col.accessor} className="min-w-0">
+                <div key={col.accessor} className="min-w-0 overflow-hidden">
                   <span
                     className={`text-xs font-medium block ${
                       mode === "dark" ? "text-gray-400" : "text-gray-500"
@@ -901,7 +836,7 @@ export function GenericTable({
                     {col.Header || col.accessor}
                   </span>
                   <div
-                    className={`text-sm ${
+                    className={`text-sm truncate ${
                       mode === "dark" ? "text-white" : "text-gray-900"
                     }`}
                   >
@@ -1098,7 +1033,7 @@ export function GenericTable({
 
   return (
     <div
-      className={`rounded-xl shadow-lg border overflow-hidden ${
+      className={`rounded-xl shadow-lg border overflow-hidden w-full ${
         mode === "dark"
           ? "bg-gray-900 border-gray-700"
           : "bg-white border-gray-200"
@@ -1378,7 +1313,9 @@ export function GenericTable({
         </div>
       ) : table.isTablet ? (
         /* Tablet Card View */
-        <div className={`${mode === "dark" ? "bg-gray-900" : "bg-white"}`}>
+        <div
+          className={`overflow-hidden ${mode === "dark" ? "bg-gray-900" : "bg-white"}`}
+        >
           {table.paged.length === 0 ? (
             <div className="px-6 py-12 text-center">
               <div
@@ -1398,8 +1335,8 @@ export function GenericTable({
         </div>
       ) : (
         /* Desktop Table View */
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <table className="w-full min-w-max">
             <thead
               className={`${mode === "dark" ? "bg-gray-800" : "bg-gray-50"}`}
             >
@@ -1435,7 +1372,7 @@ export function GenericTable({
                               : "hover:bg-gray-100"
                           }`
                         : ""
-                    }`}
+                    } ${col.className || ""}`}
                     onClick={
                       col.sortable !== false
                         ? () => table.handleSort(col.accessor)
