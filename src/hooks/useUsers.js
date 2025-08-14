@@ -151,6 +151,11 @@ export default function useUsers() {
 
   // Open edit modal
   const openEditModal = (user) => {
+    // Check if the relationship is one of the predefined values
+    const predefinedRelationships = ['spouse', 'parent', 'child', 'sibling', 'friend'];
+    const relationship = user.emergency_contact_relationship || '';
+    const isCustomRelationship = relationship && !predefinedRelationships.includes(relationship);
+    
     setFormData({
       full_name: user.full_name || "",
       email: user.email || "",
@@ -163,7 +168,8 @@ export default function useUsers() {
       address: user.address || "",
       emergency_contact_name: user.emergency_contact_name || "",
       emergency_contact_phone: user.emergency_contact_phone || "",
-      emergency_contact_relationship: user.emergency_contact_relationship || ""
+      emergency_contact_relationship: isCustomRelationship ? 'other' : relationship,
+      emergency_contact_relationship_custom: isCustomRelationship ? relationship : ''
     });
     setPassword("");
     setConfirmPassword("");
@@ -218,6 +224,15 @@ export default function useUsers() {
       errors.store_id = "Store is required for cashiers";
     }
     
+    // Validate emergency contact relationship
+    if (!formData.emergency_contact_relationship) {
+      errors.emergency_contact_relationship = "Emergency contact relationship is required";
+    } else if (formData.emergency_contact_relationship === 'other' && 
+              (!formData.emergency_contact_relationship_custom || 
+               formData.emergency_contact_relationship_custom.trim() === '')) {
+      errors.emergency_contact_relationship = "Please specify the relationship";
+    }
+    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -240,7 +255,13 @@ export default function useUsers() {
     
     setIsSubmitting(true);
     try {
-      const cleanData = cleanFormData(formData);
+      // If 'other' is selected, ensure we're using the custom value
+      const formDataToSubmit = { ...formData };
+      if (formData.emergency_contact_relationship === 'other' && formData.emergency_contact_relationship_custom) {
+        formDataToSubmit.emergency_contact_relationship = formData.emergency_contact_relationship_custom;
+      }
+      
+      const cleanData = cleanFormData(formDataToSubmit);
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
@@ -275,7 +296,13 @@ export default function useUsers() {
     
     setIsSubmitting(true);
     try {
-      const cleanData = cleanFormData(formData);
+      // If 'other' is selected, ensure we're using the custom value
+      const formDataToUpdate = { ...formData };
+      if (formData.emergency_contact_relationship === 'other' && formData.emergency_contact_relationship_custom) {
+        formDataToUpdate.emergency_contact_relationship = formData.emergency_contact_relationship_custom;
+      }
+      
+      const cleanData = cleanFormData(formDataToUpdate);
       const updateData = { ...cleanData };
       if (password) {
         updateData.password = password;

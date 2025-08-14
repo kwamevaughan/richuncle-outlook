@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react";
 import SimpleModal from "./SimpleModal";
+import { useEffect, useState } from "react";
 
 export default function UserModals({
   // Modal states
@@ -37,6 +38,19 @@ export default function UserModals({
   availableRoles,
   stores
 }) {
+  // Local state for custom relationship
+  const [customRelationship, setCustomRelationship] = useState('');
+  const predefinedRelationships = ['spouse', 'parent', 'child', 'sibling', 'friend'];
+  
+  // Initialize custom relationship when form data changes
+  useEffect(() => {
+    if (formData.emergency_contact_relationship &&
+        formData.emergency_contact_relationship !== 'other' &&
+        !predefinedRelationships.includes(formData.emergency_contact_relationship)) {
+      setCustomRelationship(formData.emergency_contact_relationship);
+    }
+  }, [formData.emergency_contact_relationship]);
+
   return (
     <>
       {/* Create User Modal */}
@@ -225,24 +239,68 @@ export default function UserModals({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Emergency Contact Relationship
               </label>
-              <select
-                value={formData.emergency_contact_relationship || ''}
-                onChange={(e) => setFormData({...formData, emergency_contact_relationship: e.target.value})}
-                className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                  formErrors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select relationship</option>
-                <option value="spouse">Spouse</option>
-                <option value="parent">Parent</option>
-                <option value="child">Child</option>
-                <option value="sibling">Sibling</option>
-                <option value="friend">Friend</option>
-                <option value="other">Other</option>
-              </select>
-              {formErrors.emergency_contact_relationship && (
-                <p className="text-red-500 text-sm mt-1">{formErrors.emergency_contact_relationship}</p>
-              )}
+              <div className="space-y-2">
+                <select
+                  value={
+                    (formData.emergency_contact_relationship
+                      ? (predefinedRelationships.includes(formData.emergency_contact_relationship) ? formData.emergency_contact_relationship : 'other')
+                      : '')
+                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'other') {
+                      setCustomRelationship('');
+                      setFormData({
+                        ...formData,
+                        emergency_contact_relationship: 'other'
+                      });
+                    } else {
+                      setFormData({
+                        ...formData,
+                        emergency_contact_relationship: value
+                      });
+                      setCustomRelationship('');
+                    }
+                  }}
+                  className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                    formErrors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                >
+                  <option value="">Select relationship</option>
+                  <option value="spouse">Spouse</option>
+                  <option value="parent">Parent</option>
+                  <option value="child">Child</option>
+                  <option value="sibling">Sibling</option>
+                  <option value="friend">Friend</option>
+                  <option value="other">Other (please specify)</option>
+                </select>
+                
+                {(formData.emergency_contact_relationship === 'other' || 
+                  (formData.emergency_contact_relationship && 
+                   !predefinedRelationships.includes(formData.emergency_contact_relationship))) && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={formData.emergency_contact_relationship === 'other' ? customRelationship : formData.emergency_contact_relationship}
+                      onChange={(e) => {
+                        setCustomRelationship(e.target.value);
+                        setFormData({
+                          ...formData,
+                          emergency_contact_relationship: e.target.value
+                        });
+                      }}
+                      className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        formErrors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Please specify the relationship"
+                    />
+                  </div>
+                )}
+                
+                {formErrors.emergency_contact_relationship && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.emergency_contact_relationship}</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -533,26 +591,72 @@ export default function UserModals({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Emergency Contact Relationship
                 </label>
-                <select
-                  value={formData.emergency_contact_relationship || ''}
-                  onChange={(e) => setFormData({...formData, emergency_contact_relationship: e.target.value})}
-                  className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                    formErrors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">Select relationship</option>
-                  <option value="spouse">Spouse</option>
-                  <option value="parent">Parent</option>
-                  <option value="child">Child</option>
-                  <option value="sibling">Sibling</option>
-                  <option value="friend">Friend</option>
-                  <option value="other">Other</option>
-                </select>
-                {formErrors.emergency_contact_relationship && (
-                  <p className="text-red-500 text-sm mt-1">{formErrors.emergency_contact_relationship}</p>
-                )}
+                <div className="space-y-2">
+                  <select
+                    value={
+                      (formData.emergency_contact_relationship
+                        ? (predefinedRelationships.includes(formData.emergency_contact_relationship) ? formData.emergency_contact_relationship : 'other')
+                        : '')
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === 'other') {
+                        setCustomRelationship('');
+                        setFormData({
+                          ...formData,
+                          emergency_contact_relationship: 'other'
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          emergency_contact_relationship: value
+                        });
+                        setCustomRelationship('');
+                      }
+                    }}
+                    className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                      formErrors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select relationship</option>
+                    <option value="spouse">Spouse</option>
+                    <option value="parent">Parent</option>
+                    <option value="child">Child</option>
+                    <option value="sibling">Sibling</option>
+                    <option value="friend">Friend</option>
+                    <option value="other">Other (please specify)</option>
+                  </select>
+
+                  {(formData.emergency_contact_relationship === 'other' || 
+                    (formData.emergency_contact_relationship && 
+                      !predefinedRelationships.includes(formData.emergency_contact_relationship))) && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        value={formData.emergency_contact_relationship === 'other' ? customRelationship : formData.emergency_contact_relationship}
+                        onChange={(e) => {
+                          setCustomRelationship(e.target.value);
+                          setFormData({
+                            ...formData,
+                            emergency_contact_relationship: e.target.value
+                          });
+                        }}
+                        className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          formErrors.emergency_contact_relationship ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Please specify the relationship"
+                      />
+                    </div>
+                  )}
+
+                  {formErrors.emergency_contact_relationship && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.emergency_contact_relationship}</p>
+                  )}
+                </div>
               </div>
             </div>
+
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
