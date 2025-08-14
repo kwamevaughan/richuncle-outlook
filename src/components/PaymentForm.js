@@ -2026,7 +2026,7 @@ const PaymentForm = ({
 
               {/* Collapsible Additional Options */}
               <CollapsibleSection
-                title="Additional Options"
+                title="Additional Options (Payment Receiver, Sale Notes)"
                 icon="mdi:cog"
                 mode={mode}
                 defaultOpen={false}

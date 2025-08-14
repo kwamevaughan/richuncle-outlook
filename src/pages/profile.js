@@ -13,6 +13,7 @@ import ImageCropper from "@/components/ImageCropper";
 import ProfileHeader from "@/components/ProfileHeader";
 import ProfilePictureSection from "@/components/ProfilePictureSection";
 import ProfileFormSection from "@/components/ProfileFormSection";
+import StoreAssignmentSection from "@/components/StoreAssignmentSection";
 import PasswordSection from "@/components/PasswordSection";
 import ProfileSidebar from "@/components/ProfileSidebar";
 
@@ -24,6 +25,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
   // State for fresh user data
   const [user, setUser] = useState(null);
   const [loadingUserData, setLoadingUserData] = useState(true);
+  const [storeData, setStoreData] = useState(null);
   
   // File upload states
   const fileInputRef = useRef(null);
@@ -61,10 +63,9 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
   const [passwordErrors, setPasswordErrors] = useState({});
   
   // Modal states
-  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Fetch fresh user data
+  // Fetch fresh user data and store information
   useEffect(() => {
     const fetchUserData = async () => {
       if (!cachedUser) return;
@@ -75,12 +76,19 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
         const result = await response.json();
         
         if (result.success) {
+          console.log('Profile API Response:', {
+            last_login: result.data.last_login,
+            updated_at: result.data.updated_at,
+            created_at: result.data.created_at
+          });
+          
           const freshUserData = {
             ...cachedUser,
             last_login: result.data.last_login,
             updated_at: result.data.updated_at,
             avatar_file_id: result.data.avatar_file_id,
-            crop_transform: result.data.crop_transform
+            crop_transform: result.data.crop_transform,
+            store_id: result.data.store_id
           };
           setUser(freshUserData);
           setCurrentAvatarFileId(result.data.avatar_file_id);
@@ -92,6 +100,20 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
           
           // Set original image URL (this will be the base URL without transformations)
           setOriginalImageUrl(result.data.avatar_url);
+          
+          // Fetch store data if user has a store_id
+          if (result.data.store_id) {
+            try {
+              const storesResponse = await fetch('/api/stores');
+              const storesResult = await storesResponse.json();
+              if (storesResult.success) {
+                const userStore = storesResult.data.find(store => store.id === result.data.store_id);
+                setStoreData(userStore);
+              }
+            } catch (storeError) {
+              console.error("Error fetching store data:", storeError);
+            }
+          }
           
           // Update form data
           setFormData({
@@ -131,12 +153,6 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
     
     if (!formData.full_name.trim()) {
       errors.full_name = "Full name is required";
-    }
-    
-    if (!formData.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Email is invalid";
     }
     
     setFormErrors(errors);
@@ -179,7 +195,6 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
         },
         body: JSON.stringify({
           full_name: formData.full_name,
-          email: formData.email,
           avatar_url: formData.avatar_url,
           avatar_file_id: currentAvatarFileId
         })
@@ -194,7 +209,6 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
         const updatedUser = { 
           ...user, 
           name: formData.full_name, 
-          email: formData.email, 
           avatar_url: formData.avatar_url,
           avatar_file_id: currentAvatarFileId
         };
@@ -247,28 +261,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(`/api/users/${user.id}`, {
-        method: 'DELETE'
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        toast.success("Account deleted successfully");
-        handleLogout();
-      } else {
-        throw new Error(result.error || "Failed to delete account");
-      }
-    } catch (err) {
-      toast.error(err.message || "Failed to delete account");
-    } finally {
-      setIsSubmitting(false);
-      setShowDeleteAccountModal(false);
-    }
-  };
+
 
   // Handle image selection (before cropping)
   const handleImageSelect = async (file) => {
@@ -613,7 +606,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
           ? "bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900/30" 
           : "bg-gradient-to-br from-gray-50 via-white to-blue-50/30"
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Profile Header */}
           <ProfileHeader
             user={user}
@@ -625,22 +618,22 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
             mode={mode}
           />
 
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
             {/* Main Content */}
-            <div className="xl:col-span-3 space-y-8">
+            <div className="lg:col-span-2 xl:col-span-3 space-y-6">
               {/* Profile Information Card */}
-              <div className={`rounded-2xl shadow-sm border overflow-hidden ${
+              <div className={`rounded-2xl shadow-lg border overflow-hidden backdrop-blur-sm ${
                 mode === "dark" 
-                  ? "bg-gray-800 border-gray-700" 
-                  : "bg-white border-gray-100"
+                  ? "bg-gray-800/90 border-gray-700/50 shadow-gray-900/20" 
+                  : "bg-white/90 border-gray-200/50 shadow-gray-900/10"
               }`}>
-                <div className={`px-8 py-6 border-b ${
+                <div className={`px-6 sm:px-8 py-6 border-b ${
                   mode === "dark" 
-                    ? "bg-gradient-to-r from-gray-700 to-blue-900/50 border-gray-700" 
-                    : "bg-gradient-to-r from-gray-50 to-blue-50/50 border-gray-100"
+                    ? "bg-gradient-to-r from-gray-700/80 to-blue-900/40 border-gray-700/50" 
+                    : "bg-gradient-to-r from-gray-50/80 to-blue-50/40 border-gray-200/50"
                 }`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                       <Icon icon="solar:user-id-bold" className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -649,40 +642,58 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
                       }`}>Profile Information</h2>
                       <p className={`text-sm ${
                         mode === "dark" ? "text-gray-300" : "text-gray-600"
-                      }`}>Manage your personal details</p>
+                      }`}>Manage your personal details and store assignment</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-8 space-y-6">
-                  {/* Profile Picture Section */}
-                  <ProfilePictureSection
-                    user={user}
-                    formData={formData}
-                    cropTransform={cropTransform}
-                    isEditing={isEditing}
-                    uploadingImage={uploadingImage}
-                    onFileUpload={triggerFileUpload}
-                    onReposition={handleRepositionImage}
-                    onResetCrop={handleResetCrop}
-                    onRemoveImage={handleRemoveImage}
-                    onImageSelect={handleImageSelect}
-                    mode={mode}
-                  />
+                <div className="relative p-6 sm:p-8 space-y-8">
+                  {/* Background Pattern */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="absolute top-4 right-4">
+                      <Icon icon="solar:user-id-bold" className="w-24 h-24 text-blue-500" />
+                    </div>
+                  </div>
+                  
+                  <div className="relative">
+                    {/* Profile Picture Section - Only show when editing */}
+                    {isEditing && (
+                      <ProfilePictureSection
+                        user={user}
+                        formData={formData}
+                        cropTransform={cropTransform}
+                        isEditing={isEditing}
+                        uploadingImage={uploadingImage}
+                        onFileUpload={triggerFileUpload}
+                        onReposition={handleRepositionImage}
+                        onResetCrop={handleResetCrop}
+                        onRemoveImage={handleRemoveImage}
+                        onImageSelect={handleImageSelect}
+                        mode={mode}
+                      />
+                    )}
 
-                  {/* Profile Form Section */}
-                  <ProfileFormSection
-                    user={user}
-                    formData={formData}
-                    formErrors={formErrors}
-                    isEditing={isEditing}
-                    isSubmitting={isSubmitting}
-                    onFormDataChange={setFormData}
-                    onSave={handleUpdateProfile}
-                    mode={mode}
-                  />
+                    {/* Profile Form Section */}
+                    <ProfileFormSection
+                      user={user}
+                      formData={formData}
+                      formErrors={formErrors}
+                      isEditing={isEditing}
+                      isSubmitting={isSubmitting}
+                      onFormDataChange={setFormData}
+                      onSave={handleUpdateProfile}
+                      mode={mode}
+                    />
+                  </div>
                 </div>
               </div>
+
+              {/* Store Assignment Section */}
+              <StoreAssignmentSection
+                user={user}
+                storeData={storeData}
+                mode={mode}
+              />
 
               {/* Password Section */}
               <PasswordSection
@@ -700,64 +711,21 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
             </div>
 
             {/* Sidebar */}
-            <ProfileSidebar
-              user={user}
-              formatDate={formatDate}
-              onLogout={() => setShowLogoutModal(true)}
-              onDeleteAccount={() => setShowDeleteAccountModal(true)}
-              mode={mode}
-            />
+            <div className="lg:col-span-1 xl:col-span-1">
+              <div className="sticky top-6">
+                <ProfileSidebar
+                  user={user}
+                  formatDate={formatDate}
+                  onLogout={() => setShowLogoutModal(true)}
+                  mode={mode}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Delete Account Modal */}
-      <SimpleModal
-        isOpen={showDeleteAccountModal}
-        onClose={() => setShowDeleteAccountModal(false)}
-        title="Delete Account"
-        size="md"
-        mode={mode}
-      >
-        <div className="p-6">
-          <div className="mb-4">
-            <Icon
-              icon="solar:danger-triangle-bold"
-              className="w-12 h-12 text-red-500 mx-auto mb-4"
-            />
-            <h3 className={`text-lg font-medium mb-2 ${
-              mode === "dark" ? "text-white" : "text-gray-900"
-            }`}>
-              Are you sure?
-            </h3>
-            <p className={`${
-              mode === "dark" ? "text-gray-300" : "text-gray-600"
-            }`}>
-              This action cannot be undone. This will permanently delete your
-              account and remove all your data.
-            </p>
-          </div>
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={() => setShowDeleteAccountModal(false)}
-              className={`px-4 py-2 border rounded-lg transition-colors ${
-                mode === "dark" 
-                  ? "border-gray-600 text-gray-300 hover:bg-gray-700" 
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDeleteAccount}
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {isSubmitting ? "Deleting..." : "Delete Account"}
-            </button>
-          </div>
-        </div>
-      </SimpleModal>
+
 
       {/* Logout Confirmation Modal */}
       <SimpleModal

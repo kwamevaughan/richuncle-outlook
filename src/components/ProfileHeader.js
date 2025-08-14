@@ -107,26 +107,35 @@ export default function ProfileHeader({
         <div className="flex items-center gap-3">
           <button
             onClick={onEditToggle}
-            className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+            className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
               isEditing
-                ? "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                ? mode === "dark"
+                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                 : "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             }`}
           >
             <Icon
               icon={isEditing ? "solar:close-circle-bold" : "solar:pen-bold"}
-              className="w-4 h-4 mr-2"
+              className="w-4 h-4"
             />
             {isEditing ? "Cancel" : "Edit Profile"}
           </button>
 
-          <button
-            className="px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-            onClick={onManageUsers}
-          >
-            <Icon icon="solar:users-group-rounded-bold" className="w-4 h-4" />
-            Manage Users
-          </button>
+          {/* Only show Manage Users for admin and manager roles */}
+          {user.role && ['admin', 'manager'].includes(user.role.toLowerCase()) && (
+            <button
+              className={`px-6 py-3 border rounded-xl transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 ${
+                mode === "dark"
+                  ? "bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700"
+                  : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={onManageUsers}
+            >
+              <Icon icon="solar:users-group-rounded-bold" className="w-4 h-4" />
+              Manage Users
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -539,8 +539,8 @@ const PosHeader = ({
                 />
               </TooltipIconButton>
 
-              {/* Print Last Receipt - Only visible on mobile and tablet */}
-              {(isMobile || isTablet) && (
+              {/* Print Last Receipt - Visible on mobile/tablet for all users, or always visible for cashiers */}
+              {((isMobile || isTablet) || user?.role === "cashier") && (
                 <TooltipIconButton
                   label="Print Last Receipt"
                   mode={mode}
@@ -567,8 +567,8 @@ const PosHeader = ({
                 </TooltipIconButton>
               )}
 
-              {/* Messages - Only visible on mobile and tablet */}
-              {(isMobile || isTablet) && (
+              {/* Messages - Visible on mobile/tablet for all users, or always visible for cashiers */}
+              {((isMobile || isTablet) || user?.role === "cashier") && (
                 <TooltipIconButton
                   label="Messages"
                   mode={mode}
@@ -705,8 +705,8 @@ const PosHeader = ({
                         : "h-6 w-6 sm:h-7 sm:w-7"
                     } text-gray-500`}
                   />
-                  {/* Show unread message count on desktop when Messages is in dropdown */}
-                  {!isMobile && !isTablet && unreadMessageCount > 0 && (
+                  {/* Show unread message count on desktop when Messages is in dropdown (only for non-cashiers) */}
+                  {!isMobile && !isTablet && user?.role !== "cashier" && unreadMessageCount > 0 && (
                     <div
                       className="absolute -top-1 -right-1 bg-red-500 text-white text-xs h-5 w-5 rounded-full flex items-center justify-center font-bold"
                     >
@@ -849,8 +849,8 @@ const PosHeader = ({
                       {/* System Actions */}
                       <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
 
-                      {/* Print Last Receipt - Only show in dropdown on desktop */}
-                      {!isMobile && !isTablet && (
+                      {/* Print Last Receipt - Only show in dropdown on desktop for non-cashiers */}
+                      {!isMobile && !isTablet && user?.role !== "cashier" && (
                         <button
                           onClick={() => {
                             setAddNewDropdownOpen(false);
@@ -879,8 +879,8 @@ const PosHeader = ({
                         </button>
                       )}
 
-                      {/* Messages - Only show in dropdown on desktop */}
-                      {!isMobile && !isTablet && (
+                      {/* Messages - Only show in dropdown on desktop for non-cashiers */}
+                      {!isMobile && !isTablet && user?.role !== "cashier" && (
                         <button
                           onClick={() => {
                             setAddNewDropdownOpen(false);

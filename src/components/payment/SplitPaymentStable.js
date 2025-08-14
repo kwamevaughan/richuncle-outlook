@@ -581,14 +581,13 @@ const SplitPaymentStable = ({
                       onClick={() => removeSplitPayment(payment.id)}
                       className={`
                         px-4 py-2 text-sm h-10 relative inline-flex items-center justify-center gap-3 font-semibold rounded-2xl
-                        transition-all duration-300 transform active:scale-95 overflow-hidden
-                        focus:outline-none focus:ring-2 focus:ring-offset-2
-                        bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800
-                        text-white shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30
-                        focus:ring-red-500 hover:scale-105
+                        transition-all duration-200  
+                         hover:bg-red-50
+                        text-white shadow-xs shadow-red-500/25 hover:shadow-xl hover:shadow-red-200/30
+                         
                       `}
                     >
-                      <Icon icon="mdi:delete" className="w-5 h-5" />
+                      <Icon icon="mynaui:trash" className="text-red-600 w-5 h-5" />
                     </button>
                   </div>
                 </div>

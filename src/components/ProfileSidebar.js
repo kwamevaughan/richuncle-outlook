@@ -4,21 +4,20 @@ export default function ProfileSidebar({
   user,
   formatDate,
   onLogout,
-  onDeleteAccount,
   mode = "light"
 }) {
   return (
     <div className="space-y-6">
       {/* Account Information */}
-      <div className={`rounded-2xl shadow-sm border overflow-hidden ${
+      <div className={`rounded-2xl shadow-lg border overflow-hidden backdrop-blur-sm ${
         mode === "dark" 
-          ? "bg-gray-800 border-gray-700" 
-          : "bg-white border-gray-100"
+          ? "bg-gray-800/90 border-gray-700/50 shadow-gray-900/20" 
+          : "bg-white/90 border-gray-200/50 shadow-gray-900/10"
       }`}>
         <div className={`px-6 py-4 border-b ${
           mode === "dark" 
-            ? "bg-gradient-to-r from-gray-700 to-blue-900/50 border-gray-700" 
-            : "bg-gradient-to-r from-gray-50 to-blue-50/50 border-gray-100"
+            ? "bg-gradient-to-r from-gray-700/80 to-blue-900/40 border-gray-700/50" 
+            : "bg-gradient-to-r from-gray-50/80 to-blue-50/40 border-gray-200/50"
         }`}>
           <h3 className={`text-lg font-bold flex items-center gap-2 ${
             mode === "dark" ? "text-white" : "text-gray-900"
@@ -64,8 +63,8 @@ export default function ProfileSidebar({
                 mode === "dark" ? "bg-green-900/50" : "bg-green-100"
               }`}>
                 <Icon
-                  icon="mdi:calendar-outline"
-                  className="w-4 h-4 text-blue-600"
+                  icon="solar:pen-new-square-bold"
+                  className="w-4 h-4 text-green-600"
                 />
               </div>
               <div>
@@ -86,11 +85,11 @@ export default function ProfileSidebar({
           }`}>
             <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                mode === "dark" ? "bg-blue-900/50" : "bg-blue-100"
+                mode === "dark" ? "bg-purple-900/50" : "bg-purple-100"
               }`}>
                 <Icon
-                  icon="mdi:login-variant"
-                  className="w-4 h-4 text-blue-600"
+                  icon="solar:login-3-bold"
+                  className="w-4 h-4 text-purple-600"
                 />
               </div>
               <div>
@@ -109,15 +108,15 @@ export default function ProfileSidebar({
       </div>
 
       {/* Quick Actions */}
-      <div className={`rounded-2xl shadow-sm border overflow-hidden ${
+      <div className={`rounded-2xl shadow-lg border overflow-hidden backdrop-blur-sm ${
         mode === "dark" 
-          ? "bg-gray-800 border-gray-700" 
-          : "bg-white border-gray-100"
+          ? "bg-gray-800/90 border-gray-700/50 shadow-gray-900/20" 
+          : "bg-white/90 border-gray-200/50 shadow-gray-900/10"
       }`}>
         <div className={`px-6 py-4 border-b ${
           mode === "dark" 
-            ? "bg-gradient-to-r from-gray-700 to-orange-900/50 border-gray-700" 
-            : "bg-gradient-to-r from-gray-50 to-orange-50/50 border-gray-100"
+            ? "bg-gradient-to-r from-gray-700/80 to-orange-900/40 border-gray-700/50" 
+            : "bg-gradient-to-r from-gray-50/80 to-orange-50/40 border-gray-200/50"
         }`}>
           <h3 className={`text-lg font-bold flex items-center gap-2 ${
             mode === "dark" ? "text-white" : "text-gray-900"
@@ -126,7 +125,7 @@ export default function ProfileSidebar({
             Quick Actions
           </h3>
         </div>
-        <div className="p-6 space-y-3">
+        <div className="p-6">
           <button
             onClick={onLogout}
             className={`w-full flex items-center justify-center px-4 py-3 border rounded-xl transition-all duration-200 group ${
@@ -144,20 +143,6 @@ export default function ProfileSidebar({
               }`}
             />
             Sign Out
-          </button>
-          <button
-            onClick={onDeleteAccount}
-            className={`w-full flex items-center justify-center px-4 py-3 border rounded-xl transition-all duration-200 group ${
-              mode === "dark" 
-                ? "border-red-600 text-red-400 hover:bg-red-900/20 hover:border-red-500" 
-                : "border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-            }`}
-          >
-            <Icon
-              icon="solar:trash-bin-trash-bold"
-              className="w-4 h-4 mr-3 text-red-500 group-hover:text-red-600"
-            />
-            Delete Account
           </button>
         </div>
       </div>
