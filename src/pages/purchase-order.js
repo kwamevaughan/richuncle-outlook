@@ -31,6 +31,10 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
   const [expandedRows, setExpandedRows] = useState([]);
   const [rowLineItems, setRowLineItems] = useState({});
   
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteItem, setDeleteItem] = useState(null);
+  
   // Enhanced state for modern features
   const [stats, setStats] = useState({
     total: 0,
@@ -102,17 +106,42 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (row) => {
+    // Extract the ID from the row object
+    const id = row?.id || row;
+    
+    // Ensure id is a valid string
+    if (!id || typeof id !== 'string') {
+      const errorMsg = "Invalid purchase order ID";
+      toast.error(errorMsg);
+      return;
+    }
+    
+    // Show delete confirmation modal
+    setDeleteItem(row);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteItem) return;
+    
     setModalLoading(true);
     setModalError(null);
+    
     try {
+      const id = deleteItem.id;
+      
+      // First delete the purchase order items
       await fetch("/api/purchase-order-items", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ purchase_order_id: id }),
       });
+      
+      // Then delete the purchase order
       await deletePurchaseOrder(id);
-      closeModal();
+      setShowDeleteConfirm(false);
+      setDeleteItem(null);
       toast.success("Purchase order deleted successfully!");
     } catch (err) {
       setModalError(err.message || "Failed to delete purchase order");
@@ -557,6 +586,56 @@ export default function PurchaseOrderPage({ mode = "light", toggleMode, ...props
                 disabled={modalLoading}
               />
             </PurchaseOrderModals>
+
+            {/* Delete Confirmation Modal */}
+            <SimpleModal
+              isOpen={showDeleteConfirm}
+              onClose={() => {
+                setShowDeleteConfirm(false);
+                setDeleteItem(null);
+              }}
+              title="Confirm Delete"
+              mode={mode}
+              width="max-w-md"
+            >
+              <div className="py-6 text-center">
+                <Icon
+                  icon="mdi:alert"
+                  className="w-12 h-12 text-red-500 mx-auto mb-4"
+                />
+                <div className="text-lg font-semibold mb-2">
+                  Are you sure you want to delete this purchase order?
+                </div>
+                <div className="text-sm text-gray-600 mb-6">
+                  This action cannot be undone. All associated line items will also be deleted.
+                </div>
+                <div className="flex justify-center gap-4">
+                  <button
+                    className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    onClick={() => {
+                      setShowDeleteConfirm(false);
+                      setDeleteItem(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-6 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                    onClick={confirmDelete}
+                    disabled={modalLoading}
+                  >
+                    {modalLoading ? (
+                      <div className="flex items-center gap-2">
+                        <Icon icon="mdi:loading" className="animate-spin w-4 h-4" />
+                        Deleting...
+                      </div>
+                    ) : (
+                      "Delete"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </SimpleModal>
           </div>
         </div>
       </div>

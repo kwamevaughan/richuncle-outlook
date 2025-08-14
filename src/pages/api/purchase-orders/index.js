@@ -77,7 +77,24 @@ export default async function handler(req, res) {
   if (req.method === 'DELETE') {
     try {
       const { id } = req.body;
-      if (!id) return res.status(400).json({ success: false, error: 'ID is required' });
+      
+      // Validate that id is provided and is a string
+      if (!id || typeof id !== 'string') {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Valid ID string is required' 
+        });
+      }
+      
+      // Validate that id is a proper UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Invalid UUID format' 
+        });
+      }
+      
       const { error } = await supabaseAdmin
         .from('purchase_orders')
         .delete()
