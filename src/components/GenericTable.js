@@ -12,6 +12,7 @@ import "react-date-range/dist/theme/default.css";
 import ReactDOM from "react-dom";
 import TooltipIconButton from "./TooltipIconButton";
 import ExportModal from "./export/ExportModal";
+import StatusPill, { getStockStatus, getInventoryStatus } from "./StatusPill";
 import toast from "react-hot-toast";
 
 // Enhanced useTable hook
@@ -51,8 +52,8 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
     if (searchTerm) {
       result = result.filter((row) =>
         Object.values(row).some((value) =>
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-        )
+          value?.toString().toLowerCase().includes(searchTerm.toLowerCase()),
+        ),
       );
     }
     // Date filters for sortBy
@@ -61,16 +62,16 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
       const lastMonth = new Date(
         now.getFullYear(),
         now.getMonth() - 1,
-        now.getDate()
+        now.getDate(),
       );
       result = result.filter(
-        (row) => row.created_at && new Date(row.created_at) >= lastMonth
+        (row) => row.created_at && new Date(row.created_at) >= lastMonth,
       );
     } else if (sortBy === "last_7_days") {
       const now = new Date();
       const last7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       result = result.filter(
-        (row) => row.created_at && new Date(row.created_at) >= last7
+        (row) => row.created_at && new Date(row.created_at) >= last7,
       );
     }
     return result;
@@ -80,15 +81,15 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
   const sortedData = useMemo(() => {
     if (sortBy === "recent") {
       return [...filteredData].sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        (a, b) => new Date(b.created_at) - new Date(a.created_at),
       );
     } else if (sortBy === "asc") {
       return [...filteredData].sort((a, b) =>
-        (a.name || "").localeCompare(b.name || "")
+        (a.name || "").localeCompare(b.name || ""),
       );
     } else if (sortBy === "desc") {
       return [...filteredData].sort((a, b) =>
-        (b.name || "").localeCompare(a.name || "")
+        (b.name || "").localeCompare(a.name || ""),
       );
     }
     // Default to filteredData
@@ -147,13 +148,13 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
 
   const toggleSelect = (id) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
   const selectAll = () => {
     setSelected(
-      selected.length === paged.length ? [] : paged.map((row) => row.id)
+      selected.length === paged.length ? [] : paged.map((row) => row.id),
     );
   };
 
@@ -211,6 +212,8 @@ export function GenericTable({
   getDefaultFields,
   mode = "light",
   hideEmptyColumns = true,
+  statusContext = "sales",
+  enableStatusPills = false,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data)
@@ -256,7 +259,7 @@ export function GenericTable({
   const filteredColumns = useMemo(() => {
     if (!hideEmptyColumns) return columns;
     return columns.filter((column) =>
-      hasColumnData(column.accessor, column.render)
+      hasColumnData(column.accessor, column.render),
     );
   }, [columns, safeData, hideEmptyColumns]);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -367,6 +370,72 @@ export function GenericTable({
                 {col.render(row, value, index)}
               </td>
             );
+          }
+
+          // Only render StatusPill if explicitly enabled
+          if (enableStatusPills && !col.render) {
+            const isStatusColumn =
+              col.accessor === "status" ||
+              col.accessor === "stock_status" ||
+              col.accessor === "order_status" ||
+              col.accessor === "payment_status" ||
+              col.accessor === "user_status" ||
+              col.accessor === "account_status" ||
+              col.accessor === "is_active" ||
+              col.accessor === "active" ||
+              (col.accessor && col.accessor.toLowerCase().includes("status"));
+
+            if (isStatusColumn) {
+              let detectedContext = statusContext; // use prop default
+              let statusValue = value;
+
+              // Override context based on column name if more specific
+              if (
+                col.accessor === "stock_status" ||
+                col.accessor.includes("stock")
+              ) {
+                detectedContext = "inventory";
+              } else if (
+                col.accessor === "payment_status" ||
+                col.accessor.includes("payment")
+              ) {
+                detectedContext = "payment";
+              } else if (
+                col.accessor === "user_status" ||
+                col.accessor === "is_active" ||
+                col.accessor === "active"
+              ) {
+                detectedContext = "user";
+                // Convert boolean values for user status
+                if (typeof value === "boolean") {
+                  statusValue = value ? "active" : "inactive";
+                }
+              } else if (
+                col.accessor.includes("inventory") ||
+                col.accessor.includes("product")
+              ) {
+                detectedContext = "inventory";
+                // Auto-determine stock status based on current_stock
+                if (row.current_stock !== undefined) {
+                  statusValue = getInventoryStatus(row);
+                }
+              }
+
+              return (
+                <td
+                  key={col.accessor}
+                  className={`px-2 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm ${
+                    mode === "dark" ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  <StatusPill
+                    status={statusValue}
+                    context={detectedContext}
+                    size="sm"
+                  />
+                </td>
+              );
+            }
           }
 
           if (col.type === "image") {
@@ -1219,7 +1288,7 @@ export function GenericTable({
                             </div>
                           )}
                         </div>,
-                        document.body
+                        document.body,
                       )}
                   </div>
                 )}
@@ -1345,7 +1414,7 @@ export function GenericTable({
                       checked={
                         table.paged.length > 0 &&
                         table.paged.every((row) =>
-                          table.selected.includes(row.id)
+                          table.selected.includes(row.id),
                         )
                       }
                       onChange={table.selectAll}
@@ -1380,7 +1449,7 @@ export function GenericTable({
                               .map(
                                 (word) =>
                                   word.charAt(0).toUpperCase() +
-                                  word.slice(1).toLowerCase()
+                                  word.slice(1).toLowerCase(),
                               )
                               .join(" ")
                           : ""}

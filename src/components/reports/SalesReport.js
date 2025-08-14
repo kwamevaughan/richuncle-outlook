@@ -14,8 +14,8 @@ import {
   Tooltip,
   Legend,
   Filler,
-} from 'chart.js';
-import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
+} from "chart.js";
+import { Line, Bar, Pie, Doughnut } from "react-chartjs-2";
 
 // Register ChartJS components
 ChartJS.register(
@@ -28,14 +28,19 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 );
 
-export default function SalesReport({ dateRange, selectedStore, stores, mode }) {
+export default function SalesReport({
+  dateRange,
+  selectedStore,
+  stores,
+  mode,
+}) {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Stats state
   const [stats, setStats] = useState({
     totalSales: 0,
@@ -44,7 +49,7 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
     topProduct: null,
     topCustomer: null,
     paymentMethods: {},
-    dailyTrends: []
+    dailyTrends: [],
   });
 
   const [orderItems, setOrderItems] = useState([]);
@@ -52,64 +57,81 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
 
   // Fetch sales data
   const fetchSalesData = async () => {
+    // Don't proceed if stores data isn't loaded yet
+    if (!stores || stores.length === 0) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await fetch('/api/orders');
+      const response = await fetch("/api/orders");
       const { data, error } = await response.json();
-      
+
       if (error) throw new Error(error);
-      
+
       // Filter by date range and store
       let filteredData = data || [];
-      
+
       if (dateRange.startDate && dateRange.endDate) {
-        filteredData = filteredData.filter(sale => {
+        filteredData = filteredData.filter((sale) => {
           const saleDate = new Date(sale.timestamp);
-          return saleDate >= dateRange.startDate && saleDate <= dateRange.endDate;
+          return (
+            saleDate >= dateRange.startDate && saleDate <= dateRange.endDate
+          );
         });
       }
-      
+
       if (selectedStore !== "all") {
-        filteredData = filteredData.filter(sale => sale.register_id === selectedStore);
+        filteredData = filteredData.filter(
+          (sale) => sale.register_id === selectedStore,
+        );
       }
-      
+
       // Fetch order items to get accurate item counts
-      const orderItemsResponse = await fetch('/api/order-items');
+      const orderItemsResponse = await fetch("/api/order-items");
       const { data: orderItemsData } = await orderItemsResponse.json();
       setOrderItems(orderItemsData || []);
-      
+
       // Fetch all products for mapping
-      const productsResponse = await fetch('/api/products');
+      const productsResponse = await fetch("/api/products");
       const { data: productsData } = await productsResponse.json();
       setProducts(productsData || []);
-      
+
       // Fetch registers to get store mapping
-      const registersResponse = await fetch('/api/registers');
+      const registersResponse = await fetch("/api/registers");
       const { data: registers } = await registersResponse.json();
-      
+
       // Create register to store mapping
       const registerToStoreMap = {};
-      registers.forEach(register => {
-        const store = stores.find(s => s.id === register.store_id);
-        registerToStoreMap[register.id] = store ? store.name : 'Unknown Store';
+      registers.forEach((register) => {
+        const store = stores.find((s) => s.id === register.store_id);
+
+        registerToStoreMap[register.id] = store ? store.name : "Unknown Store";
       });
-      
+
       // Add store name and item count to each sale record
-      const salesWithStoreNames = filteredData.map(sale => {
+      const salesWithStoreNames = filteredData.map((sale) => {
         // Calculate item count from order items
-        const saleItems = orderItemsData.filter(item => item.order_id === sale.id);
-        const itemCount = saleItems.reduce((total, item) => total + (parseInt(item.quantity) || 0), 0);
-        
+        const saleItems = orderItemsData.filter(
+          (item) => item.order_id === sale.id,
+        );
+        const itemCount = saleItems.reduce(
+          (total, item) => total + (parseInt(item.quantity) || 0),
+          0,
+        );
+
         // Find store name through register mapping
-        const storeName = registerToStoreMap[sale.register_id] || 'Unknown Store';
-        
+        const storeName =
+          registerToStoreMap[sale.register_id] || "Unknown Store";
+
         return {
           ...sale,
           store_name: storeName,
-          item_count: itemCount
+          item_count: itemCount,
         };
       });
-      
+
       setSales(salesWithStoreNames);
       calculateStats(filteredData);
     } catch (err) {
@@ -122,34 +144,40 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
 
   // Calculate statistics
   const calculateStats = (salesData) => {
-    const totalSales = salesData.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0);
+    const totalSales = salesData.reduce(
+      (sum, sale) => sum + (parseFloat(sale.total) || 0),
+      0,
+    );
     const totalOrders = salesData.length;
     const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-    
+
     // Payment methods breakdown
     const paymentMethods = {};
-    salesData.forEach(sale => {
-      const method = sale.payment_method || 'unknown';
-      paymentMethods[method] = (paymentMethods[method] || 0) + (parseFloat(sale.total) || 0);
+    salesData.forEach((sale) => {
+      const method = sale.payment_method || "unknown";
+      paymentMethods[method] =
+        (paymentMethods[method] || 0) + (parseFloat(sale.total) || 0);
     });
-    
+
     // Top product (simplified - would need order_items data for full analysis)
     const topProduct = salesData.length > 0 ? "Product Analysis" : null;
-    
+
     // Top customer (simplified - would need customer data for full analysis)
     const topCustomer = salesData.length > 0 ? "Customer Analysis" : null;
-    
+
     // Daily trends (simplified)
     const dailyTrends = [];
     if (salesData.length > 0) {
       const dateMap = {};
-      salesData.forEach(sale => {
+      salesData.forEach((sale) => {
         const date = new Date(sale.timestamp).toDateString();
         dateMap[date] = (dateMap[date] || 0) + (parseFloat(sale.total) || 0);
       });
-      dailyTrends.push(...Object.entries(dateMap).map(([date, amount]) => ({ date, amount })));
+      dailyTrends.push(
+        ...Object.entries(dateMap).map(([date, amount]) => ({ date, amount })),
+      );
     }
-    
+
     setStats({
       totalSales,
       totalOrders,
@@ -157,7 +185,7 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
       topProduct,
       topCustomer,
       paymentMethods,
-      dailyTrends
+      dailyTrends,
     });
   };
 
@@ -167,26 +195,27 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
 
     // Group sales by date
     const salesByDate = {};
-    sales.forEach(sale => {
+    sales.forEach((sale) => {
       const date = new Date(sale.timestamp).toLocaleDateString();
-      salesByDate[date] = (salesByDate[date] || 0) + (parseFloat(sale.total) || 0);
+      salesByDate[date] =
+        (salesByDate[date] || 0) + (parseFloat(sale.total) || 0);
     });
 
     const labels = Object.keys(salesByDate).sort();
-    const data = labels.map(date => salesByDate[date]);
+    const data = labels.map((date) => salesByDate[date]);
 
     return {
       labels,
       datasets: [
         {
-          label: 'Daily Sales (GHS)',
+          label: "Daily Sales (GHS)",
           data,
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderColor: "rgb(59, 130, 246)",
+          backgroundColor: "rgba(59, 130, 246, 0.1)",
           fill: true,
           tension: 0.4,
-          pointBackgroundColor: 'rgb(59, 130, 246)',
-          pointBorderColor: '#fff',
+          pointBackgroundColor: "rgb(59, 130, 246)",
+          pointBorderColor: "#fff",
           pointBorderWidth: 2,
           pointRadius: 4,
         },
@@ -197,23 +226,27 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
   const getPaymentMethodsChartData = () => {
     const methods = Object.keys(stats.paymentMethods);
     const amounts = Object.values(stats.paymentMethods);
-    
+
     const colors = [
-      'rgba(59, 130, 246, 0.8)',   // Blue
-      'rgba(16, 185, 129, 0.8)',   // Green
-      'rgba(245, 158, 11, 0.8)',   // Yellow
-      'rgba(239, 68, 68, 0.8)',    // Red
-      'rgba(139, 92, 246, 0.8)',   // Purple
-      'rgba(236, 72, 153, 0.8)',   // Pink
+      "rgba(59, 130, 246, 0.8)", // Blue
+      "rgba(16, 185, 129, 0.8)", // Green
+      "rgba(245, 158, 11, 0.8)", // Yellow
+      "rgba(239, 68, 68, 0.8)", // Red
+      "rgba(139, 92, 246, 0.8)", // Purple
+      "rgba(236, 72, 153, 0.8)", // Pink
     ];
 
     return {
-      labels: methods.map(method => method.charAt(0).toUpperCase() + method.slice(1)),
+      labels: methods.map(
+        (method) => method.charAt(0).toUpperCase() + method.slice(1),
+      ),
       datasets: [
         {
           data: amounts,
           backgroundColor: colors.slice(0, methods.length),
-          borderColor: colors.slice(0, methods.length).map(color => color.replace('0.8', '1')),
+          borderColor: colors
+            .slice(0, methods.length)
+            .map((color) => color.replace("0.8", "1")),
           borderWidth: 2,
         },
       ],
@@ -226,32 +259,33 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
     // Group sales by date
     const salesByDate = {};
     const ordersByDate = {};
-    
-    sales.forEach(sale => {
+
+    sales.forEach((sale) => {
       const date = new Date(sale.timestamp).toLocaleDateString();
-      salesByDate[date] = (salesByDate[date] || 0) + (parseFloat(sale.total) || 0);
+      salesByDate[date] =
+        (salesByDate[date] || 0) + (parseFloat(sale.total) || 0);
       ordersByDate[date] = (ordersByDate[date] || 0) + 1;
     });
 
     const labels = Object.keys(salesByDate).sort();
-    
+
     return {
       labels,
       datasets: [
         {
-          label: 'Sales Amount (GHS)',
-          data: labels.map(date => salesByDate[date]),
-          backgroundColor: 'rgba(59, 130, 246, 0.8)',
-          borderColor: 'rgb(59, 130, 246)',
+          label: "Sales Amount (GHS)",
+          data: labels.map((date) => salesByDate[date]),
+          backgroundColor: "rgba(59, 130, 246, 0.8)",
+          borderColor: "rgb(59, 130, 246)",
           borderWidth: 1,
         },
         {
-          label: 'Number of Orders',
-          data: labels.map(date => ordersByDate[date]),
-          backgroundColor: 'rgba(16, 185, 129, 0.8)',
-          borderColor: 'rgb(16, 185, 129)',
+          label: "Number of Orders",
+          data: labels.map((date) => ordersByDate[date]),
+          backgroundColor: "rgba(16, 185, 129, 0.8)",
+          borderColor: "rgb(16, 185, 129)",
           borderWidth: 1,
-          yAxisID: 'y1',
+          yAxisID: "y1",
         },
       ],
     };
@@ -261,27 +295,36 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
     if (!orderItems.length) return { labels: [], datasets: [] };
     // Build productId -> name map
     const productIdToName = {};
-    products.forEach(p => {
+    products.forEach((p) => {
       productIdToName[p.id] = p.name;
     });
     // Aggregate quantities by product
     const productMap = {};
-    orderItems.forEach(item => {
+    orderItems.forEach((item) => {
       // Filter by date range and store
-      const orderDate = item.orders && item.orders.timestamp ? new Date(item.orders.timestamp) : null;
+      const orderDate =
+        item.orders && item.orders.timestamp
+          ? new Date(item.orders.timestamp)
+          : null;
       if (orderDate && dateRange.startDate && dateRange.endDate) {
-        if (orderDate < dateRange.startDate || orderDate > dateRange.endDate) return;
+        if (orderDate < dateRange.startDate || orderDate > dateRange.endDate)
+          return;
       }
-      if (selectedStore && selectedStore !== 'all') {
-        if (item.orders && String(item.orders.register_id) !== String(selectedStore)) return;
+      if (selectedStore && selectedStore !== "all") {
+        if (
+          item.orders &&
+          String(item.orders.register_id) !== String(selectedStore)
+        )
+          return;
       }
       // Try to get product name from mapping
       let productName = item.product_name || item.product?.name;
       if (!productName && item.product_id) {
-        productName = productIdToName[item.product_id] || 'Unknown Product';
+        productName = productIdToName[item.product_id] || "Unknown Product";
       }
-      if (!productName) productName = 'Unknown Product';
-      productMap[productName] = (productMap[productName] || 0) + (parseInt(item.quantity) || 0);
+      if (!productName) productName = "Unknown Product";
+      productMap[productName] =
+        (productMap[productName] || 0) + (parseInt(item.quantity) || 0);
     });
     // Sort products by quantity sold
     const sorted = Object.entries(productMap).sort((a, b) => b[1] - a[1]);
@@ -290,14 +333,14 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
       labels: top.map(([name]) => name),
       datasets: [
         {
-          label: 'Sales Volume',
+          label: "Sales Volume",
           data: top.map(([, qty]) => qty),
           backgroundColor: [
-            'rgba(59, 130, 246, 0.8)',
-            'rgba(16, 185, 129, 0.8)',
-            'rgba(245, 158, 11, 0.8)',
-            'rgba(239, 68, 68, 0.8)',
-            'rgba(139, 92, 246, 0.8)',
+            "rgba(59, 130, 246, 0.8)",
+            "rgba(16, 185, 129, 0.8)",
+            "rgba(245, 158, 11, 0.8)",
+            "rgba(239, 68, 68, 0.8)",
+            "rgba(139, 92, 246, 0.8)",
           ],
           borderWidth: 1,
         },
@@ -306,89 +349,85 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
   };
 
   useEffect(() => {
-    fetchSalesData();
-  }, [dateRange, selectedStore]);
+    // Only fetch sales data if stores array is available
+    if (stores && stores.length > 0) {
+      fetchSalesData();
+    }
+  }, [dateRange, selectedStore, stores]);
 
   // Table columns for sales data
   const columns = [
     { Header: "Order ID", accessor: "id" },
-    { 
-      Header: "Date", 
-      accessor: "timestamp", 
+    {
+      Header: "Date",
+      accessor: "timestamp",
       render: (row, value) => {
         if (!value) return "No Date";
         try {
           const date = new Date(value);
           if (isNaN(date.getTime())) return "Invalid Date";
-          return date.toLocaleDateString('en-GB', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+          return date.toLocaleDateString("en-GB", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
           });
         } catch (e) {
           return "Invalid Date";
         }
-      }
+      },
     },
-    { 
-      Header: "Customer", 
-      accessor: "customer_name", 
-      render: (row, value) => value || "Walk-in Customer"
+    {
+      Header: "Customer",
+      accessor: "customer_name",
+      render: (row, value) => value || "Walk-in Customer",
     },
-    { 
-      Header: "Items", 
-      accessor: "item_count", 
-      render: (row, value) => value || "0"
+    {
+      Header: "Items",
+      accessor: "item_count",
+      render: (row, value) => value || "0",
     },
-    { 
-      Header: "Total", 
-      accessor: "total", 
-      render: (row, value) => `GHS ${parseFloat(value || 0).toFixed(2)}`
+    {
+      Header: "Total",
+      accessor: "total",
+      render: (row, value) => `GHS ${parseFloat(value || 0).toFixed(2)}`,
     },
-    { 
-      Header: "Payment", 
-      accessor: "payment_method", 
-      render: (row, value) => value ? value.charAt(0).toUpperCase() + value.slice(1) : "Cash"
+    {
+      Header: "Payment",
+      accessor: "payment_method",
+      render: (row, value) =>
+        value ? value.charAt(0).toUpperCase() + value.slice(1) : "Cash",
     },
-    { 
-      Header: "Status", 
-      accessor: "status", 
-      render: (row, value) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          value === 'completed' ? 'bg-green-100 text-green-800' :
-          value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-          value === 'cancelled' ? 'bg-red-100 text-red-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {value ? value.charAt(0).toUpperCase() + value.slice(1) : "Completed"}
-        </span>
-      )
+    {
+      Header: "Status",
+      accessor: "status",
     },
-    { 
-      Header: "Cashier", 
-      accessor: "cashier_name", 
-      render: (row, value) => value || "Staff"
+    {
+      Header: "Cashier",
+      accessor: "cashier_name",
+      render: (row, value) => value || "Staff",
     },
-    { 
-      Header: "Store", 
-      accessor: "store_name", 
-      render: (row, value) => value || "Main Store"
-    }
+    {
+      Header: "Store",
+      accessor: "store_name",
+      render: (row, value) => value || "Main Store",
+    },
   ];
 
   // Flatten sales data for export
-  const flattenedSales = sales.map(sale => ({
-    id: String(sale.id || ''),
-    timestamp: String(sale.timestamp || ''),
-    customer_name: String(sale.customer_name || 'Walk-in Customer'),
+  const flattenedSales = sales.map((sale) => ({
+    id: String(sale.id || ""),
+    timestamp: String(sale.timestamp || ""),
+    customer_name: String(sale.customer_name || "Walk-in Customer"),
     item_count: String(sale.item_count || 0),
-    total: String(sale.total || '0'),
-    payment_method: String(sale.payment_method || 'Cash'),
-    status: String(sale.status || 'Completed'),
-    cashier_name: String(sale.payment_receiver_name || sale.cashier_name || 'Staff'),
-    store_name: String(sale.store_name || 'Main Store')
+    total: String(sale.total || "0"),
+    payment_method: String(sale.payment_method || "Cash"),
+    status: String(sale.status || "Completed"),
+    cashier_name: String(
+      sale.payment_receiver_name || sale.cashier_name || "Staff",
+    ),
+    store_name: String(sale.store_name || "Main Store"),
   }));
 
   return (
@@ -496,7 +535,7 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
                     <p className="text-sm text-gray-500">
                       {((amount / stats.totalSales) * 100).toLocaleString(
                         undefined,
-                        { maximumFractionDigits: 1 }
+                        { maximumFractionDigits: 1 },
                       )}
                       %
                     </p>
@@ -528,22 +567,22 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
                   },
                   tooltip: {
                     callbacks: {
-                      label: function(context) {
+                      label: function (context) {
                         return `GHS ${context.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                      }
-                    }
-                  }
+                      },
+                    },
+                  },
                 },
                 scales: {
                   y: {
                     beginAtZero: true,
                     ticks: {
-                      callback: function(value) {
+                      callback: function (value) {
                         return `GHS ${value.toLocaleString()}`;
-                      }
-                    }
-                  }
-                }
+                      },
+                    },
+                  },
+                },
               }}
             />
           </div>
@@ -552,7 +591,9 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
         {/* Payment Methods Pie Chart */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Payment Methods Distribution</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Payment Methods Distribution
+            </h3>
             <Icon icon="mdi:pie-chart" className="w-5 h-5 text-gray-400" />
           </div>
           <div className="h-64">
@@ -563,18 +604,24 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
                 maintainAspectRatio: false,
                 plugins: {
                   legend: {
-                    position: 'bottom',
+                    position: "bottom",
                   },
                   tooltip: {
                     callbacks: {
-                      label: function(context) {
-                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                      label: function (context) {
+                        const total = context.dataset.data.reduce(
+                          (a, b) => a + b,
+                          0,
+                        );
+                        const percentage = (
+                          (context.parsed / total) *
+                          100
+                        ).toFixed(1);
                         return `${context.label}: GHS ${context.parsed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${percentage}%)`;
-                      }
-                    }
-                  }
-                }
+                      },
+                    },
+                  },
+                },
               }}
             />
           </div>
@@ -583,7 +630,9 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
         {/* Daily Sales Bar Chart */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Daily Sales & Orders</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Daily Sales & Orders
+            </h3>
             <Icon icon="mdi:chart-bar" className="w-5 h-5 text-gray-400" />
           </div>
           <div className="h-64">
@@ -594,42 +643,42 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
                 maintainAspectRatio: false,
                 plugins: {
                   legend: {
-                    position: 'top',
+                    position: "top",
                   },
                   tooltip: {
                     callbacks: {
-                      label: function(context) {
+                      label: function (context) {
                         if (context.datasetIndex === 0) {
                           return `Sales: GHS ${context.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         } else {
                           return `Orders: ${context.parsed.y}`;
                         }
-                      }
-                    }
-                  }
+                      },
+                    },
+                  },
                 },
                 scales: {
                   y: {
-                    type: 'linear',
+                    type: "linear",
                     display: true,
-                    position: 'left',
+                    position: "left",
                     beginAtZero: true,
                     ticks: {
-                      callback: function(value) {
+                      callback: function (value) {
                         return `GHS ${value.toLocaleString()}`;
-                      }
-                    }
+                      },
+                    },
                   },
                   y1: {
-                    type: 'linear',
+                    type: "linear",
                     display: true,
-                    position: 'right',
+                    position: "right",
                     beginAtZero: true,
                     grid: {
                       drawOnChartArea: false,
                     },
-                  }
-                }
+                  },
+                },
               }}
             />
           </div>
@@ -638,8 +687,13 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
         {/* Top Products Chart */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Top Products</h3>
-            <Icon icon="mdi:package-variant" className="w-5 h-5 text-gray-400" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Top Products
+            </h3>
+            <Icon
+              icon="mdi:package-variant"
+              className="w-5 h-5 text-gray-400"
+            />
           </div>
           <div className="h-64">
             <Bar
@@ -647,24 +701,24 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                indexAxis: 'y',
+                indexAxis: "y",
                 plugins: {
                   legend: {
                     display: false,
                   },
                   tooltip: {
                     callbacks: {
-                      label: function(context) {
+                      label: function (context) {
                         return `Sales: ${context.parsed.x}`;
-                      }
-                    }
-                  }
+                      },
+                    },
+                  },
                 },
                 scales: {
                   x: {
                     beginAtZero: true,
-                  }
-                }
+                  },
+                },
               }}
             />
           </div>
@@ -690,13 +744,19 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
           exportType="sales"
           exportTitle="Export Sales Report"
           hideEmptyColumns={false}
+          statusContext="sales"
+          enableStatusPills={true}
           getFieldsOrder={() => [
             { label: "Order ID", key: "id", icon: "mdi:identifier" },
             { label: "Date", key: "timestamp", icon: "mdi:calendar" },
             { label: "Customer", key: "customer_name", icon: "mdi:account" },
             { label: "Items", key: "item_count", icon: "mdi:package-variant" },
             { label: "Total", key: "total", icon: "mdi:currency-usd" },
-            { label: "Payment", key: "payment_method", icon: "mdi:credit-card" },
+            {
+              label: "Payment",
+              key: "payment_method",
+              icon: "mdi:credit-card",
+            },
             { label: "Status", key: "status", icon: "mdi:check-circle" },
             { label: "Cashier", key: "cashier_name", icon: "mdi:account-tie" },
             { label: "Store", key: "store_name", icon: "mdi:store" },
@@ -727,4 +787,4 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
       </div>
     </div>
   );
-} 
+}

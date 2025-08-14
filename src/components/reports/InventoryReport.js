@@ -15,8 +15,8 @@ import {
   Tooltip,
   Legend,
   Filler,
-} from 'chart.js';
-import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
+} from "chart.js";
+import { Line, Bar, Pie, Doughnut } from "react-chartjs-2";
 
 // Register ChartJS components
 ChartJS.register(
@@ -29,16 +29,21 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 );
 
-export default function InventoryReport({ dateRange, selectedStore, stores, mode }) {
+export default function InventoryReport({
+  dateRange,
+  selectedStore,
+  stores,
+  mode,
+}) {
   const [products, setProducts] = useState([]);
   const [stockMovements, setStockMovements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showExportModal, setShowExportModal] = useState(false);
-  
+
   // Stats state
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -47,7 +52,7 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
     outOfStock: 0,
     totalValue: 0,
     lowStockValue: 0,
-    stockThreshold: 10
+    stockThreshold: 10,
   });
 
   // Fetch inventory data
@@ -55,9 +60,9 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
     setLoading(true);
     try {
       const [productsRes, adjustmentsRes, transfersRes] = await Promise.all([
-        fetch('/api/products'),
-        fetch('/api/stock-adjustments'),
-        fetch('/api/stock-transfers')
+        fetch("/api/products"),
+        fetch("/api/stock-adjustments"),
+        fetch("/api/stock-transfers"),
       ]);
 
       const productsData = await productsRes.json();
@@ -65,44 +70,47 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
       const transfersData = await transfersRes.json();
 
       if (productsData.error) throw new Error(productsData.error);
-      
+
       // Filter products by store if needed
       let filteredProducts = productsData.data || [];
       if (selectedStore !== "all") {
-        filteredProducts = filteredProducts.filter(product => 
-          product.store_id === selectedStore || !product.store_id
+        filteredProducts = filteredProducts.filter(
+          (product) => product.store_id === selectedStore || !product.store_id,
         );
       }
-      
+
       setProducts(filteredProducts);
-      
+
       // Combine stock movements
       const movements = [
-        ...(adjustmentsData.data || []).map(adj => ({
+        ...(adjustmentsData.data || []).map((adj) => ({
           ...adj,
-          type: 'adjustment',
+          type: "adjustment",
           date: adj.adjustment_date,
-          description: `${adj.adjustment_type} stock adjustment`
+          description: `${adj.adjustment_type} stock adjustment`,
         })),
-        ...(transfersData.data || []).map(trans => ({
+        ...(transfersData.data || []).map((trans) => ({
           ...trans,
-          type: 'transfer',
+          type: "transfer",
           date: trans.transfer_date,
-          description: `Stock transfer ${trans.status}`
-        }))
+          description: `Stock transfer ${trans.status}`,
+        })),
       ];
-      
+
       // Filter movements by date range
       if (dateRange.startDate && dateRange.endDate) {
-        const filteredMovements = movements.filter(movement => {
+        const filteredMovements = movements.filter((movement) => {
           const movementDate = new Date(movement.date);
-          return movementDate >= dateRange.startDate && movementDate <= dateRange.endDate;
+          return (
+            movementDate >= dateRange.startDate &&
+            movementDate <= dateRange.endDate
+          );
         });
         setStockMovements(filteredMovements);
       } else {
         setStockMovements(movements);
       }
-      
+
       calculateStats(filteredProducts);
     } catch (err) {
       setError(err.message);
@@ -115,24 +123,36 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
   // Calculate statistics
   const calculateStats = (productsData) => {
     const totalProducts = productsData.length;
-    const inStock = productsData.filter(p => parseInt(p.quantity) > stats.stockThreshold).length;
-    const lowStock = productsData.filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= stats.stockThreshold).length;
-    const outOfStock = productsData.filter(p => parseInt(p.quantity) <= 0).length;
-    
+    const inStock = productsData.filter(
+      (p) => parseInt(p.quantity) > stats.stockThreshold,
+    ).length;
+    const lowStock = productsData.filter(
+      (p) =>
+        parseInt(p.quantity) > 0 &&
+        parseInt(p.quantity) <= stats.stockThreshold,
+    ).length;
+    const outOfStock = productsData.filter(
+      (p) => parseInt(p.quantity) <= 0,
+    ).length;
+
     const totalValue = productsData.reduce((sum, p) => {
       const quantity = parseInt(p.quantity) || 0;
       const price = parseFloat(p.price) || 0;
-      return sum + (quantity * price);
+      return sum + quantity * price;
     }, 0);
-    
+
     const lowStockValue = productsData
-      .filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= stats.stockThreshold)
+      .filter(
+        (p) =>
+          parseInt(p.quantity) > 0 &&
+          parseInt(p.quantity) <= stats.stockThreshold,
+      )
       .reduce((sum, p) => {
         const quantity = parseInt(p.quantity) || 0;
         const price = parseFloat(p.price) || 0;
-        return sum + (quantity * price);
+        return sum + quantity * price;
       }, 0);
-    
+
     setStats({
       totalProducts,
       inStock,
@@ -140,7 +160,7 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
       outOfStock,
       totalValue,
       lowStockValue,
-      stockThreshold: stats.stockThreshold
+      stockThreshold: stats.stockThreshold,
     });
   };
 
@@ -151,28 +171,43 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
   // Chart data processing functions
   const getStockStatusData = () => {
     const data = [
-      { label: 'In Stock', value: stats.inStock, color: 'rgba(16, 185, 129, 0.8)' },
-      { label: 'Low Stock', value: stats.lowStock, color: 'rgba(245, 158, 11, 0.8)' },
-      { label: 'Out of Stock', value: stats.outOfStock, color: 'rgba(239, 68, 68, 0.8)' }
+      {
+        label: "In Stock",
+        value: stats.inStock,
+        color: "rgba(16, 185, 129, 0.8)",
+      },
+      {
+        label: "Low Stock",
+        value: stats.lowStock,
+        color: "rgba(245, 158, 11, 0.8)",
+      },
+      {
+        label: "Out of Stock",
+        value: stats.outOfStock,
+        color: "rgba(239, 68, 68, 0.8)",
+      },
     ];
 
     return {
-      labels: data.map(item => item.label),
-      datasets: [{
-        data: data.map(item => item.value),
-        backgroundColor: data.map(item => item.color),
-        borderColor: data.map(item => item.color.replace('0.8', '1')),
-        borderWidth: 2,
-      }]
+      labels: data.map((item) => item.label),
+      datasets: [
+        {
+          data: data.map((item) => item.value),
+          backgroundColor: data.map((item) => item.color),
+          borderColor: data.map((item) => item.color.replace("0.8", "1")),
+          borderWidth: 2,
+        },
+      ],
     };
   };
 
   const getInventoryValueByCategory = () => {
     // Group products by category and calculate total value
     const categoryValues = {};
-    products.forEach(product => {
-      const category = product.category_name || 'Uncategorized';
-      const value = (parseInt(product.quantity) || 0) * (parseFloat(product.price) || 0);
+    products.forEach((product) => {
+      const category = product.category_name || "Uncategorized";
+      const value =
+        (parseInt(product.quantity) || 0) * (parseFloat(product.price) || 0);
       categoryValues[category] = (categoryValues[category] || 0) + value;
     });
 
@@ -181,13 +216,15 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
 
     return {
       labels,
-      datasets: [{
-        label: 'Inventory Value (GHS)',
-        data,
-        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-        borderColor: 'rgb(59, 130, 246)',
-        borderWidth: 1,
-      }]
+      datasets: [
+        {
+          label: "Inventory Value (GHS)",
+          data,
+          backgroundColor: "rgba(59, 130, 246, 0.8)",
+          borderColor: "rgb(59, 130, 246)",
+          borderWidth: 1,
+        },
+      ],
     };
   };
 
@@ -196,47 +233,53 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
 
     // Group movements by date
     const movementsByDate = {};
-    stockMovements.forEach(movement => {
+    stockMovements.forEach((movement) => {
       const date = new Date(movement.date).toLocaleDateString();
       if (!movementsByDate[date]) {
         movementsByDate[date] = { adjustments: 0, transfers: 0 };
       }
-      
-      if (movement.type === 'adjustment') {
-        movementsByDate[date].adjustments += Math.abs(parseInt(movement.quantity_adjusted) || 0);
-      } else if (movement.type === 'transfer') {
-        movementsByDate[date].transfers += Math.abs(parseInt(movement.quantity_transferred) || 0);
+
+      if (movement.type === "adjustment") {
+        movementsByDate[date].adjustments += Math.abs(
+          parseInt(movement.quantity_adjusted) || 0,
+        );
+      } else if (movement.type === "transfer") {
+        movementsByDate[date].transfers += Math.abs(
+          parseInt(movement.quantity_transferred) || 0,
+        );
       }
     });
 
     const labels = Object.keys(movementsByDate).sort();
-    
+
     return {
       labels,
       datasets: [
         {
-          label: 'Stock Adjustments',
-          data: labels.map(date => movementsByDate[date].adjustments),
-          borderColor: 'rgb(239, 68, 68)',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          label: "Stock Adjustments",
+          data: labels.map((date) => movementsByDate[date].adjustments),
+          borderColor: "rgb(239, 68, 68)",
+          backgroundColor: "rgba(239, 68, 68, 0.1)",
           fill: false,
           tension: 0.4,
         },
         {
-          label: 'Stock Transfers',
-          data: labels.map(date => movementsByDate[date].transfers),
-          borderColor: 'rgb(16, 185, 129)',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          label: "Stock Transfers",
+          data: labels.map((date) => movementsByDate[date].transfers),
+          borderColor: "rgb(16, 185, 129)",
+          backgroundColor: "rgba(16, 185, 129, 0.1)",
           fill: false,
           tension: 0.4,
-        }
-      ]
+        },
+      ],
     };
   };
 
   const getLowStockAlertsData = () => {
-    const lowStockProducts = products.filter(p => 
-      parseInt(p.quantity) > 0 && parseInt(p.quantity) <= stats.stockThreshold
+    const lowStockProducts = products.filter(
+      (p) =>
+        parseInt(p.quantity) > 0 &&
+        parseInt(p.quantity) <= stats.stockThreshold,
     );
 
     // Get top 10 low stock products
@@ -245,14 +288,16 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
       .slice(0, 10);
 
     return {
-      labels: topLowStock.map(p => p.name),
-      datasets: [{
-        label: 'Current Stock',
-        data: topLowStock.map(p => parseInt(p.quantity)),
-        backgroundColor: 'rgba(245, 158, 11, 0.8)',
-        borderColor: 'rgb(245, 158, 11)',
-        borderWidth: 1,
-      }]
+      labels: topLowStock.map((p) => p.name),
+      datasets: [
+        {
+          label: "Current Stock",
+          data: topLowStock.map((p) => parseInt(p.quantity)),
+          backgroundColor: "rgba(245, 158, 11, 0.8)",
+          borderColor: "rgb(245, 158, 11)",
+          borderWidth: 1,
+        },
+      ],
     };
   };
 
@@ -260,21 +305,36 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
   const productColumns = [
     { Header: "Product", accessor: "name" },
     { Header: "SKU", accessor: "sku" },
-    { Header: "Category", accessor: "category_name", 
-      Cell: ({ value }) => value || "Uncategorized" },
-    { Header: "Quantity", accessor: "quantity", 
+    {
+      Header: "Category",
+      accessor: "category_name",
+      Cell: ({ value }) => value || "Uncategorized",
+    },
+    {
+      Header: "Quantity",
+      accessor: "quantity",
       Cell: ({ value }) => (
-        <span className={`font-medium ${
-          parseInt(value) <= 0 ? 'text-red-600' :
-          parseInt(value) <= stats.stockThreshold ? 'text-orange-600' :
-          'text-green-600'
-        }`}>
+        <span
+          className={`font-medium ${
+            parseInt(value) <= 0
+              ? "text-red-600"
+              : parseInt(value) <= stats.stockThreshold
+                ? "text-orange-600"
+                : "text-green-600"
+          }`}
+        >
           {parseInt(value) || 0}
         </span>
-      )},
-    { Header: "Unit Price", accessor: "price", 
-      Cell: ({ value }) => `GHS ${parseFloat(value || 0).toFixed(2)}` },
-    { Header: "Total Value", accessor: "total_value", 
+      ),
+    },
+    {
+      Header: "Unit Price",
+      accessor: "price",
+      Cell: ({ value }) => `GHS ${parseFloat(value || 0).toFixed(2)}`,
+    },
+    {
+      Header: "Total Value",
+      accessor: "total_value",
       Cell: ({ row }) => {
         const quantity = parseInt(row.original.quantity) || 0;
         const price = parseFloat(row.original.price) || 0;
@@ -283,8 +343,11 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}`;
-      }},
-    { Header: "Status", accessor: "stock_status", 
+      },
+    },
+    {
+      Header: "Status",
+      accessor: "stock_status",
       Cell: ({ row }) => {
         const quantity = parseInt(row.original.quantity) || 0;
         let status, color;
@@ -299,80 +362,136 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
           color = "bg-green-100 text-green-800";
         }
         return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}
+          >
             {status}
           </span>
         );
-      }}
+      },
+    },
   ];
 
   // Table columns for stock movements
   const movementColumns = [
-    { Header: "Date", accessor: "date", 
-      Cell: ({ value }) => new Date(value).toLocaleDateString() },
-    { Header: "Type", accessor: "type", 
-      Cell: ({ value }) => value ? value.charAt(0).toUpperCase() + value.slice(1) : "N/A" },
-    { Header: "Product", accessor: "product_name", 
-      Cell: ({ value, row }) => value || row.original.product?.name || "N/A" },
+    {
+      Header: "Date",
+      accessor: "date",
+      Cell: ({ value }) => new Date(value).toLocaleDateString(),
+    },
+    {
+      Header: "Type",
+      accessor: "type",
+      Cell: ({ value }) =>
+        value ? value.charAt(0).toUpperCase() + value.slice(1) : "N/A",
+    },
+    {
+      Header: "Product",
+      accessor: "product_name",
+      Cell: ({ value, row }) => value || row.original.product?.name || "N/A",
+    },
     { Header: "Description", accessor: "description" },
-    { Header: "Quantity", accessor: "quantity", 
+    {
+      Header: "Quantity",
+      accessor: "quantity",
       Cell: ({ value, row }) => {
-        const qty = row.original.type === 'adjustment' ? 
-          row.original.quantity_adjusted : 
-          row.original.quantity_transferred;
+        const qty =
+          row.original.type === "adjustment"
+            ? row.original.quantity_adjusted
+            : row.original.quantity_transferred;
         return qty || value || "N/A";
-      }},
-    { Header: "Reference", accessor: "reference", 
+      },
+    },
+    {
+      Header: "Reference",
+      accessor: "reference",
       Cell: ({ value, row }) => {
-        if (row.original.type === 'adjustment') {
+        if (row.original.type === "adjustment") {
           return row.original.reference_number || "N/A";
         } else {
           return row.original.transfer_number || "N/A";
         }
-      }},
-    { Header: "Status", accessor: "status", 
+      },
+    },
+    {
+      Header: "Status",
+      accessor: "status",
       Cell: ({ value, row }) => {
-        if (row.original.type === 'transfer') {
+        if (row.original.type === "transfer") {
           return (
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              value === 'completed' ? 'bg-green-100 text-green-800' :
-              value === 'in_transit' ? 'bg-blue-100 text-blue-800' :
-              value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                value === "completed"
+                  ? "bg-green-100 text-green-800"
+                  : value === "in_transit"
+                    ? "bg-blue-100 text-blue-800"
+                    : value === "pending"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-gray-100 text-gray-800"
+              }`}
+            >
               {value ? value.charAt(0).toUpperCase() + value.slice(1) : "N/A"}
             </span>
           );
         }
         return "N/A";
-      }}
+      },
+    },
   ];
 
   // Flatten products data for export
-  const flattenedProducts = products.map(product => ({
-    name: String(product.name || ''),
-    sku: String(product.sku || ''),
-    category_name: String(product.category_name || 'Uncategorized'),
-    quantity: String(product.quantity || '0'),
-    price: String(product.price || '0'),
-    total_value: String((parseInt(product.quantity || 0) * parseFloat(product.price || 0)).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })),
-    stock_status: parseInt(product.quantity || 0) <= 0 ? 'Out of Stock' :
-                  parseInt(product.quantity || 0) <= stats.stockThreshold ? 'Low Stock' : 'In Stock',
-    store_name: stores.find(s => s.id === product.store_id)?.name || 'N/A'
+  const flattenedProducts = products.map((product) => ({
+    name: String(product.name || ""),
+    sku: String(product.sku || ""),
+    category_name: String(product.category_name || "Uncategorized"),
+    quantity: String(product.quantity || "0"),
+    price: String(product.price || "0"),
+    total_value: String(
+      (
+        parseInt(product.quantity || 0) * parseFloat(product.price || 0)
+      ).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    ),
+    stock_status:
+      parseInt(product.quantity || 0) <= 0
+        ? "Out of Stock"
+        : parseInt(product.quantity || 0) <= stats.stockThreshold
+          ? "Low Stock"
+          : "In Stock",
+    store_name: stores.find((s) => s.id === product.store_id)?.name || "N/A",
   }));
 
   // Flatten stock movements data for export
-  const flattenedMovements = stockMovements.map(movement => ({
+  const flattenedMovements = stockMovements.map((movement) => ({
     date: String(new Date(movement.date).toLocaleDateString()),
-    type: String(movement.type ? movement.type.charAt(0).toUpperCase() + movement.type.slice(1) : 'N/A'),
-    product_name: String(movement.product_name || movement.product?.name || 'N/A'),
-    description: String(movement.description || ''),
-    quantity: String(movement.type === 'adjustment' ? movement.quantity_adjusted : movement.quantity_transferred || 'N/A'),
-    reference: String(movement.type === 'adjustment' ? movement.reference_number : movement.transfer_number || 'N/A'),
-    status: String(movement.type === 'transfer' ? (movement.status ? movement.status.charAt(0).toUpperCase() + movement.status.slice(1) : 'N/A') : 'N/A')
+    type: String(
+      movement.type
+        ? movement.type.charAt(0).toUpperCase() + movement.type.slice(1)
+        : "N/A",
+    ),
+    product_name: String(
+      movement.product_name || movement.product?.name || "N/A",
+    ),
+    description: String(movement.description || ""),
+    quantity: String(
+      movement.type === "adjustment"
+        ? movement.quantity_adjusted
+        : movement.quantity_transferred || "N/A",
+    ),
+    reference: String(
+      movement.type === "adjustment"
+        ? movement.reference_number
+        : movement.transfer_number || "N/A",
+    ),
+    status: String(
+      movement.type === "transfer"
+        ? movement.status
+          ? movement.status.charAt(0).toUpperCase() + movement.status.slice(1)
+          : "N/A"
+        : "N/A",
+    ),
   }));
 
   return (
@@ -504,7 +623,7 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
                       label: function (context) {
                         const total = context.dataset.data.reduce(
                           (a, b) => a + b,
-                          0
+                          0,
                         );
                         const percentage = (
                           (context.parsed / total) *
@@ -544,7 +663,10 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
                       label: function (context) {
                         return `GHS ${context.parsed.x.toLocaleString(
                           undefined,
-                          { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
                         )}`;
                       },
                     },
@@ -657,6 +779,8 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
           onRefresh={fetchInventoryData}
           exportType="inventory"
           exportTitle="Export Inventory Data"
+          statusContext="inventory"
+          enableStatusPills={true}
           getFieldsOrder={() => [
             { label: "Product Name", key: "name", icon: "mdi:package-variant" },
             { label: "SKU", key: "sku", icon: "mdi:barcode" },
@@ -696,7 +820,7 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
             Stock Movements
           </h3>
         </div>
-        
+
         <GenericTable
           data={flattenedMovements}
           columns={movementColumns}
@@ -705,10 +829,16 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
           onRefresh={fetchInventoryData}
           exportType="stock-movements"
           exportTitle="Export Stock Movements"
+          statusContext="inventory"
+          enableStatusPills={true}
           getFieldsOrder={() => [
             { label: "Date", key: "date", icon: "mdi:calendar" },
             { label: "Type", key: "type", icon: "mdi:swap-horizontal" },
-            { label: "Product", key: "product_name", icon: "mdi:package-variant" },
+            {
+              label: "Product",
+              key: "product_name",
+              icon: "mdi:package-variant",
+            },
             { label: "Description", key: "description", icon: "mdi:text" },
             { label: "Quantity", key: "quantity", icon: "mdi:counter" },
             { label: "Reference", key: "reference", icon: "mdi:identifier" },
@@ -748,4 +878,4 @@ export default function InventoryReport({ dateRange, selectedStore, stores, mode
       />
     </div>
   );
-} 
+}

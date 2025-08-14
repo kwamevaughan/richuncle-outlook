@@ -4,38 +4,43 @@ import { GenericTable } from "../GenericTable";
 import ExportModal from "../export/ExportModal";
 import toast from "react-hot-toast";
 
-export default function ProductsReport({ dateRange, selectedStore, stores, mode }) {
+export default function ProductsReport({
+  dateRange,
+  selectedStore,
+  stores,
+  mode,
+}) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showExportModal, setShowExportModal] = useState(false);
-  
+
   // Stats state
   const [stats, setStats] = useState({
     totalProducts: 0,
     activeProducts: 0,
     lowStockProducts: 0,
     outOfStockProducts: 0,
-    totalValue: 0
+    totalValue: 0,
   });
 
   // Fetch products data
   const fetchProductsData = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch("/api/products");
       const { data, error } = await response.json();
-      
+
       if (error) throw new Error(error);
-      
+
       // Filter by store if needed
       let filteredProducts = data || [];
       if (selectedStore !== "all") {
-        filteredProducts = filteredProducts.filter(product => 
-          product.store_id === selectedStore || !product.store_id
+        filteredProducts = filteredProducts.filter(
+          (product) => product.store_id === selectedStore || !product.store_id,
         );
       }
-      
+
       setProducts(filteredProducts);
       calculateStats(filteredProducts);
     } catch (err) {
@@ -49,22 +54,28 @@ export default function ProductsReport({ dateRange, selectedStore, stores, mode 
   // Calculate statistics
   const calculateStats = (productsData) => {
     const totalProducts = productsData.length;
-    const activeProducts = productsData.filter(p => p.status === 'active').length;
-    const lowStockProducts = productsData.filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 10).length;
-    const outOfStockProducts = productsData.filter(p => parseInt(p.quantity) <= 0).length;
-    
+    const activeProducts = productsData.filter(
+      (p) => p.status === "active",
+    ).length;
+    const lowStockProducts = productsData.filter(
+      (p) => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 10,
+    ).length;
+    const outOfStockProducts = productsData.filter(
+      (p) => parseInt(p.quantity) <= 0,
+    ).length;
+
     const totalValue = productsData.reduce((sum, p) => {
       const quantity = parseInt(p.quantity) || 0;
       const price = parseFloat(p.price) || 0;
-      return sum + (quantity * price);
+      return sum + quantity * price;
     }, 0);
-    
+
     setStats({
       totalProducts,
       activeProducts,
       lowStockProducts,
       outOfStockProducts,
-      totalValue
+      totalValue,
     });
   };
 
@@ -76,21 +87,36 @@ export default function ProductsReport({ dateRange, selectedStore, stores, mode 
   const columns = [
     { Header: "Product", accessor: "name" },
     { Header: "SKU", accessor: "sku" },
-    { Header: "Category", accessor: "category_name", 
-      Cell: ({ value }) => value || "Uncategorized" },
-    { Header: "Quantity", accessor: "quantity", 
+    {
+      Header: "Category",
+      accessor: "category_name",
+      Cell: ({ value }) => value || "Uncategorized",
+    },
+    {
+      Header: "Quantity",
+      accessor: "quantity",
       Cell: ({ value }) => (
-        <span className={`font-medium ${
-          parseInt(value) <= 0 ? 'text-red-600' :
-          parseInt(value) <= 10 ? 'text-orange-600' :
-          'text-green-600'
-        }`}>
+        <span
+          className={`font-medium ${
+            parseInt(value) <= 0
+              ? "text-red-600"
+              : parseInt(value) <= 10
+                ? "text-orange-600"
+                : "text-green-600"
+          }`}
+        >
           {parseInt(value) || 0}
         </span>
-      )},
-    { Header: "Price", accessor: "price", 
-      Cell: ({ value }) => `GHS ${parseFloat(value || 0).toFixed(2)}` },
-    { Header: "Total Value", accessor: "total_value", 
+      ),
+    },
+    {
+      Header: "Price",
+      accessor: "price",
+      Cell: ({ value }) => `GHS ${parseFloat(value || 0).toFixed(2)}`,
+    },
+    {
+      Header: "Total Value",
+      accessor: "total_value",
       Cell: ({ row }) => {
         const quantity = parseInt(row.original.quantity) || 0;
         const price = parseFloat(row.original.price) || 0;
@@ -99,33 +125,32 @@ export default function ProductsReport({ dateRange, selectedStore, stores, mode 
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}`;
-      }},
-    { Header: "Status", accessor: "status", 
-      Cell: ({ value, row }) => {
-        const quantity = parseInt(row.original.quantity) || 0;
-        if (quantity <= 0) {
-          return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Out of Stock</span>;
-        } else if (quantity <= 10) {
-          return <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Low Stock</span>;
-        } else {
-          return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">In Stock</span>;
-        }
-      }}
+      },
+    },
+    { Header: "Status", accessor: "status" },
   ];
 
   // Flatten products data for export
-  const flattenedProducts = products.map(product => ({
-    name: String(product.name || ''),
-    sku: String(product.sku || ''),
-    category_name: String(product.category_name || 'Uncategorized'),
-    quantity: String(product.quantity || '0'),
-    price: String(product.price || '0'),
-    total_value: String((parseInt(product.quantity || 0) * parseFloat(product.price || 0)).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })),
-    status: parseInt(product.quantity || 0) <= 0 ? 'Out of Stock' :
-            parseInt(product.quantity || 0) <= 10 ? 'Low Stock' : 'In Stock'
+  const flattenedProducts = products.map((product) => ({
+    name: String(product.name || ""),
+    sku: String(product.sku || ""),
+    category_name: String(product.category_name || "Uncategorized"),
+    quantity: String(product.quantity || "0"),
+    price: String(product.price || "0"),
+    total_value: String(
+      (
+        parseInt(product.quantity || 0) * parseFloat(product.price || 0)
+      ).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    ),
+    status:
+      parseInt(product.quantity || 0) <= 0
+        ? "out of stock"
+        : parseInt(product.quantity || 0) <= 10
+          ? "low stock"
+          : "in stock",
   }));
 
   return (
@@ -199,9 +224,9 @@ export default function ProductsReport({ dateRange, selectedStore, stores, mode 
               className="w-6 h-6 text-green-600"
             />
           </div>
-                     <p className="text-3xl font-bold text-green-600">
-             GHS {stats.totalValue.toLocaleString()}
-           </p>
+          <p className="text-3xl font-bold text-green-600">
+            GHS {stats.totalValue.toLocaleString()}
+          </p>
           <p className="text-sm text-gray-500 mt-2">
             Based on current stock levels
           </p>
@@ -227,6 +252,8 @@ export default function ProductsReport({ dateRange, selectedStore, stores, mode 
           onRefresh={fetchProductsData}
           exportType="products"
           exportTitle="Export Product List"
+          statusContext="inventory"
+          enableStatusPills={true}
           getFieldsOrder={() => [
             { label: "Product Name", key: "name", icon: "mdi:package-variant" },
             { label: "SKU", key: "sku", icon: "mdi:barcode" },
@@ -258,4 +285,4 @@ export default function ProductsReport({ dateRange, selectedStore, stores, mode 
       </div>
     </div>
   );
-} 
+}
