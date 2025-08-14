@@ -900,7 +900,6 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         showSidebar={false}
         {...props}
       >
-        <div className="h-[72px]" aria-hidden="true"></div>
         <CashRegisterModal
           isOpen={showCashRegister || autoShowRegister}
           onClose={() => {
@@ -918,7 +917,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         />
         <div className="flex flex-col lg:flex-row gap-2 sm:gap-4 lg:gap-8 flex-1 min-h-0 overflow-hidden">
           <PosOrderList
-            className="w-full lg:w-3/5 min-h-0 overflow-auto order-2 lg:order-1"
+            className="w-full lg:w-3/5 min-h-0 overflow-auto order-1"
             selectedProducts={selectedProducts}
             quantities={quantities}
             products={products}
@@ -954,7 +953,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
 
           <PosProductList
             user={user}
-            className="w-full lg:w-2/5 min-h-0 overflow-auto order-1 lg:order-2"
+            className="w-full lg:w-2/5 min-h-0 overflow-auto order-2"
             selectedProducts={selectedProducts}
             setSelectedProducts={setSelectedProducts}
             quantities={quantities}

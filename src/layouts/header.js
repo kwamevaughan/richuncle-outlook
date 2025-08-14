@@ -422,8 +422,9 @@ const Header = ({
                 </Link>
               )}
 
-              {/* Store dropdown - always visible */}
-              <div className="relative flex-shrink-0" ref={storeDropdownRef}>
+              {/* Store dropdown - hidden for cashiers */}
+              {user?.role !== "cashier" && (
+                <div className="relative flex-shrink-0" ref={storeDropdownRef}>
                 <button
                   className={`flex items-center ${
                     isMobile
@@ -565,6 +566,7 @@ const Header = ({
                   </ul>
                 </div>
               </div>
+              )}
 
               {/* Mobile: More Actions Dropdown (tablet doesn't need it anymore) */}
               {isMobile ? (

@@ -6,9 +6,21 @@ import toast from "react-hot-toast";
 import { playBellBeep } from "@/utils/posSounds";
 import SimpleModal from "./SimpleModal";
 import TooltipIconButton from "@/components/TooltipIconButton";
-import Select, { components } from 'react-select';
+import Select, { components } from "react-select";
 
-const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantities, setQuantities, setProducts, reloadProducts, hasOpenSession = true, sessionCheckLoading = false, className = "", mode = "light" }) => {
+const PosProductList = ({
+  user,
+  selectedProducts,
+  setSelectedProducts,
+  quantities,
+  setQuantities,
+  setProducts,
+  reloadProducts,
+  hasOpenSession = true,
+  sessionCheckLoading = false,
+  className = "",
+  mode = "light",
+}) => {
   const { categories, loading: catLoading, error: catError } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, _setProducts] = useState([]);
@@ -22,24 +34,26 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   const [barcodeQty, setBarcodeQty] = useState(1);
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
   const [categoryPage, setCategoryPage] = useState(0);
-  
+
   // Product pagination state
   const [displayedProducts, setDisplayedProducts] = useState([]);
   const [productsPerPage, setProductsPerPage] = useState(12); // Start with 20 products
   const [currentProductPage, setCurrentProductPage] = useState(1);
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
-  
+
   // State to track if refresh toast has been shown for current reload
   const [lastReloadFlag, setLastReloadFlag] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Prepare options for react-select
-  const productOptions = React.useMemo(() => 
-    products.map(product => ({
-      value: product.id,
-      label: product.name,
-      product,
-    })), [products]
+  const productOptions = React.useMemo(
+    () =>
+      products.map((product) => ({
+        value: product.id,
+        label: product.name,
+        product,
+      })),
+    [products]
   );
 
   // Custom option rendering for react-select
@@ -48,13 +62,14 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     return (
       <components.Option {...props}>
         <div className="flex items-center gap-3">
-          
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-sm truncate">{product.name}</div>
             <div className="text-xs text-gray-500">GHS {product.price}</div>
           </div>
           {user?.role !== "cashier" && (
-            <div className="text-xs text-gray-400">Stock: {product.quantity}</div>
+            <div className="text-xs text-gray-400">
+              Stock: {product.quantity}
+            </div>
           )}
         </div>
       </components.Option>
@@ -68,7 +83,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     setProdError(null);
     async function fetchProducts() {
       try {
-        const response = await fetch('/api/products');
+        const response = await fetch("/api/products");
         const { data, error } = await response.json();
         if (error) setProdError(error.message || "Failed to load products");
         _setProducts(data || []);
@@ -92,14 +107,14 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
     return products.filter((product) => {
       const searchLower = search.toLowerCase();
       const cat = categories.find((c) => c.id === product.category_id);
-      
+
       // Filter by category first
       if (selectedCategory && selectedCategory !== "all") {
         if (product.category_id !== selectedCategory) {
           return false;
         }
       }
-      
+
       // Then filter by search
       return (
         product.name?.toLowerCase().includes(searchLower) ||
@@ -120,17 +135,17 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   // Load more products function
   const loadMoreProducts = () => {
     if (loadingMore || !hasMoreProducts) return;
-    
+
     setLoadingMore(true);
-    
+
     // Simulate loading delay for better UX
     setTimeout(() => {
       const nextPage = currentProductPage + 1;
       const startIndex = (nextPage - 1) * productsPerPage;
       const endIndex = startIndex + productsPerPage;
       const newProducts = filteredProducts.slice(startIndex, endIndex);
-      
-      setDisplayedProducts(prev => [...prev, ...newProducts]);
+
+      setDisplayedProducts((prev) => [...prev, ...newProducts]);
       setCurrentProductPage(nextPage);
       setHasMoreProducts(endIndex < filteredProducts.length);
       setLoadingMore(false);
@@ -139,34 +154,49 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
 
   // Category pagination logic - responsive
   const [categoriesPerPage, setCategoriesPerPage] = useState(4);
-  
+
   // Update categories per page based on screen size
   useEffect(() => {
     const updateCategoriesPerPage = () => {
-      setCategoriesPerPage(window.innerWidth < 640 ? 3 : 5);
+      const width = window.innerWidth;
+      if (width < 640) {
+        setCategoriesPerPage(3); // Mobile
+      } else if (width < 1024) {
+        setCategoriesPerPage(7); // Tablet - increased from 5 to 7
+      } else {
+        setCategoriesPerPage(4); // Desktop - 5 categories for good balance
+      }
     };
-    
+
     updateCategoriesPerPage();
-    window.addEventListener('resize', updateCategoriesPerPage);
-    
-    return () => window.removeEventListener('resize', updateCategoriesPerPage);
+    window.addEventListener("resize", updateCategoriesPerPage);
+
+    return () => window.removeEventListener("resize", updateCategoriesPerPage);
   }, []);
-  
-  const allCategories = React.useMemo(() => [
-    { id: "all", name: "All", image_url: "https://ik.imagekit.io/164jkw2ne/CategoryImages/all_accessories.jpg?updatedAt=1751485982538" }, 
-    ...categories
-  ], [categories]);
+
+  const allCategories = React.useMemo(
+    () => [
+      {
+        id: "all",
+        name: "All",
+        image_url:
+          "https://ik.imagekit.io/164jkw2ne/CategoryImages/all_accessories.jpg?updatedAt=1751485982538",
+      },
+      ...categories,
+    ],
+    [categories]
+  );
   const totalPages = Math.ceil(allCategories.length / categoriesPerPage);
   const startIndex = categoryPage * categoriesPerPage;
   const endIndex = startIndex + categoriesPerPage;
   const visibleCategories = allCategories.slice(startIndex, endIndex);
 
   const nextPage = () => {
-    setCategoryPage(prev => Math.min(prev + 1, totalPages - 1));
+    setCategoryPage((prev) => Math.min(prev + 1, totalPages - 1));
   };
 
   const prevPage = () => {
-    setCategoryPage(prev => Math.max(prev - 1, 0));
+    setCategoryPage((prev) => Math.max(prev - 1, 0));
   };
 
   // Dismiss toast when products finish loading
@@ -184,84 +214,103 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
   // Add this useEffect to reload products when reloadProducts changes
   useEffect(() => {
     if (reloadProducts !== undefined) {
-      setReloadFlag(f => f + 1);
+      setReloadFlag((f) => f + 1);
     }
   }, [reloadProducts]);
 
   const handleQuantityChange = (productId, value) => {
-    const product = products.find(p => p.id === productId);
+    const product = products.find((p) => p.id === productId);
     const val = Math.max(1, Number(value) || 1);
-    
+
     // Validate against stock
     if (product && val > product.quantity) {
-      toast.error(user?.role === "cashier" ? "Cannot exceed available stock." : `Cannot exceed available stock of ${product.quantity} units.`);
+      toast.error(
+        user?.role === "cashier"
+          ? "Cannot exceed available stock."
+          : `Cannot exceed available stock of ${product.quantity} units.`
+      );
       return;
     }
-    
+
     setQuantities((prev) => ({ ...prev, [productId]: val }));
   };
 
   const handleQuantityIncrement = (productId) => {
-    const product = products.find(p => p.id === productId);
+    const product = products.find((p) => p.id === productId);
     const currentQty = quantities[productId] || 1;
-    
+
     // Validate against stock
     if (product && currentQty >= product.quantity) {
-      toast.error(user?.role === "cashier" ? "Cannot exceed available stock." : `Cannot exceed available stock of ${product.quantity} units.`);
+      toast.error(
+        user?.role === "cashier"
+          ? "Cannot exceed available stock."
+          : `Cannot exceed available stock of ${product.quantity} units.`
+      );
       return;
     }
-    
+
     setQuantities((prev) => ({ ...prev, [productId]: currentQty + 1 }));
   };
 
   const handleQuantityDecrement = (productId) => {
-    setQuantities((prev) => ({ ...prev, [productId]: Math.max(1, (prev[productId] || 1) - 1) }));
+    setQuantities((prev) => ({
+      ...prev,
+      [productId]: Math.max(1, (prev[productId] || 1) - 1),
+    }));
   };
 
   const toggleProductSelect = (productId) => {
     if (sessionCheckLoading) {
-      toast.error('Checking register status, please wait...');
+      toast.error("Checking register status, please wait...");
       return;
     }
     if (!hasOpenSession) {
-      toast.error('You must open a cash register before making sales.');
+      toast.error("You must open a cash register before making sales.");
       return;
     }
-    const product = products.find(p => p.id === productId);
+    const product = products.find((p) => p.id === productId);
     const currentQty = quantities[productId] || 1;
-    
+
     // Check if product is already selected
     if (selectedProducts.includes(productId)) {
       // Remove from selection (no beep sound)
       setSelectedProducts((prev) => prev.filter((id) => id !== productId));
       return;
     }
-    
+
     // Validate stock before adding
     if (product && currentQty > product.quantity) {
-      toast.error(user?.role === "cashier" ? "Insufficient stock!" : `Insufficient stock! Only ${product.quantity} units available.`);
+      toast.error(
+        user?.role === "cashier"
+          ? "Insufficient stock!"
+          : `Insufficient stock! Only ${product.quantity} units available.`
+      );
       return;
     }
-    
+
     // Add to selection (no beep sound for adding products with stock)
     setSelectedProducts((prev) => [...prev, productId]);
   };
 
   const getStockStatus = (quantity) => {
-    if (quantity <= 0) return { status: 'out', color: 'text-red-600', bg: 'bg-red-100' };
-    if (quantity < 10) return { status: 'low', color: 'text-orange-600', bg: 'bg-orange-100' };
-    return { status: 'available', color: 'text-green-600', bg: 'bg-green-100' };
+    if (quantity <= 0)
+      return { status: "out", color: "text-red-600", bg: "bg-red-100" };
+    if (quantity < 10)
+      return { status: "low", color: "text-orange-600", bg: "bg-orange-100" };
+    return { status: "available", color: "text-green-600", bg: "bg-green-100" };
   };
 
   return (
     <div className={className}>
-      <div className={`flex rounded-lg overflow-hidden ${mode === "dark" ? "bg-gray-900" : "bg-white"}`}>
+      <div
+        className={`flex rounded-lg overflow-hidden ${
+          mode === "dark" ? "bg-gray-900" : "bg-white"
+        }`}
+      >
         {/* Tab Content: Products Grid */}
-        <div className="w-full px-6 py-0 flex flex-col pt-28 sm:pt-2">
-          <div className="flex justify-between items-center gap-4 mb-4">
-            
-          </div>
-          <div className="flex items-center gap-2  mb-4">
+        <div className="w-full px-2 sm:px-6 py-0 flex flex-col pt-4 md:pt-0">
+          <div className="flex justify-between items-center gap-4 mb-4"></div>
+          <div className="flex items-center gap-2 mb-4 mt-0 sm:mt-4 md:mt-6">
             {/* Left Arrow */}
             <button
               type="button"
@@ -269,21 +318,47 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               disabled={categoryPage === 0}
               className={` transition-colors focus:outline-none focus:ring-2  touch-manipulation ${
                 categoryPage === 0
-                  ? `${mode === "dark" ? "bg-gray-700 text-gray-500" : ""} cursor-not-allowed`
-                  : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-white text-gray-700 hover:bg-blue-50"} active:scale-95`
+                  ? `${
+                      mode === "dark" ? "bg-gray-700 text-gray-500" : ""
+                    } cursor-not-allowed`
+                  : `${
+                      mode === "dark"
+                        ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                        : "bg-white text-gray-700 hover:bg-blue-50"
+                    } active:scale-95`
               }`}
             >
               <Icon icon="mdi:chevron-left" className="w-6 h-6" />
             </button>
 
             {/* Categories Container */}
-            <div className=" flex gap-1 sm:gap-2 md:gap-4 flex-1 justify-center items-center overflow-x-auto scrollbar-hide">
+            <div className=" flex gap-2 sm:gap-3 md:gap-6 flex-1 justify-center items-center overflow-x-auto scrollbar-hide">
               {catLoading && (
-                <div className={`p-4 ${mode === "dark" ? "text-blue-400" : "text-blue-600"}`}>Loading...</div>
+                <div
+                  className={`p-4 ${
+                    mode === "dark" ? "text-blue-400" : "text-blue-600"
+                  }`}
+                >
+                  Loading...
+                </div>
               )}
-              {catError && <div className={`p-4 ${mode === "dark" ? "text-red-400" : "text-red-600"}`}>{catError}</div>}
+              {catError && (
+                <div
+                  className={`p-4 ${
+                    mode === "dark" ? "text-red-400" : "text-red-600"
+                  }`}
+                >
+                  {catError}
+                </div>
+              )}
               {!catLoading && !catError && visibleCategories.length === 0 && (
-                <div className={`p-4 ${mode === "dark" ? "text-gray-500" : "text-gray-400"}`}>No categories</div>
+                <div
+                  className={`p-4 ${
+                    mode === "dark" ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  No categories
+                </div>
               )}
               {visibleCategories.map((cat) => (
                 <button
@@ -291,8 +366,16 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   key={cat.id}
                   className={` flex flex-col items-center justify-center text-center text-xs sm:text-sm font-semibold rounded-xl border transition-all duration-200 focus:outline-none  min-w-[60px] my-2 p-2 touch-manipulation active:scale-95 flex-shrink-0 ${
                     selectedCategory === cat.id
-                      ? `${mode === "dark" ? "bg-blue-600 text-white border-blue-500" : "bg-blue-100 text-blue-700 border-blue-400"} scale-105`
-                      : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-600" : "bg-white text-gray-700 hover:bg-blue-100 border-transparent"}`
+                      ? `${
+                          mode === "dark"
+                            ? "bg-blue-600 text-white border-blue-500"
+                            : "bg-blue-100 text-blue-700 border-blue-400"
+                        } scale-105`
+                      : `${
+                          mode === "dark"
+                            ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-600"
+                            : "bg-white text-gray-700 hover:bg-blue-100 border-transparent"
+                        }`
                   }`}
                   onClick={(e) => {
                     e.preventDefault();
@@ -323,8 +406,14 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
               disabled={categoryPage >= totalPages - 1}
               className={` transition-colors focus:outline-none focus:ring-2  touch-manipulation ${
                 categoryPage >= totalPages - 1
-                  ? `${mode === "dark" ? "bg-gray-700 text-gray-500" : ""} cursor-not-allowed`
-                  : `${mode === "dark" ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-white text-gray-700 hover:bg-blue-50"} active:scale-95`
+                  ? `${
+                      mode === "dark" ? "bg-gray-700 text-gray-500" : ""
+                    } cursor-not-allowed`
+                  : `${
+                      mode === "dark"
+                        ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                        : "bg-white text-gray-700 hover:bg-blue-50"
+                    } active:scale-95`
               }`}
             >
               <Icon icon="mdi:chevron-right" className="w-6 h-6" />
@@ -332,13 +421,31 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
           </div>
 
           {prodLoading && (
-            <div className={`${mode === "dark" ? "text-blue-400" : "text-blue-600"}`}>Loading products...</div>
+            <div
+              className={`${
+                mode === "dark" ? "text-blue-400" : "text-blue-600"
+              }`}
+            >
+              Loading products...
+            </div>
           )}
-          {prodError && <div className={`${mode === "dark" ? "text-red-400" : "text-red-600"}`}>{prodError}</div>}
+          {prodError && (
+            <div
+              className={`${mode === "dark" ? "text-red-400" : "text-red-600"}`}
+            >
+              {prodError}
+            </div>
+          )}
           {!prodLoading && !prodError && displayedProducts.length === 0 && (
-            <div className={`${mode === "dark" ? "text-gray-500" : "text-gray-400"}`}>No products found.</div>
+            <div
+              className={`${
+                mode === "dark" ? "text-gray-500" : "text-gray-400"
+              }`}
+            >
+              No products found.
+            </div>
           )}
-          
+
           {/* Products Grid with Load More */}
           <div className="flex-1 overflow-y-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-1">
@@ -348,34 +455,60 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                   className={`group relative border-2 rounded-xl p-3 flex flex-col items-center transition-all duration-200 cursor-pointer touch-manipulation m-0.5
                     ${
                       selectedProducts.includes(product.id)
-                        ? `${mode === "dark" ? "border-green-400 shadow-green-900" : "border-green-500 shadow-green-100"} scale-105`
-                        : `${mode === "dark" ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"}`
+                        ? `${
+                            mode === "dark"
+                              ? "border-green-400 shadow-green-900"
+                              : "border-green-500 shadow-green-100"
+                          } scale-105`
+                        : `${
+                            mode === "dark"
+                              ? "border-gray-600 bg-gray-800"
+                              : "border-gray-200 bg-white"
+                          }`
                     }
-                    ${product.quantity > 0 ? 
-                      `${mode === "dark" ? "group-hover:border-green-400 group-hover:shadow-green-900" : "group-hover:border-green-500 group-hover:shadow-green-100"}` 
-                      : ""
+                    ${
+                      product.quantity > 0
+                        ? `${
+                            mode === "dark"
+                              ? "group-hover:border-green-400 group-hover:shadow-green-900"
+                              : "group-hover:border-green-500 group-hover:shadow-green-100"
+                          }`
+                        : ""
                     }
                     hover:shadow-lg
                     active:scale-95
                   `}
                   style={{
                     boxShadow: selectedProducts.includes(product.id)
-                      ? mode === "dark" ? "0 0 0 0 #4ade80" : "0 0 0 0 #22c55e"
+                      ? mode === "dark"
+                        ? "0 0 0 0 #4ade80"
+                        : "0 0 0 0 #22c55e"
                       : undefined,
                   }}
                   onMouseEnter={(e) => {
                     if (product.quantity > 0) {
                       e.currentTarget.classList.add(
-                        mode === "dark" ? "border-green-400" : "border-green-500",
-                        mode === "dark" ? "shadow-green-900" : "shadow-green-100"
+                        mode === "dark"
+                          ? "border-green-400"
+                          : "border-green-500",
+                        mode === "dark"
+                          ? "shadow-green-900"
+                          : "shadow-green-100"
                       );
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!selectedProducts.includes(product.id) && product.quantity > 0) {
+                    if (
+                      !selectedProducts.includes(product.id) &&
+                      product.quantity > 0
+                    ) {
                       e.currentTarget.classList.remove(
-                        mode === "dark" ? "border-green-400" : "border-green-500",
-                        mode === "dark" ? "shadow-green-900" : "shadow-green-100"
+                        mode === "dark"
+                          ? "border-green-400"
+                          : "border-green-500",
+                        mode === "dark"
+                          ? "shadow-green-900"
+                          : "shadow-green-100"
                       );
                     }
                   }}
@@ -396,13 +529,14 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     toggleProductSelect(product.id);
                   }}
                 >
-                  {(selectedProducts.includes(product.id) && product.quantity > 0) && (
-                    <span
-                      className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-100 transition-all duration-500`}
-                    >
-                      <Icon icon="mdi:check" className="w-2 h-2 text-white" />
-                    </span>
-                  )}
+                  {selectedProducts.includes(product.id) &&
+                    product.quantity > 0 && (
+                      <span
+                        className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-100 transition-all duration-500`}
+                      >
+                        <Icon icon="mdi:check" className="w-2 h-2 text-white" />
+                      </span>
+                    )}
                   {product.image_url ? (
                     <div className="w-full flex items-center justify-center mb-3 bg-gray-100 rounded-lg">
                       <Image
@@ -429,7 +563,11 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                       return cat ? cat.name : "";
                     })()}
                   </div> */}
-                  <div className={`font-normal capitalize mb-2 self-start truncate max-w-full overflow-hidden text-xs ${mode === "dark" ? "text-white" : "text-black"}`}>
+                  <div
+                    className={`font-normal capitalize mb-2 self-start truncate max-w-full overflow-hidden text-xs ${
+                      mode === "dark" ? "text-white" : "text-black"
+                    }`}
+                  >
                     {product.name}
                   </div>
 
@@ -453,31 +591,44 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                     </div>
                   )}
 
-                  <span className={`border-t w-full py-1 ${mode === "dark" ? "border-gray-600" : "border-gray-200"}`}></span>
+                  <span
+                    className={`border-t w-full py-1 ${
+                      mode === "dark" ? "border-gray-600" : "border-gray-200"
+                    }`}
+                  ></span>
 
                   <div className="flex flex-col gap-1 self-start w-full">
                     <div className="flex items-center justify-between w-full">
-                      <span className={`text-sm font-semibold ${mode === "dark" ? "text-blue-400" : "text-blue-700"}`}>
+                      <span
+                        className={`text-sm font-semibold ${
+                          mode === "dark" ? "text-blue-400" : "text-blue-700"
+                        }`}
+                      >
                         GHS {product.price}
                       </span>
                     </div>
                     {user?.role !== "cashier" && (
-                      <div className={`flex items-center justify-between text-xs ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+                      <div
+                        className={`flex items-center justify-between text-xs ${
+                          mode === "dark" ? "text-gray-400" : "text-gray-500"
+                        }`}
+                      >
                         {product.cost_price && product.cost_price > 0 && (
                           <span>Cost: GHS {product.cost_price}</span>
                         )}
-                        {product.tax_percentage && product.tax_percentage > 0 && (
-                          <span className="text-orange-600">
-                            Tax: {product.tax_percentage}%
-                          </span>
-                        )}
+                        {product.tax_percentage &&
+                          product.tax_percentage > 0 && (
+                            <span className="text-orange-600">
+                              Tax: {product.tax_percentage}%
+                            </span>
+                          )}
                       </div>
                     )}
                   </div>
                 </div>
               ))}
             </div>
-            
+
             {/* Load More Button */}
             {hasMoreProducts && !prodLoading && (
               <div className="flex justify-center py-6">
@@ -492,7 +643,10 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 >
                   {loadingMore ? (
                     <div className="flex items-center gap-2">
-                      <Icon icon="mdi:loading" className="w-5 h-5 animate-spin" />
+                      <Icon
+                        icon="mdi:loading"
+                        className="w-5 h-5 animate-spin"
+                      />
                       Loading...
                     </div>
                   ) : (
@@ -504,7 +658,7 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 </button>
               </div>
             )}
-            
+
             {/* Products Count Info */}
             {/* {!prodLoading && displayedProducts.length > 0 && (
               <div className={`text-center py-2 text-sm ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
@@ -556,13 +710,15 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 if (e.key === "Enter" && barcodeProduct) {
                   // Add product immediately on Enter
                   if (!hasOpenSession) {
-                    toast.error('You must open a cash register before making sales.');
+                    toast.error(
+                      "You must open a cash register before making sales."
+                    );
                     return;
                   }
                   if (barcodeQty > barcodeProduct.quantity) {
                     toast.error(
-                      user?.role === "cashier" 
-                        ? "Cannot add items. Insufficient stock." 
+                      user?.role === "cashier"
+                        ? "Cannot add items. Insufficient stock."
                         : `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
                     );
                     return;
@@ -648,13 +804,15 @@ const PosProductList = ({ user, selectedProducts, setSelectedProducts, quantitie
                 className="w-full bg-green-600 text-white rounded-lg py-4 font-semibold mt-4 text-lg touch-manipulation active:scale-95"
                 onClick={() => {
                   if (!hasOpenSession) {
-                    toast.error('You must open a cash register before making sales.');
+                    toast.error(
+                      "You must open a cash register before making sales."
+                    );
                     return;
                   }
                   if (barcodeQty > barcodeProduct.quantity) {
                     toast.error(
-                      user?.role === "cashier" 
-                        ? "Cannot add items. Insufficient stock." 
+                      user?.role === "cashier"
+                        ? "Cannot add items. Insufficient stock."
                         : `Cannot add ${barcodeQty} units. Only ${barcodeProduct.quantity} units available in stock.`
                     );
                     return;

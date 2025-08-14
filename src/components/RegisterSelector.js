@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
+import TooltipIconButton from "./TooltipIconButton";
 
-const RegisterSelector = ({ mode, user, onRegisterChange, setSelectedRegister, selectedRegister, disabled = false, registers: passedRegisters }) => {
+const RegisterSelector = ({
+  mode,
+  user,
+  onRegisterChange,
+  setSelectedRegister,
+  selectedRegister,
+  disabled = false,
+  registers: passedRegisters,
+}) => {
   const [registers, setRegisters] = useState([]);
 
   // Use passed registers or fetch registers on mount
@@ -36,12 +45,18 @@ const RegisterSelector = ({ mode, user, onRegisterChange, setSelectedRegister, s
         }
       })();
     }
-  }, [user, selectedRegister, onRegisterChange, setSelectedRegister, passedRegisters]);
+  }, [
+    user,
+    selectedRegister,
+    onRegisterChange,
+    setSelectedRegister,
+    passedRegisters,
+  ]);
 
   const handleRegisterChange = async (e) => {
     const registerId = e.target.value;
     const selectedRegisterData = registers.find((r) => r.id === registerId);
-    
+
     const changeHandler = onRegisterChange || setSelectedRegister;
     if (changeHandler) changeHandler(registerId);
 
@@ -55,36 +70,61 @@ const RegisterSelector = ({ mode, user, onRegisterChange, setSelectedRegister, s
   };
 
   const isDisabled = disabled || user?.role === "cashier";
-  
+
   return (
     <div className="flex flex-col gap-1">
-      <select
-        className={`border rounded px-2 py-1 text-xs sm:text-sm flex-shrink-0 ${
-          isDisabled
-            ? mode === "dark"
-              ? "bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed"
-              : "bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed"
-            : mode === "dark"
-            ? "bg-gray-800 text-white border-gray-700"
-            : "bg-white text-gray-900 border-gray-300"
-        }`}
-        value={selectedRegister || ""}
-        onChange={handleRegisterChange}
-        style={{ minWidth: "200px", maxWidth: "250px" }}
-        disabled={isDisabled}
-      >
-        {registers.map((r) => (
-          <option key={r.id} value={r.id}>
-            {r.name || `Register ${r.id}`}
-          </option>
-        ))}
-      </select>
-      {user?.role === "cashier" && (
-        <span className={`text-xs ${
-          mode === "dark" ? "text-gray-400" : "text-gray-500"
-        }`}>
-          Assigned to your store register
-        </span>
+      {user?.role === "cashier" ? (
+        <div className="inline-block w-fit">
+          <TooltipIconButton
+            label="Assigned to your store register"
+            mode={mode}
+            className="p-0 hover:bg-transparent inline-block w-fit"
+          >
+            <select
+              className={`border rounded px-2 py-1 text-xs sm:text-sm flex-shrink-0 ${
+                isDisabled
+                  ? mode === "dark"
+                    ? "bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed"
+                  : mode === "dark"
+                  ? "bg-gray-800 text-white border-gray-700"
+                  : "bg-white text-gray-900 border-gray-300"
+              }`}
+              value={selectedRegister || ""}
+              onChange={handleRegisterChange}
+              style={{ minWidth: "200px", maxWidth: "250px" }}
+              disabled={isDisabled}
+            >
+              {registers.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name || `Register ${r.id}`}
+                </option>
+              ))}
+            </select>
+          </TooltipIconButton>
+        </div>
+      ) : (
+        <select
+          className={`border rounded px-2 py-1 text-xs sm:text-sm flex-shrink-0 ${
+            isDisabled
+              ? mode === "dark"
+                ? "bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed"
+                : "bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed"
+              : mode === "dark"
+              ? "bg-gray-800 text-white border-gray-700"
+              : "bg-white text-gray-900 border-gray-300"
+          }`}
+          value={selectedRegister || ""}
+          onChange={handleRegisterChange}
+          style={{ minWidth: "200px", maxWidth: "250px" }}
+          disabled={isDisabled}
+        >
+          {registers.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name || `Register ${r.id}`}
+            </option>
+          ))}
+        </select>
       )}
     </div>
   );

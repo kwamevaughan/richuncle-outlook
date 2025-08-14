@@ -301,20 +301,20 @@ const PosOrderList = ({
 
   return (
     <div
-      className={`p-4 gap-6 flex flex-col ${
+      className={`p-2 sm:p-4 gap-4 sm:gap-6 flex flex-col ${
         mode === "dark" ? "bg-gray-800" : "bg-gray-200"
-      } rounded-lg overflow-auto ${className}`}
+      } rounded-lg overflow-auto mt-20 sm:mt-20 lg:mt-0 ${className}`}
     >
       <div
         className={`${
           mode === "dark" ? "bg-gray-900" : "bg-white"
-        } rounded-lg p-6`}
+        } rounded-lg p-3 sm:p-6`}
       >
         {/* Header */}
 
         {/* Customer Info */}
 
-        <div className="flex justify-start mb-2  gap-6">
+        <div className="flex flex-col sm:flex-row justify-start mb-2 gap-2 sm:gap-6">
           {/* <label
               className={`block font-semibold mb-1 ${
                 mode === "dark" ? "text-white" : "text-black"
@@ -331,7 +331,7 @@ const PosOrderList = ({
                 </span>
               )}
             </label> */}
-          <div className="flex gap-2 rounded-full border px-4">
+          <div className="flex gap-2 rounded-full border px-2 sm:px-4 w-full sm:w-auto">
             <TooltipIconButton
               label="Add Customer"
               mode="light"
@@ -417,8 +417,8 @@ const PosOrderList = ({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-[2] min-w-[500px]">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-[2] min-w-0 sm:min-w-[500px]">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Icon
                   icon="material-symbols:search-rounded"
@@ -897,7 +897,7 @@ const PosOrderList = ({
             Payment Summary
           </div> */}
 
-          <div className="flex justify-center gap-20 items-center">
+          <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-20 items-center">
             <div
               className={`flex justify-between items-center text-lg font-semibold ${
                 mode === "dark" ? "text-gray-400" : "text-black"
