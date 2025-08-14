@@ -3,7 +3,22 @@ import { Icon } from "@iconify/react";
 import { paymentMethods } from "@/constants/paymentMethods";
 import toast from "react-hot-toast";
 
-const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayment, onPrintOrder, onResetOrder, onHoldSale, onLayaway, onRetrieveSales, onRetrieveLayaways, onRecentTransactions, hasOpenSession = true, sessionCheckLoading = false, user, mode = "light" }) => {
+const PosFooterActions = ({
+  totalPayable = 0,
+  hasProducts = false,
+  onSelectPayment,
+  onPrintOrder,
+  onResetOrder,
+  onHoldSale,
+  onLayaway,
+  onRetrieveSales,
+  onRetrieveLayaways,
+  onRecentTransactions,
+  hasOpenSession = true,
+  sessionCheckLoading = false,
+  user,
+  mode = "light",
+}) => {
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showHoldOptions, setShowHoldOptions] = useState(false);
   const [showRetrieveOptions, setShowRetrieveOptions] = useState(false);
@@ -37,27 +52,28 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
   }, [showHoldOptions]);
 
   // Restriction: Cashier must have open session
-  const isCashier = user?.role === 'cashier';
+  const isCashier = user?.role === "cashier";
   const isBlocked = isCashier && !hasOpenSession;
   const isLoading = sessionCheckLoading;
   const blockAction = () => {
     if (isLoading) return;
-    toast.error('You must open a cash register before making sales.');
+    toast.error("You must open a cash register before making sales.");
   };
 
   return (
     <div
-      className={`fixed bottom-0  w-full z-50 py-4 sm:py-6 flex justify-center shadow-xl border-t-2 backdrop-blur-sm ${
+      className={`fixed bottom-0 w-full z-50 py-2 sm:py-3 md:py-4 flex justify-center shadow-xl border-t-2 backdrop-blur-sm ${
         mode === "dark"
-          ? "bg-gray-900/80 border-gray-600 border-gray-700/20"
-          : "bg-white/80 border-gray-200 border-white/20"
+          ? "bg-gray-900/95 border-gray-600 border-gray-700/20"
+          : "bg-white/95 border-gray-200 border-white/20"
       }`}
     >
-      <div className="flex flex-row gap-2 sm:gap-4 lg:gap-8 justify flex-1 min-h-0 overflow-visible items-center w-full px-2 sm:px-4">
-        <div className="ml-8 md:ml-0 flex flex-wrap gap-2 sm:gap-3">
-          <div className="relative">
+      <div className="flex flex-col gap-2 justify-center flex-1 min-h-0 overflow-visible items-stretch w-full px-2 sm:px-3 md:px-4">
+        {/* Button Row */}
+        <div className="flex flex-row gap-2 sm:gap-3 md:gap-4 flex-1 md:flex-none justify-center">
+          <div className="relative flex-1 sm:flex-none">
             <button
-              className={`select-none flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${
+              className={`select-none flex items-center justify-center gap-1.5 sm:gap-2 bg-yellow-600 hover:bg-yellow-700 active:scale-95 text-white font-semibold px-2 sm:px-3 md:px-4 py-2 sm:py-2 rounded-lg shadow transition min-h-[44px] w-full sm:w-auto ${
                 isBlocked || isLoading ? "opacity-50 cursor-not-allowed" : ""
               }`}
               onClick={() => {
@@ -72,17 +88,17 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               }
             >
               <Icon icon="mdi:archive-arrow-down" className="w-5 h-5" />
-              Retrieve
+              <span className="hidden sm:inline">Retrieve</span>
             </button>
             {showRetrieveOptions && (
               <div
                 ref={retrieveRef}
-                className={`absolute bottom-full mb-2 left-0 border rounded-lg shadow-xl p-4 flex flex-col gap-2 z-[100] min-w-[120px] sm:min-w-[160px] backdrop-blur-sm ${
+                className={`absolute bottom-full mb-2 left-0 sm:left-auto sm:right-0 border rounded-lg shadow-xl p-2 sm:p-3 md:p-4 flex flex-col gap-1.5 sm:gap-2 z-[100] w-[calc(100vw-2rem)] sm:w-auto min-w-[160px] max-w-[280px] backdrop-blur-sm ${
                   mode === "dark"
                     ? "bg-gray-800/95 border-gray-600"
                     : "bg-white/95 border-gray-300"
                 }`}
-                style={{ boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)' }}
+                style={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
               >
                 <button
                   className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${
@@ -99,7 +115,9 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
                     icon="mdi:cart-arrow-up"
                     className="w-5 h-5 text-blue-600"
                   />
-                  Sales
+                  <div className="flex items-center gap-2 text-base sm:text-lg font-bold whitespace-nowrap">
+                    Sales
+                  </div>
                 </button>
                 <button
                   className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${
@@ -116,7 +134,9 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
                     icon="mdi:cart-arrow-down"
                     className="w-5 h-5 text-green-600"
                   />
-                  Layaways
+                  <div className="flex items-center gap-2 text-base sm:text-lg font-bold whitespace-nowrap">
+                    Layaways
+                  </div>
                 </button>
                 <button
                   className={`flex items-center gap-2 px-4 py-2 rounded transition text-xs ${
@@ -133,9 +153,9 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
             )}
           </div>
 
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none">
             <button
-              className={`select-none flex items-center gap-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${
+              className={`select-none flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-semibold px-2 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] w-full sm:w-auto ${
                 isBlocked || isLoading ? "opacity-50 cursor-not-allowed" : ""
               }`}
               onClick={() => {
@@ -148,17 +168,17 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               title={isBlocked ? "Open a register to hold sales/layaways" : ""}
             >
               <Icon icon="mdi:pause" className="w-5 h-5" />
-              Hold
+              <span className="hidden sm:inline">Hold</span>
             </button>
             {showHoldOptions && (
               <div
                 ref={holdRef}
-                className={`absolute bottom-full mb-2 left-0 border rounded-lg shadow-xl p-4 flex flex-col gap-2 z-[100] min-w-[120px] sm:min-w-[160px] backdrop-blur-sm ${
+                className={`absolute bottom-full mb-2 left-0 sm:left-auto sm:right-0 border rounded-lg shadow-xl p-2 sm:p-3 md:p-4 flex flex-col gap-1.5 sm:gap-2 z-[100] w-[calc(100vw-2rem)] sm:w-auto min-w-[160px] max-w-[280px] backdrop-blur-sm ${
                   mode === "dark"
                     ? "bg-gray-800/95 border-gray-600"
                     : "bg-white/95 border-gray-300"
                 }`}
-                style={{ boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)' }}
+                style={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
               >
                 <button
                   className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${
@@ -175,7 +195,9 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
                     icon="mdi:pause-circle-outline"
                     className="w-5 h-5 text-blue-600"
                   />
-                  Hold Sale
+                  <div className="flex items-center gap-2 text-base sm:text-lg font-bold whitespace-nowrap">
+                    Hold Sale
+                  </div>
                 </button>
                 <button
                   className={`flex items-center gap-2 px-4 py-2 rounded transition font-semibold text-sm ${
@@ -192,7 +214,9 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
                     icon="mdi:cart-arrow-down"
                     className="w-5 h-5 text-green-600"
                   />
-                  Layaway
+                  <div className="flex items-center gap-2 text-base sm:text-lg font-bold whitespace-nowrap">
+                    Layaway
+                  </div>
                 </button>
                 <button
                   className={`flex items-center gap-2 px-4 py-2 rounded transition text-xs ${
@@ -209,32 +233,9 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
             )}
           </div>
 
-          {/* <button
-            className={`select-none flex items-center gap-2 bg-gray-600 hover:bg-gray-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${
-              isBlocked || isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            onClick={() => {
-              if (isBlocked || isLoading) {
-                blockAction();
-                return;
-              }
-              onPrintOrder();
-            }}
-            title={isBlocked ? "Open a register to print order" : ""}
-            disabled={!hasProducts}
-          >
-            <Icon
-              icon="material-symbols-light:print-outline-rounded"
-              className="w-5 h-5"
-            />
-            Print Order
-          </button> */}
-
-          
-
-          <div>
+          <div className="flex-1 sm:flex-none">
             <button
-              className={`select-none flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold px-3 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] min-w-[44px] ${
+              className={`select-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold px-2 sm:px-4 md:px-5 py-2 rounded-lg shadow transition min-h-[44px] w-full sm:w-auto ${
                 isBlocked || isLoading ? "opacity-50 cursor-not-allowed" : ""
               }`}
               onClick={() => {
@@ -247,31 +248,32 @@ const PosFooterActions = ({ totalPayable = 0, hasProducts = false, onSelectPayme
               title={isBlocked ? "Open a register to clear order" : ""}
             >
               <Icon icon="mdi:refresh" className="w-5 h-5" />
-              Clear Order
+              <span className="hidden sm:inline">Clear Order</span>
             </button>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2 ml-[130px] sm:ml-[130px] ">
-          {hasProducts && (
-            <div
-              className={`font-extrabold text-3xl whitespace-nowrap mt-2 sm:mt-0 ${
-                mode === "dark" ? "text-white" : "text-black"
-              }`}
-            >
-              Total Payable: GHS {totalPayable.toLocaleString()}
-            </div>
-          )}
-          <button 
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-colors"
+
+          <button
+            className="flex-1 sm:flex-none bg-blue-500 text-white px-2 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-600 transition-colors"
             onClick={() => onRecentTransactions && onRecentTransactions()}
           >
             <Icon icon="mdi:history" className="w-5 h-5" />
-            Recent Transactions
+            <span className="hidden sm:inline">Recent Transactions</span>
           </button>
         </div>
+
+        {/* Total Display - Now below buttons for all screen sizes */}
+        {hasProducts && (
+          <div
+            className={`font-extrabold text-center text-lg sm:text-xl md:text-2xl lg:text-3xl ${
+              mode === "dark" ? "text-white" : "text-black"
+            }`}
+          >
+            Total Payable: GHS {totalPayable.toLocaleString()}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default PosFooterActions; 
+export default PosFooterActions;
