@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import SimpleModal from '@/components/SimpleModal';
 import { useUser } from '@/hooks/useUser';
+import UserStatus from '@/components/messaging/UserStatus';
+import useUserPresence from '@/hooks/useUserPresence';
 
 export default function NewConversationModal({ 
   isOpen, 
@@ -18,6 +20,13 @@ export default function NewConversationModal({
   const [conversationType, setConversationType] = useState('direct');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+
+  // Get user presence data
+  const {
+    isUserOnline,
+    getUserLastSeen,
+    formatLastSeen,
+  } = useUserPresence();
 
   useEffect(() => {
     if (!isOpen) {
@@ -193,14 +202,37 @@ export default function NewConversationModal({
                       onChange={() => handleUserToggle(user.id)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
+                    <div className="relative">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Icon icon="mdi:account" className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="absolute -bottom-1 -right-1">
+                        <UserStatus
+                          userId={user.id}
+                          isOnline={isUserOnline && isUserOnline(user.id)}
+                          lastSeen={getUserLastSeen && getUserLastSeen(user.id)}
+                          formatLastSeen={formatLastSeen}
+                          size="xs"
+                          className="border border-white rounded-full shadow-sm"
+                        />
+                      </div>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {user.full_name}
                         </p>
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user.role)}`}>
-                          {user.role}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user.role)}`}>
+                            {user.role}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {isUserOnline && isUserOnline(user.id) 
+                              ? 'Online' 
+                              : formatLastSeen && getUserLastSeen && formatLastSeen(getUserLastSeen(user.id))
+                            }
+                          </span>
+                        </div>
                       </div>
                       <p className="text-sm text-gray-500 truncate">
                         {user.email}
@@ -227,6 +259,21 @@ export default function NewConversationModal({
                     key={userId}
                     className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
                   >
+                    <div className="relative mr-1">
+                      <div className="w-3 h-3 bg-blue-200 rounded-full flex items-center justify-center">
+                        <Icon icon="mdi:account" className="w-1.5 h-1.5 text-blue-600" />
+                      </div>
+                      <div className="absolute -bottom-0.5 -right-0.5">
+                        <UserStatus
+                          userId={user.id}
+                          isOnline={isUserOnline && isUserOnline(user.id)}
+                          lastSeen={getUserLastSeen && getUserLastSeen(user.id)}
+                          formatLastSeen={formatLastSeen}
+                          size="xs"
+                          className="border border-white rounded-full shadow-sm"
+                        />
+                      </div>
+                    </div>
                     {user.full_name}
                     <button
                       onClick={() => handleUserToggle(userId)}

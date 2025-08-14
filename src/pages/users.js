@@ -12,6 +12,8 @@ import { useEffect, useState } from "react";
 import ExportModal from "@/components/export/ExportModal";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
+import UserStatus from "@/components/messaging/UserStatus";
+import useUserPresence from "@/hooks/useUserPresence";
 
 export default function UsersPage({ mode = "light", toggleMode, ...props }) {
   const { user: currentUser, loading: userLoading, LoadingComponent } = useUser();
@@ -20,6 +22,13 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
   const [stores, setStores] = useState([]);
   const [showExportModal, setShowExportModal] = useState(false);
   const router = useRouter();
+
+  // Get user presence data
+  const {
+    isUserOnline,
+    getUserLastSeen,
+    formatLastSeen,
+  } = useUserPresence();
   
   useEffect(() => {
     async function fetchStores() {
@@ -96,22 +105,34 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
         
         return (
           <div className="flex items-center">
-            {row.avatar_url ? (
-              <Image 
-                src={row.avatar_url} 
-                alt={row.full_name || "User"} 
-                width={40} 
-                height={40} 
-                className="w-10 h-10 rounded-full object-cover border"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border">
-                <Icon 
-                  icon="hugeicons:ai-user" 
-                  className="w-6 h-6 text-gray-400" 
+            <div className="relative">
+              {row.avatar_url ? (
+                <Image 
+                  src={row.avatar_url} 
+                  alt={row.full_name || "User"} 
+                  width={40} 
+                  height={40} 
+                  className="w-10 h-10 rounded-full object-cover border"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border">
+                  <Icon 
+                    icon="hugeicons:ai-user" 
+                    className="w-6 h-6 text-gray-400" 
+                  />
+                </div>
+              )}
+              <div className="absolute -bottom-1 -right-1">
+                <UserStatus
+                  userId={row.id}
+                  isOnline={isUserOnline && isUserOnline(row.id)}
+                  lastSeen={getUserLastSeen && getUserLastSeen(row.id)}
+                  formatLastSeen={formatLastSeen}
+                  size="sm"
+                  className="border border-white rounded-full shadow-sm"
                 />
               </div>
-            )}
+            </div>
           </div>
         );
       }
@@ -137,6 +158,17 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
               )}
             </div>
             <div className="text-sm normal-case text-gray-500">{row.email}</div>
+            <div className="text-xs text-gray-400">
+              {isUserOnline && isUserOnline(row.id) 
+                ? (
+                  <span className="flex items-center gap-1 text-green-600">
+                    <Icon icon="mdi:circle" className="w-2 h-2 text-green-500" />
+                    Online
+                  </span>
+                ) 
+                : formatLastSeen && getUserLastSeen && formatLastSeen(getUserLastSeen(row.id))
+              }
+            </div>
           </div>
         );
       }

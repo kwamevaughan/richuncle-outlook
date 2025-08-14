@@ -26,7 +26,13 @@ export default function useUsers() {
     role: "user",
     is_active: true,
     avatar_url: "",
-    store_id: ""
+    store_id: "",
+    phone_number: "",
+    date_of_birth: "",
+    address: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    emergency_contact_relationship: ""
   });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -122,7 +128,13 @@ export default function useUsers() {
       role: "cashier",
       is_active: true,
       avatar_url: "",
-      store_id: ""
+      store_id: "",
+      phone_number: "",
+      date_of_birth: "",
+      address: "",
+      emergency_contact_name: "",
+      emergency_contact_phone: "",
+      emergency_contact_relationship: ""
     });
     setPassword("");
     setConfirmPassword("");
@@ -145,7 +157,13 @@ export default function useUsers() {
       role: user.role || "cashier",
       is_active: user.is_active ?? true,
       avatar_url: user.avatar_url || "",
-      store_id: user.store_id || ""
+      store_id: user.store_id || "",
+      phone_number: user.phone_number || "",
+      date_of_birth: user.date_of_birth || "",
+      address: user.address || "",
+      emergency_contact_name: user.emergency_contact_name || "",
+      emergency_contact_phone: user.emergency_contact_phone || "",
+      emergency_contact_relationship: user.emergency_contact_relationship || ""
     });
     setPassword("");
     setConfirmPassword("");

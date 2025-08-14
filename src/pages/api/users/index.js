@@ -18,7 +18,13 @@ export default async function handler(req, res) {
           created_at,
           updated_at,
           last_login,
-          store_id
+          store_id,
+          phone_number,
+          date_of_birth,
+          address,
+          emergency_contact_name,
+          emergency_contact_phone,
+          emergency_contact_relationship
         `)
         .order("created_at", { ascending: false });
 
