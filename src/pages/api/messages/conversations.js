@@ -52,7 +52,9 @@ export default async function handler(req, res) {
           if (conv.type === 'direct' && participants.length === 2) {
             otherParticipantId = participants.find(p => p.user_id !== user.id)?.user_id;
           }
-          
+
+          const currentParticipant = participants.find(p => p.user_id === user.id);
+
           return {
             id: conv.id,
             title: conv.title,
@@ -62,8 +64,8 @@ export default async function handler(req, res) {
             participants: participants.length,
             other_participant_id: otherParticipantId,
             last_message: lastMessage,
-            unread_count: participants.find(p => p.user_id === user.id)?.last_read_at 
-              ? messages.filter(m => new Date(m.created_at) > new Date(participants.find(p => p.user_id === user.id).last_read_at)).length
+            unread_count: currentParticipant?.last_read_at 
+              ? messages.filter(m => new Date(m.created_at) > new Date(currentParticipant.last_read_at)).length
               : messages.length
           };
         });

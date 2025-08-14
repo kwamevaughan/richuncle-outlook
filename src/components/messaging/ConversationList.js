@@ -130,36 +130,28 @@ export default function ConversationList({
               >
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 relative">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Icon 
-                        icon={getConversationIcon(conversation.type)} 
-                        className="w-5 h-5 text-blue-600" 
-                      />
-                    </div>
-                    {/* Show online status for direct conversations */}
-                    {conversation.type === 'direct' && conversation.other_participant_id && (
-                      <div className="absolute -bottom-1 -right-1">
-                        <UserStatus
-                          userId={conversation.other_participant_id}
-                          isOnline={isUserOnline && isUserOnline(conversation.other_participant_id)}
-                          lastSeen={getUserLastSeen && getUserLastSeen(conversation.other_participant_id)}
-                          formatLastSeen={formatLastSeen}
-                          size="sm"
+                    <div className="relative">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Icon 
+                          icon={getConversationIcon(conversation.type)} 
+                          className="w-5 h-5 text-blue-600" 
                         />
                       </div>
-                    )}
-                    {/* Temporary debug - show status for all direct conversations */}
-                    {conversation.type === 'direct' && !conversation.other_participant_id && (
-                      <div className="absolute -bottom-1 -right-1">
-                        <div className="w-3 h-3 rounded-full bg-red-500" title="Missing other_participant_id" />
-                      </div>
-                    )}
-                    {/* Force show status for testing */}
-                    {conversation.type === 'direct' && (
-                      <div className="absolute -top-1 -left-1">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" title={`Debug: ${conversation.other_participant_id ? 'Has ID' : 'No ID'}`} />
-                      </div>
-                    )}
+                      {/* Show online status for direct conversations */}
+                      {conversation.type === 'direct' && conversation.other_participant_id && (
+                        <div className="absolute -bottom-0.5 -right-0.5">
+                          <UserStatus
+                            userId={conversation.other_participant_id}
+                            isOnline={isUserOnline && isUserOnline(conversation.other_participant_id)}
+                            lastSeen={getUserLastSeen && getUserLastSeen(conversation.other_participant_id)}
+                            formatLastSeen={formatLastSeen}
+                            size="md"
+                            className="border-2 border-white rounded-full"
+                          />
+                        </div>
+                      )}
+                    </div>
+
                   </div>
                   
                   <div className="flex-1 min-w-0">

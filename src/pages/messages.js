@@ -427,7 +427,7 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
                                   : 'bg-gray-400'
                               }`} />
                               {isUserOnline(currentConversation.other_participant_id) && (
-                                <div className="absolute inset-0 w-3 h-3 rounded-full bg-green-500 animate-ping opacity-75" />
+                                <div className="absolute inset-0 w-2 h-2 rounded-full bg-green-500 animate-ping opacity-75" />
                               )}
                             </div>
                           )}
