@@ -425,67 +425,69 @@ const Header = ({
               {/* Store dropdown - hidden for cashiers */}
               {user?.role !== "cashier" && (
                 <div className="relative flex-shrink-0" ref={storeDropdownRef}>
-                <button
-                  className={`flex items-center ${
-                    isMobile
-                      ? "gap-1 px-2.5 py-2"
-                      : isTablet
-                      ? "gap-1 px-3.5 py-3.5"
-                      : "gap-1 text-sm px-3 py-1.5"
-                  } rounded-md hover:shadow-md transition-all duration-300 ${
-                    isMobile
-                      ? "min-h-[44px] min-w-[44px]"
-                      : isTablet
-                      ? "min-h-[48px] min-w-[48px]"
-                      : ""
-                  }
+                  <button
+                    className={`flex items-center ${
+                      isMobile
+                        ? "gap-1 px-2.5 py-2"
+                        : isTablet
+                        ? "gap-1 px-3.5 py-3.5"
+                        : "gap-1 text-sm px-3 py-1.5"
+                    } rounded-md hover:shadow-md transition-all duration-300 ${
+                      isMobile
+                        ? "min-h-[44px] min-w-[44px]"
+                        : isTablet
+                        ? "min-h-[48px] min-w-[48px]"
+                        : ""
+                    }
                     ${
                       mode === "dark"
                         ? "bg-gray-800 text-gray-100 hover:bg-gray-700"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
-                  onClick={() => setStoreDropdownOpen((prev) => !prev)}
-                  title={
-                    isMobile || isTablet
-                      ? stores.length > 0
-                        ? selectedStore
-                          ? stores.find((s) => s.id === selectedStore)?.name ||
-                            "Store"
-                          : "All Stores"
-                        : "Store"
-                      : undefined
-                  }
-                >
-                  <Icon
-                    icon="mdi:store-outline"
-                    className={`${
-                      isMobile ? "h-5 w-5" : isTablet ? "h-7 w-7" : "h-4 w-4"
-                    } ${mode === "dark" ? "text-gray-200" : "text-blue-900"}`}
-                  />
-                  {/* Show text only on desktop */}
-                  {!isMobile && !isTablet && (
-                    <span className="text-sm truncate max-w-[120px]">
-                      {stores.length > 0
-                        ? selectedStore
-                          ? stores.find((s) => s.id === selectedStore)?.name ||
-                            "Store"
-                          : "All Stores"
-                        : "Store"}
-                    </span>
-                  )}
-                  <Icon
-                    icon={
-                      storeDropdownOpen ? "mdi:chevron-up" : "mdi:chevron-down"
+                    onClick={() => setStoreDropdownOpen((prev) => !prev)}
+                    title={
+                      isMobile || isTablet
+                        ? stores.length > 0
+                          ? selectedStore
+                            ? stores.find((s) => s.id === selectedStore)
+                                ?.name || "Store"
+                            : "All Stores"
+                          : "Store"
+                        : undefined
                     }
-                    className={`${
-                      isMobile ? "h-5 w-5" : isTablet ? "h-6 w-6" : "h-4 w-4"
-                    } ${mode === "dark" ? "text-gray-200" : "text-gray-600"}`}
-                  />
-                </button>
-                <div
-                  className={`absolute left-0 mt-2 ${
-                    isMobile ? "w-44" : isTablet ? "w-56" : "w-40"
-                  } rounded-lg shadow-lg overflow-hidden transition-all duration-300 z-20
+                  >
+                    <Icon
+                      icon="mdi:store-outline"
+                      className={`${
+                        isMobile ? "h-5 w-5" : isTablet ? "h-7 w-7" : "h-4 w-4"
+                      } ${mode === "dark" ? "text-gray-200" : "text-blue-900"}`}
+                    />
+                    {/* Show text only on desktop */}
+                    {!isMobile && !isTablet && (
+                      <span className="text-sm truncate max-w-[120px]">
+                        {stores.length > 0
+                          ? selectedStore
+                            ? stores.find((s) => s.id === selectedStore)
+                                ?.name || "Store"
+                            : "All Stores"
+                          : "Store"}
+                      </span>
+                    )}
+                    <Icon
+                      icon={
+                        storeDropdownOpen
+                          ? "mdi:chevron-up"
+                          : "mdi:chevron-down"
+                      }
+                      className={`${
+                        isMobile ? "h-5 w-5" : isTablet ? "h-6 w-6" : "h-4 w-4"
+                      } ${mode === "dark" ? "text-gray-200" : "text-gray-600"}`}
+                    />
+                  </button>
+                  <div
+                    className={`absolute left-0 mt-2 ${
+                      isMobile ? "w-44" : isTablet ? "w-56" : "w-40"
+                    } rounded-lg shadow-lg overflow-hidden transition-all duration-300 z-20
                     ${
                       mode === "dark"
                         ? "bg-gray-900 text-gray-100"
@@ -496,76 +498,76 @@ const Header = ({
                         ? "max-h-60 opacity-100 scale-100"
                         : "max-h-0 opacity-0 scale-95"
                     }`}
-                >
-                  <ul className="divide-y divide-gray-100">
-                    {/* All Stores option */}
-                    <li
-                      key="all"
-                      className={`${
-                        isMobile
-                          ? "px-3 py-2.5"
-                          : isTablet
-                          ? "px-4 py-3.5"
-                          : "px-4 py-2"
-                      } cursor-pointer transition-colors duration-200 ${
-                        !selectedStore
-                          ? "font-bold bg-gray-200 dark:bg-gray-800"
-                          : ""
-                      } ${
-                        mode === "dark"
-                          ? "hover:bg-gray-800 text-gray-100"
-                          : "hover:bg-gray-50"
-                      } ${isTablet ? "text-base" : "text-sm"}`}
-                      onClick={() => {
-                        setSelectedStore("");
-                        localStorage.setItem("selected_store_id", "");
-                        setStoreDropdownOpen(false);
-                        console.log("Header: All Stores selected");
-                      }}
-                    >
-                      All Stores
-                    </li>
-                    {/* Actual stores */}
-                    {stores.length > 0 ? (
-                      stores.map((store) => (
-                        <li
-                          key={store.id}
-                          className={`${
-                            isMobile
-                              ? "px-3 py-2.5"
-                              : isTablet
-                              ? "px-4 py-3.5"
-                              : "px-4 py-2"
-                          } cursor-pointer transition-colors duration-200 ${
-                            mode === "dark"
-                              ? "hover:bg-gray-800 text-gray-100"
-                              : "hover:bg-gray-50"
-                          } ${
-                            selectedStore === store.id
-                              ? "font-bold bg-gray-200 dark:bg-gray-800"
-                              : ""
-                          } ${isTablet ? "text-base" : "text-sm"}`}
-                          onClick={() => {
-                            setSelectedStore(store.id);
-                            setStoreDropdownOpen(false);
-                            console.log(
-                              "Header: Store selected:",
-                              store.name,
-                              store.id
-                            );
-                          }}
-                        >
-                          {store.name}
-                        </li>
-                      ))
-                    ) : (
-                      <li className="px-4 py-2 text-gray-400">
-                        No stores found
+                  >
+                    <ul className="divide-y divide-gray-100">
+                      {/* All Stores option */}
+                      <li
+                        key="all"
+                        className={`${
+                          isMobile
+                            ? "px-3 py-2.5"
+                            : isTablet
+                            ? "px-4 py-3.5"
+                            : "px-4 py-2"
+                        } cursor-pointer transition-colors duration-200 ${
+                          !selectedStore
+                            ? "font-bold bg-gray-200 dark:bg-gray-800"
+                            : ""
+                        } ${
+                          mode === "dark"
+                            ? "hover:bg-gray-800 text-gray-100"
+                            : "hover:bg-gray-50"
+                        } ${isTablet ? "text-base" : "text-sm"}`}
+                        onClick={() => {
+                          setSelectedStore("");
+                          localStorage.setItem("selected_store_id", "");
+                          setStoreDropdownOpen(false);
+                          console.log("Header: All Stores selected");
+                        }}
+                      >
+                        All Stores
                       </li>
-                    )}
-                  </ul>
+                      {/* Actual stores */}
+                      {stores.length > 0 ? (
+                        stores.map((store) => (
+                          <li
+                            key={store.id}
+                            className={`${
+                              isMobile
+                                ? "px-3 py-2.5"
+                                : isTablet
+                                ? "px-4 py-3.5"
+                                : "px-4 py-2"
+                            } cursor-pointer transition-colors duration-200 ${
+                              mode === "dark"
+                                ? "hover:bg-gray-800 text-gray-100"
+                                : "hover:bg-gray-50"
+                            } ${
+                              selectedStore === store.id
+                                ? "font-bold bg-gray-200 dark:bg-gray-800"
+                                : ""
+                            } ${isTablet ? "text-base" : "text-sm"}`}
+                            onClick={() => {
+                              setSelectedStore(store.id);
+                              setStoreDropdownOpen(false);
+                              console.log(
+                                "Header: Store selected:",
+                                store.name,
+                                store.id
+                              );
+                            }}
+                          >
+                            {store.name}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="px-4 py-2 text-gray-400">
+                          No stores found
+                        </li>
+                      )}
+                    </ul>
+                  </div>
                 </div>
-              </div>
               )}
 
               {/* Mobile: More Actions Dropdown (tablet doesn't need it anymore) */}
@@ -1082,7 +1084,11 @@ const Header = ({
                   <div className="flex items-center">
                     <div
                       className={`overflow-hidden rounded-full ${
-                        isMobile ? "w-8 h-8" : isTablet ? "w-10 h-10" : "w-6 h-6"
+                        isMobile
+                          ? "w-8 h-8"
+                          : isTablet
+                          ? "w-10 h-10"
+                          : "w-6 h-6"
                       }`}
                     >
                       {user && user.avatar_url ? (
@@ -1209,7 +1215,7 @@ const Header = ({
                             }`}
                           >
                             <Icon
-                              icon="fluent-mdl2:radio-bullet"
+                              icon="solar:user-linear"
                               className={`${isTablet ? "h-6 w-6" : "h-5 w-5"}`}
                             />
                             <span className="">Profile</span>
