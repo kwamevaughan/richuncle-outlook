@@ -96,12 +96,166 @@ const PosOrderList = ({
   const [discountPlans, setDiscountPlans] = useState([]);
   const [discountValue, setDiscountValue] = useState("");
   const [newDiscountType, setNewDiscountType] = useState("percentage");
+  
+  // Enhanced barcode detection state
+  const [searchInput, setSearchInput] = useState("");
+  const [isBarcodeMode, setIsBarcodeMode] = useState(false);
+  const [barcodeTimeout, setBarcodeTimeout] = useState(null);
 
   // Detect if user is on Chrome
   const isChrome =
     typeof window !== "undefined" &&
     /Chrome/.test(navigator.userAgent) &&
     /Google Inc/.test(navigator.vendor);
+
+  // Detect operating system for keyboard shortcuts
+  const isMac = typeof window !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+  const keyboardShortcut = isMac ? "Cmd+B" : "Ctrl+B";
+
+  // Barcode detection and handling
+  const handleSearchInputChange = (value) => {
+    setSearchInput(value);
+    
+    // Clear any existing timeout
+    if (barcodeTimeout) {
+      clearTimeout(barcodeTimeout);
+    }
+    
+    // If input is empty, reset barcode mode
+    if (!value.trim()) {
+      setIsBarcodeMode(false);
+      setBarcodeError("");
+      return;
+    }
+    
+    // Check if this looks like a barcode scan
+    // Common barcode formats: EAN-8 (8 digits), EAN-13 (13 digits), UPC-A (12 digits), Code 128 (variable)
+    const isLikelyBarcode = (
+      /^\d{8,13}$/.test(value.trim()) || // Standard EAN/UPC formats
+      /^\d{12,14}$/.test(value.trim()) || // UPC-E and extended formats
+      /^[A-Z0-9]{8,20}$/.test(value.trim()) || // Alphanumeric codes
+      (value.length >= 8 && value.length <= 20) // General length check
+    );
+    
+    if (isLikelyBarcode && value.length >= 8) {
+      setIsBarcodeMode(true);
+      
+      // Set a timeout to process the barcode after a short delay
+      // This allows for complete barcode input from scanners
+      const timeout = setTimeout(() => {
+        processBarcodeInput(value.trim());
+      }, 150); // 150ms delay for better scanner compatibility
+      
+      setBarcodeTimeout(timeout);
+    } else {
+      setIsBarcodeMode(false);
+    }
+  };
+
+  const processBarcodeInput = (barcode) => {
+    // Show the scanned barcode briefly
+    toast.success(`Scanned: ${barcode}`, { duration: 1000 });
+    
+    const found = products.find((p) => p.barcode === barcode);
+    
+    if (!found) {
+      // Barcode not found - show error and keep input for manual search
+      setBarcodeError(`No product found with barcode: ${barcode}`);
+      setIsBarcodeMode(false);
+      return;
+    }
+    
+    // Barcode found - add product to order
+    const qty = quantities[found.id] || 1;
+    
+    // Check stock availability
+    if (qty > found.quantity) {
+      toast.error(
+        user?.role === "cashier"
+          ? "Cannot add items. Insufficient stock."
+          : `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`
+      );
+      setIsBarcodeMode(false);
+      return;
+    }
+    
+    // Add product to order if not already selected
+    if (!selectedProducts.includes(found.id)) {
+      setSelectedProducts([...selectedProducts, found.id]);
+      setQuantities((q) => ({ ...q, [found.id]: qty }));
+      
+      // Play success sound
+      playBellBeep();
+      toast.success(`Added ${found.name} to order list!`);
+      
+      // Clear search input after successful barcode scan
+      setSearchInput("");
+      setIsBarcodeMode(false);
+      setBarcodeError("");
+    } else {
+      // Product already in order - update quantity
+      const newQty = (quantities[found.id] || 1) + qty;
+      if (newQty > found.quantity) {
+        toast.error(
+          `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`
+        );
+        setIsBarcodeMode(false);
+        return;
+      }
+      
+      setQuantities((q) => ({ ...q, [found.id]: newQty }));
+      playBellBeep();
+      toast.success(`Updated quantity for ${found.name}!`);
+      
+      // Clear search input after successful barcode scan
+      setSearchInput("");
+      setIsBarcodeMode(false);
+      setBarcodeError("");
+    }
+    
+    // Auto-focus back to search field for continuous scanning
+    setTimeout(() => {
+      const searchInput = document.querySelector('input[type="text"]');
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }, 100);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (barcodeTimeout) {
+        clearTimeout(barcodeTimeout);
+      }
+    };
+  }, [barcodeTimeout]);
+
+  // Keyboard shortcuts for barcode mode
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl/Cmd + B to toggle barcode mode
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setIsBarcodeMode(!isBarcodeMode);
+        setSearchInput("");
+        setBarcodeError("");
+        if (!isBarcodeMode) {
+          toast.success("Barcode mode activated - scan a product");
+        }
+      }
+      
+      // Escape to exit barcode mode
+      if (e.key === 'Escape' && isBarcodeMode) {
+        setIsBarcodeMode(false);
+        setSearchInput("");
+        setBarcodeError("");
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isBarcodeMode]);
 
   // Generate a unique order ID when component mounts
   useEffect(() => {
@@ -315,23 +469,8 @@ const PosOrderList = ({
         {/* Customer Info */}
 
         <div className="flex flex-col sm:flex-row justify-start mb-2 gap-2 sm:gap-6">
-          {/* <label
-              className={`block font-semibold mb-1 ${
-                mode === "dark" ? "text-white" : "text-black"
-              }`}
-            >
-              Customer Information
-              {selectedDbCustomer && (
-                <span
-                  className={`ml-2 font-normal ${
-                    mode === "dark" ? "text-blue-400" : "text-blue-700"
-                  }`}
-                >
-                  - {selectedDbCustomer.name}
-                </span>
-              )}
-            </label> */}
-          <div className="flex gap-2 rounded-full border px-2 sm:px-4 w-full sm:w-auto">
+          {/* Customer Selection Container - Fixed height */}
+          <div className="flex gap-2 rounded-full border px-2 sm:px-4 w-full sm:w-auto h-10 items-center relative">
             <TooltipIconButton
               label="Add Customer"
               mode="light"
@@ -341,10 +480,10 @@ const PosOrderList = ({
               <Icon icon="mdi:account-plus" className="w-5 h-5" />
             </TooltipIconButton>
             <select
-              className={`px-3  w-full ${
+              className={`px-3 w-full bg-transparent border-none outline-none ${
                 mode === "dark"
-                  ? "bg-gray-800 text-white border-gray-600"
-                  : "bg-white text-black border-gray-300"
+                  ? "text-white"
+                  : "text-black"
               }`}
               value={
                 selectedCustomerId === "__online__"
@@ -354,7 +493,7 @@ const PosOrderList = ({
                   : selectedCustomerId || ""
               }
               onChange={(e) => {
-                console.log('Customer selection changed:', e.target.value);
+                console.log("Customer selection changed:", e.target.value);
                 if (e.target.value === "__online__") {
                   if (typeof setIsOnlinePurchase === "function")
                     setIsOnlinePurchase(true);
@@ -373,13 +512,14 @@ const PosOrderList = ({
               <option value="">Walk In Customer</option>
               <option value="__online__">Online Purchase</option>
               <option value="customer_db">
-                {selectedCustomerId.startsWith("db_") 
-                  ? customers.find((c) => c.id === selectedCustomerId.replace("db_", ""))?.name || "Customer Database"
-                  : "Customer Database"
-                }
+                {selectedCustomerId.startsWith("db_")
+                  ? customers.find(
+                      (c) => c.id === selectedCustomerId.replace("db_", "")
+                    )?.name || "Customer Database"
+                  : "Customer Database"}
               </option>
             </select>
-            {(selectedCustomerId && selectedCustomerId !== "") && (
+            {selectedCustomerId && selectedCustomerId !== "" && (
               <TooltipIconButton
                 label="Clear Customer Selection"
                 mode="light"
@@ -396,9 +536,9 @@ const PosOrderList = ({
               </TooltipIconButton>
             )}
 
-            {/* Show react-select if Customer Database is selected */}
+            {/* Customer Database Dropdown - Positioned below the customer container */}
             {selectedCustomerId === "customer_db" && (
-              <div className="flex-1 min-w-[200px]">
+              <div className="absolute top-full left-0 right-0 mt-1 z-[100]">
                 <Select
                   options={customers.map((c) => ({
                     value: c.id,
@@ -413,32 +553,99 @@ const PosOrderList = ({
                   placeholder="Search customer..."
                   classNamePrefix="react-select"
                   autoFocus
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      minHeight: "40px",
+                      borderRadius: "1rem",
+                    }),
+                    menu: (base) => ({
+                      ...base,
+                      zIndex: 9999,
+                      maxHeight: 200,
+                    }),
+                  }}
                 />
               </div>
             )}
           </div>
+
+          {/* Search Field Container */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-[2] min-w-0 sm:min-w-[500px]">
+            <div className="relative flex-1 sm:flex-[2] min-w-0 sm:min-w-[500px] mb-8 z-10">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Icon
-                  icon="material-symbols:search-rounded"
-                  className="w-5 h-5"
+                  icon={
+                    isBarcodeMode
+                      ? "tabler:barcode"
+                      : "material-symbols:search-rounded"
+                  }
+                  className={`w-5 h-5 ${isBarcodeMode ? "text-green-500" : ""}`}
                 />
               </span>
+
+              {/* Manual barcode mode toggle button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBarcodeMode(!isBarcodeMode);
+                  setSearchInput("");
+                  setBarcodeError("");
+                  if (!isBarcodeMode) {
+                    toast.success(
+                      `Barcode mode activated - scan a product (or press ${keyboardShortcut})`
+                    );
+                  }
+                }}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded transition-colors ${
+                  isBarcodeMode
+                    ? "bg-green-100 text-green-600 hover:bg-green-200"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+                title={
+                  isBarcodeMode
+                    ? "Exit barcode mode"
+                    : `Enter barcode mode (${keyboardShortcut})`
+                }
+              >
+                <Icon icon="tabler:barcode" className="w-4 h-4" />
+              </button>
               <div className="w-full">
                 <Select
                   options={productOptions}
                   components={{ Option: ProductOption }}
-                  placeholder="Search / select product..."
+                  placeholder={
+                    isBarcodeMode
+                      ? "Scanning barcode..."
+                      : "Search / select product or scan barcode..."
+                  }
                   isClearable
                   isSearchable
-                  // menuIsOpen removed to allow default open/close behavior
-                  onFocus={() => {
-                    /* Optionally, you can set a local state to control open if needed */
+                  value={
+                    searchInput
+                      ? { value: searchInput, label: searchInput }
+                      : null
+                  }
+                  onInputChange={(inputValue, { action }) => {
+                    if (action === "input-change") {
+                      handleSearchInputChange(inputValue);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    // Handle Enter key for barcode input
+                    if (
+                      e.key === "Enter" &&
+                      searchInput.trim() &&
+                      isBarcodeMode
+                    ) {
+                      e.preventDefault();
+                      processBarcodeInput(searchInput.trim());
+                    }
                   }}
                   onChange={(option) => {
                     if (option && option.product) {
                       toggleProductSelect(option.product.id);
+                      setSearchInput(""); // Clear input after selection
                     }
                   }}
                   styles={{
@@ -449,7 +656,12 @@ const PosOrderList = ({
                       paddingLeft: "2.5rem",
                       fontSize: "1rem",
                       boxShadow: "none",
-                      borderColor: mode === "dark" ? "#4b5563" : "#cbd5e1",
+                      borderColor: isBarcodeMode
+                        ? "#10b981"
+                        : mode === "dark"
+                        ? "#4b5563"
+                        : "#cbd5e1",
+                      border: isBarcodeMode ? "2px solid #10b981" : base.border,
                       backgroundColor: mode === "dark" ? "transparent" : "#fff",
                       color: mode === "dark" ? "#f9fafb" : "#222",
                     }),
@@ -498,6 +710,63 @@ const PosOrderList = ({
                   />
                 </span>
               </div>
+
+              {/* Barcode status indicator */}
+              {isBarcodeMode && (
+                <div className="absolute -bottom-6 left-0 text-xs text-green-600 font-medium">
+                  📱 Barcode mode active - scan a product
+                </div>
+              )}
+              
+              {/* Barcode error display */}
+              {barcodeError && (
+                <div className="absolute -bottom-6 left-0 text-xs text-red-600 font-medium">
+                  ❌ {barcodeError}
+                </div>
+              )}
+              
+              {/* Help text - positioned below barcode indicators */}
+              <div className={`absolute text-xs text-gray-500 flex items-center gap-2 ${
+                isBarcodeMode || barcodeError ? '-bottom-12' : '-bottom-6'
+              } left-0`}>
+                <Icon icon="mdi:information-outline" className="w-4 h-4" />
+                <span>
+                  Tip: Scan barcode or press {keyboardShortcut} for barcode
+                  mode.
+                </span>
+              </div>
+
+              {/* Manual barcode input when in barcode mode */}
+              {isBarcodeMode && (
+                <div className={`absolute left-0 right-0 ${
+                  barcodeError ? '-bottom-20' : '-bottom-16'
+                }`}>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="Or manually enter barcode..."
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && searchInput.trim()) {
+                          processBarcodeInput(searchInput.trim());
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 text-sm border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                    />
+                    <button
+                      onClick={() => {
+                        if (searchInput.trim()) {
+                          processBarcodeInput(searchInput.trim());
+                        }
+                      }}
+                      className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* <TooltipIconButton
@@ -541,7 +810,7 @@ const PosOrderList = ({
         </div>
 
         {/* Order Details */}
-        <div className="mb-4">
+        <div className="mb-4 pt-4">
           <div className="flex items-center justify-between mb-2">
             {/* <div
               className={`font-bold ${
@@ -1220,23 +1489,24 @@ const PosOrderList = ({
         total={total}
         orderId={orderId}
         onPaymentComplete={handlePaymentComplete}
-        customer={
-          (() => {
-            const customerInfo = selectedCustomerId === "__online__"
+        customer={(() => {
+          const customerInfo =
+            selectedCustomerId === "__online__"
               ? { id: "__online__", name: "Online Purchase" }
               : selectedCustomerId.startsWith("db_")
-              ? customers.find((c) => c.id === selectedCustomerId.replace("db_", ""))
+              ? customers.find(
+                  (c) => c.id === selectedCustomerId.replace("db_", "")
+                )
               : selectedCustomerId
               ? { id: selectedCustomerId, name: selectedCustomerId }
               : null;
-            console.log('PaymentForm customer prop:', {
-              selectedCustomerId,
-              customerInfo,
-              isOnlinePurchase
-            });
-            return customerInfo;
-          })()
-        }
+          console.log("PaymentForm customer prop:", {
+            selectedCustomerId,
+            customerInfo,
+            isOnlinePurchase,
+          });
+          return customerInfo;
+        })()}
         customers={customers}
         onCustomerChange={handleCustomerChange}
         user={allUsers.find((u) => u.id === user?.id) || user}
