@@ -148,23 +148,39 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
 
         if (
           !variantData ||
-          Object.keys(variantData).length === 0
+          Object.keys(variantData).length === 0 ||
+          Object.values(variantData).every(value => !value || value === "")
         ) {
           return <span className="text-gray-400">-</span>;
         }
 
+        // Check if the data is malformed (contains very long keys or corrupted data)
+        const hasMalformedData = Object.entries(variantData).some(([key, value]) => {
+          return key.length > 50 || (typeof value === 'string' && value.length > 100);
+        });
+
+        if (hasMalformedData) {
+          console.warn('Malformed variant_attributes detected:', variantData);
+          return (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-red-600 font-medium">Data Error</span>
+              <span className="text-xs text-gray-500">Check console for details</span>
+            </div>
+          );
+        }
+
         return (
           <div className="flex flex-wrap gap-1">
-            {Object.entries(variantData).map(
-              ([attrId, value]) => (
+            {Object.entries(variantData)
+              .filter(([attrId, value]) => value && value !== "")
+              .map(([attrId, value]) => (
                 <span
                   key={attrId}
                   className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
                 >
                   {value}
                 </span>
-              )
-            )}
+              ))}
           </div>
         );
       },

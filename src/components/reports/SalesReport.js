@@ -370,6 +370,11 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
       Header: "Cashier", 
       accessor: "cashier_name", 
       render: (row, value) => value || "Staff"
+    },
+    { 
+      Header: "Store", 
+      accessor: "store_name", 
+      render: (row, value) => value || "Main Store"
     }
   ];
 
@@ -691,11 +696,7 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
             { label: "Customer", key: "customer_name", icon: "mdi:account" },
             { label: "Items", key: "item_count", icon: "mdi:package-variant" },
             { label: "Total", key: "total", icon: "mdi:currency-usd" },
-            {
-              label: "Payment Method",
-              key: "payment_method",
-              icon: "mdi:credit-card",
-            },
+            { label: "Payment", key: "payment_method", icon: "mdi:credit-card" },
             { label: "Status", key: "status", icon: "mdi:check-circle" },
             { label: "Cashier", key: "cashier_name", icon: "mdi:account-tie" },
             { label: "Store", key: "store_name", icon: "mdi:store" },
@@ -704,12 +705,12 @@ export default function SalesReport({ dateRange, selectedStore, stores, mode }) 
             id: true,
             timestamp: true,
             customer_name: true,
+            item_count: true,
             total: true,
             payment_method: true,
             status: true,
             cashier_name: true,
             store_name: true,
-            item_count: false,
           })}
           emptyMessage={
             <div className="text-center py-12">
