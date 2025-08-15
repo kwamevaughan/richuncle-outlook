@@ -339,7 +339,7 @@ const Sidebar = ({
             >
               {!isOpen && !isMobile && !isTablet ? (
                 <Image
-                  src="/assets/images/logo-icon.svg"
+                  src={mode === "dark" ? "/assets/images/logo-icon-white.svg" : "/assets/images/logo-icon.svg"}
                   alt="Logo"
                   width={32}
                   height={32}
@@ -347,7 +347,7 @@ const Sidebar = ({
                 />
               ) : (
                 <Image
-                  src="/assets/images/logo.svg"
+                  src={mode === "dark" ? "/assets/images/regular-logo-white.svg" : "/assets/images/logo.svg"}
                   alt="Logo"
                   width={200}
                   height={200}
