@@ -106,21 +106,19 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
       content: (
         <div className={`rounded-2xl shadow-lg border overflow-hidden backdrop-blur-sm ${mode === "dark" ? "bg-gray-800/90 border-gray-700/50 shadow-gray-900/20" : "bg-white/90 border-gray-200/50 shadow-gray-900/10"}`}>
           <div className="relative p-6 sm:p-8 space-y-8">
-            {isEditing && (
-              <ProfilePictureSection
-                user={user}
-                formData={formData}
-                cropTransform={user?.crop_transform}
-                uploadingImage={uploadingImage}
-                onFileUpload={triggerFileUpload}
-                onReposition={handleReposition}
-                onResetCrop={handleResetCrop}
-                onRemoveImage={handleRemoveImage}
-                onImageSelect={handleImageSelect}
-                isEditing={isEditing}
-                mode={mode}
-              />
-            )}
+            <ProfilePictureSection
+              user={user}
+              formData={formData}
+              cropTransform={user?.crop_transform}
+              uploadingImage={uploadingImage}
+              onFileUpload={triggerFileUpload}
+              onReposition={handleReposition}
+              onResetCrop={handleResetCrop}
+              onRemoveImage={handleRemoveImage}
+              onImageSelect={handleImageSelect}
+              isEditing={isEditing}
+              mode={mode}
+            />
             <ProfileFormSection
               user={user}
               formData={formData}

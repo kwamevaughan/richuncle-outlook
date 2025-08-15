@@ -14,6 +14,38 @@ export default function ProfilePictureSection({
   onImageSelect,
   mode = "light",
 }) {
+  // Get the avatar URL from formData or fall back to user.avatar_url
+  const avatarUrl = formData?.avatar_url || user?.avatar_url;
+  
+  
+  // Show simplified view when not in edit mode
+  if (!isEditing) {
+    if (!avatarUrl) return null; // Don't show anything if no avatar exists and not in edit mode
+    
+    return (
+      <div className="rounded-xl p-6 mb-6 bg-white/50 dark:bg-gray-800/30 border border-gray-200/50 dark:border-gray-700/50">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2 dark:text-white text-gray-900">
+            <Icon icon="solar:gallery-bold" className="w-5 h-5 text-blue-500" />
+            Profile Picture
+          </h3>
+        </div>
+        <div className="flex justify-center">
+          <img
+            src={avatarUrl}
+            alt="Profile"
+            className="w-32 h-32 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/images/default-avatar.png';
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Full edit mode
   return (
     <div
       className={`rounded-xl p-6 mb-6 ${
@@ -46,10 +78,31 @@ export default function ProfilePictureSection({
 
       {isEditing ? (
         <div className="space-y-4">
+          {/* Profile Image Preview */}
+          {formData.avatar_url && (
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="w-32 h-32 rounded-full object-cover border-2 border-gray-200"
+                  onError={(e) => {
+                    // Fallback to a default avatar if image loading fails
+                    e.target.onerror = null;
+                    e.target.src = '/images/default-avatar.png';
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
-                onClick={onFileUpload}
+                onClick={(e) => {
+                  console.log('Upload button clicked');
+                  onFileUpload?.(e);
+                }}
                 disabled={uploadingImage}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2 shadow-sm"
               >
@@ -57,48 +110,60 @@ export default function ProfilePictureSection({
                 {uploadingImage ? "Uploading..." : "Upload Image"}
               </button>
 
-              {formData.avatar_url && (
-                <>
-                  <button
-                    onClick={() => onReposition(formData.avatar_url)}
-                    className={`px-4 py-2 border rounded-lg transition-colors duration-200 flex items-center gap-2 shadow-sm ${
-                      mode === "dark"
-                        ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
-                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon icon="solar:crop-bold" className="w-4 h-4" />
-                    Reposition
-                  </button>
+              {/* Action buttons - always show in edit mode */}
+              <button
+                onClick={() => {
+                  console.log('Reposition button clicked, URL:', avatarUrl);
+                  onReposition?.(avatarUrl);
+                }}
+                disabled={!avatarUrl || uploadingImage}
+                className={`px-4 py-2 border rounded-lg transition-colors duration-200 flex items-center gap-2 shadow-sm ${
+                  !avatarUrl || uploadingImage
+                    ? 'opacity-50 cursor-not-allowed'
+                    : mode === "dark"
+                    ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
+                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <Icon icon="solar:crop-bold" className="w-4 h-4" />
+                Reposition
+              </button>
 
-                  {cropTransform && (
-                    <button
-                      onClick={onResetCrop}
-                      disabled={uploadingImage}
-                      className={`px-4 py-2 border rounded-lg transition-colors duration-200 disabled:opacity-50 flex items-center gap-2 shadow-sm ${
-                        mode === "dark"
-                          ? "bg-transparent border-orange-500 text-orange-400 hover:bg-orange-500/10"
-                          : "bg-orange-50 border-orange-200 text-orange-600 hover:bg-orange-100"
-                      }`}
-                    >
-                      <Icon icon="solar:refresh-bold" className="w-4 h-4" />
-                      {uploadingImage ? "Resetting..." : "Reset"}
-                    </button>
-                  )}
+              <button
+                onClick={() => {
+                  console.log('Reset crop button clicked');
+                  onResetCrop?.();
+                }}
+                disabled={!cropTransform || uploadingImage || !avatarUrl}
+                className={`px-4 py-2 border rounded-lg transition-colors duration-200 flex items-center gap-2 shadow-sm ${
+                  !cropTransform || !avatarUrl || uploadingImage
+                    ? 'opacity-50 cursor-not-allowed'
+                    : mode === "dark"
+                    ? "bg-transparent border-orange-500 text-orange-400 hover:bg-orange-500/10"
+                    : "bg-orange-50 border-orange-200 text-orange-600 hover:bg-orange-100"
+                }`}
+              >
+                <Icon icon="solar:refresh-bold" className="w-4 h-4" />
+                {uploadingImage ? "Resetting..." : "Reset"}
+              </button>
 
-                  <button
-                    onClick={onRemoveImage}
-                    className={`px-4 py-2 border rounded-lg transition-colors duration-200 flex items-center gap-2 shadow-sm ${
-                      mode === "dark"
-                        ? "bg-transparent border-red-500 text-red-400 hover:bg-red-500/10"
-                        : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
-                    }`}
-                  >
-                    <Icon icon="solar:trash-bin-trash-bold" className="w-4 h-4" />
-                    Remove
-                  </button>
-                </>
-              )}
+              <button
+                onClick={() => {
+                  console.log('Remove button clicked');
+                  onRemoveImage?.();
+                }}
+                disabled={!avatarUrl || uploadingImage}
+                className={`px-4 py-2 border rounded-lg transition-colors duration-200 flex items-center gap-2 shadow-sm ${
+                  !avatarUrl || uploadingImage
+                    ? 'opacity-50 cursor-not-allowed'
+                    : mode === "dark"
+                    ? "bg-transparent border-red-500 text-red-400 hover:bg-red-500/10"
+                    : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+                }`}
+              >
+                <Icon icon="solar:trash-bin-trash-bold" className="w-4 h-4" />
+                Remove
+              </button>
             </div>
           </div>
 
@@ -148,22 +213,36 @@ export default function ProfilePictureSection({
           </div>
         </div>
       ) : (
-        <div className="text-center py-12">
+        <div className="text-center py-6">
           <div className="flex flex-col items-center gap-4">
-            <div
-              className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                mode === "dark"
-                  ? "bg-gray-700/50 border-2 border-gray-600"
-                  : "bg-gray-100 border-2 border-gray-200"
-              }`}
-            >
-              <Icon
-                icon="solar:gallery-bold"
-                className={`w-8 h-8 ${
-                  mode === "dark" ? "text-gray-400" : "text-gray-500"
+            {formData.avatar_url ? (
+              <div className="relative">
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/images/default-avatar.png';
+                  }}
+                />
+              </div>
+            ) : (
+              <div
+                className={`w-24 h-24 rounded-full flex items-center justify-center ${
+                  mode === "dark"
+                    ? "bg-gray-700/50 border-2 border-gray-600"
+                    : "bg-gray-100 border-2 border-gray-200"
                 }`}
-              />
-            </div>
+              >
+                <Icon
+                  icon="solar:gallery-bold"
+                  className={`w-10 h-10 ${
+                    mode === "dark" ? "text-gray-400" : "text-gray-500"
+                  }`}
+                />
+              </div>
+            )}
             <div className="text-center">
               <p
                 className={`text-sm font-medium ${
