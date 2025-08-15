@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "react-hot-toast";
-import { BrowserMultiFormatReader, NotFoundException } from "@zxing/browser";
+import { BrowserMultiFormatReader } from "@zxing/browser";
 
 const CameraBarcodeScanner = ({
   isOpen,
@@ -120,18 +120,26 @@ const CameraBarcodeScanner = ({
   };
 
   const startScanning = () => {
-    if (!videoRef.current || !codeReader) return;
+    if (!videoRef.current || !codeReader) {
+      setDebugInfo("Cannot start scanning - missing video or reader");
+      return;
+    }
 
     // Clear any existing interval
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current);
     }
 
+    // Reset scan attempts
+    setScanAttempts(0);
+    setDebugInfo("Scanning started - looking for barcodes...");
+
     // Start interval-based scanning with ZXing
     scanIntervalRef.current = setInterval(async () => {
-      await scanForBarcode();
-    }, 500);
-    setDebugInfo("Scanning started - looking for barcodes...");
+      if (isScanning) {
+        await scanForBarcode();
+      }
+    }, 300); // Reduced interval for more responsive scanning
   };
 
   const handleBarcodeResult = (result) => {
@@ -151,6 +159,11 @@ const CameraBarcodeScanner = ({
         return;
       }
 
+      // Provide haptic feedback on mobile devices
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100]); // Short vibration pattern
+      }
+
       // Success! Found barcode
       toast.success(`✅ Barcode scanned: ${barcodeText}`);
 
@@ -160,18 +173,48 @@ const CameraBarcodeScanner = ({
         clearInterval(scanIntervalRef.current);
       }
 
+      // Visual feedback - flash the screen green briefly
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(34, 197, 94, 0.3);
+        z-index: 9999;
+        pointer-events: none;
+      `;
+      document.body.appendChild(overlay);
+      setTimeout(() => {
+        document.body.removeChild(overlay);
+      }, 200);
+
       // Call success handler
       onScanSuccess(barcodeText);
     }
   };
 
   const scanForBarcode = async () => {
-    if (!videoRef.current || !codeReader || !isScanning) return;
+    if (!videoRef.current || !codeReader || !isScanning) {
+      setDebugInfo("Scan skipped - missing requirements");
+      return;
+    }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      setDebugInfo("Video not ready, waiting...");
+      return;
+    }
+
+    // Increment attempts counter at the start of each scan attempt
+    setScanAttempts((prev) => {
+      const newCount = prev + 1;
+      setDebugInfo(`Scanning attempt ${newCount}...`);
+      return newCount;
+    });
 
     try {
       // Draw video frame to canvas for processing
@@ -182,19 +225,23 @@ const CameraBarcodeScanner = ({
 
       // Try different ZXing methods for better compatibility
       let result = null;
+      let scanMethod = "";
 
       try {
         // Method 1: Try decodeFromImageData
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         result = await codeReader.decodeFromImageData(imageData);
+        scanMethod = "imageData";
       } catch (decodeError) {
         try {
           // Method 2: Try decodeFromCanvas if imageData fails
           result = await codeReader.decodeFromCanvas(canvas);
+          scanMethod = "canvas";
         } catch (canvasError) {
           try {
             // Method 3: Try direct video decode
             result = await codeReader.decodeFromVideoElement(video);
+            scanMethod = "video";
           } catch (videoError) {
             // All methods failed - this is expected when no barcode is present
             throw videoError;
@@ -203,27 +250,31 @@ const CameraBarcodeScanner = ({
       }
 
       if (result && result.getText) {
+        setDebugInfo(`✅ Barcode found using ${scanMethod} method!`);
         handleBarcodeResult(result);
       }
     } catch (err) {
       // Handle specific ZXing errors
       if (
-        err instanceof NotFoundException ||
-        err.name === "NotFoundException"
+        err.name === "NotFoundException" ||
+        err.message?.includes("No barcode found") ||
+        err.message?.includes("not found") ||
+        err.message?.includes("No code found")
       ) {
         // No barcode found in this frame, continue scanning
-        setScanAttempts((prev) => prev + 1);
         setLastScanTime(Date.now());
+        setDebugInfo(`No barcode detected (attempt ${scanAttempts + 1})`);
       } else if (
         err.message &&
         err.message.includes("No MultiFormat Readers")
       ) {
         console.error("ZXing reader configuration error:", err);
         setError("Scanner configuration error. Please refresh and try again.");
+        setDebugInfo("❌ Scanner configuration error");
       } else {
         // Log other errors but continue scanning
         console.log("Scanning attempt failed:", err.message);
-        setScanAttempts((prev) => prev + 1);
+        setDebugInfo(`⚠️ Scan error: ${err.message.substring(0, 50)}...`);
       }
     }
   };
@@ -243,8 +294,9 @@ const CameraBarcodeScanner = ({
       }
     } catch (err) {
       if (
-        !(err instanceof NotFoundException) &&
-        err.name !== "NotFoundException"
+        err.name !== "NotFoundException" &&
+        !err.message?.includes("No barcode found") &&
+        !err.message?.includes("not found")
       ) {
         console.error("Canvas barcode scanning error:", err);
       }
@@ -369,18 +421,32 @@ const CameraBarcodeScanner = ({
                       {isScanning && (
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent animate-bounce"></div>
                       )}
+                      
+                      {/* Manual scan button */}
+                      <button
+                        onClick={scanFromCanvas}
+                        className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg transition-colors"
+                        title="Manual scan"
+                      >
+                        <Icon icon="material-symbols:qr-code-scanner" className="w-4 h-4" />
+                      </button>
                     </div>
 
                     {/* Status indicator */}
-                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-white text-sm">
+                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">
                       {isScanning ? (
                         <>
                           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                          <span>Scanning... ({scanAttempts} attempts)</span>
+                          <span>
+                            {scanAttempts === 0 
+                              ? "Starting scan..." 
+                              : `Scanning... (${scanAttempts} attempts)`
+                            }
+                          </span>
                         </>
                       ) : (
                         <>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
                           <span>Initializing camera...</span>
                         </>
                       )}
@@ -388,8 +454,15 @@ const CameraBarcodeScanner = ({
 
                     {/* Debug info */}
                     {debugInfo && (
-                      <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-xs text-gray-300 bg-black bg-opacity-50 px-2 py-1 rounded max-w-xs truncate">
+                      <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-xs text-gray-300 bg-black bg-opacity-75 px-3 py-1 rounded-full max-w-sm text-center">
                         {debugInfo}
+                      </div>
+                    )}
+                    
+                    {/* Scan progress indicator */}
+                    {scanAttempts > 0 && (
+                      <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded-full">
+                        {scanAttempts > 50 ? "50+" : scanAttempts}
                       </div>
                     )}
                   </div>
