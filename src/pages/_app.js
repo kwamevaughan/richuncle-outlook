@@ -209,9 +209,13 @@ function MyApp({ Component, pageProps }) {
   })();
 
   return (
-    <div className={`${mode === "dark" ? "dark" : ""} ${nunito.variable} font-sans flex flex-col min-h-screen`}>
-      <Toaster 
-        position="top-center" 
+    <div
+      className={`${mode === "dark" ? "dark" : ""} ${
+        nunito.variable
+      } font-sans flex flex-col min-h-screen`}
+    >
+      <Toaster
+        position="top-center"
         reverseOrder={false}
         toastOptions={{
           style: {
@@ -222,21 +226,21 @@ function MyApp({ Component, pageProps }) {
           zIndex: 999999,
         }}
       />
-        <AuthProvider>
-          <DarkModeProvider>
-            <RoleBasedAccess>
-              <main className="flex-1">
-                <Component
-                  {...pageProps}
-                  mode={mode}
-                  toggleMode={toggleMode}
-                  breadcrumbs={breadcrumbs}
-                  isSidebarOpen={isSidebarOpen}
-                />
-              </main>
-            </RoleBasedAccess>
-          </DarkModeProvider>
-        </AuthProvider>
+      <AuthProvider>
+        <DarkModeProvider>
+          <RoleBasedAccess>
+            <main className="flex-1">
+              <Component
+                {...pageProps}
+                mode={mode}
+                toggleMode={toggleMode}
+                breadcrumbs={breadcrumbs}
+                isSidebarOpen={isSidebarOpen}
+              />
+            </main>
+          </RoleBasedAccess>
+        </DarkModeProvider>
+      </AuthProvider>
     </div>
   );
 }

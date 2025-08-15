@@ -179,6 +179,7 @@ export default function Dashboard({ mode = "light", toggleMode, ...props }) {
       {...props}
     >
       <div className="flex flex-col justify-center py-4">
+
         {/* Header Row: Welcome Text on Left, Hello on Right */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="flex-1">
