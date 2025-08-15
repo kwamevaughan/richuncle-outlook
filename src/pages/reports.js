@@ -260,7 +260,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       {...props}
     >
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 pt-0 md:pt-14">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {/* Header */}

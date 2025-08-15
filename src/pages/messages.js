@@ -375,7 +375,7 @@ export default function MessagesPage({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-1 bg-gray-50">
+      <div className="flex flex-1 bg-gray-50 pt-0 md:pt-14">
         <div className="flex flex-1">
           {/* Sidebar */}
           <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 flex-shrink-0 border-r border-gray-200 bg-white`}>

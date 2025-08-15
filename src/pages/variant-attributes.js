@@ -143,7 +143,7 @@ export default function VariantAttributesPage({ mode = "light", toggleMode, ...p
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-1">
+      <div className="flex flex-1 pt-0 md:pt-14">
         <div
           className={`flex-1 p-4 md:p-6 lg:p-8 transition-all ${
             isSidebarOpen && !isMobile ? "ml-0" : "ml-0"

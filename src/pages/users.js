@@ -304,7 +304,7 @@ export default function UsersPage({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex-1 p-4 md:p-6 lg:p-8">
+      <div className="flex-1 p-4 md:p-6 lg:p-8 pt-0 md:pt-14">
         <div className="max-w-7xl mx-auto">
           {/* Enhanced Header */}
           <div className="mb-4 sm:mb-8">

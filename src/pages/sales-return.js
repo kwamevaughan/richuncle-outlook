@@ -229,7 +229,7 @@ export default function SalesReturnPage({ mode = "light", toggleMode, ...props }
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-1">
+      <div className="flex flex-1 pt-0 md:pt-14">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2 sm:gap-3">

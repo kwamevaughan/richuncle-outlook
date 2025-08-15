@@ -60,15 +60,16 @@ const PosFooterActions = ({
     toast.error("You must open a cash register before making sales.");
   };
 
-  return (
+  const footerContent = (
     <div
-      className={`fixed bottom-0 w-full z-50 py-2 sm:py-3 md:py-4 flex justify-center shadow-xl border-t-2 backdrop-blur-sm ${
+      className={`fixed bottom-0 left-0 right-0 w-full z-[9999] py-2 sm:py-3 md:py-4 flex justify-center shadow-xl border-t-2 backdrop-blur-sm ${
         mode === "dark"
           ? "bg-gray-900/95 border-gray-600 border-gray-700/20"
           : "bg-white/95 border-gray-200 border-white/20"
       }`}
+      
     >
-      <div className="flex flex-col gap-2 justify-center flex-1 min-h-0 overflow-visible items-stretch w-full px-2 sm:px-3 md:px-4">
+      <div className="flex gap-2 justify-center flex-1 min-h-0 overflow-visible items-stretch w-full px-2 sm:px-3 md:px-4">
         {/* Button Row */}
         <div className="flex flex-row gap-2 sm:gap-3 md:gap-4 flex-1 md:flex-none justify-center">
           <div className="relative flex-1 sm:flex-none">
@@ -275,7 +276,9 @@ const PosFooterActions = ({
         )}
       </div>
     </div>
-  );
+  );  
+  
+  return footerContent;
 };
 
 export default PosFooterActions;

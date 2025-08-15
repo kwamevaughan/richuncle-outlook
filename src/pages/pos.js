@@ -875,6 +875,28 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
 
   return (
     <ModalProvider>
+      <PosFooterActions
+        totalPayable={totalPayable}
+        hasProducts={selectedProducts.length > 0}
+        onSelectPayment={handlePaymentSelection}
+        onPrintOrder={handlePrintOrder}
+        onResetOrder={handleResetOrder}
+        onHoldSale={() => {
+          setHoldLayawayType("hold");
+          setShowHoldLayawayModal(true);
+        }}
+        onLayaway={() => {
+          setHoldLayawayType("layaway");
+          setShowHoldLayawayModal(true);
+        }}
+        onRetrieveSales={() => setShowRetrieveSales(true)}
+        onRetrieveLayaways={() => setShowRetrieveLayaways(true)}
+        onRecentTransactions={() => setShowRecentTransactions(true)}
+        hasOpenSession={hasOpenSession}
+        sessionCheckLoading={sessionCheckLoading}
+        user={user}
+        mode={mode}
+      />
       <MainLayout
         mode={mode}
         user={user}
@@ -882,6 +904,7 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
         onLogout={handleLogout}
         HeaderComponent={headerComponent}
         showSidebar={false}
+        hideFooter={true}
         {...props}
       >
         <CashRegisterModal
@@ -1155,28 +1178,7 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
             quantities={quantities}
           />
         )}
-        <PosFooterActions
-          totalPayable={totalPayable}
-          hasProducts={selectedProducts.length > 0}
-          onSelectPayment={handlePaymentSelection}
-          onPrintOrder={handlePrintOrder}
-          onResetOrder={handleResetOrder}
-          onHoldSale={() => {
-            setHoldLayawayType("hold");
-            setShowHoldLayawayModal(true);
-          }}
-          onLayaway={() => {
-            setHoldLayawayType("layaway");
-            setShowHoldLayawayModal(true);
-          }}
-          onRetrieveSales={() => setShowRetrieveSales(true)}
-          onRetrieveLayaways={() => setShowRetrieveLayaways(true)}
-          onRecentTransactions={() => setShowRecentTransactions(true)}
-          hasOpenSession={hasOpenSession}
-          sessionCheckLoading={sessionCheckLoading}
-          user={user}
-          mode={mode}
-        />
+
         <SimpleModal
           isOpen={showNoOrderModal}
           onClose={() => setShowNoOrderModal(false)}

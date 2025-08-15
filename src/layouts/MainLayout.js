@@ -11,6 +11,7 @@ export default function MainLayout({
   showSidebar = true,
   user,
   onLogout,
+  hideFooter = false,
   ...props
 }) {
   const { isSidebarOpen, toggleSidebar, isMobile, isTablet } = useSidebar();
@@ -63,16 +64,18 @@ export default function MainLayout({
           />
         )}
         <div
-          className={`flex-1 flex flex-col transition-all duration-300 ease-in-out overflow-auto ${contentMargin} ${contentPadding} pt-6 md:pt-20`}
+          className={`flex-1 flex flex-col transition-all duration-300 ease-in-out overflow-auto ${contentMargin} ${contentPadding} pt-6 md:pt-0`}
         >
           <div className="flex flex-col flex-1 overflow-hidden">
             <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col overflow-hidden">
               {/* Page Content */}
               {children}
             </div>
-            <div className="p-4 md:p-6 lg:p-8">
-              <Footer mode={mode} isSidebarOpen={isSidebarOpen} />
-            </div>
+            {!hideFooter && (
+              <div className="p-4 md:p-6 lg:p-8">
+                <Footer mode={mode} isSidebarOpen={isSidebarOpen} />
+              </div>
+            )}
           </div>
         </div>
       </div>

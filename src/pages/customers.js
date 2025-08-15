@@ -145,7 +145,7 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
 
   return (
     <MainLayout mode={mode} user={user} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
-      <div className="flex-1 p-4 md:p-6 lg:p-8">
+      <div className="flex-1 p-4 md:p-6 lg:p-8 pt-0 md:pt-14">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-800 rounded-lg flex items-center justify-center">

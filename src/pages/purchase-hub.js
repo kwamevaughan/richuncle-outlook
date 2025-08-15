@@ -227,7 +227,7 @@ export default function PurchaseHubPage({ mode = "light", toggleMode, ...props }
       onLogout={handleLogout}
       {...props}
     >
-      <div className={`flex flex-1 min-h-screen ${
+      <div className={`flex flex-1 min-h-screen pt-0 md:pt-14 ${
         mode === "dark" ? "bg-gray-900" : "bg-gray-50"
       }`}>
         <div className="flex-1 p-4 md:p-6 lg:p-8">

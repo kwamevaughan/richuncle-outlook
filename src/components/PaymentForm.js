@@ -1775,9 +1775,17 @@ const PaymentForm = ({
 
   return (
     <div
-      className={`fixed inset-0 z-[60] overflow-y-auto transition-all duration-300 ${
+      className={`fixed inset-0 z-[9999999] overflow-y-auto transition-all duration-300 ${
         animationState === "open" ? "opacity-100" : "opacity-0"
       }`}
+      style={{
+        zIndex: 9999999,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0
+      }}
     >
       {/* Enhanced Backdrop */}
       <div
@@ -1811,7 +1819,13 @@ const PaymentForm = ({
 
       {/* Modal Container */}
       <div 
-        className="flex min-h-full items-center justify-center p-6"
+        className="flex min-h-screen items-center justify-center p-4 sm:p-6"
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
         onClick={(e) => {
           // Prevent clicks from reaching background elements
           e.stopPropagation();

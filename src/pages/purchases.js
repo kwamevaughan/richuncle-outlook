@@ -349,7 +349,7 @@ export default function PurchasesPage({ mode = "light", toggleMode, ...props }) 
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-1 bg-gray-50 min-h-screen">
+      <div className="flex flex-1 bg-gray-50 min-h-screen pt-0 md:pt-14">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {/* Enhanced Header */}

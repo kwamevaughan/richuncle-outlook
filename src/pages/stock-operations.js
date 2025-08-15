@@ -470,7 +470,7 @@ export default function StockOperationsPage({ mode = "light", toggleMode, ...pro
       {...props}
     >
       <div
-        className={`flex flex-1 min-h-screen ${
+        className={`flex flex-1 min-h-screen pt-0 md:pt-14 ${
           mode === "dark" ? "bg-gray-900" : "bg-gray-50"
         }`}
       >

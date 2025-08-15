@@ -267,7 +267,7 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex-1 p-4 md:p-6 lg:p-8">
+      <div className="flex-1 p-4 md:p-6 lg:p-8 pt-0 md:pt-14">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">

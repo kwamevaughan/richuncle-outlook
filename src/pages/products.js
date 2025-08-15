@@ -434,7 +434,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden pt-0 md:pt-14">
         <div
           className={`flex-1 overflow-hidden ${isMobile ? "p-2" : isTablet ? "p-4" : "p-4 md:p-6 lg:p-8"}`}
         >

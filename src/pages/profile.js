@@ -87,7 +87,7 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
   if (loadingUserData) {
     return (
       <MainLayout mode={mode} user={cachedUser} toggleMode={toggleMode} onLogout={handleLogout} {...props}>
-        <div className="flex-1 p-4 md:p-6 lg:p-8">
+        <div className="flex-1 p-4 md:p-6 lg:p-8 pt-0 md:pt-14">
           <div className="max-w-4xl mx-auto flex items-center justify-center h-64">
             <div className={`flex items-center gap-2 ${mode === "dark" ? "text-blue-400" : "text-blue-600"}`}>
               <Icon icon="solar:loading-bold" className="animate-spin w-5 h-5" />

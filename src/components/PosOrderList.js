@@ -510,53 +510,53 @@ const PosOrderList = ({
   };
 
   // Keyboard shortcuts for barcode mode
-  // Always-on barcode scanner focus management
-  useEffect(() => {
-    const maintainFocus = () => {
-      // Keep the hidden barcode input focused for instant scanning
-      if (barcodeInputRef && document.activeElement !== barcodeInputRef) {
-        // Only refocus if no other input is actively being used
-        const activeElement = document.activeElement;
-        const isInputActive = activeElement && (
-          activeElement.tagName === 'INPUT' || 
-          activeElement.tagName === 'TEXTAREA' || 
-          activeElement.tagName === 'SELECT' ||
-          activeElement.contentEditable === 'true'
-        );
+  // Always-on barcode scanner focus management - DISABLED to prevent text selection clearing
+  // useEffect(() => {
+  //   const maintainFocus = () => {
+  //     // Keep the hidden barcode input focused for instant scanning
+  //     if (barcodeInputRef && document.activeElement !== barcodeInputRef) {
+  //       // Only refocus if no other input is actively being used
+  //       const activeElement = document.activeElement;
+  //       const isInputActive = activeElement && (
+  //         activeElement.tagName === 'INPUT' || 
+  //         activeElement.tagName === 'TEXTAREA' || 
+  //         activeElement.tagName === 'SELECT' ||
+  //         activeElement.contentEditable === 'true'
+  //       );
         
-        if (!isInputActive) {
-          setTimeout(() => {
-            if (barcodeInputRef) {
-              barcodeInputRef.focus();
-            }
-          }, 100);
-        }
-      }
-    };
+  //       if (!isInputActive) {
+  //         setTimeout(() => {
+  //           if (barcodeInputRef) {
+  //             barcodeInputRef.focus();
+  //           }
+  //         }, 100);
+  //       }
+  //     }
+  //   };
 
-    // Set up focus maintenance
-    const focusInterval = setInterval(maintainFocus, 2000); // Check every 2 seconds
-    
-    // Also maintain focus on various events
-    const handleClick = () => setTimeout(maintainFocus, 100);
-    const handleKeyDown = (e) => {
-      // If user presses any key and no input is focused, ensure barcode scanner gets it
-      if (!document.activeElement || document.activeElement === document.body) {
-        if (barcodeInputRef) {
-          barcodeInputRef.focus();
-        }
-      }
-    };
+  //   // Set up focus maintenance
+  //   const focusInterval = setInterval(maintainFocus, 2000); // Check every 2 seconds
+  //   
+  //   // Also maintain focus on various events
+  //   const handleClick = () => setTimeout(maintainFocus, 100);
+  //   const handleKeyDown = (e) => {
+  //     // If user presses any key and no input is focused, ensure barcode scanner gets it
+  //     if (!document.activeElement || document.activeElement === document.body) {
+  //       if (barcodeInputRef) {
+  //         barcodeInputRef.focus();
+  //       }
+  //     }
+  //   };
 
-    document.addEventListener('click', handleClick);
-    document.addEventListener('keydown', handleKeyDown);
+  //   document.addEventListener('click', handleClick);
+  //   document.addEventListener('keydown', handleKeyDown);
 
-    return () => {
-      clearInterval(focusInterval);
-      document.removeEventListener('click', handleClick);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [barcodeInputRef]);
+  //   return () => {
+  //     clearInterval(focusInterval);
+  //     document.removeEventListener('click', handleClick);
+  //     document.removeEventListener('keydown', handleKeyDown);
+  //   };
+  // }, [barcodeInputRef]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -566,7 +566,7 @@ const PosOrderList = ({
     };
   }, [barcodeTimeout]);
 
-  // Global keyboard event listener for barcode scanners
+  // Global keyboard event listener for barcode scanners - MODIFIED to prevent text selection interference
   useEffect(() => {
     let barcodeBuffer = "";
     let barcodeTimer = null;
@@ -587,6 +587,15 @@ const PosOrderList = ({
         setSearchInput("");
         setBarcodeError("");
         toast("Scanner deactivated");
+        return;
+      }
+
+      // Check if user is selecting text - if so, don't interfere
+      const selection = window.getSelection();
+      const hasTextSelection = selection && selection.toString().length > 0;
+      
+      // If user is selecting text, don't capture barcode input
+      if (hasTextSelection) {
         return;
       }
 
