@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "react-hot-toast";
 import { AddEditModal } from "./AddEditModal";
@@ -819,7 +819,7 @@ const PosOrderList = ({
         />
 
         {/* Always-On Scanner Status */}
-        <div className="flex items-center justify-between mb-3">
+        {/* <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -831,7 +831,7 @@ const PosOrderList = ({
               Just scan any barcode - adds instantly!
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Customer Info */}
 
@@ -937,7 +937,7 @@ const PosOrderList = ({
 
           {/* Search Field Container */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-[2] min-w-0 sm:min-w-[500px] mb-8 z-10">
+            <div className="relative flex-1 sm:flex-[2] min-w-0 sm:min-w-[450px] mb-8 z-10">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Icon
                   icon={
@@ -1002,7 +1002,7 @@ const PosOrderList = ({
                   placeholder={
                     isBarcodeMode
                       ? "🔍 Auto-scanning... Scan barcode to add instantly"
-                      : "Search product or scan barcode (auto-adds to cart)"
+                      : "Search product or scan barcode"
                   }
                   isClearable
                   isSearchable
@@ -1190,7 +1190,7 @@ const PosOrderList = ({
               >
                 <Icon icon="mdi:information-outline" className="w-4 h-4" />
                 <span>
-                  ⚡ Auto-scan: Barcode → Beep → Added! Click "Scan" for{" "}
+                  ⚡ Auto-scan: Barcode! Click "Scan" for{" "}
                   {cameraSupported ? "camera/manual" : "manual"} or press {keyboardShortcut}.
                 </span>
               </div>
@@ -1271,7 +1271,7 @@ const PosOrderList = ({
         </div>
 
         {/* Order Details */}
-        <div className="mb-4 pt-4">
+        <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             {/* <div
               className={`font-bold ${
