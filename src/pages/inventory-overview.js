@@ -1,6 +1,7 @@
 import MainLayout from "@/layouts/MainLayout";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
+import useResponsive from "../hooks/useResponsive";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import SimpleModal from "@/components/SimpleModal";
@@ -8,38 +9,43 @@ import { GenericTable } from "@/components/GenericTable";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 
-export default function InventoryOverviewPage({ mode = "light", toggleMode, ...props }) {
+export default function InventoryOverviewPage({
+  mode = "light",
+  toggleMode,
+  ...props
+}) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
+  const { isMobile, isTablet, getTableContainerClass } = useResponsive();
   const router = useRouter();
-  
+
   // State for products
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockStatusFilter, setStockStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState("table"); // table or grid
   const [stockThreshold, setStockThreshold] = useState(10);
-  
+
   // Modal states
   const [showQuickUpdateModal, setShowQuickUpdateModal] = useState(false);
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedProducts, setSelectedProducts] = useState([]);
-  
+
   // Form states
   const [quickUpdateQuantity, setQuickUpdateQuantity] = useState("");
   const [quickUpdateType, setQuickUpdateType] = useState("add");
   const [bulkUpdateQuantity, setBulkUpdateQuantity] = useState("");
   const [bulkUpdateType, setBulkUpdateType] = useState("set");
   const [importData, setImportData] = useState("");
-  
+
   // Statistics
   const [stats, setStats] = useState({
     total: 0,
@@ -47,13 +53,13 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
     lowStock: 0,
     outOfStock: 0,
     critical: 0,
-    totalValue: 0
+    totalValue: 0,
   });
 
   // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
-      const response = await fetch('/api/categories');
+      const response = await fetch("/api/categories");
       const { data, error } = await response.json();
       if (!error) setCategories(data || []);
     };
@@ -64,13 +70,13 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
   const fetchProducts = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch('/api/products');
+      const response = await fetch("/api/products");
       const { data, error } = await response.json();
-      
+
       if (error) throw error;
-      
+
       setProducts(data || []);
       calculateStats(data || []);
     } catch (err) {
@@ -84,14 +90,22 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
   // Calculate statistics
   const calculateStats = (productData) => {
     const total = productData.length;
-    const inStock = productData.filter(p => parseInt(p.quantity) > stockThreshold).length;
-    const lowStock = productData.filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= stockThreshold).length;
-    const outOfStock = productData.filter(p => parseInt(p.quantity) <= 0).length;
-    const critical = productData.filter(p => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 5).length;
+    const inStock = productData.filter(
+      (p) => parseInt(p.quantity) > stockThreshold,
+    ).length;
+    const lowStock = productData.filter(
+      (p) => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= stockThreshold,
+    ).length;
+    const outOfStock = productData.filter(
+      (p) => parseInt(p.quantity) <= 0,
+    ).length;
+    const critical = productData.filter(
+      (p) => parseInt(p.quantity) > 0 && parseInt(p.quantity) <= 5,
+    ).length;
     const totalValue = productData.reduce((sum, p) => {
       const quantity = parseInt(p.quantity) || 0;
       const price = parseFloat(p.price) || 0;
-      return sum + (quantity * price);
+      return sum + quantity * price;
     }, 0);
 
     setStats({ total, inStock, lowStock, outOfStock, critical, totalValue });
@@ -105,7 +119,7 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
   // Open Quick Update modal if quickUpdateId is present in query
   useEffect(() => {
     if (!loading && products.length > 0 && router.query.quickUpdateId) {
-      const product = products.find(p => p.id === router.query.quickUpdateId);
+      const product = products.find((p) => p.id === router.query.quickUpdateId);
       if (product) {
         setSelectedProduct(product);
         setQuickUpdateType("add");
@@ -116,13 +130,14 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
   }, [loading, products, router.query.quickUpdateId]);
 
   // Filter products
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = products.filter((product) => {
     const quantity = parseInt(product.quantity) || 0;
-    const matchesSearch = 
+    const matchesSearch =
       product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || product.category_id === categoryFilter;
-    
+    const matchesCategory =
+      categoryFilter === "all" || product.category_id === categoryFilter;
+
     let matchesStockStatus = true;
     switch (stockStatusFilter) {
       case "in-stock":
@@ -140,40 +155,43 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
       default:
         matchesStockStatus = true;
     }
-    
+
     return matchesSearch && matchesCategory && matchesStockStatus;
   });
 
   // Get stock status styling
   const getStockStatus = (quantity) => {
     const qty = parseInt(quantity) || 0;
-    if (qty <= 0) return { 
-      status: 'Out of Stock', 
-      color: 'text-red-700', 
-      bg: 'bg-red-100 border-red-200', 
-      icon: 'mdi:close-circle',
-      priority: 'urgent'
-    };
-    if (qty <= 5) return { 
-      status: 'Critical Low', 
-      color: 'text-red-600', 
-      bg: 'bg-red-50 border-red-200', 
-      icon: 'mdi:alert-circle',
-      priority: 'high'
-    };
-    if (qty <= stockThreshold) return { 
-      status: 'Low Stock', 
-      color: 'text-orange-600', 
-      bg: 'bg-orange-50 border-orange-200', 
-      icon: 'mdi:alert',
-      priority: 'medium'
-    };
-    return { 
-      status: 'In Stock', 
-      color: 'text-green-600', 
-      bg: 'bg-green-50 border-green-200', 
-      icon: 'mdi:check-circle',
-      priority: 'low'
+    if (qty <= 0)
+      return {
+        status: "Out of Stock",
+        color: "text-red-700",
+        bg: "bg-red-100 border-red-200",
+        icon: "mdi:close-circle",
+        priority: "urgent",
+      };
+    if (qty <= 5)
+      return {
+        status: "Critical Low",
+        color: "text-red-600",
+        bg: "bg-red-50 border-red-200",
+        icon: "mdi:alert-circle",
+        priority: "high",
+      };
+    if (qty <= stockThreshold)
+      return {
+        status: "Low Stock",
+        color: "text-orange-600",
+        bg: "bg-orange-50 border-orange-200",
+        icon: "mdi:alert",
+        priority: "medium",
+      };
+    return {
+      status: "In Stock",
+      color: "text-green-600",
+      bg: "bg-green-50 border-green-200",
+      icon: "mdi:check-circle",
+      priority: "low",
     };
   };
 
@@ -209,11 +227,11 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
       }
 
       const response = await fetch(`/api/products/${selectedProduct.id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ quantity: newStock })
+        body: JSON.stringify({ quantity: newStock }),
       });
 
       const result = await response.json();
@@ -245,8 +263,8 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
     }
 
     try {
-      const updates = selectedProducts.map(productId => {
-        const product = products.find(p => p.id === productId);
+      const updates = selectedProducts.map((productId) => {
+        const product = products.find((p) => p.id === productId);
         const currentStock = parseInt(product.quantity) || 0;
         let newStock;
 
@@ -266,16 +284,16 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
 
         return {
           id: productId,
-          quantity: newStock
+          quantity: newStock,
         };
       });
 
-      const response = await fetch('/api/products/bulk-update', {
-        method: 'PUT',
+      const response = await fetch("/api/products/bulk-update", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ updates })
+        body: JSON.stringify({ updates }),
       });
 
       const result = await response.json();
@@ -301,17 +319,17 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
     }
 
     try {
-      const lines = importData.trim().split('\n');
+      const lines = importData.trim().split("\n");
       const updates = [];
 
       for (let i = 1; i < lines.length; i++) {
-        const [sku, quantity] = lines[i].split(',').map(s => s.trim());
+        const [sku, quantity] = lines[i].split(",").map((s) => s.trim());
         if (sku && quantity) {
-          const product = products.find(p => p.sku === sku);
+          const product = products.find((p) => p.sku === sku);
           if (product) {
             updates.push({
               id: product.id,
-              quantity: parseInt(quantity) || 0
+              quantity: parseInt(quantity) || 0,
             });
           }
         }
@@ -322,12 +340,12 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
         return;
       }
 
-      const response = await fetch('/api/products/bulk-update', {
-        method: 'PUT',
+      const response = await fetch("/api/products/bulk-update", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ updates })
+        body: JSON.stringify({ updates }),
       });
 
       const result = await response.json();
@@ -358,10 +376,15 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
-                <Icon icon="mdi:package-variant" className="w-6 h-6 text-blue-600" />
+                <Icon
+                  icon="mdi:package-variant"
+                  className="w-6 h-6 text-blue-600"
+                />
               </div>
             </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-medium border ${stockStatus.bg} ${stockStatus.color}`}>
+            <div
+              className={`px-3 py-1 rounded-full text-xs font-medium border ${stockStatus.bg} ${stockStatus.color}`}
+            >
               <div className="flex items-center gap-1">
                 <Icon icon={stockStatus.icon} className="w-3 h-3" />
                 {stockStatus.status}
@@ -371,29 +394,41 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
 
           {/* Product Info */}
           <div className="mb-4">
-            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
+            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+              {product.name}
+            </h3>
             <p className="text-sm text-gray-500 mb-2">SKU: {product.sku}</p>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Icon icon="mdi:tag-outline" className="w-4 h-4" />
-              {product.categories?.name || 'N/A'}
+              {product.categories?.name || "N/A"}
             </div>
           </div>
 
           {/* Stock Info */}
           <div className="space-y-3 mb-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Stock Level</span>
+              <span className="text-sm font-medium text-gray-700">
+                Stock Level
+              </span>
               <span className={`text-sm font-semibold ${stockStatus.color}`}>
                 {quantity} units
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Unit Price</span>
-              <span className="text-sm font-semibold text-gray-900">GHS {price.toLocaleString()}</span>
+              <span className="text-sm font-medium text-gray-700">
+                Unit Price
+              </span>
+              <span className="text-sm font-semibold text-gray-900">
+                GHS {price.toLocaleString()}
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Total Value</span>
-              <span className="text-sm font-semibold text-gray-900">GHS {value.toLocaleString()}</span>
+              <span className="text-sm font-medium text-gray-700">
+                Total Value
+              </span>
+              <span className="text-sm font-semibold text-gray-900">
+                GHS {value.toLocaleString()}
+              </span>
             </div>
           </div>
 
@@ -401,17 +436,24 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
           <div className="mb-4">
             <div className="flex justify-between text-xs text-gray-500 mb-1">
               <span>Stock Level</span>
-              <span>{quantity}/{stockThreshold}</span>
+              <span>
+                {quantity}/{stockThreshold}
+              </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  quantity === 0 ? 'bg-red-500' :
-                  quantity <= 5 ? 'bg-red-400' :
-                  quantity <= stockThreshold ? 'bg-orange-400' :
-                  'bg-green-400'
+                  quantity === 0
+                    ? "bg-red-500"
+                    : quantity <= 5
+                      ? "bg-red-400"
+                      : quantity <= stockThreshold
+                        ? "bg-orange-400"
+                        : "bg-green-400"
                 }`}
-                style={{ width: `${Math.min((quantity / stockThreshold) * 100, 100)}%` }}
+                style={{
+                  width: `${Math.min((quantity / stockThreshold) * 100, 100)}%`,
+                }}
               />
             </div>
           </div>
@@ -443,8 +485,7 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
               }}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
             >
-                        <Icon icon="mdi:pencil" className="w-4 h-4" />
-                        
+              <Icon icon="mdi:pencil" className="w-4 h-4" />
               Edit Stock
             </button>
           </div>
@@ -456,75 +497,92 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
   // GenericTable columns configuration
   const columns = [
     {
-      accessor: 'stock_status',
-      Header: 'Status',
+      accessor: "stock_status",
+      Header: "Status",
       sortable: true,
+      className: isMobile ? "max-w-20" : isTablet ? "max-w-28" : "",
       render: (row) => {
         const stockStatus = getStockStatus(row.quantity);
         return (
-          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase shadow-sm border ${stockStatus.bg} ${stockStatus.color}`}>
+          <span
+            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase shadow-sm border ${stockStatus.bg} ${stockStatus.color}`}
+          >
             <Icon icon={stockStatus.icon} className="w-3 h-3" />
             {stockStatus.status}
           </span>
         );
-      }
+      },
     },
     {
-      accessor: 'name',
-      Header: 'Product',
+      accessor: "name",
+      Header: "Product",
       sortable: true,
+      className: isMobile ? "max-w-20" : isTablet ? "max-w-28" : "",
       render: (row) => (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
-            <Icon icon="mdi:package-variant" className="w-5 h-5 text-blue-600" />
+            <Icon
+              icon="mdi:package-variant"
+              className="w-5 h-5 text-blue-600"
+            />
           </div>
           <div>
-            <div className="text-sm font-semibold text-gray-900">{row.name}</div>
+            <div className="text-sm font-semibold text-gray-900">
+              {row.name}
+            </div>
             <div className="text-sm text-gray-500">SKU: {row.sku}</div>
           </div>
         </div>
-      )
+      ),
     },
     {
-      accessor: 'category',
-      Header: 'Category',
+      accessor: "category",
+      Header: "Category",
       sortable: true,
+      className: isMobile ? "max-w-20" : isTablet ? "max-w-28" : "",
       render: (row) => (
         <div className="flex items-center gap-2">
           <Icon icon="mdi:tag-outline" className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-900">{row.categories?.name || 'N/A'}</span>
+          <span className="text-sm text-gray-900">
+            {row.categories?.name || "N/A"}
+          </span>
         </div>
-      )
+      ),
     },
     {
-      accessor: 'quantity',
-      Header: 'Stock Status',
+      accessor: "quantity",
+      Header: "Stock Status",
       sortable: true,
+      className: isMobile ? "max-w-20" : isTablet ? "max-w-28" : "",
       render: (row) => {
         const stockStatus = getStockStatus(row.quantity);
         const quantity = parseInt(row.quantity) || 0;
         return (
-          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${stockStatus.bg} ${stockStatus.color}`}>
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${stockStatus.bg} ${stockStatus.color}`}
+          >
             <Icon icon={stockStatus.icon} className="w-3 h-3" />
             {quantity} units
           </div>
         );
-      }
+      },
     },
     {
-      accessor: 'price',
-      Header: 'Price',
+      accessor: "price",
+      Header: "Price",
       sortable: true,
+      className: isMobile ? "max-w-20" : isTablet ? "max-w-28" : "",
       render: (row) => (
         <div className="text-sm font-semibold text-gray-900">
           GHS {parseFloat(row.price).toLocaleString()}
         </div>
-      )
+      ),
     },
     {
-      accessor: 'value',
-      Header: 'Value',
+      accessor: "value",
+      Header: "Value",
       sortable: true,
+      className: isMobile ? "max-w-20" : isTablet ? "max-w-28" : "",
       render: (row) => {
         const quantity = parseInt(row.quantity) || 0;
         const price = parseFloat(row.price) || 0;
@@ -534,8 +592,8 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
             GHS {value.toLocaleString()}
           </div>
         );
-      }
-    }
+      },
+    },
   ];
 
   // Custom actions for the table
@@ -605,11 +663,11 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
                     Inventory Overview
                   </h1>
                   <p className="text-sm sm:text-base text-gray-600">
-                    Monitor and manage your complete inventory with real-time stock levels
+                    Monitor and manage your complete inventory with real-time
+                    stock levels
                   </p>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                  
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -618,7 +676,10 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
                     }}
                     className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
                   >
-                    <Icon icon="mdi:file-import" className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <Icon
+                      icon="mdi:file-import"
+                      className="w-3 h-3 sm:w-4 sm:h-4"
+                    />
                     <span className="hidden sm:inline">Import CSV</span>
                   </button>
                   {selectedProducts.length > 0 && (
@@ -630,8 +691,13 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
                       }}
                       className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-none"
                     >
-                      <Icon icon="mdi:plus-box" className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Bulk Update ({selectedProducts.length})</span>
+                      <Icon
+                        icon="mdi:plus-box"
+                        className="w-3 h-3 sm:w-4 sm:h-4"
+                      />
+                      <span className="hidden sm:inline">
+                        Bulk Update ({selectedProducts.length})
+                      </span>
                     </button>
                   )}
                 </div>
@@ -859,16 +925,25 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
                   </div>
                 ) : (
                   /* GenericTable View */
-                  <GenericTable
-                    data={filteredProducts}
-                    columns={columns}
-                    actions={tableActions}
-                    title="Inventory Overview"
-                    emptyMessage="No products found"
-                    selectable={true}
-                    searchable={false}
-                    onSelectionChange={setSelectedProducts}
-                  />
+                  <div
+                    className={`${isMobile ? "rounded-lg" : "rounded-xl"} ${
+                      mode === "dark" ? "bg-gray-900" : "bg-white"
+                    } overflow-hidden`}
+                  >
+                      <div className={`w-full ${getTableContainerClass()}`}>
+
+                        <GenericTable
+                          data={filteredProducts}
+                          columns={columns}
+                          actions={tableActions}
+                          title="Inventory Overview"
+                          emptyMessage="No products found"
+                          selectable={true}
+                          searchable={false}
+                          onSelectionChange={setSelectedProducts}
+                        />
+                    </div>
+                  </div>
                 )}
               </>
             )}
@@ -1065,4 +1140,4 @@ export default function InventoryOverviewPage({ mode = "light", toggleMode, ...p
       </SimpleModal>
     </MainLayout>
   );
-} 
+}

@@ -12,8 +12,9 @@ import "react-date-range/dist/theme/default.css";
 import ReactDOM from "react-dom";
 import TooltipIconButton from "./TooltipIconButton";
 import ExportModal from "./export/ExportModal";
-import StatusPill, { getStockStatus, getInventoryStatus } from "./StatusPill";
 import toast from "react-hot-toast";
+
+
 
 // Enhanced useTable hook
 function useTable(data, initialPageSize = 10, statusOptions = null) {
@@ -53,8 +54,8 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
     if (searchTerm) {
       result = result.filter((row) =>
         Object.values(row).some((value) =>
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase()),
-        ),
+          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        )
       );
     }
     // Date filters for sortBy
@@ -63,16 +64,16 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
       const lastMonth = new Date(
         now.getFullYear(),
         now.getMonth() - 1,
-        now.getDate(),
+        now.getDate()
       );
       result = result.filter(
-        (row) => row.created_at && new Date(row.created_at) >= lastMonth,
+        (row) => row.created_at && new Date(row.created_at) >= lastMonth
       );
     } else if (sortBy === "last_7_days") {
       const now = new Date();
       const last7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       result = result.filter(
-        (row) => row.created_at && new Date(row.created_at) >= last7,
+        (row) => row.created_at && new Date(row.created_at) >= last7
       );
     }
     return result;
@@ -82,15 +83,15 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
   const sortedData = useMemo(() => {
     if (sortBy === "recent") {
       return [...filteredData].sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at),
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
     } else if (sortBy === "asc") {
       return [...filteredData].sort((a, b) =>
-        (a.name || "").localeCompare(b.name || ""),
+        (a.name || "").localeCompare(b.name || "")
       );
     } else if (sortBy === "desc") {
       return [...filteredData].sort((a, b) =>
-        (b.name || "").localeCompare(a.name || ""),
+        (b.name || "").localeCompare(a.name || "")
       );
     }
     // Default to filteredData
@@ -149,13 +150,13 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
 
   const toggleSelect = (id) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
   const selectAll = () => {
     setSelected(
-      selected.length === paged.length ? [] : paged.map((row) => row.id),
+      selected.length === paged.length ? [] : paged.map((row) => row.id)
     );
   };
 
@@ -260,7 +261,7 @@ export function GenericTable({
   const filteredColumns = useMemo(() => {
     if (!hideEmptyColumns) return columns;
     return columns.filter((column) =>
-      hasColumnData(column.accessor, column.render),
+      hasColumnData(column.accessor, column.render)
     );
   }, [columns, safeData, hideEmptyColumns]);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -373,6 +374,8 @@ export function GenericTable({
             );
           }
 
+
+
           if (col.type === "image") {
             return (
               <td key={col.accessor} className="px-2 sm:px-4 py-3 sm:py-4">
@@ -438,91 +441,93 @@ export function GenericTable({
             </td>
           );
         })}
-        <td className="px-2 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center gap-1 sm:gap-2">
-            {/* Custom actions */}
-            {actions.map((action, i) => {
-              if (!action) return null;
-              // Only show if action.show is not defined or returns true
-              if (typeof action.show === "function" && !action.show(row))
-                return null;
-              if (typeof action.render === "function") {
+        {(actions.length > 0 || onEdit || onDelete) && (
+          <td className="px-2 sm:px-4 py-3 sm:py-4 min-w-[120px]">
+            <div className="flex items-center gap-1 sm:gap-2">
+              {/* Custom actions */}
+              {actions.map((action, i) => {
+                if (!action) return null;
+                // Only show if action.show is not defined or returns true
+                if (typeof action.show === "function" && !action.show(row))
+                  return null;
+                if (typeof action.render === "function") {
+                  return (
+                    <React.Fragment key={action.label || i}>
+                      {action.render(row)}
+                    </React.Fragment>
+                  );
+                }
+                if (typeof action.onClick !== "function") return null;
+
+                const label =
+                  typeof action.label === "function"
+                    ? action.label(row)
+                    : action.label;
+                const icon =
+                  typeof action.icon === "function"
+                    ? action.icon(row)
+                    : action.icon;
+                const isDisabled =
+                  typeof action.disabled === "function"
+                    ? action.disabled(row)
+                    : action.disabled;
+                const tooltip =
+                  typeof action.tooltip === "function"
+                    ? action.tooltip(row)
+                    : action.tooltip;
+
                 return (
-                  <React.Fragment key={action.label || i}>
-                    {action.render(row)}
-                  </React.Fragment>
+                  <TooltipIconButton
+                    key={label || i}
+                    icon={icon || "mdi:help"}
+                    label={tooltip || label || ""}
+                    onClick={
+                      isDisabled
+                        ? undefined
+                        : (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            action.onClick(row, e);
+                          }
+                    }
+                    mode={mode}
+                    className={`${action.className || ""} ${
+                      isDisabled ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                    disabled={isDisabled}
+                  />
                 );
-              }
-              if (typeof action.onClick !== "function") return null;
-
-              const label =
-                typeof action.label === "function"
-                  ? action.label(row)
-                  : action.label;
-              const icon =
-                typeof action.icon === "function"
-                  ? action.icon(row)
-                  : action.icon;
-              const isDisabled =
-                typeof action.disabled === "function"
-                  ? action.disabled(row)
-                  : action.disabled;
-              const tooltip =
-                typeof action.tooltip === "function"
-                  ? action.tooltip(row)
-                  : action.tooltip;
-
-              return (
+              })}
+              {/* Edit/Delete */}
+              {onEdit && (
                 <TooltipIconButton
-                  key={label || i}
-                  icon={icon || "mdi:help"}
-                  label={tooltip || label || ""}
-                  onClick={
-                    isDisabled
-                      ? undefined
-                      : (e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          action.onClick(row, e);
-                        }
-                  }
+                  icon="cuida:edit-outline"
+                  label="Edit"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onEdit(row);
+                  }}
                   mode={mode}
-                  className={`${action.className || ""} ${
-                    isDisabled ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  disabled={isDisabled}
+                  className="bg-blue-50 text-blue-600 text-xs"
                 />
-              );
-            })}
-            {/* Edit/Delete */}
-            {onEdit && (
-              <TooltipIconButton
-                icon="cuida:edit-outline"
-                label="Edit"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onEdit(row);
-                }}
-                mode={mode}
-                className="bg-blue-50 text-blue-600 text-xs"
-              />
-            )}
-            {onDelete && (
-              <TooltipIconButton
-                icon="mynaui:trash"
-                label="Delete"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onDelete(row);
-                }}
-                mode={mode}
-                className="bg-red-50 text-red-600 text-xs"
-              />
-            )}
-          </div>
-        </td>
+              )}
+              {onDelete && (
+                <TooltipIconButton
+                  icon="mynaui:trash"
+                  label="Delete"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDelete(row);
+                  }}
+                  mode={mode}
+                  className="bg-red-50 text-red-600 text-xs"
+                />
+              )}
+            </div>
+          </td>
+        )}
       </>
     );
   };
@@ -1005,6 +1010,16 @@ export function GenericTable({
                     >
                       {typeof col.render === "function" ? (
                         col.render(row, value, index)
+                      ) : enableStatusPills &&
+                        isStatusColumn(col.accessor, value) ? (
+                        <StatusPill
+                          status={value}
+                          context={getStatusContext(
+                            col.accessor,
+                            statusContext
+                          )}
+                          size="sm"
+                        />
                       ) : (
                         <span className="truncate">{displayValue}</span>
                       )}
@@ -1223,7 +1238,7 @@ export function GenericTable({
                             </div>
                           )}
                         </div>,
-                        document.body,
+                        document.body
                       )}
                   </div>
                 )}
@@ -1314,7 +1329,9 @@ export function GenericTable({
       ) : table.isTablet ? (
         /* Tablet Card View */
         <div
-          className={`overflow-hidden ${mode === "dark" ? "bg-gray-900" : "bg-white"}`}
+          className={`overflow-hidden ${
+            mode === "dark" ? "bg-gray-900" : "bg-white"
+          }`}
         >
           {table.paged.length === 0 ? (
             <div className="px-6 py-12 text-center">
@@ -1336,7 +1353,7 @@ export function GenericTable({
       ) : (
         /* Desktop Table View */
         <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-          <table className="w-full min-w-max">
+          <table className="w-full">
             <thead
               className={`${mode === "dark" ? "bg-gray-800" : "bg-gray-50"}`}
             >
@@ -1351,7 +1368,7 @@ export function GenericTable({
                       checked={
                         table.paged.length > 0 &&
                         table.paged.every((row) =>
-                          table.selected.includes(row.id),
+                          table.selected.includes(row.id)
                         )
                       }
                       onChange={table.selectAll}
@@ -1362,7 +1379,7 @@ export function GenericTable({
                 {filteredColumns.map((col) => (
                   <th
                     key={col.accessor}
-                    className={`px-2 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold ${
+                    className={`px-2 sm:px-4 py-3 sm:py-4 text-left font-semibold ${
                       mode === "dark" ? "text-gray-300" : "text-gray-600"
                     } ${
                       col.sortable !== false
@@ -1386,7 +1403,7 @@ export function GenericTable({
                               .map(
                                 (word) =>
                                   word.charAt(0).toUpperCase() +
-                                  word.slice(1).toLowerCase(),
+                                  word.slice(1).toLowerCase()
                               )
                               .join(" ")
                           : ""}
@@ -1419,7 +1436,7 @@ export function GenericTable({
                 {/* Only render actions column if needed */}
                 {(actions.length > 0 || onEdit || onDelete) && (
                   <th
-                    className={`px-2 sm:px-4 py-3 sm:py-4 text-left text-xs font-semibold ${
+                    className={`px-2 sm:px-4 py-3 sm:py-4 text-left font-semibold min-w-[120px] ${
                       mode === "dark" ? "text-gray-300" : "text-gray-600"
                     }`}
                   >

@@ -410,7 +410,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                   onEdit={(item) => openEditModal("subcategories", item)}
                   onDelete={openConfirm}
                   onReorder={handleReorderCategories}
-                  enableDragDrop={true}
+                    enableDragDrop={true}
                   onAddNew={() => openAddModal("subcategories")}
                   addNewLabel="Add New Sub Category"
                 />

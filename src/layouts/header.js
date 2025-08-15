@@ -183,8 +183,8 @@ const Header = ({
               isMobile || isTablet
                 ? "ml-0"
                 : isSidebarOpen
-                ? "md:ml-[272px]"
-                : "md:ml-[80px]"
+                  ? "md:ml-[272px]"
+                  : "md:ml-[80px]"
             }
             ${
               mode === "dark"
@@ -236,8 +236,8 @@ const Header = ({
                   isMobile
                     ? "min-h-[44px] min-w-[44px]"
                     : isTablet
-                    ? "min-h-[48px] min-w-[48px]"
-                    : ""
+                      ? "min-h-[48px] min-w-[48px]"
+                      : ""
                 }`}
                 title="Search"
               >
@@ -263,8 +263,8 @@ const Header = ({
                     isMobile
                       ? "min-h-[44px] min-w-[44px]"
                       : isTablet
-                      ? "min-h-[48px] min-w-[48px]"
-                      : ""
+                        ? "min-h-[48px] min-w-[48px]"
+                        : ""
                   }`}
                   title={
                     mode === "dark"
@@ -303,30 +303,20 @@ const Header = ({
                 </div>
               )}
 
-              {/* Messages - visible on mobile/tablet */}
-              {(isMobile || isTablet) && (
+              {/* Messages - visible on tablet only */}
+              {isTablet && (
                 <TooltipIconButton
                   label="Messages"
                   mode={mode}
-                  className={`select-none ${
-                    isMobile
-                      ? "px-2.5 py-2 min-h-[44px] min-w-[44px]"
-                      : "px-3.5 py-3.5 min-h-[48px] min-w-[48px]"
-                  } rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 relative`}
+                  className="select-none px-3.5 py-3.5 min-h-[48px] min-w-[48px] rounded-md hover:shadow-xl hover:-mt-1 active:scale-95 transition-all duration-500 relative"
                   onClick={() => router.push("/messages")}
                 >
                   <Icon
                     icon="mdi:message-text"
-                    className={`${
-                      isMobile ? "h-5 w-5" : "h-7 w-7"
-                    } text-gray-500`}
+                    className="h-7 w-7 text-gray-500"
                   />
                   {unreadMessageCount > 0 && (
-                    <div
-                      className={`absolute -top-1 -right-1 bg-red-500 text-white ${
-                        isMobile ? "text-xs h-4 w-4" : "text-xs h-5 w-5"
-                      } rounded-full flex items-center justify-center font-bold`}
-                    >
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs h-5 w-5 rounded-full flex items-center justify-center font-bold">
                       {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
                     </div>
                   )}
@@ -488,14 +478,14 @@ const Header = ({
                       isMobile
                         ? "gap-1 px-2.5 py-2"
                         : isTablet
-                        ? "gap-1 px-3.5 py-3.5"
-                        : "gap-1 text-sm px-3 py-1.5"
+                          ? "gap-1 px-3.5 py-3.5"
+                          : "gap-1 text-sm px-3 py-1.5"
                     } rounded-md hover:shadow-md transition-all duration-300 ${
                       isMobile
                         ? "min-h-[44px] min-w-[44px]"
                         : isTablet
-                        ? "min-h-[48px] min-w-[48px]"
-                        : ""
+                          ? "min-h-[48px] min-w-[48px]"
+                          : ""
                     }
                     ${
                       mode === "dark"
@@ -565,8 +555,8 @@ const Header = ({
                           isMobile
                             ? "px-3 py-2.5"
                             : isTablet
-                            ? "px-4 py-3.5"
-                            : "px-4 py-2"
+                              ? "px-4 py-3.5"
+                              : "px-4 py-2"
                         } cursor-pointer transition-colors duration-200 ${
                           !selectedStore
                             ? "font-bold bg-gray-200 dark:bg-gray-800"
@@ -594,8 +584,8 @@ const Header = ({
                               isMobile
                                 ? "px-3 py-2.5"
                                 : isTablet
-                                ? "px-4 py-3.5"
-                                : "px-4 py-2"
+                                  ? "px-4 py-3.5"
+                                  : "px-4 py-2"
                             } cursor-pointer transition-colors duration-200 ${
                               mode === "dark"
                                 ? "hover:bg-gray-800 text-gray-100"
@@ -611,7 +601,7 @@ const Header = ({
                               console.log(
                                 "Header: Store selected:",
                                 store.name,
-                                store.id
+                                store.id,
                               );
                             }}
                           >
@@ -909,6 +899,36 @@ const Header = ({
                           </>
                         )}
 
+                        {/* Divider */}
+                        {isMobile && (
+                          <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                        )}
+
+                        {/* Messages - Mobile only (tablet has it in header) */}
+                        {isMobile && (
+                          <button
+                            onClick={() => {
+                              setMoreActionsDropdownOpen(false);
+                              router.push("/messages");
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer min-h-[44px] relative ${
+                              mode === "dark"
+                                ? "text-gray-300 hover:text-blue-300 hover:bg-gray-800"
+                                : "text-gray-500 hover:text-blue-800 hover:bg-gray-50"
+                            }`}
+                          >
+                            <Icon icon="mdi:message-text" className="h-5 w-5" />
+                            <span>Messages</span>
+                            {unreadMessageCount > 0 && (
+                              <div className="ml-auto bg-red-500 text-white text-xs h-4 w-4 rounded-full flex items-center justify-center font-bold">
+                                {unreadMessageCount > 99
+                                  ? "99+"
+                                  : unreadMessageCount}
+                              </div>
+                            )}
+                          </button>
+                        )}
+
                         {/* Language Switch - Mobile only (tablet has it in header) */}
                         {isMobile && (
                           <div className="px-3 py-1">
@@ -1162,8 +1182,8 @@ const Header = ({
                         isMobile
                           ? "w-8 h-8"
                           : isTablet
-                          ? "w-10 h-10"
-                          : "w-6 h-6"
+                            ? "w-10 h-10"
+                            : "w-6 h-6"
                       }`}
                     >
                       {user && user.avatar_url ? (
@@ -1179,8 +1199,8 @@ const Header = ({
                             isMobile
                               ? "h-8 w-8"
                               : isTablet
-                              ? "h-10 w-10"
-                              : "h-6 w-6"
+                                ? "h-10 w-10"
+                                : "h-6 w-6"
                           }`}
                         />
                       )}
@@ -1204,8 +1224,8 @@ const Header = ({
                               isMobile
                                 ? "w-10 h-10"
                                 : isTablet
-                                ? "w-12 h-12"
-                                : "w-6 h-6"
+                                  ? "w-12 h-12"
+                                  : "w-6 h-6"
                             }`}
                           >
                             {user && user.avatar_url ? (
@@ -1221,8 +1241,8 @@ const Header = ({
                                   isMobile
                                     ? "h-10 w-10"
                                     : isTablet
-                                    ? "h-12 w-12"
-                                    : "h-6 w-6"
+                                      ? "h-12 w-12"
+                                      : "h-6 w-6"
                                 }`}
                               />
                             )}
@@ -1233,8 +1253,8 @@ const Header = ({
                                 isMobile
                                   ? "flex-col gap-1"
                                   : isTablet
-                                  ? "flex-col gap-1"
-                                  : "gap-2"
+                                    ? "flex-col gap-1"
+                                    : "gap-2"
                               }`}
                             >
                               <span
@@ -1242,8 +1262,8 @@ const Header = ({
                                   isMobile
                                     ? "text-sm"
                                     : isTablet
-                                    ? "text-base"
-                                    : "text-md"
+                                      ? "text-base"
+                                      : "text-md"
                                 } font-semibold truncate ${
                                   mode === "dark" ? "text-white" : "text-black"
                                 }`}
@@ -1330,10 +1350,10 @@ const Header = ({
           (isMobile || isTablet) && !isHeaderVisible
             ? "h-0"
             : isMobile
-            ? "h-[60px]"
-            : isTablet
-            ? "h-[68px]"
-            : "h-[72px]"
+              ? "h-[60px]"
+              : isTablet
+                ? "h-[68px]"
+                : "h-[72px]"
         }`}
         aria-hidden="true"
       ></div>
