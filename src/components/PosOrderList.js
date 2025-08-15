@@ -134,22 +134,20 @@ const PosOrderList = ({
       return;
     }
 
-    // Check if this looks like a barcode scan
-    // Common barcode formats: EAN-8 (8 digits), EAN-13 (13 digits), UPC-A (12 digits), Code 128 (variable)
+    // More aggressive barcode detection for faster processing
+    // Reduced minimum length and faster processing for modern POS experience
     const isLikelyBarcode =
-      /^\d{8,13}$/.test(value.trim()) || // Standard EAN/UPC formats
-      /^\d{12,14}$/.test(value.trim()) || // UPC-E and extended formats
-      /^[A-Z0-9]{8,20}$/.test(value.trim()) || // Alphanumeric codes
-      (value.length >= 8 && value.length <= 20); // General length check
+      /^\d{6,14}$/.test(value.trim()) || // Standard EAN/UPC formats (reduced min length)
+      /^[A-Z0-9]{6,20}$/.test(value.trim()) || // Alphanumeric codes
+      (value.length >= 6 && /^[0-9A-Z]+$/.test(value.trim())); // General barcode pattern
 
-    if (isLikelyBarcode && value.length >= 8) {
+    if (isLikelyBarcode && value.length >= 6) {
       setIsBarcodeMode(true);
 
-      // Set a timeout to process the barcode after a short delay
-      // This allows for complete barcode input from scanners
+      // Much faster processing for immediate response (reduced from 150ms to 50ms)
       const timeout = setTimeout(() => {
         processBarcodeInput(value.trim());
-      }, 150); // 150ms delay for better scanner compatibility
+      }, 50); // Faster response time for better UX
 
       setBarcodeTimeout(timeout);
     } else {
@@ -158,31 +156,53 @@ const PosOrderList = ({
   };
 
   const processBarcodeInput = (barcode) => {
-    // Show the scanned barcode briefly
-    toast.success(`Scanned: ${barcode}`, { duration: 1000 });
-
+    // Immediate feedback with beep sound for professional POS feel
+    playBellBeep();
+    
     const found = products.find(
       (p) => p.barcode === barcode || p.sku === barcode,
     );
 
     if (!found) {
-      // Barcode not found - show error and keep input for manual search
-      setBarcodeError(`No product found with barcode: ${barcode}`);
+      // Barcode not found - show error but keep scanning active
+      setBarcodeError(`No product found: ${barcode}`);
+      toast.error(`❌ Product not found: ${barcode}`, { duration: 2000 });
+      
+      // Clear input immediately and stay ready for next scan
+      setSearchInput("");
       setIsBarcodeMode(false);
+      
+      // Auto-focus back for continuous scanning
+      setTimeout(() => {
+        const searchField = document.querySelector('[data-testid="search-input"] input');
+        if (searchField) {
+          searchField.focus();
+        }
+      }, 100);
       return;
     }
 
-    // Barcode found - add product to order
-    const qty = quantities[found.id] || 1;
+    // Barcode found - add product to order immediately
+    const qty = 1; // Always add 1 unit per scan for faster checkout
 
     // Check stock availability
     if (qty > found.quantity) {
       toast.error(
         user?.role === "cashier"
-          ? "Cannot add items. Insufficient stock."
-          : `Cannot add ${qty} units. Only ${found.quantity} units available in stock.`,
+          ? "❌ Insufficient stock!"
+          : `❌ Insufficient stock! Only ${found.quantity} units available.`,
+        { duration: 2000 }
       );
+      
+      // Clear and stay ready for next scan
+      setSearchInput("");
       setIsBarcodeMode(false);
+      setTimeout(() => {
+        const searchField = document.querySelector('[data-testid="search-input"] input');
+        if (searchField) {
+          searchField.focus();
+        }
+      }, 100);
       return;
     }
 
@@ -191,42 +211,54 @@ const PosOrderList = ({
       setSelectedProducts([...selectedProducts, found.id]);
       setQuantities((q) => ({ ...q, [found.id]: qty }));
 
-      // Play success sound
-      playBellBeep();
-      toast.success(`Added ${found.name} to order list!`);
-
-      // Clear search input after successful barcode scan
-      setSearchInput("");
-      setIsBarcodeMode(false);
-      setBarcodeError("");
+      // Success feedback
+      toast.success(`✅ Added: ${found.name}`, { 
+        duration: 1500,
+        icon: '🛒'
+      });
     } else {
-      // Product already in order - update quantity
-      const newQty = (quantities[found.id] || 1) + qty;
+      // Product already in order - increment quantity
+      const currentQty = quantities[found.id] || 1;
+      const newQty = currentQty + qty;
+      
       if (newQty > found.quantity) {
         toast.error(
-          `Cannot add ${qty} more units. Total would exceed available stock of ${found.quantity} units.`,
+          `❌ Cannot add more! Stock limit: ${found.quantity} units`,
+          { duration: 2000 }
         );
+        
+        // Clear and continue scanning
+        setSearchInput("");
         setIsBarcodeMode(false);
+        setTimeout(() => {
+          const searchField = document.querySelector('[data-testid="search-input"] input');
+          if (searchField) {
+            searchField.focus();
+          }
+        }, 100);
         return;
       }
 
       setQuantities((q) => ({ ...q, [found.id]: newQty }));
-      playBellBeep();
-      toast.success(`Updated quantity for ${found.name}!`);
-
-      // Clear search input after successful barcode scan
-      setSearchInput("");
-      setIsBarcodeMode(false);
-      setBarcodeError("");
+      toast.success(`✅ Updated: ${found.name} (${newQty})`, { 
+        duration: 1500,
+        icon: '📦'
+      });
     }
+
+    // Immediate clear and ready for next scan - this is key for modern POS
+    setSearchInput("");
+    setIsBarcodeMode(false);
+    setBarcodeError("");
 
     // Auto-focus back to search field for continuous scanning
     setTimeout(() => {
-      const searchInput = document.querySelector('input[type="text"]');
-      if (searchInput) {
-        searchInput.focus();
+      const searchField = document.querySelector('[data-testid="search-input"] input');
+      if (searchField) {
+        searchField.focus();
+        searchField.placeholder = "Ready for next scan...";
       }
-    }, 100);
+    }, 50); // Very fast refocus for continuous scanning
   };
 
   // Check for camera support on component mount
@@ -315,7 +347,7 @@ const PosOrderList = ({
     }
   };
 
-  // Handle successful barcode scan from camera
+  // Handle successful barcode scan from camera - automatic processing
   const handleCameraScanSuccess = (barcode) => {
     console.log("Camera scan success:", barcode);
 
@@ -323,22 +355,24 @@ const PosOrderList = ({
     const cleanBarcode = barcode.trim();
     if (!cleanBarcode || cleanBarcode.length < 4) {
       setBarcodeError("Invalid barcode format - too short");
-      toast.error("Invalid barcode format");
+      toast.error("❌ Invalid barcode format");
       return;
     }
 
-    // Process the barcode
+    // Process the barcode immediately - no button press needed
     processBarcodeInput(cleanBarcode);
 
-    // Close camera scanner
-    setShowCameraScanner(false);
-    setScannerMode("manual");
+    // Keep camera scanner open for continuous scanning (modern POS behavior)
+    // Don't close the camera - let user scan multiple items
+    toast.success("📷 Ready for next scan!", { duration: 1000 });
 
-    // Reset barcode mode after successful scan
+    // Reset error state but keep scanner active
+    setBarcodeError("");
+    
+    // Brief pause then ready for next scan
     setTimeout(() => {
-      setIsBarcodeMode(false);
-      setBarcodeError("");
-    }, 1000);
+      setIsBarcodeMode(true); // Keep in barcode mode for continuous scanning
+    }, 500);
   };
 
   // Handle camera scan error or close
@@ -758,8 +792,8 @@ const PosOrderList = ({
                   components={{ Option: ProductOption }}
                   placeholder={
                     isBarcodeMode
-                      ? "🔍 Scanning barcode... Point camera at barcode"
-                      : "Search / select product or scan barcode..."
+                      ? "🔍 Auto-scanning... Scan barcode to add instantly"
+                      : "Search product or scan barcode (auto-adds to cart)"
                   }
                   isClearable
                   isSearchable
@@ -891,8 +925,8 @@ const PosOrderList = ({
                   </div>
                   <span className="animate-pulse">
                     {scannerMode === "camera"
-                      ? "Camera scanner active - point at barcode"
-                      : "Manual scanner active - enter barcode"}
+                      ? "📷 Auto-scan active - point at barcode to add instantly"
+                      : "⌨️ Auto-scan active - enter barcode to add instantly"}
                   </span>
                   <div className="flex space-x-1">
                     <div
@@ -947,9 +981,8 @@ const PosOrderList = ({
               >
                 <Icon icon="mdi:information-outline" className="w-4 h-4" />
                 <span>
-                  Tip: Click "Scan" for{" "}
-                  {cameraSupported ? "camera/manual" : "manual"} barcode
-                  scanning or press {keyboardShortcut}.
+                  ⚡ Auto-scan: Barcode → Beep → Added! Click "Scan" for{" "}
+                  {cameraSupported ? "camera/manual" : "manual"} or press {keyboardShortcut}.
                 </span>
               </div>
 

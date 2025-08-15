@@ -292,7 +292,7 @@ const CameraBarcodeScanner = ({
       const barcodeText = result.getText();
       console.log("Barcode detected:", barcodeText);
       setDebugInfo(
-        `Barcode found: ${barcodeText} (length: ${barcodeText.length})`,
+        `✅ Barcode found: ${barcodeText} (length: ${barcodeText.length})`,
       );
 
       // Validate barcode (basic check)
@@ -307,15 +307,6 @@ const CameraBarcodeScanner = ({
       // Provide haptic feedback on mobile devices
       if (navigator.vibrate) {
         navigator.vibrate([100, 50, 100]); // Short vibration pattern
-      }
-
-      // Success! Found barcode
-      toast.success(`✅ Barcode scanned: ${barcodeText}`);
-
-      // Stop scanning and cleanup
-      setIsScanning(false);
-      if (scanIntervalRef.current) {
-        clearInterval(scanIntervalRef.current);
       }
 
       // Visual feedback - flash the screen green briefly
@@ -335,8 +326,18 @@ const CameraBarcodeScanner = ({
         document.body.removeChild(overlay);
       }, 200);
 
-      // Call success handler
+      // Success! Found barcode - but keep scanning for continuous operation
+      toast.success(`📦 Scanned: ${barcodeText}`, { duration: 1000 });
+
+      // Call success handler (this will add the product)
       onScanSuccess(barcodeText);
+
+      // Brief pause then resume scanning for next item (modern POS behavior)
+      setTimeout(() => {
+        setDebugInfo("🔍 Ready for next barcode...");
+        // Don't stop scanning - keep it active for continuous scanning
+        // This allows cashiers to scan multiple items without reactivating
+      }, 1000);
     }
   };
 
