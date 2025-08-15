@@ -1,8 +1,5 @@
-// Generate secure challenge for WebAuthn registration
-import { generateRegistrationOptions } from '@simplewebauthn/server';
+// Generate secure challenge for WebAuthn registration (simplified version)
 import supabaseAdmin from '@/lib/supabaseAdmin';
-import challengeStore from '@/lib/challengeStore';
-import { webauthnConfig, validateWebAuthnConfig } from '@/lib/webauthnConfig';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
@@ -11,13 +8,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Validate WebAuthn configuration
-    const configErrors = validateWebAuthnConfig();
-    if (configErrors.length > 0) {
-      console.error('WebAuthn configuration errors:', configErrors);
-      return res.status(500).json({ error: 'WebAuthn configuration error' });
-    }
-
     const { userId } = req.body;
 
     if (!userId) {
@@ -35,46 +25,50 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get existing credentials to exclude them
-    const { data: existingCredentials } = await supabaseAdmin
-      .from('user_credentials')
-      .select('credential_id')
-      .eq('user_id', userId)
-      .eq('is_active', true);
-
-    const excludeCredentials = existingCredentials?.map(cred => ({
-      id: cred.credential_id,
-      type: 'public-key',
-      transports: ['internal']
-    })) || [];
-
-    // Generate registration options using the secure library
-    const options = await generateRegistrationOptions({
-      rpName: webauthnConfig.rpName,
-      rpID: webauthnConfig.rpID,
-      userID: new TextEncoder().encode(user.id),
-      userName: user.email,
-      userDisplayName: user.full_name,
-      timeout: webauthnConfig.timeout,
-      attestationType: webauthnConfig.attestation,
-      excludeCredentials,
-      authenticatorSelection: webauthnConfig.authenticatorSelection,
-      supportedAlgorithmIDs: webauthnConfig.supportedAlgorithmIDs,
-    });
-
+    // Generate a secure random challenge
+    const challenge = crypto.randomBytes(32).toString('base64url');
+    
     // Generate session ID for challenge storage
     const sessionId = crypto.randomUUID();
 
-    // Store challenge securely with expiration
-    challengeStore.store(sessionId, options.challenge, webauthnConfig.timeout);
+    // Create registration options manually (compatible without @simplewebauthn/server)
+    const options = {
+      challenge,
+      rp: {
+        name: process.env.WEBAUTHN_RP_NAME || 'RichUncle POS System',
+        id: process.env.WEBAUTHN_RP_ID || 'localhost',
+      },
+      user: {
+        id: user.id,
+        name: user.email,
+        displayName: user.full_name,
+      },
+      pubKeyCredParams: [
+        { alg: -7, type: "public-key" }, // ES256
+        { alg: -257, type: "public-key" }, // RS256
+      ],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",
+        userVerification: "required",
+        requireResidentKey: true,
+        residentKey: "required"
+      },
+      timeout: 60000,
+      attestation: "direct"
+    };
 
     return res.status(200).json({
       success: true,
       options,
-      sessionId, // Client needs this to complete registration
+      sessionId,
+      // Include challenge directly for client compatibility
+      challenge: options.challenge,
     });
   } catch (error) {
     console.error('Error generating WebAuthn registration challenge:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }

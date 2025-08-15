@@ -76,12 +76,18 @@ export default function BiometricAuthSection({ user, mode = 'light' }) {
         throw new Error(challengeResult.error || 'Failed to get registration challenge');
       }
       
+      // Handle both challenge formats for compatibility
+      const challenge = challengeResult.challenge || challengeResult.options?.challenge;
+      if (!challenge) {
+        throw new Error('No challenge received from server');
+      }
+
       // Register credential
       const credential = await registerCredential(
         user.id,
         user.name,
         user.email,
-        challengeResult.challenge
+        challenge
       );
       
       // Complete registration
@@ -91,7 +97,7 @@ export default function BiometricAuthSection({ user, mode = 'light' }) {
         body: JSON.stringify({
           userId: user.id,
           credential,
-          challenge: challengeResult.challenge,
+          sessionId: challengeResult.sessionId,
           deviceInfo,
         }),
       });
