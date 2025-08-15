@@ -531,8 +531,9 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
               </div>
 
               {/* Last Updated Indicator */}
-              <div className="absolute top-4 right-4 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
-                Updated {new Date(lastUpdateTime).toLocaleTimeString()}
+              <div className="absolute top-4 right-4 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full flex items-center gap-1">
+                <Icon icon="mdi:clock-outline" className="w-3 h-3" />
+                <span>Last Updated: {new Date(lastUpdateTime).toLocaleTimeString()}</span>
               </div>
             </div>
           </div>

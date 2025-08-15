@@ -61,7 +61,7 @@ const NOTIFICATION_TYPES = {
   }
 };
 
-const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
+const NotificationSystem = ({ mode, isOpen, onClose, user, fullWidth = false }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -286,14 +286,23 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
   return (
     <div
       ref={dropdownRef}
-      className={`absolute right-0 mt-2 w-80 rounded-lg shadow-lg overflow-hidden transition-all duration-300 z-20
-        ${
-          mode === "dark"
-            ? "bg-gray-900 text-gray-100"
-            : "bg-white text-black"
-        }
+      className={`${fullWidth ? 'fixed inset-0 z-50' : 'absolute right-0 mt-2 w-80'} rounded-lg shadow-lg overflow-hidden transition-all duration-300 z-20
+        ${mode === "dark" ? "bg-gray-900 text-gray-100" : "bg-white text-black"}
+        ${fullWidth ? 'h-screen' : 'max-h-[80vh]'}
       `}
     >
+      {fullWidth && (
+        <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Notifications</h3>
+          <button 
+            onClick={onClose}
+            className="p-1 rounded-full hover:bg-gray-800"
+            aria-label="Close notifications"
+          >
+            <Icon icon="mdi:close" className="h-6 w-6" />
+          </button>
+        </div>
+      )}
       <div className={`p-4 border-b ${
         mode === "dark" ? "border-gray-700" : "border-gray-200"
       }`}>
@@ -312,7 +321,7 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
         </div>
       </div>
 
-      <div className="max-h-96 overflow-y-auto">
+      <div className={`${fullWidth ? 'h-[calc(100%-120px)]' : 'max-h-96'} overflow-y-auto`}>
         {loading ? (
           <div className="p-4 text-center">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
@@ -369,7 +378,7 @@ const NotificationSystem = ({ mode, isOpen, onClose, user }) => {
         )}
       </div>
 
-      <div className={`p-3 border-t ${
+      <div className={`p-3 border-t ${fullWidth ? 'absolute bottom-0 left-0 right-0 bg-inherit' : ''} ${
         mode === "dark" ? "border-gray-700" : "border-gray-200"
       }`}>
         <div className="flex items-center justify-between">

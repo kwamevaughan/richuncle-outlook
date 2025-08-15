@@ -728,7 +728,7 @@ export default function SalesReport({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white transition-all duration-300 hover:translate-y-[-5px]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium">Total Sales</p>
@@ -747,7 +747,7 @@ export default function SalesReport({
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white transition-all duration-300 hover:translate-y-[-5px]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Total Orders</p>
@@ -759,7 +759,7 @@ export default function SalesReport({
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white transition-all duration-300 hover:translate-y-[-5px]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium">
@@ -777,7 +777,7 @@ export default function SalesReport({
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white transition-all duration-300 hover:translate-y-[-5px]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-orange-100 text-sm font-medium">
@@ -870,7 +870,7 @@ export default function SalesReport({
             {Object.entries(stats.paymentMethods).map(([method, amount]) => (
               <div
                 key={method}
-                className="bg-white rounded-lg p-4 border border-gray-200"
+                className="bg-white rounded-lg p-4 border border-gray-200 transition-all duration-300 hover:translate-y-[-5px]"
               >
                 <div className="flex items-center justify-between">
                   <div>

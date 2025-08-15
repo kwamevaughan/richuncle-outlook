@@ -61,31 +61,33 @@ export default function TopProgressBar({
 
   if (!isVisible && !isLoading) return null;
 
+  const progressValue = autoComplete ? internalProgress : progress;
+  const showPercentage = progressValue > 0 && progressValue < 100;
+
   return (
-    <div className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none">
-      {/* Main progress bar */}
+    <div 
+      className={`fixed top-0 left-0 right-0 z-50 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      style={{ height: `${height}` }}
+    >
       <div 
-        className={`${selectedColor} transition-all duration-300 ease-out`}
+        className={`h-full ${selectedColor} transition-all duration-300 relative`} 
         style={{ 
-          width: `${currentProgress}%`,
-          height: height,
-          boxShadow: `0 0 10px ${color === 'blue' ? '#3b82f6' : color === 'green' ? '#10b981' : '#6b7280'}`
+          width: `${progressValue}%`,
+          transition: autoComplete ? 'width 0.5s ease-out' : 'width 0.3s ease-out',
+          minWidth: showPercentage ? '2.5rem' : '0.25rem' // Ensure enough width for the percentage
         }}
-      />
-      
-      {/* Spinner indicator */}
-      {showSpinner && isLoading && (
-        <div className="absolute top-2 right-4">
-          <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-        </div>
-      )}
-      
-      {/* Progress percentage (optional) */}
-      {progress > 0 && (
-        <div className="absolute top-2 left-4 text-xs text-gray-600 bg-white px-2 py-1 rounded shadow-sm">
-          {Math.round(currentProgress)}%
-        </div>
-      )}
+      >
+        {showPercentage && (
+          <div className="absolute inset-0 flex items-center justify-center text-white text-xs font-medium">
+            {Math.round(progressValue)}%
+          </div>
+        )}
+        {showSpinner && autoComplete && progressValue >= 100 && (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+          </div>
+        )}
+      </div>
     </div>
   );
 } 

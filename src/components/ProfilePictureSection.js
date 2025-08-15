@@ -33,7 +33,7 @@ export default function ProfilePictureSection({
         <div className="flex justify-center">
           <img
             src={avatarUrl}
-            alt="Profile"
+            alt="Profile" bnnb
             className="w-32 h-32 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
             onError={(e) => {
               e.target.onerror = null;

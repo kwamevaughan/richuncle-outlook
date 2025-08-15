@@ -62,7 +62,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
               height={32}
               className="rounded object-cover border w-8 h-8 flex-shrink-0"
             />
-          ) : (
+          ) : isMobile ? null : (
             <Icon
               icon="mdi:image-off-outline"
               className="rounded border w-8 h-8 text-gray-400 bg-gray-100 object-cover flex-shrink-0"

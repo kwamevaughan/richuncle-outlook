@@ -730,8 +730,96 @@ export function GenericTable({
     );
   };
 
-  // Mobile card view renderer
+  // Enhanced mobile card view renderer with better layout
   const renderMobileCard = (row, index) => {
+    // Helper function to render a column cell with better styling
+    const renderColumnCell = (col, value, displayValue, isPrimary = false) => {
+      return (
+        <div key={col.accessor} className={`min-w-0 ${isPrimary ? 'mb-2' : ''}`}>
+          <span
+            className={`text-xs font-medium block mb-1 ${
+              mode === "dark" ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            {col.Header || col.accessor}
+          </span>
+          <div
+            className={`${isPrimary ? 'text-base font-medium' : 'text-sm'} ${
+              mode === "dark" ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {col.type === "image" ? (
+              <div className="flex items-center gap-2">
+                <Image
+                  src={value}
+                  alt={row.name || "Image"}
+                  className={`w-10 h-10 rounded-lg object-cover border-2 ${
+                    mode === "dark"
+                      ? "border-gray-600"
+                      : "border-gray-200"
+                  }`}
+                  width={40}
+                  height={40}
+                />
+                <span className="truncate">{row.name || displayValue}</span>
+              </div>
+            ) : typeof col.render === "function" ? (
+              col.render(row, value, index)
+            ) : (
+              <span className={`truncate block ${isPrimary ? 'font-medium' : ''}`}>
+                {displayValue || '-'}
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // Helper function to process column value
+    const processColumnValue = (col, value) => {
+      // Auto-format date fields for mobile view
+      const isDateField =
+        col.accessor === "timestamp" ||
+        col.accessor === "created_at" ||
+        col.accessor === "updated_at" ||
+        col.accessor === "date" ||
+        col.accessor === "order_date" ||
+        col.accessor === "sale_date" ||
+        col.accessor === "purchase_date" ||
+        col.accessor === "due_date" ||
+        col.accessor === "expiry_date" ||
+        col.accessor === "start_date" ||
+        col.accessor === "end_date" ||
+        (col.accessor && col.accessor.toLowerCase().includes("date")) ||
+        (col.accessor && col.accessor.toLowerCase().includes("time"));
+
+      let displayValue = value;
+
+      if (isDateField && value && typeof col.render !== "function") {
+        try {
+          const date = new Date(value);
+          if (!isNaN(date.getTime())) {
+            displayValue = date.toLocaleDateString("en-GB", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          }
+        } catch (e) {
+          // Keep original value if date parsing fails
+          displayValue = value;
+        }
+      }
+
+      return displayValue;
+    };
+
+    // Get primary columns (first 2) and secondary columns (rest)
+    const primaryColumns = enhancedColumns.slice(0, 2);
+    const secondaryColumns = enhancedColumns.slice(2);
+
     return (
       <div
         key={row.id || index}
@@ -741,186 +829,29 @@ export function GenericTable({
             : "border-gray-200 bg-white"
         }`}
       >
-        <div className="flex items-start justify-between mb-3">
+        {/* Header section with checkbox, primary info, and actions */}
+        <div className="flex items-start justify-between mb-4">
           {selectable && (
             <input
               type="checkbox"
               checked={table.selected.includes(row.id)}
               onChange={() => table.toggleSelect(row.id)}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-1"
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-1 flex-shrink-0"
             />
           )}
-          <div className="flex-1 ml-3">
-            {enhancedColumns.slice(0, 2).map((col) => {
-              let value = row[col.accessor];
-
-              // Auto-format date fields for mobile view
-              const isDateField =
-                col.accessor === "timestamp" ||
-                col.accessor === "created_at" ||
-                col.accessor === "updated_at" ||
-                col.accessor === "date" ||
-                col.accessor === "order_date" ||
-                col.accessor === "sale_date" ||
-                col.accessor === "purchase_date" ||
-                col.accessor === "due_date" ||
-                col.accessor === "expiry_date" ||
-                col.accessor === "start_date" ||
-                col.accessor === "end_date" ||
-                (col.accessor && col.accessor.toLowerCase().includes("date")) ||
-                (col.accessor && col.accessor.toLowerCase().includes("time"));
-
-              let displayValue = value;
-
-              if (isDateField && value && typeof col.render !== "function") {
-                try {
-                  const date = new Date(value);
-                  if (!isNaN(date.getTime())) {
-                    displayValue = date.toLocaleDateString("en-GB", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
-                  }
-                } catch (e) {
-                  // Keep original value if date parsing fails
-                  displayValue = value;
-                }
-              }
-
-              return (
-                <div key={col.accessor} className="mb-2">
-                  <span
-                    className={`text-xs font-medium ${
-                      mode === "dark" ? "text-gray-400" : "text-gray-500"
-                    }`}
-                  >
-                    {col.Header || col.accessor}:
-                  </span>
-                  <div
-                    className={`text-sm ${
-                      mode === "dark" ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {col.type === "image" ? (
-                      <Image
-                        src={value}
-                        alt={row.name || "Image"}
-                        className={`w-8 h-8 rounded-full object-cover border-2 ${
-                          mode === "dark"
-                            ? "border-gray-600"
-                            : "border-gray-200"
-                        }`}
-                        width={32}
-                        height={32}
-                      />
-                    ) : (
-                      <span className="truncate">{displayValue}</span>
-                    )}
-                  </div>
-                </div>
-              );
+          
+          {/* Primary content area */}
+          <div className={`flex-1 ${selectable ? 'ml-3' : ''} min-w-0`}>
+            {primaryColumns.map((col) => {
+              const value = row[col.accessor];
+              const displayValue = processColumnValue(col, value);
+              return renderColumnCell(col, value, displayValue, true);
             })}
           </div>
-          <div className="flex items-center gap-1">
-            {onEdit && (
-              <TooltipIconButton
-                icon="cuida:edit-outline"
-                label="Edit"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onEdit(row);
-                }}
-                mode={mode}
-                className="bg-blue-50 text-blue-600 text-xs"
-              />
-            )}
-            {onDelete && (
-              <TooltipIconButton
-                icon="mynaui:trash"
-                label="Delete"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleOpenConfirm(row);
-                }}
-                mode={mode}
-                className="bg-red-50 text-red-600 text-xs"
-              />
-            )}
-          </div>
-        </div>
 
-        {/* Additional columns in mobile view */}
-        {enhancedColumns.slice(2).map((col) => {
-          let value = row[col.accessor];
-
-          // Auto-format date fields for mobile view
-          const isDateField =
-            col.accessor === "timestamp" ||
-            col.accessor === "created_at" ||
-            col.accessor === "updated_at" ||
-            col.accessor === "date" ||
-            col.accessor === "order_date" ||
-            col.accessor === "sale_date" ||
-            col.accessor === "purchase_date" ||
-            col.accessor === "due_date" ||
-            col.accessor === "expiry_date" ||
-            col.accessor === "start_date" ||
-            col.accessor === "end_date" ||
-            (col.accessor && col.accessor.toLowerCase().includes("date")) ||
-            (col.accessor && col.accessor.toLowerCase().includes("time"));
-
-          let displayValue = value;
-
-          if (isDateField && value && typeof col.render !== "function") {
-            try {
-              const date = new Date(value);
-              if (!isNaN(date.getTime())) {
-                displayValue = date.toLocaleDateString("en-GB", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-              }
-            } catch (e) {
-              // Keep original value if date parsing fails
-              displayValue = value;
-            }
-          }
-
-          return (
-            <div key={col.accessor} className="mb-2">
-              <span
-                className={`text-xs font-medium ${
-                  mode === "dark" ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
-                {col.Header || col.accessor}:
-              </span>
-              <div
-                className={`text-sm ${
-                  mode === "dark" ? "text-white" : "text-gray-900"
-                }`}
-              >
-                {typeof col.render === "function" ? (
-                  col.render(row, value, index)
-                ) : (
-                  <span className="truncate">{displayValue}</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Custom actions in mobile view */}
-        {actions.length > 0 && (
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          {/* Actions */}
+          <div className="flex items-center gap-1 ml-3 flex-shrink-0">
+            {/* Custom actions first */}
             {actions.map((action, i) => {
               if (!action) return null;
               if (typeof action.show === "function" && !action.show(row))
@@ -962,8 +893,47 @@ export function GenericTable({
                 />
               );
             })}
+            {onEdit && (
+              <TooltipIconButton
+                icon="cuida:edit-outline"
+                label="Edit"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit(row);
+                }}
+                mode={mode}
+                className="bg-blue-50 text-blue-600 text-xs hover:bg-blue-100"
+              />
+            )}
+            {onDelete && (
+              <TooltipIconButton
+                icon="mynaui:trash"
+                label="Delete"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleOpenConfirm(row);
+                }}
+                mode={mode}
+                className="bg-red-50 text-red-600 text-xs hover:bg-red-100"
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Secondary columns in an improved grid layout */}
+        {secondaryColumns.length > 0 && (
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 mb-3">
+            {secondaryColumns.map((col) => {
+              const value = row[col.accessor];
+              const displayValue = processColumnValue(col, value);
+              return renderColumnCell(col, value, displayValue, false);
+            })}
           </div>
         )}
+
+
       </div>
     );
   };

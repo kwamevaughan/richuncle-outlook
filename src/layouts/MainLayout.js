@@ -63,7 +63,7 @@ export default function MainLayout({
           />
         )}
         <div
-          className={`flex-1 flex flex-col transition-all duration-300 ease-in-out overflow-auto ${contentMargin} ${contentPadding} pt-20`}
+          className={`flex-1 flex flex-col transition-all duration-300 ease-in-out overflow-auto ${contentMargin} ${contentPadding} pt-6 md:pt-20`}
         >
           <div className="flex flex-col flex-1 overflow-hidden">
             <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col overflow-hidden">

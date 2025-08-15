@@ -200,8 +200,8 @@ const Header = ({
               <button
                 onClick={toggleSidebar}
                 className={`text-gray-500 hover:scale-110 transition-transform flex-shrink-0 ${
-                  isTablet ? "p-2 rounded-md" : ""
-                }`}
+                  isMobile ? "p-3" : isTablet ? "p-2" : "p-1"
+                } rounded-md hover:bg-gray-100 dark:hover:bg-gray-700`}
                 title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
                 aria-label={
                   isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"
@@ -212,7 +212,7 @@ const Header = ({
                     isSidebarOpen ? "dashicons:arrow-left-alt" : "ri:menu-line"
                   }
                   className={`${
-                    isMobile ? "w-5 h-5" : isTablet ? "w-8 h-8" : "w-6 h-6"
+                    isMobile ? "w-6 h-6" : isTablet ? "w-8 h-8" : "w-6 h-6"
                   }`}
                 />
               </button>
@@ -292,13 +292,9 @@ const Header = ({
                 </div>
               )}
 
-              {/* Notifications - visible on mobile/tablet for non-cashiers */}
-              {(isMobile || isTablet) && user?.role !== "cashier" && (
-                <div
-                  className={`flex-shrink-0 ${
-                    isMobile ? "scale-125" : isTablet ? "scale-150" : ""
-                  }`}
-                >
+              {/* Notifications - visible on tablet for non-cashiers (moved to more options on mobile) */}
+              {isTablet && user?.role !== "cashier" && (
+                <div className="flex-shrink-0 scale-150">
                   <NotificationButton mode={mode} user={user} />
                 </div>
               )}
@@ -897,6 +893,20 @@ const Header = ({
                               </>
                             )}
                           </>
+                        )}
+
+                        {/* Notifications - Mobile only */}
+                        {isMobile && user?.role !== "cashier" && (
+                          <div className="w-full border-t border-gray-200 dark:border-gray-700">
+                            <div className="w-full">
+                              <NotificationButton
+                                mode={mode}
+                                user={user}
+                                isInDropdown={true}
+                                fullWidth={true}
+                              />
+                            </div>
+                          </div>
                         )}
 
                         {/* Divider */}
