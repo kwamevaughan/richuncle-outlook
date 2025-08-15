@@ -105,6 +105,11 @@ const PosOrderList = ({
   const [searchInput, setSearchInput] = useState("");
   const [isBarcodeMode, setIsBarcodeMode] = useState(false);
   const [barcodeTimeout, setBarcodeTimeout] = useState(null);
+  
+  // Always-on barcode detection
+  const [alwaysOnBarcode, setAlwaysOnBarcode] = useState("");
+  const [barcodeInputRef, setBarcodeInputRef] = useState(null);
+  const alwaysOnTimeoutRef = useRef(null);
 
   // Detect if user is on Chrome
   const isChrome =
@@ -118,7 +123,39 @@ const PosOrderList = ({
     /Mac|iPhone|iPad|iPod/.test(navigator.platform);
   const keyboardShortcut = isMac ? "Cmd+B" : "Ctrl+B";
 
-  // Barcode detection and handling
+  // Always-on barcode detection - this runs constantly without needing activation
+  const handleAlwaysOnBarcodeInput = (value) => {
+    setAlwaysOnBarcode(value);
+
+    // Clear any existing timeout
+    if (alwaysOnTimeoutRef.current) {
+      clearTimeout(alwaysOnTimeoutRef.current);
+    }
+
+    // If input is empty, just clear
+    if (!value.trim()) {
+      setBarcodeError("");
+      return;
+    }
+
+    // Immediate barcode detection - no mode activation needed
+    const isLikelyBarcode =
+      /^\d{6,14}$/.test(value.trim()) || // Standard EAN/UPC formats
+      /^[A-Z0-9]{6,20}$/.test(value.trim()) || // Alphanumeric codes
+      (value.length >= 6 && /^[0-9A-Z]+$/.test(value.trim())); // General barcode pattern
+
+    if (isLikelyBarcode && value.length >= 6) {
+      // Very fast processing for instant response
+      const timeout = setTimeout(() => {
+        processBarcodeInput(value.trim());
+        setAlwaysOnBarcode(""); // Clear immediately after processing
+      }, 30); // Even faster - 30ms for instant feel
+
+      alwaysOnTimeoutRef.current = timeout;
+    }
+  };
+
+  // Legacy search input handler for manual product search
   const handleSearchInputChange = (value) => {
     setSearchInput(value);
 
@@ -135,7 +172,6 @@ const PosOrderList = ({
     }
 
     // More aggressive barcode detection for faster processing
-    // Reduced minimum length and faster processing for modern POS experience
     const isLikelyBarcode =
       /^\d{6,14}$/.test(value.trim()) || // Standard EAN/UPC formats (reduced min length)
       /^[A-Z0-9]{6,20}$/.test(value.trim()) || // Alphanumeric codes
@@ -144,7 +180,7 @@ const PosOrderList = ({
     if (isLikelyBarcode && value.length >= 6) {
       setIsBarcodeMode(true);
 
-      // Much faster processing for immediate response (reduced from 150ms to 50ms)
+      // Much faster processing for immediate response
       const timeout = setTimeout(() => {
         processBarcodeInput(value.trim());
       }, 50); // Faster response time for better UX
@@ -384,20 +420,73 @@ const PosOrderList = ({
   };
 
   // Keyboard shortcuts for barcode mode
+  // Always-on barcode scanner focus management
+  useEffect(() => {
+    const maintainFocus = () => {
+      // Keep the hidden barcode input focused for instant scanning
+      if (barcodeInputRef && document.activeElement !== barcodeInputRef) {
+        // Only refocus if no other input is actively being used
+        const activeElement = document.activeElement;
+        const isInputActive = activeElement && (
+          activeElement.tagName === 'INPUT' || 
+          activeElement.tagName === 'TEXTAREA' || 
+          activeElement.tagName === 'SELECT' ||
+          activeElement.contentEditable === 'true'
+        );
+        
+        if (!isInputActive) {
+          setTimeout(() => {
+            if (barcodeInputRef) {
+              barcodeInputRef.focus();
+            }
+          }, 100);
+        }
+      }
+    };
+
+    // Set up focus maintenance
+    const focusInterval = setInterval(maintainFocus, 2000); // Check every 2 seconds
+    
+    // Also maintain focus on various events
+    const handleClick = () => setTimeout(maintainFocus, 100);
+    const handleKeyDown = (e) => {
+      // If user presses any key and no input is focused, ensure barcode scanner gets it
+      if (!document.activeElement || document.activeElement === document.body) {
+        if (barcodeInputRef) {
+          barcodeInputRef.focus();
+        }
+      }
+    };
+
+    document.addEventListener('click', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearInterval(focusInterval);
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [barcodeInputRef]);
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (barcodeTimeout) clearTimeout(barcodeTimeout);
+      if (alwaysOnTimeoutRef.current) clearTimeout(alwaysOnTimeoutRef.current);
     };
   }, [barcodeTimeout]);
 
-  // Keyboard shortcuts
+  // Global keyboard event listener for barcode scanners
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    let barcodeBuffer = "";
+    let barcodeTimer = null;
+
+    const handleGlobalKeyDown = (e) => {
       // Toggle scanner mode with Ctrl+B or Cmd+B
       if ((e.ctrlKey || e.metaKey) && e.key === "b") {
         e.preventDefault();
         handleScanButtonClick();
+        return;
       }
 
       // Exit scanner mode with Escape
@@ -408,12 +497,73 @@ const PosOrderList = ({
         setSearchInput("");
         setBarcodeError("");
         toast("Scanner deactivated");
+        return;
+      }
+
+      // Global barcode detection - capture rapid key sequences from barcode scanners
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' || 
+        activeElement.tagName === 'SELECT' ||
+        activeElement.contentEditable === 'true'
+      );
+
+      // Only capture if no input is focused or if it's our hidden barcode input
+      if (!isInputFocused || activeElement === barcodeInputRef) {
+        // Clear previous timer
+        if (barcodeTimer) {
+          clearTimeout(barcodeTimer);
+        }
+
+        // Handle Enter key - process accumulated barcode
+        if (e.key === "Enter" && barcodeBuffer.trim()) {
+          e.preventDefault();
+          const barcode = barcodeBuffer.trim();
+          
+          // Check if it looks like a barcode
+          const isLikelyBarcode =
+            /^\d{6,14}$/.test(barcode) || 
+            /^[A-Z0-9]{6,20}$/.test(barcode) || 
+            (barcode.length >= 6 && /^[0-9A-Z]+$/.test(barcode));
+
+          if (isLikelyBarcode) {
+            processBarcodeInput(barcode);
+          }
+          
+          barcodeBuffer = "";
+          return;
+        }
+
+        // Accumulate characters for barcode (alphanumeric only)
+        if (/^[a-zA-Z0-9]$/.test(e.key)) {
+          barcodeBuffer += e.key.toUpperCase();
+          
+          // Set timer to clear buffer if no more input (barcode scanners are fast)
+          barcodeTimer = setTimeout(() => {
+            // If buffer looks like a complete barcode, process it
+            const barcode = barcodeBuffer.trim();
+            const isLikelyBarcode =
+              /^\d{6,14}$/.test(barcode) || 
+              /^[A-Z0-9]{6,20}$/.test(barcode) || 
+              (barcode.length >= 6 && /^[0-9A-Z]+$/.test(barcode));
+
+            if (isLikelyBarcode && barcode.length >= 6) {
+              processBarcodeInput(barcode);
+            }
+            
+            barcodeBuffer = "";
+          }, 100); // 100ms timeout - barcode scanners type very fast
+        }
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isBarcodeMode]);
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+      if (barcodeTimer) clearTimeout(barcodeTimer);
+    };
+  }, [barcodeInputRef, processBarcodeInput]);
 
   // Generate a unique order ID when component mounts
   useEffect(() => {
@@ -623,6 +773,65 @@ const PosOrderList = ({
         } rounded-lg p-3 sm:p-6`}
       >
         {/* Header */}
+
+        {/* Always-On Barcode Scanner - Hidden but always listening */}
+        <input
+          ref={(el) => {
+            setBarcodeInputRef(el);
+            // Auto-focus this field when component mounts
+            if (el && !isBarcodeMode) {
+              setTimeout(() => el.focus(), 100);
+            }
+          }}
+          type="text"
+          value={alwaysOnBarcode}
+          onChange={(e) => handleAlwaysOnBarcodeInput(e.target.value)}
+          onKeyDown={(e) => {
+            // Handle Enter key for immediate processing
+            if (e.key === "Enter" && alwaysOnBarcode.trim()) {
+              e.preventDefault();
+              processBarcodeInput(alwaysOnBarcode.trim());
+              setAlwaysOnBarcode("");
+            }
+            // Prevent other keys from interfering with normal UI
+            if (e.key === "Tab" || e.key === "Escape") {
+              e.preventDefault();
+              // Focus the visible search field instead
+              const searchField = document.querySelector('[data-testid="search-input"] input');
+              if (searchField) {
+                searchField.focus();
+              }
+            }
+          }}
+          placeholder="Always-on barcode scanner (hidden)"
+          className="absolute -top-96 left-0 opacity-0 pointer-events-none"
+          style={{ 
+            position: 'absolute',
+            top: '-1000px',
+            left: '-1000px',
+            width: '1px',
+            height: '1px',
+            opacity: 0,
+            zIndex: -1
+          }}
+          autoComplete="off"
+          tabIndex={-1}
+        />
+
+        {/* Always-On Scanner Status */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-medium text-green-700">
+                🔍 Auto-Scanner Ready
+              </span>
+            </div>
+            <div className="text-xs text-gray-500">
+              Just scan any barcode - adds instantly!
+            </div>
+          </div>
+        </div>
 
         {/* Customer Info */}
 
