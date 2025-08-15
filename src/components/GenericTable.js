@@ -14,8 +14,6 @@ import TooltipIconButton from "./TooltipIconButton";
 import ExportModal from "./export/ExportModal";
 import toast from "react-hot-toast";
 
-
-
 // Enhanced useTable hook
 function useTable(data, initialPageSize = 10, statusOptions = null) {
   const [page, setPage] = useState(1);
@@ -214,8 +212,6 @@ export function GenericTable({
   getDefaultFields,
   mode = "light",
   hideEmptyColumns = true,
-  statusContext = "sales",
-  enableStatusPills = false,
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data)
@@ -373,8 +369,6 @@ export function GenericTable({
               </td>
             );
           }
-
-
 
           if (col.type === "image") {
             return (
@@ -1010,16 +1004,6 @@ export function GenericTable({
                     >
                       {typeof col.render === "function" ? (
                         col.render(row, value, index)
-                      ) : enableStatusPills &&
-                        isStatusColumn(col.accessor, value) ? (
-                        <StatusPill
-                          status={value}
-                          context={getStatusContext(
-                            col.accessor,
-                            statusContext
-                          )}
-                          size="sm"
-                        />
                       ) : (
                         <span className="truncate">{displayValue}</span>
                       )}
