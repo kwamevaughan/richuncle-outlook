@@ -16,6 +16,7 @@ import ProfileFormSection from "@/components/ProfileFormSection";
 import StoreAssignmentSection from "@/components/StoreAssignmentSection";
 import PasswordSection from "@/components/PasswordSection";
 import ProfileSidebar from "@/components/ProfileSidebar";
+import BiometricAuthSection from "@/components/BiometricAuthSection";
 
 export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
   const {
@@ -812,6 +813,9 @@ export default function ProfilePage({ mode = "light", toggleMode, ...props }) {
                 onSavePassword={handleChangePassword}
                 mode={mode}
               />
+
+              {/* Biometric Authentication Section */}
+              <BiometricAuthSection user={user} mode={mode} />
             </div>
 
             {/* Sidebar */}

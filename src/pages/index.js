@@ -1,13 +1,16 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import ReCAPTCHA from "react-google-recaptcha";
 import useLogin from "@/hooks/useLogin";
 import SimpleModal from "@/components/SimpleModal";
+import PasswordlessLoginButton from "@/components/PasswordlessLoginButton";
+import { useAuth } from "@/hooks/useAuth";
 
 const LoginPage = ({ mode = "light", toggleMode }) => {
   const router = useRouter();
+  const { login } = useAuth();
   const {
     loginData,
     setLoginData,
@@ -27,6 +30,59 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
   } = useLogin();
   const currentYear = new Date().getFullYear();
   const recaptchaRef = useRef(null);
+  
+  // State for showing/hiding the email form
+  const [showEmailForm, setShowEmailForm] = useState(false);
+
+  // Handle biometric login success
+  const handleBiometricSuccess = async (userData) => {
+    try {
+      // Simulate the same login flow as regular login
+      const user = {
+        id: userData.id,
+        email: userData.email,
+        name: userData.full_name,
+        role: userData.role,
+        avatar_url: userData.avatar_url,
+        avatar_file_id: userData.avatar_file_id,
+        is_active: userData.is_active,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at,
+        last_login: userData.last_login,
+        store_id: userData.store_id,
+      };
+
+      // Update localStorage and context
+      localStorage.setItem("ruo_user_data", JSON.stringify(user));
+      localStorage.setItem("ruo_member_session", "authenticated");
+      localStorage.setItem("user_email", userData.email);
+      
+      // Set session timing (treat biometric login as "remember me")
+      localStorage.setItem(
+        "ruo_session_expiry",
+        (Date.now() + 30 * 24 * 60 * 60 * 1000).toString()
+      );
+      localStorage.removeItem("ruo_session_start");
+      
+      // Set flag to indicate user just logged in
+      sessionStorage.setItem('just_logged_in', 'true');
+      
+      // Redirect based on role
+      if (user.role === 'cashier') {
+        await router.push('/pos');
+      } else {
+        await router.push('/dashboard');
+      }
+      
+      // Clear the flag after a short delay
+      setTimeout(() => {
+        sessionStorage.removeItem('just_logged_in');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error handling biometric login success:', error);
+    }
+  };
 
   // Remove per-page cashier redirect logic
   // (No need for useEffect that redirects cashiers to /pos)
@@ -64,20 +120,69 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
           </div>
 
           <div className="w-full max-w-md md:max-w-lg lg:max-w-md py-4">
-            <div className="pb-6 space-y-2">
+            <div className="text-center mb-6">
               <p
-                className={`text-2xl md:text-3xl lg:text-3xl font-bold ${
+                className={`text-2xl md:text-3xl lg:text-3xl font-bold mb-2 ${
                   mode === "dark" ? "text-blue-300" : "text-blue-800"
                 }`}
               >
                 Welcome back!
               </p>
               <p
-                className={`text-sm md:text-base ${mode === "dark" ? "text-gray-300" : "text-blue-900"}`}
+                className={`text-sm md:text-base ${
+                  mode === "dark" ? "text-gray-300" : "text-blue-900"
+                }`}
               >
-                Access the store dashboard using your email and password.
+                Quick and secure access to your dashboard
               </p>
             </div>
+            {/* Passwordless Login Section */}
+            <div className="mb-8">
+              <PasswordlessLoginButton
+                onSuccess={handleBiometricSuccess}
+                mode={mode}
+              />
+            </div>
+
+            {/* Collapsible Email Form Toggle */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setShowEmailForm(!showEmailForm)}
+                className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  mode === "dark"
+                    ? "text-gray-400 hover:text-gray-300 hover:bg-gray-700/50"
+                    : "text-gray-600 hover:text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <span>Or sign in with email</span>
+                <Icon 
+                  icon={showEmailForm ? "mdi:chevron-up" : "mdi:chevron-down"} 
+                  className="w-4 h-4 transition-transform duration-200" 
+                />
+              </button>
+            </div>
+
+            {/* Collapsible Email Form */}
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+              showEmailForm ? "max-h-[800px] opacity-100 mt-6" : "max-h-0 opacity-0"
+            }`}>
+              <div className="pb-6 space-y-2">
+                <p
+                  className={`text-xl md:text-2xl font-bold ${
+                    mode === "dark" ? "text-blue-300" : "text-blue-800"
+                  }`}
+                >
+                  Sign in with email
+                </p>
+                <p
+                  className={`text-sm md:text-base ${
+                    mode === "dark" ? "text-gray-300" : "text-blue-900"
+                  }`}
+                >
+                  Access the store dashboard using your email and password.
+                </p>
+              </div>
 
             <form onSubmit={handleLogin}>
               <div className="mb-8">
@@ -222,7 +327,9 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                     }
                   >
                     <span className="md:hidden">Remember me</span>
-                    <span className="hidden md:inline">Remember me on this device</span>
+                    <span className="hidden md:inline">
+                      Remember me on this device
+                    </span>
                   </label>
                 </div>
 
@@ -284,6 +391,7 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                 Continue with Facebook
               </button>
             </div> */}
+            </div> {/* End of collapsible email form */}
           </div>
           <span className={mode === "dark" ? "text-gray-400" : "text-gray-600"}>
             Copyright © {currentYear}, All rights reserved.

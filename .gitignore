@@ -40,5 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.history/
 .history
+
+/database
+/scripts
+/supabase
+.cursorignore
