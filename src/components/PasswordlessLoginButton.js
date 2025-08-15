@@ -60,8 +60,14 @@ export default function PasswordlessLoginButton({
       }
 
       // Authenticate with biometric (discoverable credentials)
+      // Handle both challenge formats for compatibility
+      const challenge = challengeResult.challenge || challengeResult.options?.challenge;
+      if (!challenge) {
+        throw new Error('No challenge received from server');
+      }
+      
       const assertion = await authenticateCredential(
-        challengeResult.challenge,
+        challenge,
         [] // Empty array allows discoverable credentials
       );
 
@@ -71,7 +77,7 @@ export default function PasswordlessLoginButton({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           assertion,
-          challenge: challengeResult.challenge,
+          sessionId: challengeResult.sessionId,
         }),
       });
 

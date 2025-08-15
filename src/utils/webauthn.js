@@ -92,15 +92,32 @@ export const authenticateCredential = async (challenge, allowCredentials = []) =
     throw new Error('WebAuthn is not supported in this browser');
   }
 
+  // Validate challenge
+  if (!challenge || typeof challenge !== 'string') {
+    throw new Error('Invalid challenge: challenge is required and must be a string');
+  }
+
+  let challengeBuffer;
+  try {
+    challengeBuffer = base64URLStringToBuffer(challenge);
+  } catch (error) {
+    throw new Error(`Failed to process challenge: ${error.message}`);
+  }
+
   const publicKeyCredentialRequestOptions = {
-    challenge: base64URLStringToBuffer(challenge),
+    challenge: challengeBuffer,
     // For discoverable credentials, we can omit allowCredentials to let the authenticator
     // present all available credentials for the current domain
-    allowCredentials: allowCredentials.length > 0 ? allowCredentials.map(cred => ({
-      id: base64URLStringToBuffer(cred.id),
-      type: 'public-key',
-      transports: cred.transports || ['internal'],
-    })) : [], // Empty array allows discoverable credentials
+    allowCredentials: allowCredentials.length > 0 ? allowCredentials.map(cred => {
+      if (!cred.id) {
+        throw new Error('Invalid credential: missing id');
+      }
+      return {
+        id: base64URLStringToBuffer(cred.id),
+        type: 'public-key',
+        transports: cred.transports || ['internal'],
+      };
+    }) : [], // Empty array allows discoverable credentials
     userVerification: "required",
     timeout: 60000,
   };
