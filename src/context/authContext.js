@@ -29,18 +29,67 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const cachedUser = localStorage.getItem("ruo_user_data");
+      const sessionExpiry = localStorage.getItem("ruo_session_expiry");
+      
       if (cachedUser) {
         const parsedUser = JSON.parse(cachedUser);
+        
+        // Check if user data is valid
         if (!parsedUser.name) {
           localStorage.removeItem("ruo_user_data");
           localStorage.removeItem("ruo_member_session");
           localStorage.removeItem("user_email");
+          localStorage.removeItem("ruo_session_expiry");
         } else {
+          // Check session expiry if "Remember Me" was used
+          if (sessionExpiry) {
+            const expiryTime = parseInt(sessionExpiry);
+            const currentTime = Date.now();
+            
+            if (currentTime > expiryTime) {
+              // Session has expired
+              console.log("AuthContext: Session expired, logging out");
+              localStorage.removeItem("ruo_user_data");
+              localStorage.removeItem("ruo_member_session");
+              localStorage.removeItem("user_email");
+              localStorage.removeItem("ruo_session_expiry");
+              localStorage.removeItem("ruo_remembered_email");
+              setUser(null);
+              setShowExpiredModal(true);
+              setLoading(false);
+              setIsAuthenticating(false);
+              return;
+            }
+          } else {
+            // No session expiry set, check if browser session should persist
+            // If no "Remember Me", session should expire when browser closes
+            // We can't detect browser close, but we can set a shorter session
+            const sessionStart = localStorage.getItem("ruo_session_start");
+            if (!sessionStart) {
+              // Set session start time for new sessions
+              localStorage.setItem("ruo_session_start", Date.now().toString());
+            } else {
+              // Check if session is older than 8 hours (browser session timeout)
+              const sessionAge = Date.now() - parseInt(sessionStart);
+              const maxSessionAge = 8 * 60 * 60 * 1000; // 8 hours
+              
+              if (sessionAge > maxSessionAge) {
+                console.log("AuthContext: Browser session expired, logging out");
+                localStorage.removeItem("ruo_user_data");
+                localStorage.removeItem("ruo_member_session");
+                localStorage.removeItem("user_email");
+                localStorage.removeItem("ruo_session_start");
+                setUser(null);
+                setShowExpiredModal(true);
+                setLoading(false);
+                setIsAuthenticating(false);
+                return;
+              }
+            }
+          }
+          
           setUser(parsedUser);
           setLoading(false);
-          
-          // For localStorage-based auth, we trust the cached data
-          // No need to validate with server on every page load
           setIsAuthenticating(false);
           return;
         }
@@ -51,6 +100,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("ruo_user_data");
       localStorage.removeItem("ruo_member_session");
       localStorage.removeItem("user_email");
+      localStorage.removeItem("ruo_session_expiry");
+      localStorage.removeItem("ruo_session_start");
     } catch (err) {
       console.error("AuthContext: Initialization error:", err);
       setLoginError("An error occurred during authentication.");
@@ -58,6 +109,8 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("ruo_user_data");
       localStorage.removeItem("ruo_member_session");
       localStorage.removeItem("user_email");
+      localStorage.removeItem("ruo_session_expiry");
+      localStorage.removeItem("ruo_session_start");
     } finally {
       setLoading(false);
       setIsAuthenticating(false);
@@ -68,6 +121,36 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     initializeAuth();
+    
+    // Set up periodic session validation (every 5 minutes)
+    const sessionCheckInterval = setInterval(() => {
+      const sessionExpiry = localStorage.getItem("ruo_session_expiry");
+      const sessionStart = localStorage.getItem("ruo_session_start");
+      const currentTime = Date.now();
+      
+      // Check "Remember Me" session expiry
+      if (sessionExpiry && currentTime > parseInt(sessionExpiry)) {
+        console.log("AuthContext: Periodic check - Session expired");
+        logout();
+        return;
+      }
+      
+      // Check browser session expiry (8 hours)
+      if (sessionStart && !sessionExpiry) {
+        const sessionAge = currentTime - parseInt(sessionStart);
+        const maxSessionAge = 8 * 60 * 60 * 1000; // 8 hours
+        
+        if (sessionAge > maxSessionAge) {
+          console.log("AuthContext: Periodic check - Browser session expired");
+          logout();
+          return;
+        }
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+    
+    return () => {
+      clearInterval(sessionCheckInterval);
+    };
   }, []);
 
   const login = async (email, password, rememberMe, recaptchaToken) => {
@@ -98,11 +181,13 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("ruo_remembered_email", email);
         localStorage.setItem(
           "ruo_session_expiry",
-          Date.now() + 30 * 24 * 60 * 60 * 1000
+          (Date.now() + 30 * 24 * 60 * 60 * 1000).toString()
         );
+        localStorage.removeItem("ruo_session_start"); // Remove browser session timer
       } else {
         localStorage.removeItem("ruo_remembered_email");
         localStorage.removeItem("ruo_session_expiry");
+        localStorage.setItem("ruo_session_start", Date.now().toString()); // Set browser session timer
       }
 
       const user = {
@@ -380,6 +465,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("user_email");
       localStorage.removeItem("ruo_remembered_email");
       localStorage.removeItem("ruo_session_expiry");
+      localStorage.removeItem("ruo_session_start");
       await router.push("/");
     } catch (err) {
       console.error("AuthContext: Logout error:", err);

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+import Image from "next/image";
 import { Icon } from "@iconify/react";
 import ReCAPTCHA from "react-google-recaptcha";
 import useLogin from "@/hooks/useLogin";
@@ -37,40 +38,42 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
       } pt-0`}
     >
       <div
-        className={`w-full md:w-2/5 flex flex-col justify-between overflow-y-auto gap-10 ${
+        className={`w-full md:w-3/5 lg:w-2/5 flex flex-col justify-between overflow-y-auto gap-6 md:gap-10 px-4 md:px-0 ${
           mode === "dark"
             ? "bg-gray-800/70 backdrop-blur-lg border border-gray-700/30 shadow-xl"
             : "bg-white/70 backdrop-blur-lg border border-white/30 shadow-xl"
         }`}
       >
         <div className="flex-grow flex flex-col justify-center items-center">
-          <div className="w-full max-w-md">
+          <div className="  ">
             <div
-              className={`py-4 px-4 mb-4 shadow-lg hover:shadow-none transition-all duration-500 rounded-lg ${
-                mode === "dark" ? "bg-gray-700/80" : "bg-white/80"
+              className={`mb-4 transition-all duration-500 rounded-lg ${
+                mode === "dark" ? "" : ""
               }`}
             >
-              <p
-                className={`text-4xl font-black text-center ${
-                  mode === "dark" ? "text-white" : "text-blue-900"
-                }`}
-              >
-                RichUncle
-              </p>
+              <div className="flex justify-center ">
+                <Image
+                  src="/assets/images/regular-logo.svg"
+                  alt="Logo"
+                  width={200}
+                  height={200}
+                  className="transition-all duration-300 p-4 rounded-md  bg-white/80 hover:translate-y-[-5px]"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="w-full max-w-md py-4">
+          <div className="w-full max-w-md md:max-w-lg lg:max-w-md py-4">
             <div className="pb-6 space-y-2">
               <p
-                className={`text-3xl font-bold ${
+                className={`text-2xl md:text-3xl lg:text-3xl font-bold ${
                   mode === "dark" ? "text-blue-300" : "text-blue-800"
                 }`}
               >
                 Welcome back!
               </p>
               <p
-                className={mode === "dark" ? "text-gray-300" : "text-blue-900"}
+                className={`text-sm md:text-base ${mode === "dark" ? "text-gray-300" : "text-blue-900"}`}
               >
                 Access the store dashboard using your email and password.
               </p>
@@ -182,7 +185,7 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row items-center justify-between mb-8 space-y-2 md:space-y-0">
+              <div className="flex flex-col md:flex-row items-center justify-between mb-8 space-y-3 md:space-y-0 md:space-x-4">
                 <div className="flex items-center">
                   <div
                     onClick={() =>
@@ -218,7 +221,8 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
                       }))
                     }
                   >
-                    Remember me on this device
+                    <span className="md:hidden">Remember me</span>
+                    <span className="hidden md:inline">Remember me on this device</span>
                   </label>
                 </div>
 
@@ -288,7 +292,7 @@ const LoginPage = ({ mode = "light", toggleMode }) => {
       </div>
 
       <div
-        className={`hidden md:block w-full md:w-3/5 ${
+        className={`hidden md:block w-full md:w-2/5 lg:w-3/5 ${
           mode === "dark" ? "bg-gray-800/10" : "bg-blue-950/10"
         }`}
       ></div>
