@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import { toast } from "react-hot-toast";
 import { AddEditModal } from "./AddEditModal";
@@ -13,6 +13,84 @@ import Select, { components } from "react-select";
 import { paymentMethods } from "@/constants/paymentMethods";
 import TooltipIconButton from "./TooltipIconButton";
 import CameraBarcodeScanner from "./CameraBarcodeScanner";
+
+// Optimized OrderItem component with React.memo
+const OrderItem = React.memo(({ product, qty, itemTotal, index, mode, user, onQtyChange, onRemove }) => {
+  const handleDecrement = useCallback(() => onQtyChange(product.id, -1), [product.id, onQtyChange]);
+  const handleIncrement = useCallback(() => onQtyChange(product.id, 1), [product.id, onQtyChange]);
+  const handleRemoveItem = useCallback(() => onRemove(product.id), [product.id, onRemove]);
+
+  return (
+    <div
+      className={`grid grid-cols-4 items-center px-4 py-2 border-t text-sm ${
+        mode === "dark" ? "border-gray-600" : "border-gray-200"
+      } ${
+        index % 2 === 0
+          ? mode === "dark"
+            ? "bg-gray-800"
+            : "bg-white"
+          : mode === "dark"
+            ? "bg-gray-750"
+            : "bg-blue-50"
+      } hover:${
+        mode === "dark" ? "bg-gray-700" : "bg-blue-100"
+      } transition-colors`}
+    >
+      <div className="flex items-center gap-2 uppercase">
+        <span className={mode === "dark" ? "text-white" : "text-black"}>
+          {product.name}
+        </span>
+      </div>
+      <div className="flex items-center justify-center gap-2">
+        <button
+          onClick={handleDecrement}
+          className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${
+            mode === "dark"
+              ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white"
+              : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"
+          }`}
+        >
+          -
+        </button>
+        <span className={`w-6 text-center ${mode === "dark" ? "text-white" : "text-black"}`}>
+          {qty}
+        </span>
+        <button
+          onClick={handleIncrement}
+          className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${
+            mode === "dark"
+              ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white"
+              : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"
+          }`}
+        >
+          +
+        </button>
+      </div>
+      <div className={`text-right font-semibold ${mode === "dark" ? "text-white" : "text-black"}`}>
+        GHS {itemTotal.toLocaleString()}
+      </div>
+      <div className="flex items-center justify-center">
+        <Icon
+          icon="ic:baseline-clear"
+          className={`w-8 h-8 cursor-pointer ${
+            mode === "dark"
+              ? "text-gray-500 hover:text-red-400"
+              : "text-red-600 hover:text-red-500"
+          }`}
+          onClick={handleRemoveItem}
+        />
+      </div>
+      <div className={`text-xs mt-1 col-span-4 ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+        {user?.role !== "cashier" && (
+          <>Stock: {product.quantity} |</>
+        )}
+        {qty > product.quantity && user?.role !== "cashier" && (
+          <span className="text-red-500 ml-1">⚠️ Exceeds stock</span>
+        )}
+      </div>
+    </div>
+  );
+});
 
 const dummyOrder = {
   id: "ORD123",
@@ -123,6 +201,19 @@ const PosOrderList = ({
     /Mac|iPhone|iPad|iPod/.test(navigator.platform);
   const keyboardShortcut = isMac ? "Cmd+B" : "Ctrl+B";
 
+  // Optimized product and discount maps for O(1) lookups - moved before usage
+  const productMap = useMemo(() => {
+    const map = new Map();
+    products.forEach(product => map.set(product.id, product));
+    return map;
+  }, [products]);
+
+  const discountMap = useMemo(() => {
+    const map = new Map();
+    discounts.forEach(discount => map.set(discount.id, discount));
+    return map;
+  }, [discounts]);
+
   // Always-on barcode detection - this runs constantly without needing activation
   const handleAlwaysOnBarcodeInput = (value) => {
     setAlwaysOnBarcode(value);
@@ -191,13 +282,12 @@ const PosOrderList = ({
     }
   };
 
-  const processBarcodeInput = (barcode) => {
+  const processBarcodeInput = useCallback((barcode) => {
     // Immediate feedback with beep sound for professional POS feel
     playBellBeep();
     
-    const found = products.find(
-      (p) => p.barcode === barcode || p.sku === barcode,
-    );
+    const found = productMap.get(barcode) || 
+                  Array.from(productMap.values()).find(p => p.barcode === barcode || p.sku === barcode);
 
     if (!found) {
       // Barcode not found - show error but keep scanning active
@@ -295,7 +385,7 @@ const PosOrderList = ({
         searchField.placeholder = "Ready for next scan...";
       }
     }, 50); // Very fast refocus for continuous scanning
-  };
+  }, [productMap, selectedProducts, quantities, user?.role, setSelectedProducts, setQuantities]);
 
   // Check for camera support on component mount
   useEffect(() => {
@@ -586,13 +676,14 @@ const PosOrderList = ({
       });
   }, []);
 
-  const handleQty = (id, delta) => {
-    if (!products.length) return;
-    const product = products.find((p) => p.id === id);
+  const handleQty = useCallback((id, delta) => {
+    const product = productMap.get(id);
+    if (!product) return;
+    
     const qty = Math.max(1, (quantities[id] || 1) + delta);
 
     // Validate against stock
-    if (product && qty > product.quantity) {
+    if (qty > product.quantity) {
       toast.error(
         user?.role === "cashier"
           ? "Cannot exceed available stock."
@@ -602,21 +693,21 @@ const PosOrderList = ({
     }
 
     setQuantities((prev) => ({ ...prev, [id]: qty }));
-  };
+  }, [productMap, quantities, user?.role]);
 
-  const handleRemove = (id) => {
+  const handleRemove = useCallback((id) => {
     setSelectedProducts((prev) => prev.filter((pid) => pid !== id));
     setQuantities((prev) => {
       const q = { ...prev };
       delete q[id];
       return q;
     });
-  };
+  }, []);
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     setSelectedProducts([]);
     setQuantities({});
-  };
+  }, []);
 
   const handleAddCustomer = () => {
     setShowCustomerModal(true);
@@ -651,8 +742,8 @@ const PosOrderList = ({
     );
   };
 
-  const toggleProductSelect = (productId) => {
-    const product = products.find((p) => p.id === productId);
+  const toggleProductSelect = useCallback((productId) => {
+    const product = productMap.get(productId);
     if (!product) return;
 
     // Check if product is already selected
@@ -675,7 +766,7 @@ const PosOrderList = ({
 
     // Add to selection
     setSelectedProducts((prev) => [...prev, productId]);
-  };
+  }, [productMap, selectedProducts, quantities, user?.role]);
 
   const handlePrintOrder = () => {
     const printReceipt = PrintReceipt({
@@ -700,61 +791,72 @@ const PosOrderList = ({
     }
   };
 
-  // Calculate summary
-  const subtotal = selectedProducts.reduce((sum, id) => {
-    const product = products.find((p) => p.id === id);
-    const qty = quantities[id] || 1;
-    return product ? sum + product.price * qty : sum;
-  }, 0);
+  // productMap and discountMap are now declared above
 
-  const totalCost = selectedProducts.reduce((sum, id) => {
-    const product = products.find((p) => p.id === id);
-    const qty = quantities[id] || 1;
-    return product ? sum + (product.cost_price || 0) * qty : sum;
-  }, 0);
+  // Memoized calculations for better performance
+  const calculations = useMemo(() => {
+    let subtotal = 0;
+    let totalCost = 0;
+    let tax = 0;
 
-  const totalProfit = subtotal - totalCost;
+    // Single loop for all calculations
+    for (const id of selectedProducts) {
+      const product = productMap.get(id);
+      if (!product) continue;
+      
+      const qty = quantities[id] || 1;
+      const itemSubtotal = product.price * qty;
+      const itemCost = (product.cost_price || 0) * qty;
+      
+      subtotal += itemSubtotal;
+      totalCost += itemCost;
 
-  // Calculate tax based on product tax configuration
-  const tax = selectedProducts.reduce((sum, id) => {
-    const product = products.find((p) => p.id === id);
-    const qty = quantities[id] || 1;
-    if (!product || !product.tax_percentage || product.tax_percentage <= 0)
-      return sum;
-
-    const taxPercentage = Number(product.tax_percentage);
-    let itemTax = 0;
-
-    if (product.tax_type === "exclusive") {
-      // Tax is added on top of the price
-      itemTax = ((product.price * taxPercentage) / 100) * qty;
-    } else if (product.tax_type === "inclusive") {
-      // Tax is included in the price, so we need to extract it
-      const priceWithoutTax = product.price / (1 + taxPercentage / 100);
-      itemTax = (product.price - priceWithoutTax) * qty;
-    }
-
-    return sum + itemTax;
-  }, 0);
-
-  let discount = 0;
-  let discountLabel = "No discount";
-  let discountType = "";
-  if (selectedDiscountId) {
-    const discountObj = discounts.find((d) => d.id === selectedDiscountId);
-    if (discountObj) {
-      discountLabel = discountObj.name || discountObj.label || "Discount";
-      discountType =
-        discountObj.discount_type || discountObj.type || "percentage";
-      if (discountType === "percentage") {
-        discount = Math.round(subtotal * (Number(discountObj.value) / 100));
-      } else {
-        discount = Number(discountObj.value);
+      // Calculate tax inline
+      if (product.tax_percentage && product.tax_percentage > 0) {
+        const taxPercentage = Number(product.tax_percentage);
+        if (product.tax_type === "exclusive") {
+          tax += ((product.price * taxPercentage) / 100) * qty;
+        } else if (product.tax_type === "inclusive") {
+          const priceWithoutTax = product.price / (1 + taxPercentage / 100);
+          tax += (product.price - priceWithoutTax) * qty;
+        }
       }
     }
-  }
-  const roundoff = roundoffEnabled ? 0 : 0;
-  const total = subtotal + tax - discount + roundoff;
+
+    // Calculate discount
+    let discount = 0;
+    let discountLabel = "No discount";
+    let discountType = "";
+    
+    if (selectedDiscountId) {
+      const discountObj = discountMap.get(selectedDiscountId);
+      if (discountObj) {
+        discountLabel = discountObj.name || discountObj.label || "Discount";
+        discountType = discountObj.discount_type || discountObj.type || "percentage";
+        if (discountType === "percentage") {
+          discount = Math.round(subtotal * (Number(discountObj.value) / 100));
+        } else {
+          discount = Number(discountObj.value);
+        }
+      }
+    }
+
+    const total = subtotal + tax - discount;
+    const totalProfit = subtotal - totalCost;
+
+    return {
+      subtotal,
+      totalCost,
+      totalProfit,
+      tax,
+      discount,
+      discountLabel,
+      discountType,
+      total
+    };
+  }, [selectedProducts, quantities, productMap, discountMap, selectedDiscountId, roundoffEnabled]);
+
+  const { subtotal, totalCost, totalProfit, tax, discount, discountLabel, discountType, total } = calculations;
 
   // Find the selected customer object if selectedCustomerId starts with 'db_'
   const selectedDbCustomer = selectedCustomerId.startsWith("db_")
@@ -1318,97 +1420,23 @@ const PosOrderList = ({
               </div>
             )}
             {selectedProducts.map((id, index) => {
-              const product = products.find((p) => p.id === id);
+              const product = productMap.get(id);
               if (!product) return null;
               const qty = quantities[id] || 1;
+              const itemTotal = product.price * qty;
+              
               return (
-                <div
+                <OrderItem
                   key={id}
-                  className={`grid grid-cols-4 items-center px-4 py-2 border-t text-sm ${
-                    mode === "dark" ? "border-gray-600" : "border-gray-200"
-                  } ${
-                    index % 2 === 0
-                      ? mode === "dark"
-                        ? "bg-gray-800"
-                        : "bg-white"
-                      : mode === "dark"
-                        ? "bg-gray-750"
-                        : "bg-blue-50"
-                  } hover:${
-                    mode === "dark" ? "bg-gray-700" : "bg-blue-100"
-                  } transition-colors`}
-                >
-                  <div className="flex items-center gap-2 uppercase">
-                    <span
-                      className={mode === "dark" ? "text-white" : "text-black"}
-                    >
-                      {product.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => handleQty(id, -1)}
-                      className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${
-                        mode === "dark"
-                          ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white"
-                          : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"
-                      }`}
-                    >
-                      -
-                    </button>
-                    <span
-                      className={`w-6 text-center ${
-                        mode === "dark" ? "text-white" : "text-black"
-                      }`}
-                    >
-                      {qty}
-                    </span>
-                    <button
-                      onClick={() => handleQty(id, 1)}
-                      className={`w-6 h-6 flex items-center justify-center rounded-full text-base font-bold transition ${
-                        mode === "dark"
-                          ? "text-gray-400 bg-gray-700 hover:bg-blue-600 hover:text-white"
-                          : "text-gray-500 bg-gray-100 hover:bg-blue-100 hover:text-blue-700"
-                      }`}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div
-                    className={`text-right font-semibold ${
-                      mode === "dark" ? "text-white" : "text-black"
-                    }`}
-                  >
-                    GHS {(product.price * qty).toLocaleString()}
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <Icon
-                      icon="ic:baseline-clear"
-                      className={`w-8 h-8 cursor-pointer ${
-                        mode === "dark"
-                          ? "text-gray-500 hover:text-red-400"
-                          : "text-red-600 hover:text-red-500"
-                      }`}
-                      onClick={() => handleRemove(id)}
-                    />
-                  </div>
-
-                  <div
-                    className={`text-xs mt-1 col-span-4 ${
-                      mode === "dark" ? "text-gray-400" : "text-gray-500"
-                    }`}
-                  >
-                    {user?.role !== "cashier" && (
-                      <>Stock: {product.quantity} |</>
-                    )}
-                    {/* Ordered: {qty} */}
-                    {qty > product.quantity && user?.role !== "cashier" && (
-                      <span className="text-red-500 ml-1">
-                        ⚠️ Exceeds stock
-                      </span>
-                    )}
-                  </div>
-                </div>
+                  product={product}
+                  qty={qty}
+                  itemTotal={itemTotal}
+                  index={index}
+                  mode={mode}
+                  user={user}
+                  onQtyChange={handleQty}
+                  onRemove={handleRemove}
+                />
               );
             })}
           </div>

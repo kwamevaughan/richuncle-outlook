@@ -39,41 +39,50 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
     return () => window.removeEventListener("resize", checkDeviceType);
   }, []);
 
-  // Filtering
+  // Optimized filtering with early returns and memoized search terms
+  const searchTermLower = useMemo(() => searchTerm.toLowerCase(), [searchTerm]);
+  
   const filteredData = useMemo(() => {
+    if (!data.length) return [];
+    
     let result = data;
-    // Status filter for sales returns
+    
+    // Status filter (fastest check first)
     if (statusFilter && statusFilter !== "all" && statusOptions) {
       result = result.filter((row) => row.status === statusFilter);
     }
-    // Search filter
-    if (searchTerm) {
-      result = result.filter((row) =>
-        Object.values(row).some((value) =>
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
-    // Date filters for sortBy
+    
+    // Date filters (before expensive search)
     if (sortBy === "last_month") {
-      const now = new Date();
-      const lastMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() - 1,
-        now.getDate()
-      );
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
       result = result.filter(
         (row) => row.created_at && new Date(row.created_at) >= lastMonth
       );
     } else if (sortBy === "last_7_days") {
-      const now = new Date();
-      const last7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const last7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       result = result.filter(
-        (row) => row.created_at && new Date(row.created_at) >= last7
+        (row) => row.created_at && new Date(row.created_at) >= last7Days
       );
     }
+    
+    // Search filter (most expensive, do last)
+    if (searchTermLower) {
+      result = result.filter((row) => {
+        // Check most likely fields first for early return
+        if (row.name?.toLowerCase().includes(searchTermLower)) return true;
+        if (row.id?.toString().toLowerCase().includes(searchTermLower)) return true;
+        if (row.email?.toLowerCase().includes(searchTermLower)) return true;
+        
+        // Fallback to full object search
+        return Object.values(row).some((value) =>
+          value?.toString().toLowerCase().includes(searchTermLower)
+        );
+      });
+    }
+    
     return result;
-  }, [data, searchTerm, statusFilter, sortBy, statusOptions]);
+  }, [data, searchTermLower, statusFilter, sortBy, statusOptions]);
 
   // Sorting
   const sortedData = useMemo(() => {

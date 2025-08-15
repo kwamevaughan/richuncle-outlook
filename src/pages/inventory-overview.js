@@ -263,8 +263,13 @@ export default function InventoryOverviewPage({
     }
 
     try {
+      // Create product map for O(1) lookups
+      const productMap = new Map(products.map(p => [p.id, p]));
+      
       const updates = selectedProducts.map((productId) => {
-        const product = products.find((p) => p.id === productId);
+        const product = productMap.get(productId);
+        if (!product) return null;
+        
         const currentStock = parseInt(product.quantity) || 0;
         let newStock;
 
@@ -286,9 +291,9 @@ export default function InventoryOverviewPage({
           id: productId,
           quantity: newStock,
         };
-      });
+      }).filter(Boolean);
 
-      const response = await fetch("/api/products/bulk-update", {
+      const response = await fetch("/api/products/batch-update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -322,10 +327,13 @@ export default function InventoryOverviewPage({
       const lines = importData.trim().split("\n");
       const updates = [];
 
+      // Create SKU map for O(1) lookups
+      const skuMap = new Map(products.map(p => [p.sku, p]));
+      
       for (let i = 1; i < lines.length; i++) {
         const [sku, quantity] = lines[i].split(",").map((s) => s.trim());
         if (sku && quantity) {
-          const product = products.find((p) => p.sku === sku);
+          const product = skuMap.get(sku);
           if (product) {
             updates.push({
               id: product.id,

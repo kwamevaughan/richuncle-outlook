@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useCategories } from "@/hooks/useCategories";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
@@ -7,6 +7,118 @@ import { playBellBeep } from "@/utils/posSounds";
 import SimpleModal from "./SimpleModal";
 import TooltipIconButton from "@/components/TooltipIconButton";
 import Select, { components } from "react-select";
+
+// Optimized ProductCard component with React.memo
+const ProductCard = React.memo(({ product, isSelected, mode, user, hasOpenSession, onToggleSelect, getStockStatus }) => {
+  const handleClick = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!hasOpenSession) {
+      toast.error("You must open a cash register before making sales.");
+      return;
+    }
+    if (product.quantity <= 0) {
+      toast.error("This product is out of stock!");
+      playBellBeep();
+      return;
+    }
+    onToggleSelect(product.id);
+  }, [product.id, product.quantity, hasOpenSession, onToggleSelect]);
+
+  const stockStatus = useMemo(() => getStockStatus(product.quantity), [product.quantity, getStockStatus]);
+
+  return (
+    <div
+      className={`group relative border-2 rounded-xl p-3 flex flex-col items-center transition-all duration-200 cursor-pointer touch-manipulation m-0.5
+        ${
+          isSelected
+            ? `${
+                mode === "dark"
+                  ? "border-green-400 shadow-green-900"
+                  : "border-green-500 shadow-green-100"
+              } scale-105`
+            : `${
+                mode === "dark"
+                  ? "border-gray-600 bg-gray-800"
+                  : "border-gray-200 bg-white"
+              }`
+        }
+        ${
+          product.quantity > 0
+            ? `${
+                mode === "dark"
+                  ? "group-hover:border-green-400 group-hover:shadow-green-900"
+                  : "group-hover:border-green-500 group-hover:shadow-green-100"
+              }`
+            : ""
+        }
+        hover:shadow-lg
+        active:scale-95
+      `}
+      onClick={handleClick}
+    >
+      {isSelected && product.quantity > 0 && (
+        <span className="absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-100 transition-all duration-500">
+          <Icon icon="mdi:check" className="w-2 h-2 text-white" />
+        </span>
+      )}
+      
+      {product.image_url ? (
+        <div className="w-full flex items-center justify-center mb-3 bg-gray-100 rounded-lg">
+          <Image
+            src={product.image_url}
+            alt={product.name}
+            width={60}
+            height={60}
+            className="object-cover rounded-lg w-20 h-20 transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+      ) : (
+        <div className="w-full flex items-center justify-center bg-gray-50 rounded-lg">
+          <Icon icon="carbon:no-image" className="w-10 h-16 text-gray-400" />
+        </div>
+      )}
+      
+      <div className={`font-normal capitalize mb-2 self-start truncate max-w-full overflow-hidden text-xs ${
+        mode === "dark" ? "text-white" : "text-black"
+      }`}>
+        {product.name}
+      </div>
+
+      {user?.role !== "cashier" && (
+        <div className="self-start mb-1">
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${stockStatus.bg} ${stockStatus.color}`}>
+            {stockStatus.status === "out"
+              ? "Out of Stock"
+              : stockStatus.status === "low"
+              ? `Low Stock (${product.quantity})`
+              : `In Stock (${product.quantity})`}
+          </span>
+        </div>
+      )}
+
+      <span className={`border-t w-full py-1 ${mode === "dark" ? "border-gray-600" : "border-gray-200"}`}></span>
+
+      <div className="flex flex-col gap-1 self-start w-full">
+        <div className="flex items-center justify-between w-full">
+          <span className={`text-sm font-semibold ${mode === "dark" ? "text-blue-400" : "text-blue-700"}`}>
+            GHS {product.price}
+          </span>
+        </div>
+        {user?.role !== "cashier" && (
+          <div className={`flex items-center justify-between text-xs ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
+            {product.cost_price && product.cost_price > 0 && (
+              <span>Cost: GHS {product.cost_price}</span>
+            )}
+            {product.tax_percentage && product.tax_percentage > 0 && (
+              <span className="text-orange-600">Tax: {product.tax_percentage}%</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
 
 const PosProductList = ({
   user,
@@ -27,6 +139,7 @@ const PosProductList = ({
   const [prodLoading, setProdLoading] = useState(false);
   const [prodError, setProdError] = useState(null);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [reloadFlag, setReloadFlag] = useState(0);
   const [barcodeInput, setBarcodeInput] = useState("");
   const [barcodeProduct, setBarcodeProduct] = useState(null);
@@ -44,6 +157,15 @@ const PosProductList = ({
   // State to track if refresh toast has been shown for current reload
   const [lastReloadFlag, setLastReloadFlag] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Debounce search input to reduce filtering operations
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 150); // 150ms debounce for responsive feel
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Prepare options for react-select
   const productOptions = React.useMemo(
@@ -102,27 +224,39 @@ const PosProductList = ({
     }
   }, [catLoading, categories, selectedCategory]);
 
-  // Filter products by search and category
-  const filteredProducts = React.useMemo(() => {
-    return products.filter((product) => {
-      const searchLower = search.toLowerCase();
-      const cat = categories.find((c) => c.id === product.category_id);
+  // Optimized category map for faster lookups
+  const categoryMap = useMemo(() => {
+    const map = new Map();
+    categories.forEach(cat => map.set(cat.id, cat));
+    return map;
+  }, [categories]);
 
-      // Filter by category first
-      if (selectedCategory && selectedCategory !== "all") {
-        if (product.category_id !== selectedCategory) {
-          return false;
-        }
+  // Optimized product filtering with debounced search
+  const filteredProducts = useMemo(() => {
+    if (!products.length) return [];
+    
+    const searchLower = debouncedSearch.toLowerCase();
+    const hasSearch = searchLower.length > 0;
+    const hasCategory = selectedCategory && selectedCategory !== "all";
+    
+    return products.filter((product) => {
+      // Category filter first (fastest)
+      if (hasCategory && product.category_id !== selectedCategory) {
+        return false;
       }
 
-      // Then filter by search
-      return (
-        product.name?.toLowerCase().includes(searchLower) ||
-        product.sku?.toLowerCase().includes(searchLower) ||
-        (cat && cat.name?.toLowerCase().includes(searchLower))
-      );
+      // Skip search if no search term
+      if (!hasSearch) return true;
+
+      // Optimized search - check most likely matches first
+      if (product.name?.toLowerCase().includes(searchLower)) return true;
+      if (product.sku?.toLowerCase().includes(searchLower)) return true;
+      
+      // Category name search (least likely, check last)
+      const cat = categoryMap.get(product.category_id);
+      return cat?.name?.toLowerCase().includes(searchLower) || false;
     });
-  }, [products, search, selectedCategory, categories]);
+  }, [products, debouncedSearch, selectedCategory, categoryMap]);
 
   // Update displayed products when filtered products change
   useEffect(() => {
@@ -218,8 +352,15 @@ const PosProductList = ({
     }
   }, [reloadProducts]);
 
-  const handleQuantityChange = (productId, value) => {
-    const product = products.find((p) => p.id === productId);
+  // Optimized product map for O(1) lookups
+  const productMap = useMemo(() => {
+    const map = new Map();
+    products.forEach(product => map.set(product.id, product));
+    return map;
+  }, [products]);
+
+  const handleQuantityChange = useCallback((productId, value) => {
+    const product = productMap.get(productId);
     const val = Math.max(1, Number(value) || 1);
 
     // Validate against stock
@@ -233,10 +374,10 @@ const PosProductList = ({
     }
 
     setQuantities((prev) => ({ ...prev, [productId]: val }));
-  };
+  }, [productMap, user?.role]);
 
-  const handleQuantityIncrement = (productId) => {
-    const product = products.find((p) => p.id === productId);
+  const handleQuantityIncrement = useCallback((productId) => {
+    const product = productMap.get(productId);
     const currentQty = quantities[productId] || 1;
 
     // Validate against stock
@@ -250,16 +391,16 @@ const PosProductList = ({
     }
 
     setQuantities((prev) => ({ ...prev, [productId]: currentQty + 1 }));
-  };
+  }, [productMap, quantities, user?.role]);
 
-  const handleQuantityDecrement = (productId) => {
+  const handleQuantityDecrement = useCallback((productId) => {
     setQuantities((prev) => ({
       ...prev,
       [productId]: Math.max(1, (prev[productId] || 1) - 1),
     }));
-  };
+  }, []);
 
-  const toggleProductSelect = (productId) => {
+  const toggleProductSelect = useCallback((productId) => {
     if (sessionCheckLoading) {
       toast.error("Checking register status, please wait...");
       return;
@@ -268,18 +409,21 @@ const PosProductList = ({
       toast.error("You must open a cash register before making sales.");
       return;
     }
-    const product = products.find((p) => p.id === productId);
+    
+    const product = productMap.get(productId);
+    if (!product) return;
+    
     const currentQty = quantities[productId] || 1;
 
     // Check if product is already selected
     if (selectedProducts.includes(productId)) {
-      // Remove from selection (no beep sound)
+      // Remove from selection
       setSelectedProducts((prev) => prev.filter((id) => id !== productId));
       return;
     }
 
     // Validate stock before adding
-    if (product && currentQty > product.quantity) {
+    if (currentQty > product.quantity) {
       toast.error(
         user?.role === "cashier"
           ? "Insufficient stock!"
@@ -288,9 +432,9 @@ const PosProductList = ({
       return;
     }
 
-    // Add to selection (no beep sound for adding products with stock)
+    // Add to selection
     setSelectedProducts((prev) => [...prev, productId]);
-  };
+  }, [sessionCheckLoading, hasOpenSession, productMap, quantities, selectedProducts, user?.role]);
 
   const getStockStatus = (quantity) => {
     if (quantity <= 0)
@@ -450,182 +594,16 @@ const PosProductList = ({
           <div className="flex-1 overflow-y-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-1">
               {displayedProducts.map((product) => (
-                <div
+                <ProductCard
                   key={product.id}
-                  className={`group relative border-2 rounded-xl p-3 flex flex-col items-center transition-all duration-200 cursor-pointer touch-manipulation m-0.5
-                    ${
-                      selectedProducts.includes(product.id)
-                        ? `${
-                            mode === "dark"
-                              ? "border-green-400 shadow-green-900"
-                              : "border-green-500 shadow-green-100"
-                          } scale-105`
-                        : `${
-                            mode === "dark"
-                              ? "border-gray-600 bg-gray-800"
-                              : "border-gray-200 bg-white"
-                          }`
-                    }
-                    ${
-                      product.quantity > 0
-                        ? `${
-                            mode === "dark"
-                              ? "group-hover:border-green-400 group-hover:shadow-green-900"
-                              : "group-hover:border-green-500 group-hover:shadow-green-100"
-                          }`
-                        : ""
-                    }
-                    hover:shadow-lg
-                    active:scale-95
-                  `}
-                  style={{
-                    boxShadow: selectedProducts.includes(product.id)
-                      ? mode === "dark"
-                        ? "0 0 0 0 #4ade80"
-                        : "0 0 0 0 #22c55e"
-                      : undefined,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (product.quantity > 0) {
-                      e.currentTarget.classList.add(
-                        mode === "dark"
-                          ? "border-green-400"
-                          : "border-green-500",
-                        mode === "dark"
-                          ? "shadow-green-900"
-                          : "shadow-green-100"
-                      );
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (
-                      !selectedProducts.includes(product.id) &&
-                      product.quantity > 0
-                    ) {
-                      e.currentTarget.classList.remove(
-                        mode === "dark"
-                          ? "border-green-400"
-                          : "border-green-500",
-                        mode === "dark"
-                          ? "shadow-green-900"
-                          : "shadow-green-100"
-                      );
-                    }
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!hasOpenSession) {
-                      toast.error(
-                        "You must open a cash register before making sales."
-                      );
-                      return;
-                    }
-                    if (product.quantity <= 0) {
-                      toast.error("This product is out of stock!");
-                      playBellBeep(); // Add beep sound for out of stock
-                      return;
-                    }
-                    toggleProductSelect(product.id);
-                  }}
-                >
-                  {selectedProducts.includes(product.id) &&
-                    product.quantity > 0 && (
-                      <span
-                        className={`absolute top-2 right-2 bg-green-500 rounded-full p-1 opacity-100 transition-all duration-500`}
-                      >
-                        <Icon icon="mdi:check" className="w-2 h-2 text-white" />
-                      </span>
-                    )}
-                  {product.image_url ? (
-                    <div className="w-full flex items-center justify-center mb-3 bg-gray-100 rounded-lg">
-                      <Image
-                        src={product.image_url}
-                        alt={product.name}
-                        width={60}
-                        height={60}
-                        className="object-cover rounded-lg w-20 h-20 transition-transform duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full flex items-center justify-center bg-gray-50 rounded-lg">
-                      <Icon
-                        icon="carbon:no-image"
-                        className="w-10 h-16 text-gray-400"
-                      />
-                    </div>
-                  )}
-                  {/* <div className={`text-sm mb-2 self-start ${mode === "dark" ? "text-gray-400" : "text-gray-500"}`}>
-                    {(() => {
-                      const cat = categories.find(
-                        (c) => c.id === product.category_id
-                      );
-                      return cat ? cat.name : "";
-                    })()}
-                  </div> */}
-                  <div
-                    className={`font-normal capitalize mb-2 self-start truncate max-w-full overflow-hidden text-xs ${
-                      mode === "dark" ? "text-white" : "text-black"
-                    }`}
-                  >
-                    {product.name}
-                  </div>
-
-                  {/* Stock Status */}
-                  {user?.role !== "cashier" && (
-                    <div className="self-start mb-1">
-                      {(() => {
-                        const stockStatus = getStockStatus(product.quantity);
-                        return (
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full font-medium ${stockStatus.bg} ${stockStatus.color}`}
-                          >
-                            {stockStatus.status === "out"
-                              ? "Out of Stock"
-                              : stockStatus.status === "low"
-                              ? `Low Stock (${product.quantity})`
-                              : `In Stock (${product.quantity})`}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  )}
-
-                  <span
-                    className={`border-t w-full py-1 ${
-                      mode === "dark" ? "border-gray-600" : "border-gray-200"
-                    }`}
-                  ></span>
-
-                  <div className="flex flex-col gap-1 self-start w-full">
-                    <div className="flex items-center justify-between w-full">
-                      <span
-                        className={`text-sm font-semibold ${
-                          mode === "dark" ? "text-blue-400" : "text-blue-700"
-                        }`}
-                      >
-                        GHS {product.price}
-                      </span>
-                    </div>
-                    {user?.role !== "cashier" && (
-                      <div
-                        className={`flex items-center justify-between text-xs ${
-                          mode === "dark" ? "text-gray-400" : "text-gray-500"
-                        }`}
-                      >
-                        {product.cost_price && product.cost_price > 0 && (
-                          <span>Cost: GHS {product.cost_price}</span>
-                        )}
-                        {product.tax_percentage &&
-                          product.tax_percentage > 0 && (
-                            <span className="text-orange-600">
-                              Tax: {product.tax_percentage}%
-                            </span>
-                          )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  product={product}
+                  isSelected={selectedProducts.includes(product.id)}
+                  mode={mode}
+                  user={user}
+                  hasOpenSession={hasOpenSession}
+                  onToggleSelect={toggleProductSelect}
+                  getStockStatus={getStockStatus}
+                />
               ))}
             </div>
 

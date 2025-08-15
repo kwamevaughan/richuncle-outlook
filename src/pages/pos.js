@@ -2,7 +2,7 @@ import MainLayout from "@/layouts/MainLayout";
 import { useUser } from "../hooks/useUser";
 import useLogout from "../hooks/useLogout";
 import PosHeader from "@/layouts/posHeader";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import PosProductList from "@/components/PosProductList";
 import PosOrderList from "@/components/PosOrderList";
 import { Icon } from "@iconify/react";
@@ -23,7 +23,7 @@ import SalesReturnModals from "@/components/SalesReturnModals";
 import SalesReturnItemsEditor from "@/components/SalesReturnItemsEditor";
 import { useRouter } from "next/router";
 
-export default function POS({ mode = "light", toggleMode, ...props }) {
+const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
   const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
@@ -112,21 +112,52 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     fetchCustomers();
   }, []);
 
-  // Calculate total for footer
-  const calculateTotal = () => {
-    const subtotal = selectedProducts.reduce((sum, id) => {
-      const product = products.find((p) => p.id === id);
+  // Memoized product lookup for performance
+  const productMap = useMemo(() => {
+    const map = new Map();
+    products.forEach(product => map.set(product.id, product));
+    return map;
+  }, [products]);
+
+  // Memoized discount lookup
+  const discountMap = useMemo(() => {
+    const map = new Map();
+    discounts.forEach(discount => map.set(discount.id, discount));
+    return map;
+  }, [discounts]);
+
+  // Optimized total calculation with memoization
+  const calculateTotal = useMemo(() => {
+    let subtotal = 0;
+    let tax = 0;
+
+    // Single loop for both subtotal and tax calculation
+    for (const id of selectedProducts) {
+      const product = productMap.get(id);
+      if (!product) continue;
+      
       const qty = quantities[id] || 1;
-      return product ? sum + product.price * qty : sum;
-    }, 0);
+      const itemSubtotal = product.price * qty;
+      subtotal += itemSubtotal;
+
+      // Calculate tax inline
+      if (product.tax_percentage && product.tax_percentage > 0) {
+        const taxPercentage = Number(product.tax_percentage);
+        if (product.tax_type === "exclusive") {
+          tax += ((product.price * taxPercentage) / 100) * qty;
+        } else if (product.tax_type === "inclusive") {
+          const priceWithoutTax = product.price / (1 + taxPercentage / 100);
+          tax += (product.price - priceWithoutTax) * qty;
+        }
+      }
+    }
 
     // Calculate discount
     let discount = 0;
     if (selectedDiscountId) {
-      const discountObj = discounts.find((d) => d.id === selectedDiscountId);
+      const discountObj = discountMap.get(selectedDiscountId);
       if (discountObj) {
-        const discountType =
-          discountObj.discount_type || discountObj.type || "percentage";
+        const discountType = discountObj.discount_type || discountObj.type || "percentage";
         if (discountType === "percentage") {
           discount = Math.round(subtotal * (Number(discountObj.value) / 100));
         } else {
@@ -135,36 +166,10 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       }
     }
 
-    // Calculate tax based on product tax configuration
-    const tax = selectedProducts.reduce((sum, id) => {
-      const product = products.find((p) => p.id === id);
-      const qty = quantities[id] || 1;
-      if (!product || !product.tax_percentage || product.tax_percentage <= 0)
-        return sum;
+    return subtotal + tax - discount;
+  }, [selectedProducts, quantities, productMap, discountMap, selectedDiscountId, roundoffEnabled]);
 
-      const taxPercentage = Number(product.tax_percentage);
-      let itemTax = 0;
-
-      if (product.tax_type === "exclusive") {
-        // Tax is added on top of the price
-        itemTax = ((product.price * taxPercentage) / 100) * qty;
-      } else if (product.tax_type === "inclusive") {
-        // Tax is included in the price, so we need to extract it
-        const priceWithoutTax = product.price / (1 + taxPercentage / 100);
-        itemTax = (product.price - priceWithoutTax) * qty;
-      }
-
-      return sum + itemTax;
-    }, 0);
-
-    const roundoff = roundoffEnabled ? 0 : 0; // For now, roundoff is 0
-
-    // Calculate total
-    const total = subtotal + tax - discount + roundoff;
-    return total;
-  };
-
-  const totalPayable = calculateTotal();
+  const totalPayable = calculateTotal;
 
   // Handler to print last receipt
   const handlePrintLastReceipt = useCallback(() => {
@@ -316,8 +321,13 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
   const [receiptData, setReceiptData] = useState(null);
   const [isResumingOrder, setIsResumingOrder] = useState(false);
 
-  // Update processCompleteTransaction to accept paymentInfo
-  const processCompleteTransaction = async (paymentInfo) => {
+  // Add currentSessionId and selectedCustomerId state before they're used
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+
+  // Optimized transaction processing with batch operations
+  const processCompleteTransaction = useCallback(async (paymentInfo) => {
     if (!paymentInfo) {
       import("react-hot-toast").then(({ toast }) =>
         toast.error("Please complete payment details first")
@@ -422,17 +432,16 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         finalCustomerName: selectedCustomerName,
         customers: customers.length,
       });
-      // Debug logs for product selection and order item building
-      console.log("selectedProducts:", selectedProducts);
-      console.log("products:", products);
-
+      // Optimized order items building using productMap
       const items = selectedProducts.map((id) => {
-        const product = products.find((p) => p.id === id);
-        console.log("Building order item for:", id, product);
+        const product = productMap.get(id);
+        if (!product) return null;
+        
         const qty = quantities[id] || 1;
         const itemSubtotal = product.price * qty;
         let itemTax = 0;
-        if (product && product.tax_percentage && product.tax_percentage > 0) {
+        
+        if (product.tax_percentage && product.tax_percentage > 0) {
           const taxPercentage = Number(product.tax_percentage);
           if (product.tax_type === "exclusive") {
             itemTax = ((product.price * taxPercentage) / 100) * qty;
@@ -441,6 +450,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
             itemTax = (product.price - priceWithoutTax) * qty;
           }
         }
+        
         return {
           productId: id,
           name: product.name,
@@ -452,8 +462,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
           itemTax: itemTax,
           total: itemSubtotal,
         };
-      });
-      console.log("Order items being built:", items);
+      }).filter(Boolean);
       // Use the selected store ID (for admin/manager) or register's store (for cashier)
       const storeId = selectedStoreId;
       orderData = {
@@ -527,22 +536,24 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       });
       const itemsResJson = await itemsResponse.json();
       if (itemsResJson.error) throw itemsResJson.error;
-      // Update stock quantities for each product
-      for (const item of items) {
-        const product = products.find((p) => p.id === item.productId);
-        const newQty = (product?.quantity || 0) - item.quantity;
-        const updateResponse = await fetch(`/api/products/${item.productId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ quantity: newQty }),
-        });
-        const updateResJson = await updateResponse.json();
-        if (updateResJson.error) {
-          console.error(
-            `Failed to update stock for product ${item.productId}:`,
-            updateResJson.error.message
-          );
-        }
+      // Batch update stock quantities for better performance
+      const stockUpdates = items.map(item => {
+        const product = productMap.get(item.productId);
+        return {
+          id: item.productId,
+          quantity: (product?.quantity || 0) - item.quantity
+        };
+      });
+
+      // Single API call for all stock updates
+      const stockUpdateResponse = await fetch('/api/products/batch-update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates: stockUpdates })
+      });
+
+      if (!stockUpdateResponse.ok) {
+        console.warn('Some stock updates may have failed');
       }
       // Play success sound
       const { playBellBeep } = await import("../utils/posSounds");
@@ -551,40 +562,18 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       toast.dismiss(processingToast);
 
       // Auto-print receipt instead of showing preview modal
-      console.log("Attempting to print receipt with data:", {
-        orderId: orderData.id,
-        selectedProducts,
-        quantities,
-        products: products.length,
-        subtotal:
-          calculateTotal() -
-          (selectedDiscountId
-            ? discounts.find((d) => d.id === selectedDiscountId)?.value || 0
-            : 0),
-        tax: 0,
-        discount: selectedDiscountId
-          ? discounts.find((d) => d.id === selectedDiscountId)?.value || 0
-          : 0,
-        total: totalPayable,
-        selectedCustomerId: customerId || "",
-        customers: customers.length,
-        paymentData: paymentResult,
-      });
-
+      // Optimized receipt printing with pre-calculated values
+      const discountAmount = selectedDiscountId ? 
+        (discountMap.get(selectedDiscountId)?.value || 0) : 0;
+      
       const printReceipt = PrintReceipt({
         orderId: orderData.id,
         selectedProducts: selectedProducts,
         quantities: quantities,
         products: products,
-        subtotal:
-          calculateTotal() -
-          (selectedDiscountId
-            ? discounts.find((d) => d.id === selectedDiscountId)?.value || 0
-            : 0),
-        tax: 0, // Calculate if needed
-        discount: selectedDiscountId
-          ? discounts.find((d) => d.id === selectedDiscountId)?.value || 0
-          : 0,
+        subtotal: totalPayable + discountAmount,
+        tax: 0,
+        discount: discountAmount,
         total: totalPayable,
         selectedCustomerId: customerId || "",
         customers: customers,
@@ -592,9 +581,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
         order: { ...orderData, items },
       });
 
-      console.log("PrintReceipt instance created:", printReceipt);
       const printSuccess = printReceipt.printOrder();
-      console.log("Print result:", printSuccess);
 
       if (printSuccess) {
         toast.success("Order completed and receipt printed!");
@@ -639,7 +626,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       );
       console.error("Transaction failed:", error);
     }
-  };
+  }, [selectedProducts, quantities, productMap, discountMap, selectedDiscountId, totalPayable, customers, user, allUsers, selectedStoreId, selectedRegister, currentSessionId, isResumingOrder, selectedCustomerId]);
 
   // In pos.js, add handlePrintOrder:
   const handlePrintOrder = () => {
@@ -700,7 +687,6 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
 
   const [showRetrieveSales, setShowRetrieveSales] = useState(false);
   const [showRetrieveLayaways, setShowRetrieveLayaways] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [saleNote, setSaleNote] = useState("");
   
   // State to track if store assignment toasts have been shown
@@ -717,9 +703,7 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
     ? products.filter((p) => selectedProducts.includes(p.id))
     : [];
 
-  // At the top of POS component, add:
-  const [currentSessionId, setCurrentSessionId] = useState(null);
-  const [orders, setOrders] = useState([]);
+  // currentSessionId and orders are now declared above
 
   useEffect(() => {
     // Fetch registers and stores on mount
@@ -1592,4 +1576,6 @@ export default function POS({ mode = "light", toggleMode, ...props }) {
       </MainLayout>
     </ModalProvider>
   );
-}
+});
+
+export default POS;

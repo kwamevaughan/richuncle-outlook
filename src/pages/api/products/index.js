@@ -3,7 +3,12 @@ import supabaseAdmin from "@/lib/supabaseAdmin";
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
-      const { data, error } = await supabaseAdmin
+      const { limit, offset, search, category_id, active_only } = req.query;
+      
+      // Set cache headers for better performance
+      res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+      
+      let query = supabaseAdmin
         .from("products")
         .select(
           `
@@ -33,8 +38,33 @@ export default async function handler(req, res) {
           stores(name),
           warehouses(name)
         `
-        )
-        .order("created_at", { ascending: false });
+        );
+
+      // Add filters for better performance
+      if (active_only === 'true') {
+        query = query.eq('is_active', true);
+      }
+      
+      if (category_id) {
+        query = query.eq('category_id', category_id);
+      }
+      
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%,barcode.ilike.%${search}%`);
+      }
+      
+      // Add pagination
+      if (limit) {
+        query = query.limit(parseInt(limit));
+        if (offset) {
+          query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+        }
+      }
+      
+      query = query.order("created_at", { ascending: false });
+
+      // Execute the query
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching products:", error);

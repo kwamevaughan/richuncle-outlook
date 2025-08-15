@@ -3,7 +3,19 @@ import supabaseAdmin from "@/lib/supabaseAdmin";
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
-      const { register_id, session_id, id } = req.query;
+      const { 
+        register_id, 
+        session_id, 
+        id, 
+        limit = '50', 
+        offset = '0',
+        status,
+        date_from,
+        date_to
+      } = req.query;
+      
+      // Set cache headers for better performance
+      res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
       let query = supabaseAdmin
         .from("orders")
         .select(`
@@ -17,9 +29,21 @@ export default async function handler(req, res) {
       if (id) {
         query = query.eq("id", id).single();
       } else {
-        query = query.order("created_at", { ascending: false });
+        // Add filters
         if (register_id) query = query.eq("register_id", register_id);
         if (session_id) query = query.eq("session_id", session_id);
+        if (status) query = query.eq("status", status);
+        
+        // Date range filters
+        if (date_from) query = query.gte("created_at", date_from);
+        if (date_to) query = query.lte("created_at", date_to);
+        
+        // Pagination
+        const limitNum = parseInt(limit);
+        const offsetNum = parseInt(offset);
+        query = query
+          .range(offsetNum, offsetNum + limitNum - 1)
+          .order("created_at", { ascending: false });
       }
       const { data, error } = await query;
 
