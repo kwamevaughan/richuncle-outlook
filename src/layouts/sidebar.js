@@ -19,6 +19,7 @@ const Sidebar = ({
   toggleHeader = null,
   isMobile = false,
   isTablet = false,
+  className = "",
 }) => {
   const [windowWidth, setWindowWidth] = useState(null);
   const router = !disableRouter ? useRouter() : null;
@@ -306,12 +307,16 @@ const Sidebar = ({
       )}
       <div
         ref={sidebarRef}
-        className={`fixed left-0 top-0 z-50 transition-all duration-300
-          ${isMobile ? "m-0 rounded-none" : "m-0 md:m-3 rounded-xl"}
+        className={`h-screen z-40 transition-all duration-300
+          ${
+            isMobile || isTablet
+              ? "fixed left-0 top-0"
+              : "sticky top-0"
+          }
+          ${isMobile ? "m-0 rounded-none" : "m-0 rounded-xl"}
           ${isMobile || isTablet ? (isOpen ? "block" : "hidden") : "block"}
           ${mode === "dark" ? "" : "bg-white"}
-          group shadow-lg shadow-black/20 custom-scrollbar
-        `}
+          group shadow-lg shadow-black/20 custom-scrollbar ${className}`}
         style={{
           width: isMobile
             ? "85vw"
@@ -322,20 +327,11 @@ const Sidebar = ({
             : isOpen
             ? "240px"
             : "64px",
-          height: isMobile ? "100vh" : "calc(100vh - 48px)",
-          maxHeight: isMobile ? "100vh" : "calc(100vh - 48px)",
         }}
       >
-        <div className="flex flex-col h-full relative">
-          <div
-            className={`flex items-center justify-between ${
-              !isOpen && !isMobile && !isTablet
-                ? "justify-center"
-                : "justify-between"
-            } py-4 px-4 shadow-md  ${
-              isMobile ? "rounded-none" : "rounded-t-md"
-            }`}
-          >
+        <div className="flex flex-col h-full">
+          {/* Header section */}
+          <div className="h-[72px] z-50 flex-shrink-0 flex items-center justify-between py-4 px-4 bg-white dark:bg-gray-800 shadow-md">
             <div
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity duration-200"
               onClick={() => handleNavigation("/dashboard", "Dashboard")}
@@ -360,11 +356,10 @@ const Sidebar = ({
               )}
             </div>
 
-            {/* Mobile/Tablet close button */}
             {(isMobile || isTablet) && (
               <button
                 onClick={toggleSidebar}
-                className="text-white hover:scale-110 transition-transform p-1 rounded"
+                className="text-gray-500 dark:text-gray-300 hover:scale-110 transition-transform p-1 rounded"
                 title="Close Sidebar"
                 aria-label="Close Sidebar"
               >
@@ -373,11 +368,8 @@ const Sidebar = ({
             )}
           </div>
 
-          <div
-            className={`flex-grow px-2 overflow-y-auto flex flex-col scrollbar-thin pb-4 ${
-              !isOpen && !isMobile && !isTablet ? "items-center" : ""
-            }`}
-          >
+          {/* Scrollable navigation area */}
+          <nav className="flex-1 overflow-y-auto p-4 space-y-2">
             {/* Render standalone nav items (e.g., Home) */}
             {filteredNav
               .filter((entry) => !entry.items)
@@ -396,16 +388,16 @@ const Sidebar = ({
                   {item.icon && (
                     <Icon
                       icon={item.icon}
-                      className={`${
-                        item.href === "/dashboard" ? "h-7 w-7" : "h-5 w-5"
-                      } text-gray-500 transition-all duration-300 ${
+                      className={`${item.href === "/dashboard" ? "h-7 w-7" : "h-5 w-5"} text-gray-500 transition-all duration-300 ${
                         !isOpen && !isMobile && !isTablet ? "mx-auto" : "mr-2"
                       }`}
                     />
                   )}
                   <span
-                    className={`transition-all duration-300${
-                      !isOpen && !isMobile && !isTablet ? " hidden" : ""
+                    className={`text-sm transition-all duration-300 ${
+                      !isOpen && !isMobile && !isTablet ? "opacity-0 w-0 overflow-hidden" : ""
+                    } ${
+                      mode === "dark" ? "text-gray-100" : ""
                     }`}
                   >
                     {item.label}
@@ -667,7 +659,7 @@ const Sidebar = ({
                   </div>
                 </div>
               ))}
-          </div>
+          </nav>
 
           <div
             className={`px-4 py-2 mt-auto ${

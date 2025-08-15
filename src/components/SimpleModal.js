@@ -40,28 +40,14 @@ const SimpleModal = ({
   // Prevent background scrolling when modal is open
   useEffect(() => {
     if (shouldRender) {
-      // Store current scroll position
       scrollPositionRef.current = window.scrollY;
       document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollPositionRef.current}px`;
-      document.body.style.width = '100%';
     } else {
-      // Restore scroll position and body styles
       document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      if (scrollPositionRef.current) {
-        window.scrollTo(0, scrollPositionRef.current);
-      }
     }
-    
+
     return () => {
       document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
     };
   }, [shouldRender]);
 
@@ -121,8 +107,8 @@ const SimpleModal = ({
   return (
     <>
       <div
-        className="fixed inset-0 overflow-y-auto"
-        style={{ zIndex: 99999 }}
+        className="absolute inset-0 h-screen"
+        style={{ zIndex: 99999, top: `${scrollPositionRef.current}px` }}
         onClick={handleOutsideClick}
         onTouchMove={(e) => {
           // Prevent touch scrolling on background

@@ -12,6 +12,7 @@ import TooltipIconButton from "./TooltipIconButton";
 import ExportModal from "./export/ExportModal";
 import toast from "react-hot-toast";
 import StatusPill from "./StatusPill";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
 // Enhanced useTable hook
 function useTable(data, initialPageSize = 10, statusOptions = null) {
@@ -283,6 +284,25 @@ export function GenericTable({
   statusPillVariant = "default",
   customStatusContexts = {},
 }) {
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteItem, setDeleteItem] = useState(null);
+
+  const handleOpenConfirm = (item) => {
+    setDeleteItem(item);
+    setShowConfirmDelete(true);
+  };
+
+  const handleCloseConfirm = () => {
+    setDeleteItem(null);
+    setShowConfirmDelete(false);
+  };
+
+  const handleConfirmDelete = () => {
+    if (onDelete && deleteItem) {
+      onDelete(deleteItem);
+    }
+    handleCloseConfirm();
+  };
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data)
     ? data.filter((item) => item != null)
@@ -697,7 +717,7 @@ export function GenericTable({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    onDelete(row);
+                    handleOpenConfirm(row);
                   }}
                   mode={mode}
                   className="bg-red-50 text-red-600 text-xs"
@@ -825,7 +845,7 @@ export function GenericTable({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  onDelete(row);
+                  handleOpenConfirm(row);
                 }}
                 mode={mode}
                 className="bg-red-50 text-red-600 text-xs"
@@ -1675,8 +1695,13 @@ export function GenericTable({
           </table>
         </div>
       )}
-
-      {/* Footer with pagination */}
+      <ConfirmDeleteModal
+        isOpen={showConfirmDelete}
+        onClose={handleCloseConfirm}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteItem?.name || "the selected item"}
+        mode={mode}
+      />
       <div
         className={`px-3 sm:px-6 py-4 border-t ${
           mode === "dark"

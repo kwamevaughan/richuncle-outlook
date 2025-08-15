@@ -38,7 +38,6 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
   // Active tab state
   const [activeTab, setActiveTab] = useState("sales");
   const [loading, setLoading] = useState(false);
-  const [reportLoading, setReportLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showDateRangeModal, setShowDateRangeModal] = useState(false);
   const [tempDateRange, setTempDateRange] = useState(null);
@@ -208,10 +207,9 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
     // eslint-disable-next-line
   }, [router.isReady, router.query.tab]);
 
-  // Update URL when tab changes with loading state
+  // Update URL when tab changes
   useEffect(() => {
     if (router.isReady) {
-      setReportLoading(true);
       router.replace(
         {
           pathname: router.pathname,
@@ -220,30 +218,15 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
         undefined,
         { shallow: true },
       );
-
-      // Simulate report loading time
-      const timer = setTimeout(() => {
-        setReportLoading(false);
-        setLastUpdateTime(Date.now());
-      }, 300);
-
-      return () => clearTimeout(timer);
+      setLastUpdateTime(Date.now());
     }
     // eslint-disable-next-line
-  }, [activeTab]);
+  }, [activeTab, router.isReady]);
 
   // Trigger loading when filters change
   const handleFilterChange = useCallback((callback) => {
-    setReportLoading(true);
     callback();
-
-    // Debounce the loading state
-    const timer = setTimeout(() => {
-      setReportLoading(false);
-      setLastUpdateTime(Date.now());
-    }, 500);
-
-    return () => clearTimeout(timer);
+    setLastUpdateTime(Date.now());
   }, []);
 
   // Memoized date range options for better performance
@@ -465,23 +448,14 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
                           setActiveTab(tab.id);
                         }
                       }}
-                      disabled={reportLoading}
                       className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                         activeTab === tab.id
                           ? `bg-blue-500 text-white shadow-md`
-                          : reportLoading
-                            ? "text-gray-400 cursor-not-allowed"
-                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                       }`}
                     >
                       <Icon icon={tab.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">{tab.label}</span>
-                      {activeTab === tab.id && reportLoading && (
-                        <Icon
-                          icon="mdi:loading"
-                          className="w-3 h-3 animate-spin ml-1"
-                        />
-                      )}
                     </button>
                   ))}
                 </div>
@@ -520,41 +494,9 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
 
             {/* Active Tab Content */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[600px] relative">
-              {/* Enhanced Loading Overlay */}
-              {reportLoading && (
-                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
-                  <div className="text-center">
-                    <div className="relative mb-6">
-                      <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                      <Icon
-                        icon="mdi:chart-line"
-                        className="w-8 h-8 text-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                      />
-                    </div>
-                    <div className="text-center mb-6">
-                      <p className="text-lg font-medium text-gray-700 mb-2">
-                        Loading Report...
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Analyzing data for {getActiveTab()?.label}
-                      </p>
-                    </div>
-                    
-                    {/* Enhanced Loading Content */}
-                    <ContentLoader 
-                      type="card" 
-                      count={2} 
-                      className="max-w-md mx-auto"
-                      showHeader={false}
-                    />
-                  </div>
-                </div>
-              )}
-
+  
               {/* Report Content */}
-              <div
-                className={`transition-opacity duration-300 ${reportLoading ? "opacity-30" : "opacity-100"}`}
-              >
+              <div>
                 {ActiveComponent ? (
                   (() => {
                     console.log('Reports: About to render ActiveComponent with props:', {
@@ -573,7 +515,6 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
                         stores={stores}
                         mode={mode}
                         loading={storesLoading}
-                        onLoadingChange={setReportLoading}
                         lastUpdateTime={lastUpdateTime}
                       />
                     );
@@ -590,11 +531,9 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
               </div>
 
               {/* Last Updated Indicator */}
-              {!reportLoading && (
-                <div className="absolute top-4 right-4 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
-                  Updated {new Date(lastUpdateTime).toLocaleTimeString()}
-                </div>
-              )}
+              <div className="absolute top-4 right-4 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                Updated {new Date(lastUpdateTime).toLocaleTimeString()}
+              </div>
             </div>
           </div>
         </div>

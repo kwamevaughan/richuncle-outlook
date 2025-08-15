@@ -16,8 +16,6 @@ import useResponsive from "../hooks/useResponsive";
 export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [deleteItem, setDeleteItem] = useState(null);
   const [errorModal, setErrorModal] = useState({ open: false, message: "" });
   const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -316,17 +314,10 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
     setShowModal(false);
     setEditItem(null);
   };
-  const openConfirm = (item) => {
-    setDeleteItem(item);
-    setShowConfirm(true);
-  };
-  const closeConfirm = () => {
-    setDeleteItem(null);
-    setShowConfirm(false);
-  };
-  const handleDelete = async () => {
+  const handleDelete = async (item) => {
+    if (!item) return;
     try {
-      const response = await fetch(`/api/products/${deleteItem.id}`, {
+      const response = await fetch(`/api/products/${item.id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -334,8 +325,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
       });
       const result = await response.json();
       if (result.error) throw new Error(result.error);
-      setProducts((prev) => prev.filter((p) => p.id !== deleteItem.id));
-      closeConfirm();
+      setProducts((prev) => prev.filter((p) => p.id !== item.id));
       toast.success("Product deleted!");
     } catch (err) {
       toast.error(err.message || "Failed to delete product");
@@ -483,7 +473,7 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                   data={products}
                   columns={columns}
                   onEdit={openEditModal}
-                  onDelete={openConfirm}
+                  onDelete={handleDelete}
                   onAddNew={openAddModal}
                   onRefresh={fetchProducts}
                   addNewLabel="Add New Product"
@@ -543,40 +533,6 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                   >
                     Close
                   </button>
-                </div>
-              </SimpleModal>
-            )}
-            {showConfirm && (
-              <SimpleModal
-                isOpen={true}
-                onClose={closeConfirm}
-                title="Confirm Delete"
-                mode={mode}
-                width="max-w-md"
-              >
-                <div className="py-6 text-center">
-                  <Icon
-                    icon="mdi:alert"
-                    className="w-12 h-12 text-red-500 mx-auto mb-4"
-                  />
-                  <div className="text-lg font-semibold mb-2">
-                    Are you sure you want to delete{" "}
-                    <span className="font-semibold">{deleteItem?.name}</span>?
-                  </div>
-                  <div className="flex justify-center gap-4 mt-6">
-                    <button
-                      className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
-                      onClick={closeConfirm}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-6 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
-                      onClick={handleDelete}
-                    >
-                      Delete
-                    </button>
-                  </div>
                 </div>
               </SimpleModal>
             )}

@@ -18,8 +18,6 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("add");
   const [editItem, setEditItem] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [deleteItem, setDeleteItem] = useState(null);
   const [errorModal, setErrorModal] = useState({ open: false, message: "" });
   const router = useRouter();
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -67,18 +65,11 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
     setShowModal(false);
     setEditItem(null);
   };
-  const openConfirm = (item) => {
-    setDeleteItem(item);
-    setShowConfirm(true);
-  };
-  const closeConfirm = () => {
-    setDeleteItem(null);
-    setShowConfirm(false);
-  };
-  const handleDelete = async () => {
+  const handleDelete = async (item) => {
+    if (!item) return;
     try {
       if (tab === "categories") {
-        const response = await fetch(`/api/categories/${deleteItem.id}`, {
+        const response = await fetch(`/api/categories/${item.id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -86,9 +77,9 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
         });
         const result = await response.json();
         if (result.error) throw new Error(result.error);
-        setCategories((prev) => prev.filter((cat) => cat.id !== deleteItem.id));
+        setCategories((prev) => prev.filter((cat) => cat.id !== item.id));
       } else {
-        const response = await fetch(`/api/subcategories/${deleteItem.id}`, {
+        const response = await fetch(`/api/subcategories/${item.id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -96,9 +87,8 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
         });
         const result = await response.json();
         if (result.error) throw new Error(result.error);
-        setSubCategories((prev) => prev.filter((sub) => sub.id !== deleteItem.id));
+        setSubCategories((prev) => prev.filter((sub) => sub.id !== item.id));
       }
-      closeConfirm();
       toast.success(`${tab === "categories" ? "Category" : "Subcategory"} deleted!`);
     } catch (err) {
       toast.error(err.message || `Failed to delete ${tab === "categories" ? "category" : "subcategory"}`);
@@ -365,7 +355,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                     },
                   ]}
                   onEdit={(item) => openEditModal("categories", item)}
-                  onDelete={openConfirm}
+                  onDelete={handleDelete}
                   onReorder={handleReorderCategories}
                   enableDragDrop={true}
                   onAddNew={() => openAddModal("categories")}
@@ -408,7 +398,7 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                     { Header: "Image", accessor: "image_url", type: "image" },
                   ]}
                   onEdit={(item) => openEditModal("subcategories", item)}
-                  onDelete={openConfirm}
+                  onDelete={handleDelete}
                   onReorder={handleReorderCategories}
                     enableDragDrop={true}
                   onAddNew={() => openAddModal("subcategories")}
@@ -500,45 +490,11 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                     {errorModal.message}
                   </div>
                   <button
-                    className="mt-4 px-6 py-2 rounded bg-blue-600 text-white bg-blue-700"
+                    className="mt-4 px-6 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
                     onClick={() => setErrorModal({ open: false, message: "" })}
                   >
                     Close
                   </button>
-                </div>
-              </SimpleModal>
-            )}
-            {showConfirm && (
-              <SimpleModal
-                isOpen={true}
-                onClose={closeConfirm}
-                title="Confirm Delete"
-                mode={mode}
-                width="max-w-md"
-              >
-                <div className="py-6 text-center">
-                  <Icon
-                    icon="mdi:alert"
-                    className="w-12 h-12 text-red-500 mx-auto mb-4"
-                  />
-                  <div className="text-lg font-semibold mb-2">
-                    Are you sure you want to delete{" "}
-                    <span className="font-semibold">{deleteItem?.name}</span>?
-                  </div>
-                  <div className="flex justify-center gap-4 mt-6">
-                    <button
-                      className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100"
-                      onClick={closeConfirm}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-6 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
-                      onClick={handleDelete}
-                    >
-                      Delete
-                    </button>
-                  </div>
                 </div>
               </SimpleModal>
             )}

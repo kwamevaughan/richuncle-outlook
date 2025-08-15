@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
@@ -51,6 +51,38 @@ export default function ExportModal({
 }) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
+  const scrollPositionRef = useRef(0);
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (shouldRender) {
+      scrollPositionRef.current = window.scrollY;
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [shouldRender]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
 
   // Handle modal open/close with smooth transitions
   useEffect(() => {
@@ -356,8 +388,13 @@ export default function ExportModal({
         : "Export Data");
 
   return (
-    <div className="fixed top-0 left-0 right-0 bottom-0 min-h-screen bg-black/30 backdrop-blur-sm flex flex-col items-center justify-start z-[9999]">
+    <div
+      className="absolute inset-0 h-screen bg-black/30 backdrop-blur-sm flex flex-col items-center justify-start z-[9999]"
+      style={{ top: `${scrollPositionRef.current}px` }}
+      onClick={onClose}
+    >
       <div
+        onClick={(e) => e.stopPropagation()}
         className={`rounded-xl max-w-2xl w-full mx-0 shadow-2xl transform transition-all duration-${animationDuration} ease-out flex flex-col max-h-[80vh] backdrop-blur-md bg-white/95 border border-white/20 ${
           mode === "dark"
             ? "bg-gray-800/95 text-white border-gray-700/20"

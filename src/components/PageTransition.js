@@ -102,6 +102,10 @@ export default function PageTransition({
   // Handle route changes
   useEffect(() => {
     const handleStart = (url) => {
+      // Prevent transition for query changes on the same page
+      if (router.pathname === url.split('?')[0]) {
+        return;
+      }
       setIsLoading(true);
       setLoadingProgress(0);
       setIsTransitioning(true);
