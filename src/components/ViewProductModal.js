@@ -62,36 +62,36 @@ export default function ViewProductModal({ product, isOpen, onClose, mode }) {
     { label: "Unit", value: product.unit_name, icon: "mdi:ruler" },
     { label: "Quantity", value: product.quantity, icon: "mdi:package-variant" },
     { label: "Cost Price", value: formatPrice(product.cost_price || 0), icon: "mdi:currency-usd" },
-    { 
-      label: "Tax Configuration", 
-      value: `${product.tax_type === 'inclusive' ? 'Inclusive' : 'Exclusive'} (${product.tax_percentage || 0}%)`, 
-      icon: "mdi:receipt-text" 
-    },
-    {
-      label: "Selling Type",
-      value: (() => {
-        let val = product.selling_type;
-        // If it's an array with a single string that looks like a JSON array, parse it
-        if (Array.isArray(val) && val.length === 1 && typeof val[0] === "string" && val[0].startsWith("[")) {
-          try {
-            val = JSON.parse(val[0]);
-          } catch {}
-        }
-        // If it's a string that looks like a JSON array, parse it
-        if (typeof val === "string" && val.startsWith("[")) {
-          try {
-            val = JSON.parse(val);
-          } catch {}
-        }
-        // If it's now an array, join it
-        if (Array.isArray(val)) {
-          return val.join(", ");
-        }
-        // Otherwise, just return as string
-        return val || "—";
-      })(),
-      icon: "mdi:briefcase-outline",
-    },
+    // { 
+    //   label: "Tax Configuration", 
+    //   value: `${product.tax_type === 'inclusive' ? 'Inclusive' : 'Exclusive'} (${product.tax_percentage || 0}%)`, 
+    //   icon: "mdi:receipt-text" 
+    // },
+    // {
+    //   label: "Selling Type",
+    //   value: (() => {
+    //     let val = product.selling_type;
+    //     // If it's an array with a single string that looks like a JSON array, parse it
+    //     if (Array.isArray(val) && val.length === 1 && typeof val[0] === "string" && val[0].startsWith("[")) {
+    //       try {
+    //         val = JSON.parse(val[0]);
+    //       } catch {}
+    //     }
+    //     // If it's a string that looks like a JSON array, parse it
+    //     if (typeof val === "string" && val.startsWith("[")) {
+    //       try {
+    //         val = JSON.parse(val);
+    //       } catch {}
+    //     }
+    //     // If it's now an array, join it
+    //     if (Array.isArray(val)) {
+    //       return val.join(", ");
+    //     }
+    //     // Otherwise, just return as string
+    //     return val || "—";
+    //   })(),
+    //   icon: "mdi:briefcase-outline",
+    // },
   ];
 
   const printRef = useRef();
