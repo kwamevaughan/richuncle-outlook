@@ -17,7 +17,7 @@ const CameraBarcodeScanner = ({
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [stream, setStream] = useState(null);
   const scanIntervalRef = useRef(null);
-  const [codeReader, setCodeReader] = useState(null);
+  const codeReaderRef = useRef(null);
   const [scanAttempts, setScanAttempts] = useState(0);
   const [lastScanTime, setLastScanTime] = useState(null);
   const [showTips, setShowTips] = useState(false);
@@ -27,21 +27,46 @@ const CameraBarcodeScanner = ({
   // Initialize camera and start scanning
   useEffect(() => {
     if (isOpen) {
-      try {
-        // Initialize the code reader with error handling
-        const reader = new BrowserMultiFormatReader();
-        setCodeReader(reader);
-        setReaderError(null);
-        setDebugInfo("Code reader initialized successfully");
-        initializeCamera();
-      } catch (err) {
-        console.error("Failed to initialize code reader:", err);
-        setReaderError(
-          "Failed to initialize barcode reader. Please refresh and try again.",
-        );
-        setError("Scanner initialization failed");
-        setDebugInfo(`Init error: ${err.message}`);
-      }
+      const initializeScanner = async () => {
+        try {
+          setDebugInfo("Initializing barcode scanner...");
+          console.log("Creating BrowserMultiFormatReader...");
+          
+          // Initialize the code reader with error handling
+          const reader = new BrowserMultiFormatReader();
+          console.log("BrowserMultiFormatReader created:", reader);
+          console.log("Available methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(reader)));
+          
+          // Test if the reader has the methods we need
+          const availableMethods = {
+            decodeOnceFromVideoDevice: typeof reader.decodeOnceFromVideoDevice === 'function',
+            decodeFromCanvas: typeof reader.decodeFromCanvas === 'function',
+            decodeFromImageData: typeof reader.decodeFromImageData === 'function',
+            decode: typeof reader.decode === 'function'
+          };
+          console.log("Available decode methods:", availableMethods);
+          
+          if (!availableMethods.decodeOnceFromVideoDevice && !availableMethods.decodeFromCanvas && !availableMethods.decode) {
+            throw new Error("No compatible decode methods found in ZXing library");
+          }
+          
+          codeReaderRef.current = reader;
+          setReaderError(null);
+          setDebugInfo("Code reader initialized successfully");
+          
+          // Initialize camera after code reader is set
+          await initializeCamera();
+        } catch (err) {
+          console.error("Failed to initialize code reader:", err);
+          setReaderError(
+            "Failed to initialize barcode reader. Please refresh and try again.",
+          );
+          setError("Scanner initialization failed");
+          setDebugInfo(`Init error: ${err.message}`);
+        }
+      };
+
+      initializeScanner();
     }
 
     return () => {
@@ -64,6 +89,12 @@ const CameraBarcodeScanner = ({
   const initializeCamera = async () => {
     try {
       setError(null);
+      setDebugInfo("Requesting camera access...");
+
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera access not supported in this browser");
+      }
 
       // Get available video devices
       const mediaDevices = await navigator.mediaDevices.enumerateDevices();
@@ -71,6 +102,7 @@ const CameraBarcodeScanner = ({
         (device) => device.kind === "videoinput",
       );
       setDevices(videoDevices);
+      setDebugInfo(`Found ${videoDevices.length} camera(s)`);
 
       // Select back camera if available, otherwise first camera
       const backCamera = videoDevices.find(
@@ -83,32 +115,117 @@ const CameraBarcodeScanner = ({
       const deviceId =
         selectedDeviceId || backCamera?.deviceId || videoDevices[0]?.deviceId;
 
-      if (!deviceId) {
+      if (!deviceId && videoDevices.length === 0) {
         setDebugInfo("No camera devices found");
         throw new Error("No camera devices found");
       }
 
-      // Request camera access
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          deviceId: deviceId ? { exact: deviceId } : undefined,
-          facingMode: selectedDeviceId ? undefined : "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+      setDebugInfo("Requesting camera stream...");
+
+      // Try different camera configurations for better mobile compatibility
+      let mediaStream;
+      const constraints = [
+        // First try: specific device with high resolution
+        {
+          video: {
+            deviceId: deviceId ? { exact: deviceId } : undefined,
+            facingMode: selectedDeviceId ? undefined : "environment",
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+          },
         },
-      });
+        // Second try: just facing mode
+        {
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        },
+        // Third try: any camera
+        {
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        },
+        // Last try: basic video
+        {
+          video: true,
+        },
+      ];
+
+      for (let i = 0; i < constraints.length; i++) {
+        try {
+          setDebugInfo(`Trying camera config ${i + 1}/${constraints.length}...`);
+          mediaStream = await navigator.mediaDevices.getUserMedia(constraints[i]);
+          setDebugInfo(`Camera config ${i + 1} successful`);
+          break;
+        } catch (err) {
+          console.log(`Camera config ${i + 1} failed:`, err.message);
+          if (i === constraints.length - 1) {
+            throw err; // Last attempt failed
+          }
+        }
+      }
+
+      if (!mediaStream) {
+        throw new Error("Failed to get camera stream with any configuration");
+      }
 
       setStream(mediaStream);
-      setDebugInfo(
-        `Camera initialized: ${deviceId ? "specific device" : "default device"}`,
-      );
+      setDebugInfo("Camera stream obtained successfully");
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Add multiple event listeners for better compatibility
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play();
-          setIsScanning(true);
-          startScanning();
+          console.log("Video metadata loaded");
+          setDebugInfo("Video metadata loaded, starting playback...");
+          videoRef.current.play().then(() => {
+            console.log("Video playing successfully");
+            setDebugInfo("Video playing, initializing scanner...");
+            setIsScanning(true);
+            
+            // Start scanning after a short delay to ensure everything is ready
+            setTimeout(() => {
+              // Double-check video dimensions before starting
+              const videoEl = videoRef.current;
+              if (videoEl && videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+                setDebugInfo(`Video ready: ${videoEl.videoWidth}x${videoEl.videoHeight}`);
+                startScanning();
+              } else {
+                setDebugInfo("Waiting for video dimensions...");
+                // Try again after another delay
+                setTimeout(() => {
+                  const videoEl2 = videoRef.current;
+                  if (videoEl2 && videoEl2.videoWidth > 0 && videoEl2.videoHeight > 0) {
+                    setDebugInfo(`Video ready: ${videoEl2.videoWidth}x${videoEl2.videoHeight}`);
+                    startScanning();
+                  } else {
+                    setDebugInfo("Video dimensions still not ready, starting anyway");
+                    startScanning();
+                  }
+                }, 1000);
+              }
+            }, 500);
+          }).catch(err => {
+            console.error("Video play failed:", err);
+            setDebugInfo(`Video play failed: ${err.message}`);
+            setError("Failed to start video playback");
+          });
+        };
+
+        videoRef.current.oncanplay = () => {
+          console.log("Video can play");
+          setDebugInfo("Video ready for playback");
+        };
+
+        videoRef.current.onerror = (err) => {
+          console.error("Video error:", err);
+          setDebugInfo("Video error occurred");
+          setError("Video playback error");
         };
       }
     } catch (err) {
@@ -120,8 +237,22 @@ const CameraBarcodeScanner = ({
   };
 
   const startScanning = () => {
-    if (!videoRef.current || !codeReader) {
-      setDebugInfo("Cannot start scanning - missing video or reader");
+    console.log("startScanning called", {
+      hasVideo: !!videoRef.current,
+      hasCodeReader: !!codeReaderRef.current,
+      videoReadyState: videoRef.current?.readyState,
+      isScanning
+    });
+
+    if (!videoRef.current) {
+      setDebugInfo("Cannot start scanning - video element not ready");
+      console.error("Video element not found");
+      return;
+    }
+
+    if (!codeReaderRef.current) {
+      setDebugInfo("Cannot start scanning - code reader not initialized");
+      console.error("Code reader not initialized");
       return;
     }
 
@@ -134,12 +265,26 @@ const CameraBarcodeScanner = ({
     setScanAttempts(0);
     setDebugInfo("Scanning started - looking for barcodes...");
 
-    // Start interval-based scanning with ZXing
-    scanIntervalRef.current = setInterval(async () => {
-      if (isScanning) {
-        await scanForBarcode();
+    // Wait for video to be ready before starting scan loop
+    const waitForVideoAndStartScan = () => {
+      if (videoRef.current && videoRef.current.readyState >= 2) {
+        // Video has enough data to start scanning
+        setDebugInfo("Video ready, starting scan loop...");
+        
+        // Start interval-based scanning with ZXing
+        scanIntervalRef.current = setInterval(async () => {
+          if (isScanning && videoRef.current && codeReaderRef.current) {
+            await scanForBarcode();
+          }
+        }, 300); // Reduced interval for more responsive scanning
+      } else {
+        // Video not ready yet, wait a bit more
+        setDebugInfo("Waiting for video to be ready...");
+        setTimeout(waitForVideoAndStartScan, 200);
       }
-    }, 300); // Reduced interval for more responsive scanning
+    };
+
+    waitForVideoAndStartScan();
   };
 
   const handleBarcodeResult = (result) => {
@@ -196,7 +341,12 @@ const CameraBarcodeScanner = ({
   };
 
   const scanForBarcode = async () => {
-    if (!videoRef.current || !codeReader || !isScanning) {
+    if (!videoRef.current || !codeReaderRef.current || !isScanning) {
+      console.log("Scan skipped", {
+        hasVideo: !!videoRef.current,
+        hasCodeReader: !!codeReaderRef.current,
+        isScanning
+      });
       setDebugInfo("Scan skipped - missing requirements");
       return;
     }
@@ -204,49 +354,64 @@ const CameraBarcodeScanner = ({
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-      setDebugInfo("Video not ready, waiting...");
+    if (!canvas) {
+      setDebugInfo("Canvas not available");
+      return;
+    }
+
+    if (video.readyState < video.HAVE_CURRENT_DATA) {
+      setDebugInfo(`Video not ready (state: ${video.readyState}), waiting...`);
       return;
     }
 
     // Increment attempts counter at the start of each scan attempt
     setScanAttempts((prev) => {
       const newCount = prev + 1;
-      setDebugInfo(`Scanning attempt ${newCount}...`);
+      setDebugInfo(`Scanning attempt ${newCount}... (video: ${video.videoWidth}x${video.videoHeight})`);
       return newCount;
     });
 
     try {
+      // Ensure video has dimensions
+      const videoWidth = video.videoWidth || video.clientWidth || 640;
+      const videoHeight = video.videoHeight || video.clientHeight || 480;
+      
+      if (videoWidth === 0 || videoHeight === 0) {
+        setDebugInfo(`Video dimensions not ready (${videoWidth}x${videoHeight})`);
+        return;
+      }
+
       // Draw video frame to canvas for processing
       const ctx = canvas.getContext("2d");
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // Try different ZXing methods for better compatibility
       let result = null;
       let scanMethod = "";
 
+      const codeReader = codeReaderRef.current;
+      
       try {
-        // Method 1: Try decodeFromImageData
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        result = await codeReader.decodeFromImageData(imageData);
-        scanMethod = "imageData";
-      } catch (decodeError) {
-        try {
-          // Method 2: Try decodeFromCanvas if imageData fails
+        // Method 1: Try decodeOnceFromVideoDevice first (most reliable for video)
+        if (codeReader.decodeOnceFromVideoDevice) {
+          result = await codeReader.decodeOnceFromVideoDevice(undefined, video);
+          scanMethod = "videoDevice";
+        } else if (codeReader.decodeFromCanvas) {
+          // Method 2: Try decodeFromCanvas
           result = await codeReader.decodeFromCanvas(canvas);
           scanMethod = "canvas";
-        } catch (canvasError) {
-          try {
-            // Method 3: Try direct video decode
-            result = await codeReader.decodeFromVideoElement(video);
-            scanMethod = "video";
-          } catch (videoError) {
-            // All methods failed - this is expected when no barcode is present
-            throw videoError;
-          }
+        } else if (codeReader.decode) {
+          // Method 3: Try the generic decode method
+          result = await codeReader.decode(canvas);
+          scanMethod = "decode";
+        } else {
+          throw new Error("No compatible decode methods available");
         }
+      } catch (decodeError) {
+        // All methods failed - this is expected when no barcode is present
+        throw decodeError;
       }
 
       if (result && result.getText) {
@@ -281,24 +446,67 @@ const CameraBarcodeScanner = ({
 
   // Additional method for manual barcode detection from canvas (optional)
   const scanFromCanvas = async () => {
-    if (!canvasRef.current || !codeReader) return;
+    if (!canvasRef.current || !codeReaderRef.current) {
+      setDebugInfo("Manual scan failed - missing canvas or reader");
+      return;
+    }
 
     const canvas = canvasRef.current;
+    const video = videoRef.current;
     const ctx = canvas.getContext("2d");
 
+    if (!video || video.readyState < video.HAVE_CURRENT_DATA) {
+      setDebugInfo("Manual scan failed - video not ready");
+      return;
+    }
+
     try {
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const result = await codeReader.decodeFromImageData(imageData);
+      // Ensure video has dimensions
+      const videoWidth = video.videoWidth || video.clientWidth || 640;
+      const videoHeight = video.videoHeight || video.clientHeight || 480;
+      
+      if (videoWidth === 0 || videoHeight === 0) {
+        setDebugInfo("Manual scan failed - video has no dimensions");
+        return;
+      }
+
+      // Set canvas dimensions and draw current video frame
+      canvas.width = videoWidth;
+      canvas.height = videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      setDebugInfo(`Manual scan triggered (${canvas.width}x${canvas.height})...`);
+
+      let result = null;
+      const codeReader = codeReaderRef.current;
+      
+      // Try different methods based on what's available
+      // Start with video-based methods first as they're more reliable
+      if (codeReader.decodeOnceFromVideoDevice) {
+        result = await codeReader.decodeOnceFromVideoDevice(undefined, video);
+      } else if (codeReader.decodeFromCanvas) {
+        result = await codeReader.decodeFromCanvas(canvas);
+      } else if (codeReader.decode) {
+        result = await codeReader.decode(canvas);
+      } else {
+        throw new Error("No decode methods available");
+      }
+
       if (result && result.getText) {
+        setDebugInfo("✅ Manual scan successful!");
         handleBarcodeResult(result);
       }
     } catch (err) {
       if (
         err.name !== "NotFoundException" &&
         !err.message?.includes("No barcode found") &&
-        !err.message?.includes("not found")
+        !err.message?.includes("not found") &&
+        !err.message?.includes("No code found")
       ) {
         console.error("Canvas barcode scanning error:", err);
+        setDebugInfo(`Manual scan error: ${err.message}`);
+      } else {
+        setDebugInfo("Manual scan - no barcode detected");
       }
     }
   };
@@ -508,6 +716,14 @@ const CameraBarcodeScanner = ({
               <span className="bg-gray-100 px-2 py-1 rounded">EAN-13</span>
               <span className="bg-gray-100 px-2 py-1 rounded">UPC-A</span>
             </div>
+
+            {/* Manual scan trigger */}
+            <button
+              onClick={scanFromCanvas}
+              className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              Scan Now
+            </button>
 
             {/* Manual input fallback */}
             <button
