@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { userId } = req.body;
+    const { userId, excludeCredentials = true } = req.body;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID is required' });
@@ -23,6 +23,17 @@ export default async function handler(req, res) {
 
     if (userError || !user) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get existing credentials to exclude (if needed)
+    let excludeCredentialList = [];
+    if (excludeCredentials) {
+      const { data: existingCredentials } = await supabaseAdmin
+        .from('user_credentials')
+        .select('credential_id')
+        .eq('user_id', userId);
+      
+      excludeCredentialList = existingCredentials || [];
     }
 
     // Generate a secure random challenge
@@ -47,6 +58,11 @@ export default async function handler(req, res) {
         { alg: -7, type: "public-key" }, // ES256
         { alg: -257, type: "public-key" }, // RS256
       ],
+      excludeCredentials: excludeCredentialList.map(cred => ({
+        id: Buffer.from(cred.credential_id, 'base64url'),
+        type: 'public-key',
+        transports: ['internal'],
+      })),
       authenticatorSelection: {
         authenticatorAttachment: "platform",
         userVerification: "required",

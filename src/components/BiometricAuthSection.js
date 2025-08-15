@@ -48,11 +48,15 @@ export default function BiometricAuthSection({ user, mode = 'light' }) {
       const result = await response.json();
       
       if (result.success) {
-        setCredentials(result.data || []);
-        setIsEnabled(result.data && result.data.length > 0);
+        const currentCredentials = result.data || [];
+        setCredentials(currentCredentials);
+        // Don't disable the button if there are credentials - allow adding more
+        setIsEnabled(true);
       }
     } catch (error) {
       console.error('Error fetching credentials:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -67,7 +71,11 @@ export default function BiometricAuthSection({ user, mode = 'light' }) {
       const challengeResponse = await fetch('/api/auth/webauthn/register-challenge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ 
+          userId: user.id,
+          // Always allow creating new credentials, don't exclude existing ones
+          excludeCredentials: false 
+        }),
       });
       
       const challengeResult = await challengeResponse.json();
@@ -76,18 +84,12 @@ export default function BiometricAuthSection({ user, mode = 'light' }) {
         throw new Error(challengeResult.error || 'Failed to get registration challenge');
       }
       
-      // Handle both challenge formats for compatibility
-      const challenge = challengeResult.challenge || challengeResult.options?.challenge;
-      if (!challenge) {
-        throw new Error('No challenge received from server');
-      }
-
-      // Register credential
+      // Register the new credential
       const credential = await registerCredential(
         user.id,
-        user.name,
+        user.full_name || user.email,
         user.email,
-        challenge
+        challengeResult.challenge
       );
       
       // Complete registration
@@ -98,7 +100,7 @@ export default function BiometricAuthSection({ user, mode = 'light' }) {
           userId: user.id,
           credential,
           sessionId: challengeResult.sessionId,
-          deviceInfo,
+          deviceInfo: getDeviceInfo()
         }),
       });
       
@@ -108,13 +110,15 @@ export default function BiometricAuthSection({ user, mode = 'light' }) {
         throw new Error(registerResult.error || 'Failed to complete registration');
       }
       
-      toast.success('Biometric authentication enabled successfully!', { id: toastId });
-      setIsEnabled(true);
+      toast.success('Biometric authentication added successfully!', { id: toastId });
       fetchUserCredentials(); // Refresh credentials list
       
     } catch (error) {
-      console.error('Error enabling biometric auth:', error);
-      toast.error(error.message || 'Failed to enable biometric authentication', { id: toastId });
+      console.error('Error adding biometric auth:', error);
+      toast.error(error.message || 'Failed to add biometric authentication', { 
+        id: toastId,
+        duration: 5000 // Show error for longer
+      });
     } finally {
       setIsRegistering(false);
     }
