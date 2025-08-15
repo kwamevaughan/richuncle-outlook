@@ -50,7 +50,11 @@ export function useOptimizedData(endpoint, options = {}) {
       }
 
       const result = await response.json();
+      console.log('useOptimizedData: Raw API response:', result);
+      console.log('useOptimizedData: result.data:', result.data);
+      console.log('useOptimizedData: result.data || result:', result.data || result);
       const transformedData = transform(result.data || result);
+      console.log('useOptimizedData: Transformed data:', transformedData);
 
       // Cache the result
       cache.set(cacheKey, {

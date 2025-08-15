@@ -336,7 +336,11 @@ const Sidebar = ({
               isMobile ? "rounded-none" : "rounded-t-md"
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity duration-200"
+              onClick={() => handleNavigation("/dashboard", "Dashboard")}
+              title="Go to Dashboard"
+            >
               {!isOpen && !isMobile && !isTablet ? (
                 <Image
                   src="/assets/images/logo-icon.svg"

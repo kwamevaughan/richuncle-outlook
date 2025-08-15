@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import MainLayout from "@/layouts/MainLayout";
 import { Icon } from "@iconify/react";
 import { useUser } from "../hooks/useUser";
@@ -7,6 +13,7 @@ import { useRouter } from "next/router";
 import toast from "react-hot-toast";
 import DateRangePicker from "@/components/DateRangePicker";
 import SimpleModal from "@/components/SimpleModal";
+import { useOptimizedData } from "../hooks/useOptimizedData";
 
 // Report Components (to be created)
 import SalesReport from "@/components/reports/SalesReport";
@@ -26,16 +33,18 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
   const { handleLogout } = useLogout();
   const router = useRouter();
-  
+
   // Active tab state
   const [activeTab, setActiveTab] = useState("sales");
   const [loading, setLoading] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showDateRangeModal, setShowDateRangeModal] = useState(false);
   const [tempDateRange, setTempDateRange] = useState(null);
   const [dropdownValue, setDropdownValue] = useState("This Month");
   const dateRangeDropdownRef = useRef(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
   // Global filters for all reports
   const [dateRange, setDateRange] = useState(() => {
     const today = new Date();
@@ -45,13 +54,47 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
   const [selectedStore, setSelectedStore] = useState("all");
   const [stores, setStores] = useState([]);
 
-  // Fetch stores for filter
+  // Simple stores fetching (temporary fix)
+  const [storesData, setStoresData] = useState(null);
+  const [storesLoading, setStoresLoading] = useState(true);
+
   useEffect(() => {
-    fetch('/api/stores')
-      .then(res => res.json())
-      .then(({ data }) => setStores(data || []))
-      .catch(err => console.error('Error fetching stores:', err));
+    const fetchStores = async () => {
+      try {
+        setStoresLoading(true);
+        const response = await fetch('/api/stores');
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Reports: Direct fetch stores result:', result);
+          setStoresData(result.data || []);
+        } else {
+          console.error('Failed to fetch stores');
+        }
+      } catch (error) {
+        console.error('Error fetching stores:', error);
+      } finally {
+        setStoresLoading(false);
+      }
+    };
+
+    fetchStores();
   }, []);
+
+  useEffect(() => {
+    console.log('Reports: storesData received:', storesData);
+    console.log('Reports: storesLoading:', storesLoading);
+    if (storesData) {
+      console.log('Reports: Setting stores:', storesData);
+      setStores(storesData);
+    }
+  }, [storesData]);
+
+  // Debug stores state
+  useEffect(() => {
+    console.log('Reports: Current stores state:', stores);
+    console.log('Reports: Stores length:', stores.length);
+    console.log('Reports: Stores data:', JSON.stringify(stores, null, 2));
+  }, [stores]);
 
   // Tab configuration
   const tabs = [
@@ -61,7 +104,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:chart-line",
       description: "Sales analytics, trends, and performance",
       color: "blue",
-      component: SalesReport
+      component: SalesReport,
     },
     {
       id: "inventory",
@@ -69,7 +112,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:package-variant",
       description: "Stock levels, movements, and alerts",
       color: "green",
-      component: InventoryReport
+      component: InventoryReport,
     },
     {
       id: "purchases",
@@ -77,7 +120,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:cart-outline",
       description: "Purchase orders, direct purchases, and returns",
       color: "purple",
-      component: PurchasesReport
+      component: PurchasesReport,
     },
     {
       id: "customers",
@@ -85,7 +128,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:account-group",
       description: "Customer analytics and due balances",
       color: "indigo",
-      component: CustomersReport
+      component: CustomersReport,
     },
     {
       id: "suppliers",
@@ -93,7 +136,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:truck-delivery",
       description: "Supplier performance and due balances",
       color: "orange",
-      component: SuppliersReport
+      component: SuppliersReport,
     },
     {
       id: "products",
@@ -101,7 +144,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:cube-outline",
       description: "Product performance and expiry alerts",
       color: "teal",
-      component: ProductsReport
+      component: ProductsReport,
     },
     {
       id: "expenses",
@@ -109,7 +152,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:file-document-outline",
       description: "Expense tracking and analysis",
       color: "red",
-      component: ExpensesReport
+      component: ExpensesReport,
     },
     {
       id: "payments",
@@ -117,7 +160,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:credit-card-multiple",
       description: "Payment methods breakdown and transaction analysis",
       color: "pink",
-      component: PaymentReport
+      component: PaymentReport,
     },
     {
       id: "profit-loss",
@@ -125,7 +168,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:chart-areaspline",
       description: "Financial performance and profitability",
       color: "emerald",
-      component: ProfitLossReport
+      component: ProfitLossReport,
     },
     {
       id: "tax",
@@ -133,7 +176,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:calculator",
       description: "Tax calculations and reports",
       color: "amber",
-      component: TaxReport
+      component: TaxReport,
     },
     {
       id: "annual",
@@ -141,7 +184,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:calendar-year",
       description: "Annual reports and summaries",
       color: "cyan",
-      component: AnnualReport
+      component: AnnualReport,
     },
     {
       id: "z-report",
@@ -149,36 +192,75 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       icon: "mdi:receipt-long",
       description: "Register sessions and Z-reports",
       color: "rose",
-      component: ZReportHub
-    }
+      component: ZReportHub,
+    },
   ];
 
   // Deep-linking: set tab from query param on mount
   useEffect(() => {
     if (router.isReady) {
       const tabParam = router.query.tab;
-      if (tabParam && tabs.some(tab => tab.id === tabParam)) {
+      if (tabParam && tabs.some((tab) => tab.id === tabParam)) {
         setActiveTab(tabParam);
       }
     }
     // eslint-disable-next-line
   }, [router.isReady, router.query.tab]);
 
-  // Update URL when tab changes
+  // Update URL when tab changes with loading state
   useEffect(() => {
     if (router.isReady) {
-      router.replace({
-        pathname: router.pathname,
-        query: { ...router.query, tab: activeTab },
-      }, undefined, { shallow: true });
+      setReportLoading(true);
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { ...router.query, tab: activeTab },
+        },
+        undefined,
+        { shallow: true },
+      );
+
+      // Simulate report loading time
+      const timer = setTimeout(() => {
+        setReportLoading(false);
+        setLastUpdateTime(Date.now());
+      }, 300);
+
+      return () => clearTimeout(timer);
     }
     // eslint-disable-next-line
   }, [activeTab]);
 
-  
+  // Trigger loading when filters change
+  const handleFilterChange = useCallback((callback) => {
+    setReportLoading(true);
+    callback();
+
+    // Debounce the loading state
+    const timer = setTimeout(() => {
+      setReportLoading(false);
+      setLastUpdateTime(Date.now());
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Memoized date range options for better performance
+  const dateRangeOptions = useMemo(
+    () => [
+      { value: "Today", label: "Today" },
+      { value: "Yesterday", label: "Yesterday" },
+      { value: "This Week", label: "This Week" },
+      { value: "Last Week", label: "Last Week" },
+      { value: "This Month", label: "This Month" },
+      { value: "Last Month", label: "Last Month" },
+      { value: "This Year", label: "This Year" },
+    ],
+    [],
+  );
 
   const getActiveTab = () => {
-    return tabs.find(tab => tab.id === activeTab);
+    return tabs.find((tab) => tab.id === activeTab);
   };
 
   const ActiveComponent = getActiveTab()?.component;
@@ -252,83 +334,83 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
                       className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
                       value={dropdownValue}
                       onChange={(e) => {
-                        setDropdownValue(e.target.value);
-                        const today = new Date();
-                        let startDate, endDate, label;
+                        handleFilterChange(() => {
+                          setDropdownValue(e.target.value);
+                          const today = new Date();
+                          let startDate, endDate, label;
 
-                        switch (e.target.value) {
-                          case "Today":
-                            startDate = endDate = today;
-                            label = "Today";
-                            break;
-                          case "Yesterday":
-                            startDate = endDate = new Date(
-                              today.getTime() - 24 * 60 * 60 * 1000
-                            );
-                            label = "Yesterday";
-                            break;
-                          case "This Week":
-                            const startOfWeek = new Date(today);
-                            startOfWeek.setDate(
-                              today.getDate() - today.getDay()
-                            );
-                            startDate = startOfWeek;
-                            endDate = today;
-                            label = "This Week";
-                            break;
-                          case "Last Week":
-                            const lastWeekStart = new Date(today);
-                            lastWeekStart.setDate(
-                              today.getDate() - today.getDay() - 7
-                            );
-                            const lastWeekEnd = new Date(lastWeekStart);
-                            lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
-                            startDate = lastWeekStart;
-                            endDate = lastWeekEnd;
-                            label = "Last Week";
-                            break;
-                          case "This Month":
-                            startDate = new Date(
-                              today.getFullYear(),
-                              today.getMonth(),
-                              1
-                            );
-                            endDate = today;
-                            label = "This Month";
-                            break;
-                          case "Last Month":
-                            startDate = new Date(
-                              today.getFullYear(),
-                              today.getMonth() - 1,
-                              1
-                            );
-                            endDate = new Date(
-                              today.getFullYear(),
-                              today.getMonth(),
-                              0
-                            );
-                            label = "Last Month";
-                            break;
-                          case "This Year":
-                            startDate = new Date(today.getFullYear(), 0, 1);
-                            endDate = today;
-                            label = "This Year";
-                            break;
-                          default:
-                            startDate = endDate = today;
-                            label = "Today";
-                        }
+                          switch (e.target.value) {
+                            case "Today":
+                              startDate = endDate = today;
+                              label = "Today";
+                              break;
+                            case "Yesterday":
+                              startDate = endDate = new Date(
+                                today.getTime() - 24 * 60 * 60 * 1000,
+                              );
+                              label = "Yesterday";
+                              break;
+                            case "This Week":
+                              const startOfWeek = new Date(today);
+                              startOfWeek.setDate(
+                                today.getDate() - today.getDay(),
+                              );
+                              startDate = startOfWeek;
+                              endDate = today;
+                              label = "This Week";
+                              break;
+                            case "Last Week":
+                              const lastWeekStart = new Date(today);
+                              lastWeekStart.setDate(
+                                today.getDate() - today.getDay() - 7,
+                              );
+                              const lastWeekEnd = new Date(lastWeekStart);
+                              lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+                              startDate = lastWeekStart;
+                              endDate = lastWeekEnd;
+                              label = "Last Week";
+                              break;
+                            case "This Month":
+                              startDate = new Date(
+                                today.getFullYear(),
+                                today.getMonth(),
+                                1,
+                              );
+                              endDate = today;
+                              label = "This Month";
+                              break;
+                            case "Last Month":
+                              startDate = new Date(
+                                today.getFullYear(),
+                                today.getMonth() - 1,
+                                1,
+                              );
+                              endDate = new Date(
+                                today.getFullYear(),
+                                today.getMonth(),
+                                0,
+                              );
+                              label = "Last Month";
+                              break;
+                            case "This Year":
+                              startDate = new Date(today.getFullYear(), 0, 1);
+                              endDate = today;
+                              label = "This Year";
+                              break;
+                            default:
+                              startDate = endDate = today;
+                              label = "Today";
+                          }
 
-                        setDateRange({ startDate, endDate, label });
+                          setDateRange({ startDate, endDate, label });
+                        });
                       }}
                     >
-                      <option value="Today">Today</option>
-                      <option value="Yesterday">Yesterday</option>
-                      <option value="This Week">This Week</option>
-                      <option value="Last Week">Last Week</option>
-                      <option value="This Month">This Month</option>
-                      <option value="Last Month">Last Month</option>
-                      <option value="This Year">This Year</option>
+                      {dateRangeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </select>
                     <button
                       onClick={() => {
@@ -351,7 +433,11 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
                     <select
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={selectedStore}
-                      onChange={(e) => setSelectedStore(e.target.value)}
+                      onChange={(e) =>
+                        handleFilterChange(() =>
+                          setSelectedStore(e.target.value),
+                        )
+                      }
                     >
                       <option value="all">All Stores</option>
                       {stores.map((store) => (
@@ -372,15 +458,28 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
                   {tabs.map((tab) => (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => {
+                        if (activeTab !== tab.id) {
+                          setActiveTab(tab.id);
+                        }
+                      }}
+                      disabled={reportLoading}
                       className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
                         activeTab === tab.id
                           ? `bg-blue-500 text-white shadow-md`
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          : reportLoading
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                       }`}
                     >
                       <Icon icon={tab.icon} className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">{tab.label}</span>
+                      {activeTab === tab.id && reportLoading && (
+                        <Icon
+                          icon="mdi:loading"
+                          className="w-3 h-3 animate-spin ml-1"
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -418,21 +517,72 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
             )}
 
             {/* Active Tab Content */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[600px]">
-              {ActiveComponent ? (
-                <ActiveComponent
-                  dateRange={dateRange}
-                  selectedStore={selectedStore}
-                  stores={stores}
-                  mode={mode}
-                />
-              ) : (
-                <div className="p-8 text-center text-gray-500">
-                  <Icon
-                    icon="mdi:alert-circle"
-                    className="w-12 h-12 mx-auto mb-4 text-gray-300"
-                  />
-                  <p>Report component not found</p>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[600px] relative">
+              {/* Loading Overlay */}
+              {reportLoading && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                      <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                      <Icon
+                        icon="mdi:chart-line"
+                        className="w-6 h-6 text-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                      />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-gray-700">
+                        Loading Report...
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Analyzing data for {getActiveTab()?.label}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Report Content */}
+              <div
+                className={`transition-opacity duration-300 ${reportLoading ? "opacity-30" : "opacity-100"}`}
+              >
+                {ActiveComponent ? (
+                  (() => {
+                    console.log('Reports: About to render ActiveComponent with props:', {
+                      activeTab,
+                      stores,
+                      storesLength: stores.length,
+                      storesLoading,
+                      dateRange,
+                      selectedStore
+                    });
+                    return (
+                      <ActiveComponent
+                        key={`${activeTab}-${stores.length}-${storesLoading}`}
+                        dateRange={dateRange}
+                        selectedStore={selectedStore}
+                        stores={stores}
+                        mode={mode}
+                        loading={storesLoading}
+                        onLoadingChange={setReportLoading}
+                        lastUpdateTime={lastUpdateTime}
+                      />
+                    );
+                  })()
+                ) : (
+                  <div className="p-8 text-center text-gray-500">
+                    <Icon
+                      icon="mdi:alert-circle"
+                      className="w-12 h-12 mx-auto mb-4 text-gray-300"
+                    />
+                    <p>Report component not found</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Last Updated Indicator */}
+              {!reportLoading && (
+                <div className="absolute top-4 right-4 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                  Updated {new Date(lastUpdateTime).toLocaleTimeString()}
                 </div>
               )}
             </div>
@@ -477,8 +627,10 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
             <button
               onClick={() => {
                 if (tempDateRange) {
-                  setDateRange(tempDateRange);
-                  setDropdownValue(tempDateRange.label);
+                  handleFilterChange(() => {
+                    setDateRange(tempDateRange);
+                    setDropdownValue(tempDateRange.label);
+                  });
                 }
                 setShowDateRangeModal(false);
               }}
@@ -491,4 +643,4 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       </SimpleModal>
     </MainLayout>
   );
-} 
+}

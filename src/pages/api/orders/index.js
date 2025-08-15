@@ -35,15 +35,15 @@ export default async function handler(req, res) {
         if (status) query = query.eq("status", status);
         
         // Date range filters
-        if (date_from) query = query.gte("created_at", date_from);
-        if (date_to) query = query.lte("created_at", date_to);
+        if (date_from) query = query.gte("timestamp", date_from);
+        if (date_to) query = query.lte("timestamp", date_to);
         
         // Pagination
         const limitNum = parseInt(limit);
         const offsetNum = parseInt(offset);
         query = query
           .range(offsetNum, offsetNum + limitNum - 1)
-          .order("created_at", { ascending: false });
+          .order("timestamp", { ascending: false });
       }
       const { data, error } = await query;
 

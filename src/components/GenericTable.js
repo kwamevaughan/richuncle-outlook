@@ -11,6 +11,7 @@ import ReactDOM from "react-dom";
 import TooltipIconButton from "./TooltipIconButton";
 import ExportModal from "./export/ExportModal";
 import toast from "react-hot-toast";
+import StatusPill from "./StatusPill";
 
 // Enhanced useTable hook
 function useTable(data, initialPageSize = 10, statusOptions = null) {
@@ -191,6 +192,43 @@ function useTable(data, initialPageSize = 10, statusOptions = null) {
   };
 }
 
+/**
+ * Enhanced GenericTable component with automatic status pill rendering
+ * 
+ * @param {Object} props - Component props
+ * @param {Array} props.data - Data array to display
+ * @param {Array} props.columns - Column definitions
+ * @param {boolean} props.enableStatusPills - Enable automatic status pill rendering (default: false)
+ * @param {string} props.statusContext - Default status context for pills (default: "default")
+ * @param {Array} props.statusColumnPatterns - Patterns to identify status columns (default: comprehensive list)
+ * @param {string} props.statusPillSize - Size of status pills: 'sm', 'md', 'lg' (default: 'sm')
+ * @param {string} props.statusPillVariant - Style variant: 'default', 'solid' (default: 'default')
+ * @param {Object} props.customStatusContexts - Custom status context mapping for specific columns
+ * 
+ * @example
+ * // Basic usage with status pills
+ * <GenericTable
+ *   data={salesData}
+ *   columns={columns}
+ *   enableStatusPills={true}
+ *   statusContext="sales"
+ * />
+ * 
+ * @example
+ * // Advanced usage with custom configurations
+ * <GenericTable
+ *   data={inventoryData}
+ *   columns={columns}
+ *   enableStatusPills={true}
+ *   statusContext="inventory"
+ *   statusPillSize="md"
+ *   statusPillVariant="solid"
+ *   customStatusContexts={{
+ *     'product_status': 'inventory',
+ *     'user_status': 'user'
+ *   }}
+ * />
+ */
 export function GenericTable({
   data = [],
   columns = [],
@@ -219,6 +257,31 @@ export function GenericTable({
   getDefaultFields,
   mode = "light",
   hideEmptyColumns = true,
+  enableStatusPills = false,
+  statusContext = "default",
+  statusColumnPatterns = [
+    "status", 
+    "state", 
+    "condition", 
+    "health", 
+    "stock_status", 
+    "payment_status",
+    "order_status",
+    "delivery_status",
+    "shipping_status",
+    "inventory_status",
+    "product_status",
+    "user_status",
+    "account_status",
+    "subscription_status",
+    "approval_status",
+    "verification_status",
+    "completion_status",
+    "progress_status"
+  ],
+  statusPillSize = "sm",
+  statusPillVariant = "default",
+  customStatusContexts = {},
 }) {
   // Ensure data is an array and filter out any null/undefined items
   const safeData = Array.isArray(data)
@@ -267,6 +330,100 @@ export function GenericTable({
       hasColumnData(column.accessor, column.render)
     );
   }, [columns, safeData, hideEmptyColumns]);
+
+  // Enhance columns with automatic status pill rendering
+  const enhancedColumns = useMemo(() => {
+    if (!enableStatusPills) return filteredColumns;
+
+    return filteredColumns.map(column => {
+      // Check if this column should be treated as a status column
+      const isStatusColumn = statusColumnPatterns.some(pattern => 
+        column.accessor.toLowerCase().includes(pattern.toLowerCase()) ||
+        (column.Header && column.Header.toLowerCase().includes(pattern.toLowerCase()))
+      );
+
+      // If it's a status column and doesn't already have a custom render function
+      if (isStatusColumn && !column.render) {
+        // Auto-detect the best context based on column name and data
+        const autoContext = getAutoStatusContext(column, safeData);
+        
+        return {
+          ...column,
+          render: (row, value) => (
+            <StatusPill 
+              status={value} 
+              context={autoContext || statusContext}
+              size={statusPillSize}
+              variant={statusPillVariant}
+            />
+          )
+        };
+      }
+
+      return column;
+    });
+  }, [filteredColumns, enableStatusPills, statusContext, statusColumnPatterns, safeData, statusPillSize, statusPillVariant]);
+
+  // Function to automatically determine the best status context
+  const getAutoStatusContext = (column, data) => {
+    const columnName = column.accessor.toLowerCase();
+    const headerName = column.Header?.toLowerCase() || '';
+    
+    // Check custom status contexts first
+    if (customStatusContexts[column.accessor]) {
+      return customStatusContexts[column.accessor];
+    }
+    
+    // Check for specific patterns in column names
+    if (columnName.includes('stock') || columnName.includes('inventory') || headerName.includes('stock') || headerName.includes('inventory')) {
+      return 'inventory';
+    }
+    
+    if (columnName.includes('payment') || columnName.includes('paid') || headerName.includes('payment') || headerName.includes('paid')) {
+      return 'payment';
+    }
+    
+    if (columnName.includes('user') || columnName.includes('account') || headerName.includes('user') || headerName.includes('account')) {
+      return 'user';
+    }
+    
+    if (columnName.includes('order') || columnName.includes('sale') || headerName.includes('order') || headerName.includes('sale')) {
+      return 'sales';
+    }
+    
+    if (columnName.includes('delivery') || columnName.includes('shipping') || headerName.includes('delivery') || headerName.includes('shipping')) {
+      return 'delivery';
+    }
+    
+    // Check data patterns to infer context
+    if (data.length > 0) {
+      const sampleValues = data.slice(0, 10).map(row => row[column.accessor]).filter(Boolean);
+      const uniqueValues = [...new Set(sampleValues.map(v => v.toString().toLowerCase()))];
+      
+      // Check for inventory-related values
+      if (uniqueValues.some(v => ['in stock', 'out of stock', 'low stock', 'discontinued'].includes(v))) {
+        return 'inventory';
+      }
+      
+      // Check for payment-related values
+      if (uniqueValues.some(v => ['paid', 'unpaid', 'partially paid', 'overdue'].includes(v))) {
+        return 'payment';
+      }
+      
+      // Check for user-related values
+      if (uniqueValues.some(v => ['active', 'inactive', 'suspended', 'pending'].includes(v))) {
+        return 'user';
+      }
+      
+      // Check for sales-related values
+      if (uniqueValues.some(v => ['completed', 'pending', 'cancelled', 'refunded', 'processing'].includes(v))) {
+        return 'sales';
+      }
+    }
+    
+    // Default fallback
+    return statusContext;
+  };
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState([
     {
@@ -360,7 +517,7 @@ export function GenericTable({
             />
           </td>
         )}
-        {filteredColumns.map((col) => {
+        {enhancedColumns.map((col) => {
           let value = row[col.accessor];
 
           // Use custom render function if provided
@@ -554,7 +711,7 @@ export function GenericTable({
             />
           )}
           <div className="flex-1 ml-3">
-            {filteredColumns.slice(0, 2).map((col) => {
+            {enhancedColumns.slice(0, 2).map((col) => {
               let value = row[col.accessor];
 
               // Auto-format date fields for mobile view
@@ -658,7 +815,7 @@ export function GenericTable({
         </div>
 
         {/* Additional columns in mobile view */}
-        {filteredColumns.slice(2).map((col) => {
+        {enhancedColumns.slice(2).map((col) => {
           let value = row[col.accessor];
 
           // Auto-format date fields for mobile view
@@ -794,7 +951,7 @@ export function GenericTable({
 
           {/* Main content in a grid layout for tablet */}
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 overflow-hidden">
-            {filteredColumns.slice(0, 4).map((col) => {
+            {enhancedColumns.slice(0, 4).map((col) => {
               let value = row[col.accessor];
 
               // Auto-format date fields
@@ -954,10 +1111,10 @@ export function GenericTable({
         </div>
 
         {/* Additional columns for tablet - show remaining columns in a more compact way */}
-        {filteredColumns.length > 4 && (
+        {enhancedColumns.length > 4 && (
           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-3 gap-x-4 gap-y-1">
-              {filteredColumns.slice(4).map((col) => {
+              {enhancedColumns.slice(4).map((col) => {
                 let value = row[col.accessor];
 
                 const isDateField =
@@ -1367,7 +1524,7 @@ export function GenericTable({
                     />
                   </th>
                 )}
-                {filteredColumns.map((col) => (
+                {enhancedColumns.map((col) => (
                   <th
                     key={col.accessor}
                     className={`px-2 sm:px-4 py-3 sm:py-4 text-left font-semibold ${
@@ -1454,7 +1611,7 @@ export function GenericTable({
                 <tr>
                   <td
                     colSpan={
-                      filteredColumns.length +
+                      enhancedColumns.length +
                       (selectable ? 1 : 0) +
                       (enableDragDrop ? 1 : 0) +
                       (actions.length > 0 || onEdit || onDelete ? 1 : 0)
