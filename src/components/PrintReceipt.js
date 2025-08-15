@@ -287,58 +287,111 @@ const PrintReceipt = ({
     `;
 
     try {
-      // Create a minimal popup window
-      const printWindow = window.open(
-        "",
-        "PrintWindow",
-        "width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no",
-      );
-
-      if (printWindow) {
-        // Write content to the new window
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-
-        // Wait for content to load, then print and close
-        printWindow.onload = function () {
+      // Detect mobile devices (iOS, Android, etc.)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+                      window.innerWidth <= 768;
+      
+      if (isMobile) {
+        // Mobile device printing method (works for iOS, Android, and other mobile devices)
+        const printFrame = document.createElement('iframe');
+        printFrame.style.position = 'fixed';
+        printFrame.style.top = '0';
+        printFrame.style.left = '0';
+        printFrame.style.width = '100%';
+        printFrame.style.height = '100%';
+        printFrame.style.zIndex = '999999';
+        printFrame.style.border = 'none';
+        
+        document.body.appendChild(printFrame);
+        
+        printFrame.contentDocument.write(printContent);
+        printFrame.contentDocument.close();
+        
+        // Wait for content to load
+        printFrame.onload = function() {
           setTimeout(() => {
-            printWindow.print();
-            setTimeout(() => {
-              printWindow.close();
-            }, 1000);
-          }, 500);
+            try {
+              printFrame.contentWindow.print();
+              // Keep the frame visible for a moment so user can see the print dialog
+              setTimeout(() => {
+                document.body.removeChild(printFrame);
+              }, 2000);
+            } catch (e) {
+              console.error('Mobile print error:', e);
+              document.body.removeChild(printFrame);
+            }
+          }, 1000);
         };
-
-        // Fallback: if onload doesn't fire, try printing anyway
+        
+        // Fallback if onload doesn't fire
         setTimeout(() => {
-          if (!printWindow.closed) {
-            printWindow.print();
-            setTimeout(() => {
-              printWindow.close();
-            }, 1000);
+          if (document.body.contains(printFrame)) {
+            try {
+              printFrame.contentWindow.print();
+              setTimeout(() => {
+                document.body.removeChild(printFrame);
+              }, 2000);
+            } catch (e) {
+              console.error('Mobile print fallback error:', e);
+              document.body.removeChild(printFrame);
+            }
           }
-        }, 1500);
+        }, 2000);
       } else {
-        // Fallback to iframe method if popup is blocked
-        const iframe = document.createElement("iframe");
-        iframe.style.display = "none";
-        iframe.style.position = "fixed";
-        iframe.style.top = "-9999px";
-        iframe.style.left = "-9999px";
+        // Desktop printing method
+        const printWindow = window.open(
+          "",
+          "PrintWindow",
+          "width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no",
+        );
 
-        document.body.appendChild(iframe);
+        if (printWindow) {
+          // Write content to the new window
+          printWindow.document.write(printContent);
+          printWindow.document.close();
 
-        iframe.contentDocument.write(printContent);
-        iframe.contentDocument.close();
-
-        iframe.onload = function () {
-          setTimeout(() => {
-            iframe.contentWindow.print();
+          // Wait for content to load, then print and close
+          printWindow.onload = function () {
             setTimeout(() => {
-              document.body.removeChild(iframe);
-            }, 1000);
-          }, 500);
-        };
+              printWindow.print();
+              setTimeout(() => {
+                printWindow.close();
+              }, 1000);
+            }, 500);
+          };
+
+          // Fallback: if onload doesn't fire, try printing anyway
+          setTimeout(() => {
+            if (!printWindow.closed) {
+              printWindow.print();
+              setTimeout(() => {
+                printWindow.close();
+              }, 1000);
+            }
+          }, 1500);
+        } else {
+          // Fallback to iframe method if popup is blocked
+          const iframe = document.createElement("iframe");
+          iframe.style.display = "none";
+          iframe.style.position = "fixed";
+          iframe.style.top = "-9999px";
+          iframe.style.left = "-9999px";
+
+          document.body.appendChild(iframe);
+
+          iframe.contentDocument.write(printContent);
+          iframe.contentDocument.close();
+
+          iframe.onload = function () {
+            setTimeout(() => {
+              iframe.contentWindow.print();
+              setTimeout(() => {
+                document.body.removeChild(iframe);
+              }, 1000);
+            }, 500);
+          };
+        }
       }
 
       return true;
