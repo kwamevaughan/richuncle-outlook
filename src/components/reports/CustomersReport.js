@@ -98,16 +98,7 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
           GHS {parseFloat(value || 0).toFixed(2)}
         </span>
       )},
-    { Header: "Status", accessor: "status", 
-      Cell: ({ value }) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          value === 'active' ? 'bg-green-100 text-green-800' :
-          value === 'inactive' ? 'bg-gray-100 text-gray-800' :
-          'bg-yellow-100 text-yellow-800'
-        }`}>
-          {value ? value.charAt(0).toUpperCase() + value.slice(1) : "N/A"}
-        </span>
-      )}
+    { Header: "Status", accessor: "status" },
   ];
 
   // Flatten customers data for export
@@ -242,6 +233,9 @@ export default function CustomersReport({ dateRange, selectedStore, stores, mode
           loading={loading}
           error={error}
           onRefresh={fetchCustomersData}
+          enableStatusPills={true}
+          statusContext="user"
+          statusPillSize="sm"
           exportType="customers"
           exportTitle="Export Customer List"
           getFieldsOrder={() => [

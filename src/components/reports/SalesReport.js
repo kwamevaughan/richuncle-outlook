@@ -205,7 +205,7 @@ export default function SalesReport({
       
       // Add store filter if not 'all'
       if (selectedStore && selectedStore !== 'all') {
-        params.append('register_id', selectedStore);
+        params.append('store_id', selectedStore);
         console.log('Store filter:', selectedStore);
       } else {
         console.log('No store filter applied (using all stores)');
@@ -599,7 +599,7 @@ export default function SalesReport({
       if (selectedStore && selectedStore !== "all") {
         if (
           item.orders &&
-          String(item.orders.register_id) !== String(selectedStore)
+          String(item.orders.store_id) !== String(selectedStore)
         )
           return;
       }
@@ -1183,14 +1183,19 @@ export default function SalesReport({
           <GenericTable
             data={flattenedSales}
             columns={columns}
+            title="Sales Transactions"
+            searchable={true}
+            selectable={false}
+            enableStatusPills={true}
+            statusContext="sales"
+            statusPillSize="sm"
             loading={loading}
             error={error}
             onRefresh={fetchSalesData}
+            onExport={() => exportSalesData()}
             exportType="sales"
             exportTitle="Export Sales Report"
             hideEmptyColumns={false}
-            statusContext="sales"
-            enableStatusPills={true}
             getFieldsOrder={() => [
               { label: "Order ID", key: "id", icon: "mdi:identifier" },
               { label: "Date", key: "timestamp", icon: "mdi:calendar" },

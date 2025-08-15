@@ -12,87 +12,90 @@ export default function ZReportHub({ dateRange, selectedStore, stores, mode }) {
   const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError(null);
-      try {
-        // Fetch cash register sessions
-        const sessionsRes = await fetch("/api/cash-register-sessions");
-        const sessionsJson = await sessionsRes.json();
-        let sessionsData = sessionsJson.data || [];
-        
-        // Filter by date and store
-        if (dateRange.startDate && dateRange.endDate) {
-          sessionsData = sessionsData.filter(session => {
-            const sessionDate = new Date(session.opened_at);
-            return sessionDate >= dateRange.startDate && sessionDate <= dateRange.endDate;
-          });
-        }
-        if (selectedStore && selectedStore !== "all") {
-          sessionsData = sessionsData.filter(session => String(session.register_id) === String(selectedStore));
-        }
-
-        // Fetch orders for each session to calculate totals
-        const ordersRes = await fetch("/api/orders");
-        const ordersJson = await ordersRes.json();
-        const orders = ordersJson.data || [];
-
-        // Fetch order items to calculate total items
-        const orderItemsRes = await fetch("/api/order-items");
-        const orderItemsJson = await orderItemsRes.json();
-        const orderItems = orderItemsJson.data || [];
-
-        // Enhance sessions with order data
-        const enhancedSessions = sessionsData.map(session => {
-          // Use the same logic as the individual Z-Report API:
-          // Filter orders by register_id and timestamp range
-          const sessionOrders = orders.filter(order => {
-            // Match register_id
-            if (String(order.register_id) !== String(session.register_id)) {
-              return false;
-            }
-            
-            // Match timestamp range (opened_at to closed_at or now)
-            const orderTime = new Date(order.timestamp || order.created_at);
-            const openedTime = new Date(session.opened_at);
-            const closedTime = session.closed_at ? new Date(session.closed_at) : new Date();
-            
-            return orderTime >= openedTime && orderTime <= closedTime;
-          });
-          
-          // Get order IDs for this session
-          const sessionOrderIds = sessionOrders.map(order => order.id);
-          
-          // Calculate total items from order items
-          const sessionOrderItems = orderItems.filter(item => 
-            sessionOrderIds.includes(item.order_id)
-          );
-          const totalItems = sessionOrderItems.reduce((sum, item) => 
-            sum + (parseInt(item.quantity) || 0), 0
-          );
-          
-          const totalSales = sessionOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
-          
-          return {
-            ...session,
-            totalSales,
-            totalItems,
-            orderCount: sessionOrders.length,
-            duration: session.closed_at ? 
-              Math.round((new Date(session.closed_at) - new Date(session.opened_at)) / (1000 * 60 * 60)) : 
-              null // hours
-          };
-        });
-
-        setSessions(enhancedSessions);
-      } catch (err) {
-        setError("Failed to load Z-Report data");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
+    fetchSessionsData();
   }, [dateRange, selectedStore]);
+
+  // Fetch sessions data function
+  const fetchSessionsData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch cash register sessions
+      const sessionsRes = await fetch("/api/cash-register-sessions");
+      const sessionsJson = await sessionsRes.json();
+      let sessionsData = sessionsJson.data || [];
+      
+      // Filter by date and store
+      if (dateRange.startDate && dateRange.endDate) {
+        sessionsData = sessionsData.filter(session => {
+          const sessionDate = new Date(session.opened_at);
+          return sessionDate >= dateRange.startDate && sessionDate <= dateRange.endDate;
+        });
+      }
+      if (selectedStore && selectedStore !== "all") {
+        sessionsData = sessionsData.filter(session => String(session.register_id) === String(selectedStore));
+      }
+
+      // Fetch orders for each session to calculate totals
+      const ordersRes = await fetch("/api/orders");
+      const ordersJson = await ordersRes.json();
+      const orders = ordersJson.data || [];
+
+      // Fetch order items to calculate total items
+      const orderItemsRes = await fetch("/api/order-items");
+      const orderItemsJson = await orderItemsRes.json();
+      const orderItems = orderItemsJson.data || [];
+
+      // Enhance sessions with order data
+      const enhancedSessions = sessionsData.map(session => {
+        // Use the same logic as the individual Z-Report API:
+        // Filter orders by register_id and timestamp range
+        const sessionOrders = orders.filter(order => {
+          // Match register_id
+          if (String(order.register_id) !== String(session.register_id)) {
+            return false;
+          }
+          
+          // Match timestamp range (opened_at to closed_at or now)
+          const orderTime = new Date(order.timestamp || order.created_at);
+          const openedTime = new Date(session.opened_at);
+          const closedTime = session.closed_at ? new Date(session.closed_at) : new Date();
+          
+          return orderTime >= openedTime && orderTime <= closedTime;
+        });
+        
+        // Get order IDs for this session
+        const sessionOrderIds = sessionOrders.map(order => order.id);
+        
+        // Calculate total items from order items
+        const sessionOrderItems = orderItems.filter(item => 
+          sessionOrderIds.includes(item.order_id)
+        );
+        const totalItems = sessionOrderItems.reduce((sum, item) => 
+          sum + (parseInt(item.quantity) || 0), 0
+        );
+        
+        const totalSales = sessionOrders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
+        
+        return {
+          ...session,
+          totalSales,
+          totalItems,
+          orderCount: sessionOrders.length,
+          duration: session.closed_at ? 
+            (new Date(session.closed_at) - new Date(session.opened_at)) : 
+            null, // milliseconds
+          status: session.closed_at ? "closed" : "open" // Add computed status field
+        };
+      });
+
+      setSessions(enhancedSessions);
+    } catch (err) {
+      setError("Failed to load Z-Report data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Fetch users for mapping user_id to name
@@ -107,6 +110,22 @@ export default function ZReportHub({ dateRange, selectedStore, stores, mode }) {
       });
   }, []);
 
+  // Helper function to format duration in a readable format
+  const formatDuration = (durationMs) => {
+    if (!durationMs || durationMs <= 0) return "0m";
+    
+    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours === 0) {
+      return `${minutes}m`;
+    } else if (minutes === 0) {
+      return `${hours}h`;
+    } else {
+      return `${hours}h ${minutes}m`;
+    }
+  };
+
   // KPI calculations
   const totalSessions = sessions.length;
   const openSessions = sessions.filter(s => !s.closed_at).length;
@@ -118,15 +137,14 @@ export default function ZReportHub({ dateRange, selectedStore, stores, mode }) {
     { Header: "Session ID", accessor: "id" },
     { Header: "Opened", accessor: "opened_at", render: (row) => format(new Date(row.opened_at), "MMM dd, yyyy HH:mm") },
     { Header: "Closed", accessor: "closed_at", render: (row) => row.closed_at ? format(new Date(row.closed_at), "MMM dd, yyyy HH:mm") : "Open" },
-    { Header: "Duration", accessor: "duration", render: (row) => row.duration !== null ? `${row.duration}h` : "N/A" },
+    { Header: "Duration", accessor: "duration", render: (row) => {
+      if (row.duration === null) return "N/A";
+      return formatDuration(row.duration);
+    } },
     { Header: "Orders", accessor: "orderCount" },
     { Header: "Sales", accessor: "totalSales", render: (row) => `GHS ${row.totalSales.toLocaleString()}` },
     { Header: "Items", accessor: "totalItems" },
-    { Header: "Status", accessor: "closed_at", render: (row) => (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.closed_at ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-        {row.closed_at ? 'Closed' : 'Open'}
-      </span>
-    ) },
+    { Header: "Status", accessor: "status" },
   ];
 
   // When preparing export data, replace user_id with name and remove user_id field
@@ -148,7 +166,7 @@ export default function ZReportHub({ dateRange, selectedStore, stores, mode }) {
       totalSales: s.totalSales.toLocaleString(),
       totalItems: s.totalItems,
       orderCount: s.orderCount,
-      duration: s.duration,
+      duration: formatDuration(s.duration),
     };
   });
 
@@ -169,7 +187,7 @@ export default function ZReportHub({ dateRange, selectedStore, stores, mode }) {
     { label: "Total Sales", key: "totalSales", icon: "mdi:currency-usd" },
     { label: "Total Items", key: "totalItems", icon: "mdi:package-variant" },
     { label: "Order Count", key: "orderCount", icon: "mdi:clipboard-text" },
-    { label: "Duration (Hours)", key: "duration", icon: "mdi:clock-outline" },
+    { label: "Duration (Hours & Minutes)", key: "duration", icon: "mdi:clock-outline" },
   ];
 
   const getDefaultFields = () => ({
@@ -245,15 +263,19 @@ export default function ZReportHub({ dateRange, selectedStore, stores, mode }) {
             <div>Loading...</div>
           ) : (
             <GenericTable
-              data={exportSessions}
+              data={sessions}
               columns={columns}
-              title={"Register Sessions"}
-              emptyMessage="No register sessions found for the selected period"
-              selectable={false}
-              searchable={true}
-              enableDateFilter={false}
-              exportType="zreport"
-              exportTitle="Export Register Sessions"
+              loading={loading}
+              error={error}
+              onRefresh={fetchSessionsData}
+              enableStatusPills={true}
+              statusContext="default"
+              statusPillSize="sm"
+              customStatusContexts={{
+                'status': 'session'
+              }}
+              exportType="z-report"
+              exportTitle="Export Z-Report"
               getFieldsOrder={getFieldsOrder}
               getDefaultFields={getDefaultFields}
             />

@@ -40,6 +40,27 @@ const STATUS_CONFIGS = {
       icon: "mdi:cog-outline",
       label: "Processing",
     },
+    "n/a": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "N/A",
+    },
+    "not available": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "Not Available",
+    },
+    "unavailable": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "Unavailable",
+    },
   },
 
   // Inventory/Stock statuses
@@ -79,6 +100,13 @@ const STATUS_CONFIGS = {
       icon: "mdi:truck-delivery",
       label: "Backordered",
     },
+    "n/a": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "N/A",
+    },
   },
 
   // User/Account statuses
@@ -110,6 +138,13 @@ const STATUS_CONFIGS = {
       border: "border-yellow-200",
       icon: "mdi:clock-outline",
       label: "Pending",
+    },
+    "n/a": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "N/A",
     },
   },
 
@@ -143,6 +178,13 @@ const STATUS_CONFIGS = {
       icon: "mdi:alert-circle",
       label: "Overdue",
     },
+    "n/a": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "N/A",
+    },
   },
 
   // Generic boolean statuses
@@ -160,6 +202,66 @@ const STATUS_CONFIGS = {
       border: "border-gray-200",
       icon: "mdi:close-circle",
       label: "No",
+    },
+    "n/a": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "N/A",
+    },
+    "not available": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "Not Available",
+    },
+    "unavailable": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "Unavailable",
+    },
+  },
+
+  // Session statuses (for register sessions, etc.)
+  session: {
+    open: {
+      bg: "bg-yellow-100",
+      text: "text-yellow-800",
+      border: "border-yellow-200",
+      icon: "mdi:clock-outline",
+      label: "Open",
+    },
+    closed: {
+      bg: "bg-green-100",
+      text: "text-green-800",
+      border: "border-green-200",
+      icon: "mdi:check-circle",
+      label: "Closed",
+    },
+    "n/a": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "N/A",
+    },
+    "not available": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "Not Available",
+    },
+    "unavailable": {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-300",
+      icon: "mdi:minus-circle",
+      label: "Unavailable",
     },
   },
 };

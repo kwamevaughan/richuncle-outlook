@@ -331,39 +331,6 @@ export function GenericTable({
     );
   }, [columns, safeData, hideEmptyColumns]);
 
-  // Enhance columns with automatic status pill rendering
-  const enhancedColumns = useMemo(() => {
-    if (!enableStatusPills) return filteredColumns;
-
-    return filteredColumns.map(column => {
-      // Check if this column should be treated as a status column
-      const isStatusColumn = statusColumnPatterns.some(pattern => 
-        column.accessor.toLowerCase().includes(pattern.toLowerCase()) ||
-        (column.Header && column.Header.toLowerCase().includes(pattern.toLowerCase()))
-      );
-
-      // If it's a status column and doesn't already have a custom render function
-      if (isStatusColumn && !column.render) {
-        // Auto-detect the best context based on column name and data
-        const autoContext = getAutoStatusContext(column, safeData);
-        
-        return {
-          ...column,
-          render: (row, value) => (
-            <StatusPill 
-              status={value} 
-              context={autoContext || statusContext}
-              size={statusPillSize}
-              variant={statusPillVariant}
-            />
-          )
-        };
-      }
-
-      return column;
-    });
-  }, [filteredColumns, enableStatusPills, statusContext, statusColumnPatterns, safeData, statusPillSize, statusPillVariant]);
-
   // Function to automatically determine the best status context
   const getAutoStatusContext = (column, data) => {
     const columnName = column.accessor.toLowerCase();
@@ -424,6 +391,59 @@ export function GenericTable({
     // Default fallback
     return statusContext;
   };
+
+  // Enhance columns with automatic status pill rendering
+  const enhancedColumns = useMemo(() => {
+    if (!enableStatusPills) return filteredColumns;
+
+    return filteredColumns.map(column => {
+      // Check if this column should be treated as a status column
+      const isStatusColumn = statusColumnPatterns.some(pattern => 
+        column.accessor.toLowerCase().includes(pattern.toLowerCase()) ||
+        (column.Header && column.Header.toLowerCase().includes(pattern.toLowerCase()))
+      );
+
+      // If it's a status column and doesn't already have a custom render function
+      if (isStatusColumn && !column.render) {
+        // Auto-detect the best context based on column name and data
+        const autoContext = getAutoStatusContext(column, safeData);
+        
+        return {
+          ...column,
+          render: (row, value) => {
+            // Preprocess status values for better handling
+            let processedStatus = value;
+            
+            // Handle null, undefined, empty, and "N/A" variations
+            if (value === null || value === undefined || value === '') {
+              processedStatus = 'n/a';
+            } else if (typeof value === 'string') {
+              const normalizedValue = value.toLowerCase().trim();
+              if (normalizedValue === 'n/a' || 
+                  normalizedValue === 'na' || 
+                  normalizedValue === 'not available' || 
+                  normalizedValue === 'unavailable' ||
+                  normalizedValue === 'none' ||
+                  normalizedValue === 'unknown') {
+                processedStatus = 'n/a';
+              }
+            }
+            
+            return (
+              <StatusPill 
+                status={processedStatus} 
+                context={autoContext || statusContext}
+                size={statusPillSize}
+                variant={statusPillVariant}
+              />
+            );
+          }
+        };
+      }
+
+      return column;
+    });
+  }, [filteredColumns, enableStatusPills, statusContext, statusColumnPatterns, safeData, statusPillSize, statusPillVariant, customStatusContexts]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState([
     {

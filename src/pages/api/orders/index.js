@@ -11,7 +11,8 @@ export default async function handler(req, res) {
         offset = '0',
         status,
         date_from,
-        date_to
+        date_to,
+        store_id
       } = req.query;
       
       // Set cache headers for better performance
@@ -33,6 +34,7 @@ export default async function handler(req, res) {
         if (register_id) query = query.eq("register_id", register_id);
         if (session_id) query = query.eq("session_id", session_id);
         if (status) query = query.eq("status", status);
+        if (store_id) query = query.eq("store_id", store_id);
         
         // Date range filters
         if (date_from) query = query.gte("timestamp", date_from);
