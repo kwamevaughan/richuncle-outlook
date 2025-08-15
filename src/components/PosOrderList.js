@@ -1765,8 +1765,8 @@ const PosOrderList = ({
       </div>
 
       {/* Customer Modal */}
-      {showCustomerModal && (
-        <AddEditModal
+      <AddEditModal
+        isOpen={showCustomerModal}
           type="customers"
           mode="light"
           item={null}
@@ -1792,7 +1792,6 @@ const PosOrderList = ({
             }
           }}
         />
-      )}
 
       {showBarcodeModal && (
         <SimpleModal

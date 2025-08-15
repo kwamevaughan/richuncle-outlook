@@ -201,8 +201,8 @@ export default function VariantAttributesPage({ mode = "light", toggleMode, ...p
               />
             </div>
 
-            {showModal && (
-              <AddEditModal
+            <AddEditModal
+              isOpen={showModal}
                 type="variant_attributes"
                 mode={mode}
                 item={editItem}
@@ -226,7 +226,6 @@ export default function VariantAttributesPage({ mode = "light", toggleMode, ...p
                   }
                 }}
               />
-            )}
             {errorModal.open && (
               <SimpleModal
                 isOpen={true}

@@ -416,13 +416,13 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                 />
               )}
             </div>
-            {showModal && (
-              <AddEditModal
-                type={tab}
-                mode={mode}
-                item={editItem}
-                categories={categories}
-                onClose={closeModal}
+            <AddEditModal
+              type={tab}
+              mode={mode}
+              item={editItem}
+              categories={categories}
+              isOpen={showModal}
+              onClose={closeModal}
                 onSave={async (values) => {
                   if (tab === "categories" && !editItem) {
                     try {
@@ -483,7 +483,6 @@ export default function CategoryPage({ mode = "light", toggleMode, ...props }) {
                   }
                 }}
               />
-            )}
             {errorModal.open && (
               <SimpleModal
                 isOpen={true}

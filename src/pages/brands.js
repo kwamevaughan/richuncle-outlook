@@ -214,14 +214,14 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
               />
             </div>
 
-            {showModal && (
-              <AddEditModal
-                type="brands"
-                mode={mode}
-                item={editItem}
-                categories={[]}
-                onClose={closeModal}
-                onSave={async (values) => {
+            <AddEditModal
+              type="brands"
+              mode={mode}
+              item={editItem}
+              categories={[]}
+              isOpen={showModal}
+              onClose={closeModal}
+              onSave={async (values) => {
                   try {
                     if (!editItem) {
                       await handleAddBrand(values);
@@ -237,7 +237,6 @@ export default function BrandsPage({ mode = "light", toggleMode, ...props }) {
                   }
                 }}
               />
-            )}
             {errorModal.open && (
               <SimpleModal
                 isOpen={true}

@@ -594,8 +594,8 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                 />
               )}
             </div>
-            {showModal && (
-              <AddEditModal
+            <AddEditModal
+              isOpen={showModal}
                 type={tab}
                 mode={mode}
                 item={editItem}
@@ -630,7 +630,6 @@ export default function DiscountPage({ mode = "light", toggleMode, ...props }) {
                   }
                 }}
               />
-            )}
             {errorModal.open && (
               <SimpleModal
                 isOpen={true}

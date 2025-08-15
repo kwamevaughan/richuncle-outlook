@@ -195,8 +195,8 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
             />
           </div>
 
-          {showModal && (
-            <AddEditModal
+                      <AddEditModal
+              isOpen={showModal}
               type="customers"
               mode={mode}
               item={editItem}
@@ -216,9 +216,8 @@ export default function CustomersPage({ mode = "light", toggleMode, ...props }) 
                 } catch (err) {
                   toast.error(err.message || "Failed to save customer");
                 }
-              }}
-            />
-          )}
+                              }}
+              />
           {errorModal.open && (
             <SimpleModal
               isOpen={true}

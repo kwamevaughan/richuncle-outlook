@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
@@ -47,7 +47,29 @@ export default function ExportModal({
   getDefaultFields,
   onToggleType,
   zreportTab,
+  animationDuration = 300
 }) {
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
+
+  // Handle modal open/close with smooth transitions
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      // Small delay to ensure DOM is ready for animation
+      const timer = setTimeout(() => {
+        setIsAnimating(true);
+      }, 10);
+      return () => clearTimeout(timer);
+    } else {
+      setIsAnimating(false);
+      // Wait for animation to complete before unmounting
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, animationDuration);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, animationDuration]);
   // Field logic: use parent-provided for zreport, default for users
   const isZReport = type === "zreport";
 
@@ -324,7 +346,7 @@ export default function ExportModal({
     toast.success("CSV exported successfully!", { icon: "✅" });
   };
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
   let modalTitle =
     title ||
     (isZReport
@@ -334,12 +356,16 @@ export default function ExportModal({
         : "Export Data");
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-[9999]">
+    <div className="fixed top-0 left-0 right-0 bottom-0 min-h-screen bg-black/30 backdrop-blur-sm flex flex-col items-center justify-start z-[9999]">
       <div
-        className={`rounded-xl max-w-2xl w-full mx-0 shadow-2xl transform transition-all duration-300 animate-fade-in flex flex-col max-h-[80vh] backdrop-blur-md bg-white/95 border border-white/20 ${
+        className={`rounded-xl max-w-2xl w-full mx-0 shadow-2xl transform transition-all duration-${animationDuration} ease-out flex flex-col max-h-[80vh] backdrop-blur-md bg-white/95 border border-white/20 ${
           mode === "dark"
             ? "bg-gray-800/95 text-white border-gray-700/20"
             : "bg-white/95 text-[#231812] border-white/20"
+        } ${
+          isAnimating 
+            ? 'opacity-100 scale-100 translate-y-0' 
+            : 'opacity-0 scale-95 translate-y-4'
         }`}
       >
         <div className="bg-blue-800 rounded-t-xl p-4 flex items-center justify-between">

@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react";
 import { useState, useEffect, useRef } from "react";
 
-const SimpleModal = ({ 
+const EnhancedModal = ({ 
   isOpen, 
   onClose, 
   title, 
@@ -11,7 +11,9 @@ const SimpleModal = ({
   rightElement,
   hasUnsavedChanges = false,
   disableOutsideClick = false,
-  animationDuration = 300
+  showBackdrop = true,
+  animationDuration = 300,
+  backdropBlur = true
 }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -67,15 +69,15 @@ const SimpleModal = ({
 
   // Handle escape key
   useEffect(() => {
-      const handleEscape = (e) => {
-    if (e.key === 'Escape' && isOpen) {
-      if (hasUnsavedChanges) {
-        setShowConfirmDialog(true);
-      } else {
-        onClose();
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        if (hasUnsavedChanges) {
+          setShowConfirmDialog(true);
+        } else {
+          onClose();
+        }
       }
-    }
-  };
+    };
 
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
@@ -120,29 +122,28 @@ const SimpleModal = ({
 
   return (
     <>
+      {/* Main Modal */}
       <div
-        className="fixed inset-0 overflow-y-auto"
-        style={{ zIndex: 99999 }}
+        className="fixed inset-0 overflow-y-auto z-[99999]"
         onClick={handleOutsideClick}
         onTouchMove={(e) => {
-          // Prevent touch scrolling on background
           e.preventDefault();
           e.stopPropagation();
         }}
       >
-        {/* Enhanced Glassmorphic Background */}
+        {/* Enhanced Backdrop with Smooth Transitions */}
         <div
-          className={`fixed inset-0 transition-all duration-${animationDuration} ease-out backdrop-blur-sm
-            ${
-              mode === "dark"
-                ? "bg-gradient-to-br from-slate-900/40 via-blue-900/20 to-blue-900/30"
-                : "bg-gradient-to-br from-white/40 via-blue-50/40 to-blue-50/30"
-            } ${
-              isAnimating 
-                ? 'opacity-100' 
-                : 'opacity-0'
-            }`}
-          onClick={handleOutsideClick}
+          className={`fixed inset-0 transition-all duration-${animationDuration} ease-out ${
+            backdropBlur ? 'backdrop-blur-sm' : ''
+          } ${
+            mode === "dark"
+              ? "bg-gradient-to-br from-slate-900/40 via-blue-900/20 to-blue-900/30"
+              : "bg-gradient-to-br from-white/40 via-blue-50/40 to-blue-50/30"
+          } ${
+            isAnimating 
+              ? 'opacity-100' 
+              : 'opacity-0'
+          }`}
           style={{
             backgroundImage: `
               radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.2) 0%, transparent 50%),
@@ -150,17 +151,15 @@ const SimpleModal = ({
               radial-gradient(circle at 40% 40%, rgba(100, 149, 237, 0.08) 0%, transparent 50%)
             `,
           }}
+          onClick={handleOutsideClick}
         />
 
-        {/* Modal Content */}
+        {/* Modal Container */}
         <div
           className="flex min-h-screen items-center justify-center p-4"
           onClick={handleOutsideClick}
-          onTouchMove={(e) => {
-            // Allow touch scrolling within modal but prevent background scrolling
-            e.stopPropagation();
-          }}
         >
+          {/* Modal Content with Enhanced Animations */}
           <div
             className={`relative w-full ${width} transform transition-all duration-${animationDuration} ease-out max-h-[85vh] overflow-hidden
               ${
@@ -227,7 +226,7 @@ const SimpleModal = ({
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Content wrapper with subtle inner glow */}
+              {/* Content wrapper with enhanced styling */}
               <div
                 className={`${
                   mode === "dark" ? "text-gray-100" : "text-gray-800"
@@ -261,11 +260,10 @@ const SimpleModal = ({
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
+      {/* Enhanced Confirmation Dialog */}
       {showConfirmDialog && (
         <div
-          className="fixed inset-0 overflow-y-auto"
-          style={{ zIndex: 100000 }}
+          className="fixed inset-0 overflow-y-auto z-[100000]"
           onClick={(e) => e.stopPropagation()}
         >
           <div
@@ -344,4 +342,4 @@ const SimpleModal = ({
   );
 };
 
-export default SimpleModal;
+export default EnhancedModal; 

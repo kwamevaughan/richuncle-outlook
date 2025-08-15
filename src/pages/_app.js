@@ -9,6 +9,7 @@ import { AuthProvider } from "@/context/authContext";
 import useSidebar from "@/hooks/useSidebar";
 import { DarkModeProvider } from "@/components/GlobalDarkMode";
 import RoleBasedAccess from "@/components/RoleBasedAccess";
+import PageTransition from "@/components/PageTransition";
 import "../styles/dark-mode-date-range.css";
 
 const nunito = Nunito({
@@ -135,53 +136,14 @@ function MyApp({ Component, pageProps }) {
     };
   }, [router]);
 
+  // Prefetch sidebar routes for better performance
   useEffect(() => {
-    const routeChangeStart = (url) => {
-      const pageSlug = url.split("/").pop() || "overview";
-      const navItems = sidebarNav.flatMap((entry) =>
-        entry.items ? entry.items : [entry]
-      );
-      const page = navItems.find(
-        (item) => item && item.href && (item.href === url || item.href.endsWith(`/${pageSlug}`))
-      );
-      const pageName = page
-        ? page.label
-        : pageSlug.charAt(0).toUpperCase() + pageSlug.slice(1);
-      toast.loading(`Fetching ${pageName}...`, {
-        id: "route-loading",
-        duration: 1000, // Reduced duration for quicker toasts
-      });
-    };
-
-    const routeChangeComplete = () => {
-      toast.dismiss("route-loading");
-    };
-
-    const routeChangeError = (err, url) => {
-      if (url === "/") {
-        toast.dismiss("route-loading");
-      } else {
-        toast.error("Failed to load page", { id: "route-loading" });
-      }
-    };
-
-    // Prefetch sidebar routes
     const navItems = sidebarNav.flatMap((entry) =>
       entry.items ? entry.items : [entry]
     );
     navItems.forEach((item) => {
       router.prefetch(item.href);
     });
-
-    router.events.on("routeChangeStart", routeChangeStart);
-    router.events.on("routeChangeComplete", routeChangeComplete);
-    router.events.on("routeChangeError", routeChangeError);
-
-    return () => {
-      router.events.off("routeChangeStart", routeChangeStart);
-      router.events.off("routeChangeComplete", routeChangeComplete);
-      router.events.off("routeChangeError", routeChangeError);
-    };
   }, [router]);
 
   const breadcrumbs = (() => {
@@ -230,13 +192,20 @@ function MyApp({ Component, pageProps }) {
         <DarkModeProvider>
           <RoleBasedAccess>
             <main className="flex-1">
-              <Component
-                {...pageProps}
-                mode={mode}
-                toggleMode={toggleMode}
-                breadcrumbs={breadcrumbs}
-                isSidebarOpen={isSidebarOpen}
-              />
+              <PageTransition 
+                color="blue"
+                showProgressBar={true}
+                transitionDuration={300}
+                showLoadingText={true}
+              >
+                <Component
+                  {...pageProps}
+                  mode={mode}
+                  toggleMode={toggleMode}
+                  breadcrumbs={breadcrumbs}
+                  isSidebarOpen={isSidebarOpen}
+                />
+              </PageTransition>
             </main>
           </RoleBasedAccess>
         </DarkModeProvider>

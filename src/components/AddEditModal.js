@@ -16,6 +16,7 @@ export function AddEditModal({
   categories = [],
   onClose,
   onSave,
+  isOpen = true,
 }) {
   const [localCategories, setLocalCategories] = useState([]);
   const [name, setName] = useState(item?.name || "");
@@ -1110,7 +1111,7 @@ export function AddEditModal({
   return (
     <>
       <SimpleModal
-        isOpen={true}
+        isOpen={isOpen}
         onClose={onClose}
         title={modalTitle}
         mode={mode}

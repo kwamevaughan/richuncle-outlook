@@ -36,6 +36,7 @@ export default function MainLayout({
     <div
       className={`min-h-screen flex flex-col overflow-hidden ${mode === "dark" ? "bg-gray-900 text-white" : "text-gray-900"}`}
     >
+
       <HeaderComponent
         {...props}
         isSidebarOpen={isSidebarOpen}
@@ -61,10 +62,11 @@ export default function MainLayout({
           />
         )}
         <div
-          className={`flex-1 flex flex-col transition-all overflow-hidden ${contentMargin} ${contentPadding}`}
+          className={`flex-1 flex flex-col transition-all duration-300 ease-in-out overflow-hidden ${contentMargin} ${contentPadding}`}
         >
           <div className="flex flex-col flex-1 overflow-hidden">
             <div className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col overflow-hidden">
+              {/* Page Content */}
               {children}
             </div>
             <div className="p-4 md:p-6 lg:p-8">

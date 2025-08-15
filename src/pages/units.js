@@ -225,8 +225,8 @@ export default function UnitsPage({ mode = "light", toggleMode, ...props }) {
               />
             </div>
 
-            {showModal && (
-              <AddEditModal
+            <AddEditModal
+              isOpen={showModal}
                 type="units"
                 mode={mode}
                 item={editItem}
@@ -248,7 +248,6 @@ export default function UnitsPage({ mode = "light", toggleMode, ...props }) {
                   }
                 }}
               />
-            )}
             {errorModal.open && (
               <SimpleModal
                 isOpen={true}

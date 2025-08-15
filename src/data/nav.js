@@ -6,6 +6,12 @@ export const sidebarNav = [
     isStandalone: true,
   },
   {
+    href: "/demo-native-features",
+    icon: "mdi:ticket-percent",
+    label: "Demo Native Features",
+    isStandalone: true,
+  },
+  {
     category: "Inventory",
     icon: "mdi:package-variant-closed",
     items: [

@@ -200,8 +200,8 @@ export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...pro
       </div>
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <AddEditModal
+                  <AddEditModal
+              isOpen={showModal}
           type="expense-categories"
           mode={mode}
           item={editItem}
@@ -219,9 +219,8 @@ export default function ExpenseCategoryPage({ mode = "light", toggleMode, ...pro
             } catch (err) {
               toast.error(err.message || "Failed to save expense category");
             }
-          }}
-        />
-      )}
+                          }}
+              />
 
       {/* Delete Confirmation Modal */}
       <SimpleModal

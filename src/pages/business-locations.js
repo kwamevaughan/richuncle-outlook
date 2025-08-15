@@ -417,8 +417,8 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
           )}
 
           {/* Add/Edit Modal */}
-          {showModal && (
-            <AddEditModal
+                      <AddEditModal
+              isOpen={showModal}
               type={activeTab}
               mode={mode}
               item={editItem}
@@ -426,7 +426,6 @@ export default function BusinessLocationsPage({ mode = "light", toggleMode, ...p
               onClose={closeModal}
               onSave={handleSave}
             />
-          )}
 
           {/* Error Modal */}
           {errorModal.open && (

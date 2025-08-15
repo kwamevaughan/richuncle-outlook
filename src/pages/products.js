@@ -498,8 +498,8 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
               </div>
             </div>
 
-            {showModal && (
-              <AddEditModal
+            <AddEditModal
+              isOpen={showModal}
                 type="products"
                 mode={mode}
                 item={editItem}
@@ -521,7 +521,6 @@ export default function ProductsPage({ mode = "light", toggleMode, ...props }) {
                   }
                 }}
               />
-            )}
             {errorModal.open && (
               <SimpleModal
                 isOpen={true}

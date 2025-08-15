@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import TopProgressBar from './TopProgressBar';
+import { sidebarNav } from '@/data/nav';
 
 export default function PageTransition({ 
   children, 
@@ -14,14 +15,100 @@ export default function PageTransition({
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [currentLoadingText, setCurrentLoadingText] = useState(loadingText);
   const timeoutRef = useRef(null);
+
+  // Get page name from route using nav.js data
+  const getPageName = (url) => {
+    // Handle root path
+    if (url === '/') {
+      return 'Dashboard';
+    }
+
+    // Flatten all navigation items for easier searching
+    const allNavItems = sidebarNav.flatMap(entry => {
+      if (entry.items) {
+        return entry.items;
+      } else {
+        return [entry];
+      }
+    });
+
+    // Try to find exact match first
+    let page = allNavItems.find(item => item.href === url);
+    
+    if (page) {
+      return page.label;
+    }
+
+    // If no exact match, try to match by path segments
+    const urlSegments = url.split('/').filter(segment => segment);
+    const lastSegment = urlSegments[urlSegments.length - 1];
+    
+    // Look for items that end with the last segment
+    page = allNavItems.find(item => {
+      if (!item.href) return false;
+      const itemSegments = item.href.split('/').filter(segment => segment);
+      return itemSegments[itemSegments.length - 1] === lastSegment;
+    });
+
+    if (page) {
+      return page.label;
+    }
+
+    // Handle special cases for reports with tabs
+    if (url.includes('/reports?tab=')) {
+      const tabMatch = url.match(/tab=([^&]+)/);
+      if (tabMatch) {
+        const tabName = tabMatch[1];
+        // Map tab names to readable labels
+        const tabLabels = {
+          'sales': 'Sales Report',
+          'inventory': 'Inventory Report',
+          'purchases': 'Purchases Report',
+          'customers': 'Customers Report',
+          'suppliers': 'Suppliers Report',
+          'products': 'Products Report',
+          'expenses': 'Expenses Report',
+          'profit-loss': 'Profit & Loss Report',
+          'tax': 'Tax Report',
+          'annual': 'Annual Report',
+          'z-report': 'Z-Report'
+        };
+        return tabLabels[tabName] || 'Reports';
+      }
+      return 'Reports';
+    }
+
+    // Handle discount tabs
+    if (url.includes('/discount?tab=')) {
+      const tabMatch = url.match(/tab=([^&]+)/);
+      if (tabMatch) {
+        const tabName = tabMatch[1];
+        if (tabName === 'discounts') return 'Discounts';
+        if (tabName === 'plans') return 'Discount Plans';
+      }
+      return 'Discounts';
+    }
+
+    // If still no match, format the last segment nicely
+    const pageSlug = lastSegment || 'overview';
+    return pageSlug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
 
   // Handle route changes
   useEffect(() => {
-    const handleStart = () => {
+    const handleStart = (url) => {
       setIsLoading(true);
       setLoadingProgress(0);
       setIsTransitioning(true);
+      
+      // Set dynamic loading text based on the page being loaded
+      const pageName = getPageName(url);
+      setCurrentLoadingText(`Loading ${pageName}...`);
       
       // Simulate progress
       const progressInterval = setInterval(() => {
@@ -95,7 +182,7 @@ export default function PageTransition({
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[9998] flex items-center justify-center">
+        <div className="fixed inset-0 min-h-screen bg-white/80 backdrop-blur-sm z-[9998] flex items-center justify-center">
           <div className="text-center">
             {/* Loading Spinner */}
             <div className="relative w-16 h-16 mx-auto mb-4">
@@ -108,7 +195,7 @@ export default function PageTransition({
             {/* Loading Text */}
             {showLoadingText && (
               <p className="text-lg font-medium text-gray-700 animate-pulse">
-                {loadingText}
+                {currentLoadingText}
               </p>
             )}
             

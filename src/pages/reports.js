@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import DateRangePicker from "@/components/DateRangePicker";
 import SimpleModal from "@/components/SimpleModal";
 import { useOptimizedData } from "../hooks/useOptimizedData";
+import { LoadingOverlay, ContentLoader } from "@/components/LoadingStates";
 
 // Report Components (to be created)
 import SalesReport from "@/components/reports/SalesReport";
@@ -265,7 +266,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
 
   const ActiveComponent = getActiveTab()?.component;
 
-  if (userLoading) return <LoadingComponent />;
+  if (userLoading) return <LoadingOverlay isVisible={true} text="Loading user..." />;
 
   return (
     <MainLayout
@@ -275,6 +276,7 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
       onLogout={handleLogout}
       {...props}
     >
+
       <div className="flex flex-1">
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
@@ -518,25 +520,33 @@ export default function ReportsPage({ mode = "light", toggleMode, ...props }) {
 
             {/* Active Tab Content */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[600px] relative">
-              {/* Loading Overlay */}
+              {/* Enhanced Loading Overlay */}
               {reportLoading && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="relative">
-                      <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                  <div className="text-center">
+                    <div className="relative mb-6">
+                      <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
                       <Icon
                         icon="mdi:chart-line"
-                        className="w-6 h-6 text-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                        className="w-8 h-8 text-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
                       />
                     </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-700">
+                    <div className="text-center mb-6">
+                      <p className="text-lg font-medium text-gray-700 mb-2">
                         Loading Report...
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-sm text-gray-500">
                         Analyzing data for {getActiveTab()?.label}
                       </p>
                     </div>
+                    
+                    {/* Enhanced Loading Content */}
+                    <ContentLoader 
+                      type="card" 
+                      count={2} 
+                      className="max-w-md mx-auto"
+                      showHeader={false}
+                    />
                   </div>
                 </div>
               )}

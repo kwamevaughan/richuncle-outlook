@@ -394,8 +394,8 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
       </div>
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <AddEditModal
+                  <AddEditModal
+              isOpen={showModal}
           type="expenses"
           mode={mode}
           item={editItem}
@@ -413,9 +413,8 @@ export default function ExpensesPage({ mode = "light", toggleMode, ...props }) {
             } catch (err) {
               toast.error(err.message || "Failed to save expense");
             }
-          }}
-        />
-      )}
+                          }}
+              />
 
       {/* Delete Confirmation Modal */}
       <SimpleModal
