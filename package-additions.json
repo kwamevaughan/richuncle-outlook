@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@simplewebauthn/server": "^9.0.3",
+    "@simplewebauthn/browser": "^9.0.1"
+  }
+}

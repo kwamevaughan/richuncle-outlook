@@ -1,5 +1,8 @@
-// Complete passwordless WebAuthn authentication (no email required)
+// Complete passwordless WebAuthn authentication with full security verification
+import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import supabaseAdmin from '@/lib/supabaseAdmin';
+import challengeStore from '@/lib/challengeStore';
+import { webauthnConfig } from '@/lib/webauthnConfig';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -7,10 +10,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { assertion, challenge } = req.body;
+    const { assertion, sessionId } = req.body;
 
-    if (!assertion || !challenge) {
+    if (!assertion || !sessionId) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Retrieve and consume the challenge (prevents replay attacks)
+    const expectedChallenge = challengeStore.consume(sessionId);
+    if (!expectedChallenge) {
+      return res.status(400).json({ error: 'Invalid or expired challenge' });
     }
 
     // Find the credential by credential ID
@@ -46,13 +55,40 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'User not found or inactive' });
     }
 
-    // In production, verify the assertion with a WebAuthn library
-    // For now, we'll trust the client-side verification
-    
-    // Update last used timestamp
+    // Prepare authenticator data for verification
+    const authenticator = {
+      credentialID: credential.credential_id,
+      credentialPublicKey: new Uint8Array(credential.credential_data.credentialPublicKey),
+      counter: credential.credential_data.counter,
+      transports: credential.credential_data.transports || ['internal'],
+    };
+
+    // Verify the authentication response cryptographically
+    const verification = await verifyAuthenticationResponse({
+      response: assertion,
+      expectedChallenge,
+      expectedOrigin: webauthnConfig.expectedOrigins,
+      expectedRPID: webauthnConfig.rpID,
+      authenticator,
+      requireUserVerification: true,
+    });
+
+    if (!verification.verified) {
+      console.error('WebAuthn authentication verification failed:', verification);
+      return res.status(401).json({ error: 'Authentication verification failed' });
+    }
+
+    // Update credential counter to prevent replay attacks
+    const { authenticationInfo } = verification;
     await supabaseAdmin
       .from('user_credentials')
-      .update({ last_used: new Date().toISOString() })
+      .update({ 
+        last_used: new Date().toISOString(),
+        credential_data: {
+          ...credential.credential_data,
+          counter: authenticationInfo.newCounter,
+        }
+      })
       .eq('id', credential.id);
 
     // Update user's last login
@@ -64,6 +100,7 @@ export default async function handler(req, res) {
     // Return user data (same format as regular login)
     return res.status(200).json({
       success: true,
+      verified: true,
       user: {
         id: user.id,
         email: user.email,
@@ -80,6 +117,9 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Error completing passwordless WebAuthn authentication:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Authentication failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
