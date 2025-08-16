@@ -58,6 +58,14 @@ const NOTIFICATION_TYPES = {
     borderColor: "border-gray-200", 
     title: "System",
     description: "System notification"
+  },
+  long_running_session: {
+    icon: "mdi:clock-alert-outline",
+    color: "text-amber-500",
+    bgColor: "bg-amber-50",
+    borderColor: "border-amber-200",
+    title: "Long-Running Register",
+    description: "Register has been open for more than 24 hours"
   }
 };
 
@@ -76,7 +84,7 @@ const NotificationSystem = ({ mode, isOpen, onClose, user, fullWidth = false }) 
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
-      const [ordersResponse, productsResponse, cashResponse, conversationsResponse] = await Promise.all([
+      const [ordersResponse, productsResponse, cashResponse, conversationsResponse, sessionsResponse] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/products'),
         fetch('/api/cash-movements'),
@@ -86,13 +94,15 @@ const NotificationSystem = ({ mode, isOpen, onClose, user, fullWidth = false }) 
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ user }),
-        })
+        }),
+        fetch('/api/cash-register-sessions?status=open')
       ]);
       
       const ordersData = await ordersResponse.json();
       const productsData = await productsResponse.json();
       const cashData = await cashResponse.json();
       const conversationsData = await conversationsResponse.json();
+      const sessionsData = await sessionsResponse.json();
       
       const recentOrders = ordersData.success ? 
         (ordersData.data || []).filter(order => new Date(order.timestamp) >= yesterday).slice(0, 5) : [];
@@ -112,6 +122,33 @@ const NotificationSystem = ({ mode, isOpen, onClose, user, fullWidth = false }) 
 
       // Build notifications array
       const allNotifications = [];
+      
+      // Add long-running session notifications (only for admins)
+      if (user?.role === 'admin' && sessionsData?.success) {
+        const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+        const now = new Date();
+        
+        (sessionsData.data || []).forEach(session => {
+          if (session?.opened_at) {
+            const openedAt = new Date(session.opened_at);
+            const durationMs = now - openedAt;
+            
+            if (durationMs > TWENTY_FOUR_HOURS_MS) {
+              const hoursOpen = Math.floor(durationMs / (1000 * 60 * 60));
+              allNotifications.push({
+                id: `long_running_${session.id}`,
+                type: 'long_running_session',
+                title: 'Long-Running Register Session',
+                message: `Register ${session.register_name || session.id} has been open for ${hoursOpen} hours`,
+                timestamp: session.opened_at,
+                data: session,
+                read: false,
+                priority: 1 // Higher priority to show at the top
+              });
+            }
+          }
+        });
+      }
 
       // Add new order notifications
       if (recentOrders && recentOrders.length > 0) {
@@ -197,8 +234,12 @@ const NotificationSystem = ({ mode, isOpen, onClose, user, fullWidth = false }) 
         });
       }
 
-      // Sort by timestamp (newest first)
-      allNotifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      // Sort by priority (if any) and then by timestamp (newest first)
+      allNotifications.sort((a, b) => {
+        const priorityDiff = (b.priority || 0) - (a.priority || 0);
+        if (priorityDiff !== 0) return priorityDiff;
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
       
       setNotifications(allNotifications);
       setUnreadCount(allNotifications.filter(n => !n.read).length);
@@ -269,6 +310,12 @@ const NotificationSystem = ({ mode, isOpen, onClose, user, fullWidth = false }) 
         // Navigate to messages page and open the specific conversation
         if (typeof window !== 'undefined') {
           window.location.href = `/messages?conversation=${notification.data.id}`;
+        }
+        break;
+      case 'long_running_session':
+        // Navigate to registers page
+        if (typeof window !== 'undefined') {
+          window.location.href = '/registers';
         }
         break;
       default:

@@ -11,9 +11,28 @@ import { GenericTable } from "@/components/GenericTable";
 import useLogout from "../hooks/useLogout";
 import ZReportView from "@/components/ZReportView";
 import printZReport from "@/components/printZReport";
-import { format, parseISO, isWithinInterval } from 'date-fns';
+import { format, parseISO, isWithinInterval, differenceInHours } from 'date-fns';
+import { enUS } from 'date-fns/locale';
+
+// Format number as currency (GHS)
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-GH', {
+    style: 'currency',
+    currency: 'GHS',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+};
 
 const PAGE_SIZE = 10;
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+
+// Helper function to check if a session is long-running
+const isLongRunningSession = (session) => {
+  if (!session?.opened_at) return false;
+  const openedAt = new Date(session.opened_at);
+  return (Date.now() - openedAt) > TWENTY_FOUR_HOURS_MS;
+};
 
 export default function RegistersPage({ mode = "light", toggleMode, ...props }) {
   const { user, loading: userLoading, LoadingComponent } = useUser();
@@ -112,6 +131,23 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
       map[s.register_id].push(s);
     });
     return map;
+  }, [sessions]);
+
+  // Get open sessions by register ID and check for long-running sessions
+  const { openSessionsByRegister, hasLongRunningSessions } = useMemo(() => {
+    const sessionsByRegister = {};
+    let hasLongRunning = false;
+    
+    sessions.forEach(session => {
+      if (session.register_id) {
+        sessionsByRegister[session.register_id] = session;
+        if (isLongRunningSession(session)) {
+          hasLongRunning = true;
+        }
+      }
+    });
+    
+    return { openSessionsByRegister: sessionsByRegister, hasLongRunningSessions: hasLongRunning };
   }, [sessions]);
 
   // StoreId -> Store Name
@@ -297,6 +333,23 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                 </span>
               </TooltipIconButton>
             )}
+            {hasLongRunningSessions && (
+              <TooltipIconButton
+                icon="mdi:clock-alert-outline"
+                label="Long-Running Session"
+                mode={mode}
+                className="flex items-center gap-2 bg-red-50 px-4 py-2 rounded shadow-sm text-red-900 font-semibold"
+                style={{ minWidth: 0 }}
+              >
+                <Icon
+                  icon="mdi:clock-alert-outline"
+                  className="w-5 h-5 text-red-700"
+                />
+                <span className="font-semibold text-red-900">
+                  Long-Running Session
+                </span>
+              </TooltipIconButton>
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -411,18 +464,26 @@ export default function RegistersPage({ mode = "light", toggleMode, ...props }) 
                     const openSession = openSessionsMap[row.id];
                     return openSession ? (
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs text-gray-700">
-                          Opened by:{" "}
-                          <span className="font-semibold">
-                            {userMap[openSession.user_id] ||
-                              openSession.user_id}
-                          </span>
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {openSession.opened_at
-                            ? new Date(openSession.opened_at).toLocaleString()
-                            : "-"}
-                        </span>
+                        <div className="text-sm text-muted-foreground">
+                          {openSession ? (
+                            <div className={isLongRunningSession(openSession) ? 'border-l-4 border-red-500 pl-2' : ''}>
+                              {isLongRunningSession(openSession) && (
+                                <div className="flex items-center text-red-500 font-medium mb-1">
+                                  <Icon icon="mdi:clock-alert-outline" className="h-4 w-4 mr-1" />
+                                  Long-Running Session
+                                </div>
+                              )}
+                              <div>Opened: {format(new Date(openSession.opened_at), 'PPpp', { locale: enUS })}</div>
+                              <div>Duration: {differenceInHours(new Date(), new Date(openSession.opened_at))} hours</div>
+                              <div>By: {userMap[openSession.user_id] || 'Unknown'}</div>
+                              <div>Starting Cash: {formatCurrency(openSession.starting_cash || 0)}</div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">
+                              No open session
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <span className="text-xs text-gray-400">

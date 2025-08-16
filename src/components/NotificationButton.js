@@ -14,7 +14,7 @@ const NotificationButton = ({ mode, user, showLabel = false, isInDropdown = fals
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
-      const [ordersResponse, productsResponse, conversationsResponse] = await Promise.all([
+      const [ordersResponse, productsResponse, conversationsResponse, sessionsResponse] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/products'),
         fetch('/api/messages/conversations', {
@@ -23,12 +23,14 @@ const NotificationButton = ({ mode, user, showLabel = false, isInDropdown = fals
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ user }),
-        })
+        }),
+        user?.role === 'admin' ? fetch('/api/cash-register-sessions?status=open') : Promise.resolve({ json: () => ({ success: false }) })
       ]);
       
       const ordersData = await ordersResponse.json();
       const productsData = await productsResponse.json();
       const conversationsData = await conversationsResponse.json();
+      const sessionsData = await sessionsResponse.json();
       
       const recentOrders = ordersData.success ? 
         (ordersData.data || []).filter(order => new Date(order.timestamp) >= yesterday) : [];
@@ -43,12 +45,24 @@ const NotificationButton = ({ mode, user, showLabel = false, isInDropdown = fals
       const unreadMessages = conversationsData.success ? 
         (conversationsData.conversations || []).reduce((total, conv) => total + (conv.unread_count || 0), 0) : 0;
 
+      // Check for long-running sessions (only for admins)
+      let longRunningSessions = 0;
+      if (user?.role === 'admin' && sessionsData?.success) {
+        const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+        const now = new Date();
+        
+        longRunningSessions = (sessionsData.data || []).filter(session => {
+          return session?.opened_at && (now - new Date(session.opened_at)) > TWENTY_FOUR_HOURS_MS;
+        }).length;
+      }
+
       // Calculate total notifications
       const totalNotifications = 
         (recentOrders?.length || 0) + 
         (lowStockProducts?.length || 0) + 
         (outOfStockProducts?.length || 0) +
-        (unreadMessages > 0 ? 1 : 0); // Add 1 for messaging if there are unread messages
+        (unreadMessages > 0 ? 1 : 0) + // Add 1 for messaging if there are unread messages
+        longRunningSessions; // Add count of long-running sessions
       
       setUnreadCount(totalNotifications);
     } catch (error) {
