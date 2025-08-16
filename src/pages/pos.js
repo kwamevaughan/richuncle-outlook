@@ -733,6 +733,9 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
   const [layawayOutstanding, setLayawayOutstanding] = useState(0);
   const [layawayOrder, setLayawayOrder] = useState(null);
 
+  // Add discount modal state
+  const [showAddDiscountModal, setShowAddDiscountModal] = useState(false);
+
   // Build orderedProducts for the current order (quantity > 0)
   const orderedProducts = Array.isArray(products)
     ? products.filter((p) => selectedProducts.includes(p.id))
@@ -909,10 +912,21 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
   }
 
   // Determine if footer should be hidden when modals are open
-  const isAnyModalOpen = showOrderHistory || showRecentTransactions || showNoOrderModal || 
-    showCashRegister || showModernReceipt || showPaymentModal || showSalesReturnModal || 
-    showSuccessModal || showReceiptModal || showHoldLayawayModal || showRetrieveSales || 
-    showRetrieveLayaways || showLayawayPaymentForm || autoShowRegister;
+  const isAnyModalOpen =
+    showOrderHistory ||
+    showRecentTransactions ||
+    showNoOrderModal ||
+    showCashRegister ||
+    showModernReceipt ||
+    showPaymentModal ||
+    showSalesReturnModal ||
+    showSuccessModal ||
+    showReceiptModal ||
+    showHoldLayawayModal ||
+    showRetrieveSales ||
+    showRetrieveLayaways ||
+    showLayawayPaymentForm ||
+    autoShowRegister;
 
   return (
     <ModalProvider>
@@ -964,7 +978,7 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
           registers={registers}
           setRegisters={setRegisters}
         />
-        <div className="flex flex-col lg:flex-row gap-2 sm:gap-4 lg:gap-8 flex-1 min-h-0 pb-32 sm:pb-36 md:pb-40">
+        <div className="pos-content-wrapper flex flex-col lg:flex-row gap-2 sm:gap-4 lg:gap-8 flex-1 min-h-0">
           <PosOrderList
             className="w-full lg:w-3/5 min-h-0 overflow-auto order-1"
             selectedProducts={selectedProducts}
@@ -998,6 +1012,8 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
             selectedCustomerId={selectedCustomerId}
             setSelectedCustomerId={setSelectedCustomerId}
             mode={mode}
+            showAddDiscountModal={showAddDiscountModal}
+            setShowAddDiscountModal={setShowAddDiscountModal}
           />
 
           <PosProductList

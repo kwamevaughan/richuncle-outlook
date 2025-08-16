@@ -281,24 +281,42 @@ const PosFooterActions = ({
 
   // Inject CSS to ensure footer sticks properly
   useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = `
-      .pos-footer-sticky {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100vw !important;
-        z-index: 9999 !important;
-        margin: 0 !important;
+    const existingStyle = document.getElementById("pos-footer-styles");
+    
+    if (!hideFooter) {
+      // Only add styles when footer is visible
+      if (!existingStyle) {
+        const style = document.createElement("style");
+        style.id = "pos-footer-styles";
+        style.textContent = `
+          .pos-footer-sticky {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100vw;
+            z-index: 9999;
+            margin: 0;
+          }
+          .pos-content-wrapper {
+            padding-bottom: 120px;
+          }
+        `;
+        document.head.appendChild(style);
       }
-      ${!hideFooter ? 'body { padding-bottom: 120px !important; }' : ''}
-    `;
-    document.head.appendChild(style);
+    } else {
+      // Immediately remove styles when footer should be hidden
+      if (existingStyle) {
+        document.head.removeChild(existingStyle);
+      }
+    }
 
     return () => {
-      document.head.removeChild(style);
-      document.body.style.paddingBottom = "";
+      // Cleanup on unmount
+      const styleToRemove = document.getElementById("pos-footer-styles");
+      if (styleToRemove) {
+        document.head.removeChild(styleToRemove);
+      }
     };
   }, [hideFooter]);
 

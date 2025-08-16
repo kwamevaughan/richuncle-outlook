@@ -163,6 +163,8 @@ const PosOrderList = ({
   setSelectedCustomerId,
   className = "",
   mode = "light",
+  showAddDiscountModal,
+  setShowAddDiscountModal,
 }) => {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
@@ -171,7 +173,6 @@ const PosOrderList = ({
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeQty, setBarcodeQty] = useState(1);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-  const [showAddDiscountModal, setShowAddDiscountModal] = useState(false);
   const [discountPlans, setDiscountPlans] = useState([]);
   const [discountValue, setDiscountValue] = useState("");
   const [newDiscountType, setNewDiscountType] = useState("percentage");
@@ -1453,10 +1454,9 @@ const PosOrderList = ({
           {/* Discount Selector */}
 
           {/* Add Discount Modal */}
-          {showAddDiscountModal && (
-            <SimpleModal
-              isOpen={true}
-              onClose={() => setShowAddDiscountModal(false)}
+          <SimpleModal
+            isOpen={showAddDiscountModal}
+            onClose={() => setShowAddDiscountModal(false)}
               title="Quick Discount"
               mode="light"
               width="max-w-md"
@@ -1651,8 +1651,7 @@ const PosOrderList = ({
                   </button>
                 </div>
               </div>
-            </SimpleModal>
-          )}
+          </SimpleModal>
         </div>
         {/* Payment Summary */}
         <div className="mb-2">
@@ -1802,10 +1801,9 @@ const PosOrderList = ({
           }}
         />
 
-      {showBarcodeModal && (
-        <SimpleModal
-          isOpen={true}
-          onClose={() => {
+      <SimpleModal
+        isOpen={showBarcodeModal}
+        onClose={() => {
             setShowBarcodeModal(false);
             setBarcodeInput("");
             setBarcodeProduct(null);
@@ -1972,8 +1970,7 @@ const PosOrderList = ({
               </button>
             </div>
           )}
-        </SimpleModal>
-      )}
+      </SimpleModal>
 
       {/* Payment Form Modal */}
       <PaymentForm

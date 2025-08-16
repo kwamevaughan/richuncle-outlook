@@ -1838,7 +1838,7 @@ const PaymentForm = ({
         <div
           ref={modalRef}
           className={`
-            relative w-full max-w-5xl transform transition-all duration-500
+            relative w-full max-w-5xl transform transition-all duration-500 flex flex-col max-h-[90vh]
             ${
               animationState === "open"
                 ? "scale-100 translate-y-0"
@@ -1868,7 +1868,7 @@ const PaymentForm = ({
         >
           {/* Enhanced Header */}
           <div
-            className="relative overflow-hidden"
+            className="relative overflow-clip"
             style={{ borderRadius: "32px 32px 0 0" }}
           >
             <div className="absolute inset-0 bg-blue-600 opacity-90" />
@@ -1916,47 +1916,47 @@ const PaymentForm = ({
             </div>
           </div>
 
-          {/* Collapsible Product List */}
-          {!isLayaway && (
-            <CollapsibleSection
-              title={`View Items (${(() => {
-                if (!Array.isArray(products)) return 0;
-
-                // If quantities is empty but we have products, assume each product has quantity 1
-                if (!quantities || Object.keys(quantities).length === 0) {
-                  return products.length;
-                }
-
-                // Try multiple common patterns for matching products with quantities
-                const count = products.filter((p) => {
-                  // Try different possible keys that might be used
-                  const possibleKeys = [
-                    p.id, // Most common: product.id
-                    p.product_id, // Alternative: product.product_id
-                    p.name, // By name: product.name
-                    String(p.id), // String version of ID
-                    String(p.product_id), // String version of product_id
-                  ].filter((key) => key != null); // Remove null/undefined keys
-
-                  // Check if any of these keys have a quantity > 0
-                  return possibleKeys.some((key) => (quantities[key] || 0) > 0);
-                }).length;
-
-                return count;
-              })()})`}
-              icon="mdi:package-variant"
-              mode={mode}
-              defaultOpen={true}
-            >
-              <OrderItems products={products} quantities={quantities} />
-            </CollapsibleSection>
-          )}
-
-          {/* Content Area - Streamlined */}
+          {/* Scrollable Content Area */}
           <div
             ref={scrollContainerRef}
-            className="px-6 py-6 max-h-[calc(85vh-200px)] overflow-y-auto space-y-6"
+            className="flex-1 overflow-y-auto px-6 py-6 space-y-6"
           >
+            {/* Collapsible Product List */}
+            {!isLayaway && (
+              <CollapsibleSection
+                title={`View Items (${(() => {
+                  if (!Array.isArray(products)) return 0;
+
+                  // If quantities is empty but we have products, assume each product has quantity 1
+                  if (!quantities || Object.keys(quantities).length === 0) {
+                    return products.length;
+                  }
+
+                  // Try multiple common patterns for matching products with quantities
+                  const count = products.filter((p) => {
+                    // Try different possible keys that might be used
+                    const possibleKeys = [
+                      p.id, // Most common: product.id
+                      p.product_id, // Alternative: product.product_id
+                      p.name, // By name: product.name
+                      String(p.id), // String version of ID
+                      String(p.product_id), // String version of product_id
+                    ].filter((key) => key != null); // Remove null/undefined keys
+
+                    // Check if any of these keys have a quantity > 0
+                    return possibleKeys.some((key) => (quantities[key] || 0) > 0);
+                  }).length;
+
+                  return count;
+                })()})`}
+                icon="mdi:package-variant"
+                mode={mode}
+                defaultOpen={true}
+              >
+                <OrderItems products={products} quantities={quantities} />
+              </CollapsibleSection>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Streamlined Payment Header - Essential Info Only */}
 
@@ -2122,17 +2122,20 @@ const PaymentForm = ({
             </form>
           </div>
 
-          {/* Enhanced Action Buttons */}
+          {/* Fixed Action Buttons Footer */}
           <div
             className={`
-            sticky bottom-0 px-10 py-6 border-t backdrop-blur-xl
+            flex-shrink-0 px-10 py-6 border-t backdrop-blur-xl z-10
             ${
               mode === "dark"
                 ? "bg-gray-900/95 border-gray-700/50"
                 : "bg-white/95 border-gray-200/50"
             }
           `}
-            style={{ borderRadius: "0 0 32px 32px" }}
+            style={{ 
+              borderRadius: "0 0 32px 32px",
+              boxShadow: "0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06)"
+            }}
           >
             <div className="flex justify-end gap-6">
               <ModernButton
