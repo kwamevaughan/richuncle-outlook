@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "@iconify/react";
 import { paymentMethods } from "@/constants/paymentMethods";
 import toast from "react-hot-toast";
@@ -18,6 +19,7 @@ const PosFooterActions = ({
   sessionCheckLoading = false,
   user,
   mode = "light",
+  hideFooter = false,
 }) => {
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showHoldOptions, setShowHoldOptions] = useState(false);
@@ -62,16 +64,17 @@ const PosFooterActions = ({
 
   const footerContent = (
     <div
-      className={`fixed bottom-0 left-0 right-0 w-full z-[9999] py-2 sm:py-3 md:py-4 flex justify-center shadow-xl border-t-2 backdrop-blur-sm ${
+      className={`pos-footer-sticky py-2 sm:py-3 md:py-4 flex flex-col justify-center shadow-xl border-t-2 backdrop-blur-sm ${
         mode === "dark"
-          ? "bg-gray-900/95 border-gray-600 border-gray-700/20"
-          : "bg-white/95 border-gray-200 border-white/20"
+          ? "bg-gray-900/95 border-gray-600"
+          : "bg-white/95 border-gray-200"
       }`}
-      
     >
-      <div className="flex gap-2 justify-center flex-1 min-h-0 overflow-visible items-stretch w-full px-2 sm:px-3 md:px-4">
+      <div className="w-full px-2 sm:px-3 md:px-4 space-y-2">
+        {/* Total Display - Now at top for better visibility */}
+
         {/* Button Row */}
-        <div className="flex flex-row gap-2 sm:gap-3 md:gap-4 flex-1 md:flex-none justify-center">
+        <div className="flex flex-row gap-2 sm:gap-3 md:gap-4 justify-center">
           <div className="relative flex-1 sm:flex-none">
             <button
               className={`select-none flex items-center justify-center gap-1.5 sm:gap-2 bg-yellow-600 hover:bg-yellow-700 active:scale-95 text-white font-semibold px-2 sm:px-3 md:px-4 py-2 sm:py-2 rounded-lg shadow transition min-h-[44px] w-full sm:w-auto ${
@@ -262,23 +265,52 @@ const PosFooterActions = ({
               <span className="hidden sm:inline">Recent Transactions</span>
             </button>
           </div>
+          {hasProducts && (
+            <div
+              className={`font-extrabold text-center text-lg sm:text-xl md:text-2xl lg:text-3xl ${
+                mode === "dark" ? "text-white" : "text-black"
+              }`}
+            >
+              Total Payable: GHS {totalPayable.toLocaleString()}
+            </div>
+          )}
         </div>
-
-        {/* Total Display - Now below buttons for all screen sizes */}
-        {hasProducts && (
-          <div
-            className={`font-extrabold text-center text-lg sm:text-xl md:text-2xl lg:text-3xl ${
-              mode === "dark" ? "text-white" : "text-black"
-            }`}
-          >
-            Total Payable: GHS {totalPayable.toLocaleString()}
-          </div>
-        )}
       </div>
     </div>
-  );  
-  
-  return footerContent;
+  );
+
+  // Inject CSS to ensure footer sticks properly
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      .pos-footer-sticky {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        z-index: 9999 !important;
+        margin: 0 !important;
+      }
+      ${!hideFooter ? 'body { padding-bottom: 120px !important; }' : ''}
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+      document.body.style.paddingBottom = "";
+    };
+  }, [hideFooter]);
+
+  // Don't render footer if hideFooter is true
+  if (hideFooter) {
+    return null;
+  }
+
+  // Use portal to render footer outside the main layout tree
+  return typeof window !== "undefined"
+    ? createPortal(footerContent, document.body)
+    : footerContent;
 };
 
 export default PosFooterActions;

@@ -115,14 +115,14 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
   // Memoized product lookup for performance
   const productMap = useMemo(() => {
     const map = new Map();
-    products.forEach(product => map.set(product.id, product));
+    products.forEach((product) => map.set(product.id, product));
     return map;
   }, [products]);
 
   // Memoized discount lookup
   const discountMap = useMemo(() => {
     const map = new Map();
-    discounts.forEach(discount => map.set(discount.id, discount));
+    discounts.forEach((discount) => map.set(discount.id, discount));
     return map;
   }, [discounts]);
 
@@ -135,7 +135,7 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
     for (const id of selectedProducts) {
       const product = productMap.get(id);
       if (!product) continue;
-      
+
       const qty = quantities[id] || 1;
       const itemSubtotal = product.price * qty;
       subtotal += itemSubtotal;
@@ -157,7 +157,8 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
     if (selectedDiscountId) {
       const discountObj = discountMap.get(selectedDiscountId);
       if (discountObj) {
-        const discountType = discountObj.discount_type || discountObj.type || "percentage";
+        const discountType =
+          discountObj.discount_type || discountObj.type || "percentage";
         if (discountType === "percentage") {
           discount = Math.round(subtotal * (Number(discountObj.value) / 100));
         } else {
@@ -167,7 +168,14 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
     }
 
     return subtotal + tax - discount;
-  }, [selectedProducts, quantities, productMap, discountMap, selectedDiscountId, roundoffEnabled]);
+  }, [
+    selectedProducts,
+    quantities,
+    productMap,
+    discountMap,
+    selectedDiscountId,
+    roundoffEnabled,
+  ]);
 
   const totalPayable = calculateTotal;
 
@@ -327,306 +335,332 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
 
   // Optimized transaction processing with batch operations
-  const processCompleteTransaction = useCallback(async (paymentInfo) => {
-    if (!paymentInfo) {
-      import("react-hot-toast").then(({ toast }) =>
-        toast.error("Please complete payment details first")
-      );
-      return;
-    }
-    if (selectedProducts.length === 0) {
-      import("react-hot-toast").then(({ toast }) =>
-        toast.error("Please add products to the order")
-      );
-      return;
-    }
-    if (!selectedStoreId) {
-      import("react-hot-toast").then(({ toast }) =>
-        toast.error("Please select a store first")
-      );
-      return;
-    }
-    let orderData = null;
-    let paymentResult = null;
-    let processingToast = null;
-    try {
-      const { toast } = await import("react-hot-toast");
-      processingToast = toast.loading("Processing order...");
-      if (paymentInfo.paymentType === "split") {
-        paymentResult = {
-          success: true,
-          method: "split",
-          paymentType: "split",
-          totalPaid: paymentInfo.total - paymentInfo.remainingAmount,
-          payments: paymentInfo.splitPayments,
-          splitPayments: paymentInfo.splitPayments,
-          total: paymentInfo.total,
-          remainingAmount: paymentInfo.remainingAmount,
-          payingAmount: paymentInfo.payingAmount,
-          receivedAmount: paymentInfo.receivedAmount,
-          change: paymentInfo.change || 0,
-        };
-      } else {
-        paymentResult = {
-          success: true,
-          method: paymentInfo.paymentType,
-          paymentType: paymentInfo.paymentType,
-          amount: parseFloat(paymentInfo.payingAmount),
-          payingAmount: paymentInfo.payingAmount,
-          receivedAmount: paymentInfo.receivedAmount,
-          change: paymentInfo.change,
-          reference: paymentInfo.referenceNumber || null,
-        };
-      }
-      let paymentReceiverName = "Unknown";
-      if (paymentInfo.paymentReceiver && allUsers && allUsers.length > 0) {
-        const receiverUser = allUsers.find(
-          (u) => u.id === paymentInfo.paymentReceiver
+  const processCompleteTransaction = useCallback(
+    async (paymentInfo) => {
+      if (!paymentInfo) {
+        import("react-hot-toast").then(({ toast }) =>
+          toast.error("Please complete payment details first")
         );
-        paymentReceiverName =
-          receiverUser?.full_name ||
-          receiverUser?.name ||
-          receiverUser?.email ||
-          paymentInfo.paymentReceiver;
-      } else {
-        paymentReceiverName = user?.full_name || user?.email || "Unknown";
+        return;
       }
-      // Find selected customer
-      let customerId = "";
-      let selectedCustomerName = "";
-
-      // First check if customer info is in paymentInfo
-      if (paymentInfo.customerId) {
-        customerId = paymentInfo.customerId;
-        selectedCustomerName =
-          customers.find((c) => c.id === paymentInfo.customerId)?.name ||
-          "Walk In Customer";
-      } else if (paymentInfo.customer && paymentInfo.customer.id) {
-        customerId = paymentInfo.customer.id;
-        selectedCustomerName = paymentInfo.customer.name || "Walk In Customer";
-      } else {
-        // Fall back to the selectedCustomerId state variable
-        customerId = selectedCustomerId || "";
-        if (selectedCustomerId === "__online__") {
-          selectedCustomerName = "Online Purchase";
-        } else if (selectedCustomerId && selectedCustomerId.startsWith("db_")) {
-          // Handle database customer selection (remove db_ prefix for lookup)
-          const actualCustomerId = selectedCustomerId.replace("db_", "");
-          const customer = customers.find((c) => c.id === actualCustomerId);
-          selectedCustomerName = customer?.name || "Walk In Customer";
-          customerId = actualCustomerId; // Use the actual customer ID without prefix
-        } else if (selectedCustomerId) {
-          selectedCustomerName =
-            customers.find((c) => c.id === selectedCustomerId)?.name ||
-            "Walk In Customer";
+      if (selectedProducts.length === 0) {
+        import("react-hot-toast").then(({ toast }) =>
+          toast.error("Please add products to the order")
+        );
+        return;
+      }
+      if (!selectedStoreId) {
+        import("react-hot-toast").then(({ toast }) =>
+          toast.error("Please select a store first")
+        );
+        return;
+      }
+      let orderData = null;
+      let paymentResult = null;
+      let processingToast = null;
+      try {
+        const { toast } = await import("react-hot-toast");
+        processingToast = toast.loading("Processing order...");
+        if (paymentInfo.paymentType === "split") {
+          paymentResult = {
+            success: true,
+            method: "split",
+            paymentType: "split",
+            totalPaid: paymentInfo.total - paymentInfo.remainingAmount,
+            payments: paymentInfo.splitPayments,
+            splitPayments: paymentInfo.splitPayments,
+            total: paymentInfo.total,
+            remainingAmount: paymentInfo.remainingAmount,
+            payingAmount: paymentInfo.payingAmount,
+            receivedAmount: paymentInfo.receivedAmount,
+            change: paymentInfo.change || 0,
+          };
         } else {
-          selectedCustomerName = "Walk In Customer";
+          paymentResult = {
+            success: true,
+            method: paymentInfo.paymentType,
+            paymentType: paymentInfo.paymentType,
+            amount: parseFloat(paymentInfo.payingAmount),
+            payingAmount: paymentInfo.payingAmount,
+            receivedAmount: paymentInfo.receivedAmount,
+            change: paymentInfo.change,
+            reference: paymentInfo.referenceNumber || null,
+          };
         }
-      }
+        let paymentReceiverName = "Unknown";
+        if (paymentInfo.paymentReceiver && allUsers && allUsers.length > 0) {
+          const receiverUser = allUsers.find(
+            (u) => u.id === paymentInfo.paymentReceiver
+          );
+          paymentReceiverName =
+            receiverUser?.full_name ||
+            receiverUser?.name ||
+            receiverUser?.email ||
+            paymentInfo.paymentReceiver;
+        } else {
+          paymentReceiverName = user?.full_name || user?.email || "Unknown";
+        }
+        // Find selected customer
+        let customerId = "";
+        let selectedCustomerName = "";
 
-      console.log("Customer processing:", {
-        paymentInfoCustomerId: paymentInfo.customerId,
-        paymentInfoCustomer: paymentInfo.customer,
-        selectedCustomerId: selectedCustomerId,
-        finalCustomerId: customerId,
-        finalCustomerName: selectedCustomerName,
-        customers: customers.length,
-      });
-      // Optimized order items building using productMap
-      const items = selectedProducts.map((id) => {
-        const product = productMap.get(id);
-        if (!product) return null;
-        
-        const qty = quantities[id] || 1;
-        const itemSubtotal = product.price * qty;
-        let itemTax = 0;
-        
-        if (product.tax_percentage && product.tax_percentage > 0) {
-          const taxPercentage = Number(product.tax_percentage);
-          if (product.tax_type === "exclusive") {
-            itemTax = ((product.price * taxPercentage) / 100) * qty;
-          } else if (product.tax_type === "inclusive") {
-            const priceWithoutTax = product.price / (1 + taxPercentage / 100);
-            itemTax = (product.price - priceWithoutTax) * qty;
+        // First check if customer info is in paymentInfo
+        if (paymentInfo.customerId) {
+          customerId = paymentInfo.customerId;
+          selectedCustomerName =
+            customers.find((c) => c.id === paymentInfo.customerId)?.name ||
+            "Walk In Customer";
+        } else if (paymentInfo.customer && paymentInfo.customer.id) {
+          customerId = paymentInfo.customer.id;
+          selectedCustomerName =
+            paymentInfo.customer.name || "Walk In Customer";
+        } else {
+          // Fall back to the selectedCustomerId state variable
+          customerId = selectedCustomerId || "";
+          if (selectedCustomerId === "__online__") {
+            selectedCustomerName = "Online Purchase";
+          } else if (
+            selectedCustomerId &&
+            selectedCustomerId.startsWith("db_")
+          ) {
+            // Handle database customer selection (remove db_ prefix for lookup)
+            const actualCustomerId = selectedCustomerId.replace("db_", "");
+            const customer = customers.find((c) => c.id === actualCustomerId);
+            selectedCustomerName = customer?.name || "Walk In Customer";
+            customerId = actualCustomerId; // Use the actual customer ID without prefix
+          } else if (selectedCustomerId) {
+            selectedCustomerName =
+              customers.find((c) => c.id === selectedCustomerId)?.name ||
+              "Walk In Customer";
+          } else {
+            selectedCustomerName = "Walk In Customer";
           }
         }
-        
-        return {
-          productId: id,
-          name: product.name,
-          quantity: qty,
-          price: product.price,
-          costPrice: product.cost_price || 0,
-          taxType: product.tax_type || "exclusive",
-          taxPercentage: product.tax_percentage || 0,
-          itemTax: itemTax,
-          total: itemSubtotal,
+
+        console.log("Customer processing:", {
+          paymentInfoCustomerId: paymentInfo.customerId,
+          paymentInfoCustomer: paymentInfo.customer,
+          selectedCustomerId: selectedCustomerId,
+          finalCustomerId: customerId,
+          finalCustomerName: selectedCustomerName,
+          customers: customers.length,
+        });
+        // Optimized order items building using productMap
+        const items = selectedProducts
+          .map((id) => {
+            const product = productMap.get(id);
+            if (!product) return null;
+
+            const qty = quantities[id] || 1;
+            const itemSubtotal = product.price * qty;
+            let itemTax = 0;
+
+            if (product.tax_percentage && product.tax_percentage > 0) {
+              const taxPercentage = Number(product.tax_percentage);
+              if (product.tax_type === "exclusive") {
+                itemTax = ((product.price * taxPercentage) / 100) * qty;
+              } else if (product.tax_type === "inclusive") {
+                const priceWithoutTax =
+                  product.price / (1 + taxPercentage / 100);
+                itemTax = (product.price - priceWithoutTax) * qty;
+              }
+            }
+
+            return {
+              productId: id,
+              name: product.name,
+              quantity: qty,
+              price: product.price,
+              costPrice: product.cost_price || 0,
+              taxType: product.tax_type || "exclusive",
+              taxPercentage: product.tax_percentage || 0,
+              itemTax: itemTax,
+              total: itemSubtotal,
+            };
+          })
+          .filter(Boolean);
+        // Use the selected store ID (for admin/manager) or register's store (for cashier)
+        const storeId = selectedStoreId;
+        orderData = {
+          id: orderId,
+          customer_id: customerId || "",
+          customer_name: selectedCustomerName || "Walk In Customer",
+          subtotal: 0, // You may want to calculate this
+          tax: 0, // You may want to calculate this
+          discount: 0, // You may want to calculate this
+          total: totalPayable,
+          payment_method: paymentResult.method,
+          payment_data: paymentResult,
+          payment_receiver: paymentInfo.paymentReceiver,
+          payment_note: paymentInfo.paymentNote,
+          sale_note: paymentInfo.saleNote,
+          staff_note: paymentInfo.staffNote,
+          timestamp: new Date().toISOString(),
+          payment_receiver_name: paymentReceiverName,
+          order_type: "pos",
+          status: "Completed",
+          register_id: selectedRegister,
+          session_id: currentSessionId,
+          store_id: storeId,
+          // Add other columns as needed
         };
-      }).filter(Boolean);
-      // Use the selected store ID (for admin/manager) or register's store (for cashier)
-      const storeId = selectedStoreId;
-      orderData = {
-        id: orderId,
-        customer_id: customerId || "",
-        customer_name: selectedCustomerName || "Walk In Customer",
-        subtotal: 0, // You may want to calculate this
-        tax: 0, // You may want to calculate this
-        discount: 0, // You may want to calculate this
-        total: totalPayable,
-        payment_method: paymentResult.method,
-        payment_data: paymentResult,
-        payment_receiver: paymentInfo.paymentReceiver,
-        payment_note: paymentInfo.paymentNote,
-        sale_note: paymentInfo.saleNote,
-        staff_note: paymentInfo.staffNote,
-        timestamp: new Date().toISOString(),
-        payment_receiver_name: paymentReceiverName,
-        order_type: "pos",
-        status: "Completed",
-        register_id: selectedRegister,
-        session_id: currentSessionId,
-        store_id: storeId,
-        // Add other columns as needed
-      };
-      // Insert or update order in 'orders' table
-      const response = await fetch("/api/orders", {
-        method: isResumingOrder ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
-      });
-      const orderResJson = await response.json();
-      if (orderResJson.error) throw orderResJson.error;
-      // Handle order items - delete existing items for resumed orders, then insert new ones
-      if (isResumingOrder) {
-        // Delete existing order items for this order
-        const deleteResponse = await fetch(
-          `/api/order-items?order_id=${orderData.id}`,
-          {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
+        // Insert or update order in 'orders' table
+        const response = await fetch("/api/orders", {
+          method: isResumingOrder ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderData),
+        });
+        const orderResJson = await response.json();
+        if (orderResJson.error) throw orderResJson.error;
+        // Handle order items - delete existing items for resumed orders, then insert new ones
+        if (isResumingOrder) {
+          // Delete existing order items for this order
+          const deleteResponse = await fetch(
+            `/api/order-items?order_id=${orderData.id}`,
+            {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+          const deleteResult = await deleteResponse.json();
+          if (deleteResult.error) {
+            console.warn(
+              "Failed to delete existing order items:",
+              deleteResult.error
+            );
           }
-        );
-        const deleteResult = await deleteResponse.json();
-        if (deleteResult.error) {
-          console.warn(
-            "Failed to delete existing order items:",
-            deleteResult.error
+        }
+
+        // Insert order items into 'order_items' table
+        const itemsToInsert = items.map((item) => ({
+          order_id: orderData.id,
+          product_id: item.productId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          unit_price: item.price, // ensure unit_price is set
+          cost_price: item.costPrice,
+          tax_type: item.taxType,
+          tax_percentage: item.taxPercentage,
+          item_tax: item.itemTax,
+          total: item.total,
+        }));
+        const itemsResponse = await fetch("/api/order-items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(itemsToInsert),
+        });
+        const itemsResJson = await itemsResponse.json();
+        if (itemsResJson.error) throw itemsResJson.error;
+        // Batch update stock quantities for better performance
+        const stockUpdates = items.map((item) => {
+          const product = productMap.get(item.productId);
+          return {
+            id: item.productId,
+            quantity: (product?.quantity || 0) - item.quantity,
+          };
+        });
+
+        // Single API call for all stock updates
+        const stockUpdateResponse = await fetch("/api/products/batch-update", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ updates: stockUpdates }),
+        });
+
+        if (!stockUpdateResponse.ok) {
+          console.warn("Some stock updates may have failed");
+        }
+        // Play success sound
+        const { playBellBeep } = await import("../utils/posSounds");
+        playBellBeep();
+        // Dismiss processing toast
+        toast.dismiss(processingToast);
+
+        // Auto-print receipt instead of showing preview modal
+        // Optimized receipt printing with pre-calculated values
+        const discountAmount = selectedDiscountId
+          ? discountMap.get(selectedDiscountId)?.value || 0
+          : 0;
+
+        const printReceipt = PrintReceipt({
+          orderId: orderData.id,
+          selectedProducts: selectedProducts,
+          quantities: quantities,
+          products: products,
+          subtotal: totalPayable + discountAmount,
+          tax: 0,
+          discount: discountAmount,
+          total: totalPayable,
+          selectedCustomerId: customerId || "",
+          customers: customers,
+          paymentData: paymentResult,
+          order: { ...orderData, items },
+        });
+
+        const printSuccess = printReceipt.printOrder();
+
+        if (printSuccess) {
+          toast.success("Order completed and receipt printed!");
+        } else {
+          toast.success("Order completed successfully!");
+        }
+
+        setShowSuccessModal(false);
+        setSuccessOrderData(null);
+        setReloadProducts((r) => r + 1);
+        // Set lastOrderData for Print Last Receipt
+        const paymentInfoWithName = {
+          ...paymentInfo,
+          paymentReceiverName,
+        };
+        handleOrderComplete({
+          ...orderData,
+          items,
+          payment: paymentInfoWithName,
+          customerId: customerId || "",
+        });
+        // Reset order state
+        setSelectedProducts([]);
+        setQuantities({});
+        setSelectedDiscountId("");
+        setPaymentData(null);
+        setSelectedPayment("");
+        setLastPaymentData(paymentResult);
+        setIsResumingOrder(false); // Reset the resuming flag
+        // Generate new order ID
+        const timestamp = Date.now().toString().slice(-6);
+        const random = Math.floor(Math.random() * 100);
+        setOrderId(`RUO${timestamp}${random.toString().padStart(2, "0")}`);
+      } catch (error) {
+        if (processingToast) {
+          import("react-hot-toast").then(({ toast }) =>
+            toast.dismiss(processingToast)
           );
         }
-      }
-
-      // Insert order items into 'order_items' table
-      const itemsToInsert = items.map((item) => ({
-        order_id: orderData.id,
-        product_id: item.productId,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        unit_price: item.price, // ensure unit_price is set
-        cost_price: item.costPrice,
-        tax_type: item.taxType,
-        tax_percentage: item.taxPercentage,
-        item_tax: item.itemTax,
-        total: item.total,
-      }));
-      const itemsResponse = await fetch("/api/order-items", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(itemsToInsert),
-      });
-      const itemsResJson = await itemsResponse.json();
-      if (itemsResJson.error) throw itemsResJson.error;
-      // Batch update stock quantities for better performance
-      const stockUpdates = items.map(item => {
-        const product = productMap.get(item.productId);
-        return {
-          id: item.productId,
-          quantity: (product?.quantity || 0) - item.quantity
-        };
-      });
-
-      // Single API call for all stock updates
-      const stockUpdateResponse = await fetch('/api/products/batch-update', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates: stockUpdates })
-      });
-
-      if (!stockUpdateResponse.ok) {
-        console.warn('Some stock updates may have failed');
-      }
-      // Play success sound
-      const { playBellBeep } = await import("../utils/posSounds");
-      playBellBeep();
-      // Dismiss processing toast
-      toast.dismiss(processingToast);
-
-      // Auto-print receipt instead of showing preview modal
-      // Optimized receipt printing with pre-calculated values
-      const discountAmount = selectedDiscountId ? 
-        (discountMap.get(selectedDiscountId)?.value || 0) : 0;
-      
-      const printReceipt = PrintReceipt({
-        orderId: orderData.id,
-        selectedProducts: selectedProducts,
-        quantities: quantities,
-        products: products,
-        subtotal: totalPayable + discountAmount,
-        tax: 0,
-        discount: discountAmount,
-        total: totalPayable,
-        selectedCustomerId: customerId || "",
-        customers: customers,
-        paymentData: paymentResult,
-        order: { ...orderData, items },
-      });
-
-      const printSuccess = printReceipt.printOrder();
-
-      if (printSuccess) {
-        toast.success("Order completed and receipt printed!");
-      } else {
-        toast.success("Order completed successfully!");
-      }
-
-      setShowSuccessModal(false);
-      setSuccessOrderData(null);
-      setReloadProducts((r) => r + 1);
-      // Set lastOrderData for Print Last Receipt
-      const paymentInfoWithName = {
-        ...paymentInfo,
-        paymentReceiverName,
-      };
-      handleOrderComplete({
-        ...orderData,
-        items,
-        payment: paymentInfoWithName,
-        customerId: customerId || "",
-      });
-      // Reset order state
-      setSelectedProducts([]);
-      setQuantities({});
-      setSelectedDiscountId("");
-      setPaymentData(null);
-      setSelectedPayment("");
-      setLastPaymentData(paymentResult);
-      setIsResumingOrder(false); // Reset the resuming flag
-      // Generate new order ID
-      const timestamp = Date.now().toString().slice(-6);
-      const random = Math.floor(Math.random() * 100);
-      setOrderId(`RUO${timestamp}${random.toString().padStart(2, "0")}`);
-    } catch (error) {
-      if (processingToast) {
         import("react-hot-toast").then(({ toast }) =>
-          toast.dismiss(processingToast)
+          toast.error("Transaction failed. Please try again.")
         );
+        console.error("Transaction failed:", error);
       }
-      import("react-hot-toast").then(({ toast }) =>
-        toast.error("Transaction failed. Please try again.")
-      );
-      console.error("Transaction failed:", error);
-    }
-  }, [selectedProducts, quantities, productMap, discountMap, selectedDiscountId, totalPayable, customers, user, allUsers, selectedStoreId, selectedRegister, currentSessionId, isResumingOrder, selectedCustomerId]);
+    },
+    [
+      selectedProducts,
+      quantities,
+      productMap,
+      discountMap,
+      selectedDiscountId,
+      totalPayable,
+      customers,
+      user,
+      allUsers,
+      selectedStoreId,
+      selectedRegister,
+      currentSessionId,
+      isResumingOrder,
+      selectedCustomerId,
+    ]
+  );
 
   // In pos.js, add handlePrintOrder:
   const handlePrintOrder = () => {
@@ -688,10 +722,11 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
   const [showRetrieveSales, setShowRetrieveSales] = useState(false);
   const [showRetrieveLayaways, setShowRetrieveLayaways] = useState(false);
   const [saleNote, setSaleNote] = useState("");
-  
+
   // State to track if store assignment toasts have been shown
-  const [storeAssignmentToastShown, setStoreAssignmentToastShown] = useState(false);
-  
+  const [storeAssignmentToastShown, setStoreAssignmentToastShown] =
+    useState(false);
+
   // State to track if cash register toast has been shown
   const [cashRegisterToastShown, setCashRegisterToastShown] = useState(false);
   const [showLayawayPaymentForm, setShowLayawayPaymentForm] = useState(false);
@@ -746,7 +781,7 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
         // Cashier: use assigned store
         if (selectedStoreId !== user.store_id) {
           setSelectedStoreId(user.store_id);
-          
+
           // Show toast for cashier's assigned store only once
           const assignedStore = stores.find((s) => s.id === user.store_id);
           if (assignedStore) {
@@ -873,6 +908,12 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
     return null;
   }
 
+  // Determine if footer should be hidden when modals are open
+  const isAnyModalOpen = showOrderHistory || showRecentTransactions || showNoOrderModal || 
+    showCashRegister || showModernReceipt || showPaymentModal || showSalesReturnModal || 
+    showSuccessModal || showReceiptModal || showHoldLayawayModal || showRetrieveSales || 
+    showRetrieveLayaways || showLayawayPaymentForm || autoShowRegister;
+
   return (
     <ModalProvider>
       <PosFooterActions
@@ -896,6 +937,7 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
         sessionCheckLoading={sessionCheckLoading}
         user={user}
         mode={mode}
+        hideFooter={isAnyModalOpen}
       />
       <MainLayout
         mode={mode}
@@ -922,7 +964,7 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
           registers={registers}
           setRegisters={setRegisters}
         />
-        <div className="flex flex-col lg:flex-row gap-2 sm:gap-4 lg:gap-8 flex-1 min-h-0 overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-2 sm:gap-4 lg:gap-8 flex-1 min-h-0 pb-32 sm:pb-36 md:pb-40">
           <PosOrderList
             className="w-full lg:w-3/5 min-h-0 overflow-auto order-1"
             selectedProducts={selectedProducts}
