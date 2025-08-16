@@ -35,8 +35,12 @@ export default function NotificationCarousel({ mode = 'light' }) {
         if (ordersData.success && ordersData.data) {
           const todayOrders = ordersData.data.filter(order => {
             if (!order.timestamp) return false;
-            const orderDate = parseISO(order.timestamp.replace(' ', 'T'));
-            return isWithinInterval(orderDate, { start: todayStart, end: todayEnd });
+            try {
+              const orderDate = parseISO(order.timestamp.replace(' ', 'T'));
+              return isWithinInterval(orderDate, { start: todayStart, end: todayEnd });
+            } catch (error) {
+              return false;
+            }
           });
           
           const orderCount = todayOrders.length;
@@ -46,8 +50,12 @@ export default function NotificationCarousel({ mode = 'light' }) {
               type: 'info',
               icon: 'mdi:shopping',
               iconClass: 'text-blue-600',
-              message: `You have ${orderCount}+ Orders, Today`,
-              action: () => router.push('/orders')
+              message: `You have ${orderCount} Order${orderCount > 1 ? 's' : ''} Today`,
+              action: () => {
+                // Store the date filter in session storage before navigation
+                sessionStorage.setItem('orderHistoryDateFilter', 'today');
+                router.push('/pos?showRecentTransactions=true', undefined, { shallow: true });
+              }
             });
           }
         }
@@ -66,7 +74,7 @@ export default function NotificationCarousel({ mode = 'light' }) {
               message: `${lowStockCount} item${
                 lowStockCount > 1 ? "s" : ""
               } running low on stock`,
-              action: () => router.push("/inventory"),
+              action: () => router.push("/manage-stock"),
             });
           }
           
@@ -77,7 +85,7 @@ export default function NotificationCarousel({ mode = 'light' }) {
               icon: 'mdi:package-variant-remove',
               iconClass: 'text-red-600',
               message: `${outOfStockCount} item${outOfStockCount > 1 ? 's' : ''} out of stock`,
-              action: () => router.push('/inventory')
+              action: () => router.push('/manage-stock')
             });
           }
         }

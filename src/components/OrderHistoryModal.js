@@ -16,6 +16,14 @@ const OrderHistoryModal = ({ isOpen, onClose, customers, statusFilter, onResume 
     if (!isOpen) return;
     setLoading(true);
     
+    // Check for date filter in session storage
+    const savedFilter = sessionStorage.getItem('orderHistoryDateFilter');
+    if (savedFilter) {
+      setDateFilter(savedFilter);
+      // Clear it so it doesn't affect future opens
+      sessionStorage.removeItem('orderHistoryDateFilter');
+    }
+    
     fetch('/api/orders')
       .then(response => response.json())
       .then(result => {

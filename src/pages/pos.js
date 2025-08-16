@@ -880,6 +880,7 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
 
   useEffect(() => {
     if (!router.isReady) return;
+    
     if (router.query.open === "layaways") {
       setShowRetrieveLayaways(true);
       router.replace(
@@ -890,12 +891,12 @@ const POS = React.memo(function POS({ mode = "light", toggleMode, ...props }) {
         undefined,
         { shallow: true }
       );
-    } else if (router.query.open === "orders") {
-      setShowRetrieveSales(true);
+    } else if (router.query.open === "orders" || router.query.showRecentTransactions) {
+      setShowRecentTransactions(true);
       router.replace(
         {
           pathname: router.pathname,
-          query: { ...router.query, open: undefined },
+          query: { ...router.query, open: undefined, showRecentTransactions: undefined },
         },
         undefined,
         { shallow: true }
