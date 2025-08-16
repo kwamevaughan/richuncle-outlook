@@ -1487,6 +1487,52 @@ const PosOrderList = ({
                   </button>
                 </div>
 
+                {/* Quick Discount Buttons */}
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold text-gray-700">Quick Discounts</div>
+                  {newDiscountType === "percentage" ? (
+                    <div className="grid grid-cols-4 gap-2">
+                      {[5, 10, 15, 20, 25, 30, 50].map((percent) => (
+                        <button
+                          key={percent}
+                          type="button"
+                          className="py-2 px-3 text-sm font-medium rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                          onClick={() => setDiscountValue(percent.toString())}
+                        >
+                          {percent}%
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        className="py-2 px-3 text-sm font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                        onClick={() => setDiscountValue("")}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {[5, 10, 20, 50, 100, 200, 500].map((amount) => (
+                        <button
+                          key={amount}
+                          type="button"
+                          className="py-2 px-3 text-sm font-medium rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                          onClick={() => setDiscountValue(amount.toString())}
+                        >
+                          ₵{amount}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        className="py-2 px-3 text-sm font-medium rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                        onClick={() => setDiscountValue("")}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold">
                     {newDiscountType === "percentage"

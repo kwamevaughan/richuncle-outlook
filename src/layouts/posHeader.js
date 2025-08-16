@@ -336,10 +336,7 @@ const PosHeader = ({
                 </div>
               ) : (
                 // Admin/Manager: Show store selector
-                <div
-                  className="relative"
-                  ref={storeDropdownRef}
-                >
+                <div className="relative" ref={storeDropdownRef}>
                   <div
                     className={
                       `flex items-center gap-1 sm:gap-2 ${
@@ -360,9 +357,7 @@ const PosHeader = ({
                       }`}
                     >
                       {isMobile ? "" : "Store:"}
-                      <span className="text-gray-500">
-                        {userStoreName}
-                      </span>
+                      <span className="text-gray-500">{userStoreName}</span>
                     </span>
                     <Icon
                       icon="mdi:chevron-down"
@@ -497,9 +492,7 @@ const PosHeader = ({
                   }`}
                 >
                   <span className="text-gray-500">Cashier:</span>
-                  <span className="text-gray-500">
-                    {user.name}
-                  </span>
+                  <span className="text-gray-500">{user.name}</span>
                 </div>
               </div>
             </div>
@@ -540,7 +533,7 @@ const PosHeader = ({
               </TooltipIconButton>
 
               {/* Print Last Receipt - Visible on mobile/tablet for all users, or always visible for cashiers */}
-              {((isMobile || isTablet) || user?.role === "cashier") && (
+              {(isMobile || isTablet || user?.role === "cashier") && (
                 <TooltipIconButton
                   label="Print Last Receipt"
                   mode={mode}
@@ -568,7 +561,7 @@ const PosHeader = ({
               )}
 
               {/* Messages - Visible on mobile/tablet for all users, or always visible for cashiers */}
-              {((isMobile || isTablet) || user?.role === "cashier") && (
+              {(isMobile || isTablet || user?.role === "cashier") && (
                 <TooltipIconButton
                   label="Messages"
                   mode={mode}
@@ -706,13 +699,14 @@ const PosHeader = ({
                     } text-gray-500`}
                   />
                   {/* Show unread message count on desktop when Messages is in dropdown (only for non-cashiers) */}
-                  {!isMobile && !isTablet && user?.role !== "cashier" && unreadMessageCount > 0 && (
-                    <div
-                      className="absolute -top-1 -right-1 bg-red-500 text-white text-xs h-5 w-5 rounded-full flex items-center justify-center font-bold"
-                    >
-                      {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
-                    </div>
-                  )}
+                  {!isMobile &&
+                    !isTablet &&
+                    user?.role !== "cashier" &&
+                    unreadMessageCount > 0 && (
+                      <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs h-5 w-5 rounded-full flex items-center justify-center font-bold">
+                        {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+                      </div>
+                    )}
                 </TooltipIconButton>
 
                 {addNewDropdownOpen && (
@@ -905,7 +899,9 @@ const PosHeader = ({
                           <span>Messages</span>
                           {unreadMessageCount > 0 && (
                             <div className="ml-auto bg-red-500 text-white text-xs h-5 w-5 rounded-full flex items-center justify-center font-bold">
-                              {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+                              {unreadMessageCount > 99
+                                ? "99+"
+                                : unreadMessageCount}
                             </div>
                           )}
                         </button>
@@ -1184,7 +1180,7 @@ const PosHeader = ({
       {/* Spacer div to account for fixed header height */}
       <div
         className={`${
-          isMobile ? "h-[120px]" : isTablet ? "h-[140px]" : "h-[120px]"
+          isMobile ? "h-[120px]" : isTablet ? "h-[140px]" : "h-[100px]"
         }`}
         aria-hidden="true"
       ></div>
