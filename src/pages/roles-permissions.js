@@ -1097,37 +1097,58 @@ export default function RolesPermissionsPage({
               <>
                 {/* Page-Aware Permission Mapping */}
                 {(() => {
-                  // Define which permissions are relevant to which pages
-                  // Based on actual permissions in the database
-                  const pagePermissionMap = {
-                    '/dashboard': ['view_dashboard'],
-                    '/pos': ['manage_sales', 'manage_returns'],
-                    '/sales': ['manage_sales'],
-                    '/sales-return': ['manage_returns'],
-                    '/products': ['manage_products'],
-                    '/brands': ['manage_products'], // Brands are part of products
-                    '/category': ['manage_products'], // Categories are part of products
-                    '/units': ['manage_products'], // Units are part of products
-                    '/variant-attributes': ['manage_products'], // Attributes are part of products
-                    '/inventory-overview': ['manage_products'], // Inventory is related to products
-                    '/stock-operations': ['manage_products'],
-                    '/stock-history': ['manage_products'],
-                    '/purchases': ['manage_purchases'], // Purchases have their own permission
-                    '/purchase-order': ['manage_purchases'],
-                    '/purchase-return': ['manage_returns'],
-                    '/suppliers': ['manage_suppliers'], // Suppliers have their own permission
-                    '/customers': ['manage_sales'], // Customers are related to sales
-                    '/reports': ['view_reports'],
-                    '/users': ['manage_users'],
-                    '/roles-permissions': ['manage_users'],
-                    '/messages': ['manage_messages'], // Messages have their own permission
-                    '/expenses': ['manage_expenses'], // Expenses have their own permission
-                    '/expense-category': ['manage_expenses'],
-                    '/discount': ['manage_sales'], // Discounts are related to sales
-                    '/registers': ['manage_sales'], // Registers are related to sales
-                    '/business-locations': ['manage_settings'], // Locations are settings
-                    '/profile': ['manage_settings'], // Profile is settings
+                  // Dynamically generate permission mapping from navigation data
+                  const generatePagePermissionMap = () => {
+                    const map = {};
+                    
+                    // Helper function to get permissions for a page based on its category/path
+                    const getPermissionsForPage = (path, category) => {
+                      if (path.includes('dashboard')) return ['view_dashboard'];
+                      if (path.includes('pos') || path.includes('sales') || path.includes('registers') || path.includes('discount')) return ['manage_sales', 'manage_returns'];
+                      if (path.includes('products') || path.includes('brands') || path.includes('category') || path.includes('units') || path.includes('variant-attributes') || path.includes('inventory') || path.includes('stock')) return ['manage_products'];
+                      if (path.includes('purchases') || path.includes('purchase-order')) return ['manage_purchases'];
+                      if (path.includes('suppliers')) return ['manage_suppliers'];
+                      if (path.includes('customers')) return ['manage_sales'];
+                      if (path.includes('reports')) return ['view_reports'];
+                      if (path.includes('users') || path.includes('roles-permissions')) return ['manage_users'];
+                      if (path.includes('messages') || path.includes('notifications')) return ['manage_messages'];
+                      if (path.includes('expenses') || path.includes('expense-category')) return ['manage_expenses'];
+                      if (path.includes('business-locations') || path.includes('profile')) return ['manage_settings'];
+                      
+                      // Default permissions based on category
+                      if (category === 'Inventory' || category === 'Stock') return ['manage_products'];
+                      if (category === 'Sales') return ['manage_sales', 'manage_returns'];
+                      if (category === 'Purchases') return ['manage_purchases'];
+                      if (category === 'Contacts') return ['manage_sales', 'manage_suppliers'];
+                      if (category === 'Reports') return ['view_reports'];
+                      if (category === 'User Management') return ['manage_users'];
+                      if (category === 'Communication') return ['manage_messages'];
+                      if (category === 'Settings') return ['manage_settings'];
+                      if (category === 'Finance & Accounts') return ['manage_expenses'];
+                      
+                      return ['view_dashboard']; // Default fallback
+                    };
+                    
+                    // Process navigation data to build the map
+                    sidebarNav.forEach(item => {
+                      if (item.href) {
+                        // Standalone page
+                        map[item.href] = getPermissionsForPage(item.href, item.category);
+                      }
+                      if (item.items) {
+                        // Category with sub-items
+                        item.items.forEach(subItem => {
+                          if (subItem.href) {
+                            map[subItem.href] = getPermissionsForPage(subItem.href, item.category);
+                          }
+                        });
+                      }
+                    });
+                    
+                    return map;
                   };
+                  
+                  const pagePermissionMap = generatePagePermissionMap();
 
                   // Get relevant permissions for selected pages
                   const relevantPermissions = [];

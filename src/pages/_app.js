@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import toast, { Toaster } from "react-hot-toast";
 import "../styles/globals.css";
 import "../styles/dark-mode.css";
+import "../styles/notifications.css";
 import { sidebarNav } from "@/data/nav";
 import { Nunito } from "next/font/google";
 import { AuthProvider } from "@/context/authContext";

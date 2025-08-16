@@ -49,5 +49,14 @@ export const supabaseServer = (req, res) => {
   });
 };
 
+// Client-side Supabase client for real-time functionality
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+});
+
 // Default export for backward compatibility
-export const supabase = supabaseServer;
+export default supabase;

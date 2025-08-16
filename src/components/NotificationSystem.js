@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from 'next/router';
 import { Icon } from "@iconify/react";
 
 // Notification types and their configurations
@@ -74,6 +75,7 @@ const NotificationSystem = ({ mode, isOpen, onClose, user, fullWidth = false }) 
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
+  const router = useRouter();
 
   // Fetch notifications from database
   const fetchNotifications = async () => {
@@ -430,11 +432,12 @@ const NotificationSystem = ({ mode, isOpen, onClose, user, fullWidth = false }) 
       }`}>
         <div className="flex items-center justify-between">
           <button
-            onClick={() => {
-              // Could open full notifications page
-              console.log('View all notifications');
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onClose) onClose();
+              router.push('/notifications');
             }}
-            className={`text-sm ${
+            className={`text-sm w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${
               mode === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600 hover:text-blue-500"
             }`}
           >

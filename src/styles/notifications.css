@@ -1,0 +1,144 @@
+/* Custom slider styling for notification preferences */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-track {
+  background: #e5e7eb;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #3b82f6;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #2563eb;
+  transform: scale(1.1);
+}
+
+.slider::-moz-range-track {
+  background: #e5e7eb;
+  height: 8px;
+  border-radius: 4px;
+  border: none;
+}
+
+.slider::-moz-range-thumb {
+  background: #3b82f6;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slider::-moz-range-thumb:hover {
+  background: #2563eb;
+}
+
+/* Dark mode slider styling */
+.dark .slider::-webkit-slider-track {
+  background: #374151;
+}
+
+.dark .slider::-webkit-slider-thumb {
+  background: #60a5fa;
+}
+
+.dark .slider::-webkit-slider-thumb:hover {
+  background: #3b82f6;
+}
+
+.dark .slider::-moz-range-track {
+  background: #374151;
+}
+
+.dark .slider::-moz-range-thumb {
+  background: #60a5fa;
+}
+
+.dark .slider::-moz-range-thumb:hover {
+  background: #3b82f6;
+}
+
+/* Notification item hover effects */
+.notification-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.notification-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Checkbox styling */
+.notification-checkbox {
+  transition: all 0.2s ease-in-out;
+}
+
+.notification-checkbox:checked {
+  transform: scale(1.1);
+}
+
+/* Bulk actions bar animation */
+.bulk-actions-bar {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Search input focus effects */
+.search-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Filter dropdown hover effects */
+.filter-dropdown:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Settings modal animations */
+.settings-modal-enter {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.settings-modal-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 200ms, transform 200ms;
+}
+
+.settings-modal-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.settings-modal-exit-active {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 200ms, transform 200ms;
+} 

@@ -43,6 +43,8 @@ export const useAuth = () => {
   };
 
   return {
+    user: context.user,
+    loading: context.loading,
     login: handleLogin,
     logout,
     signInWithSocial: handleSocialLogin,

@@ -259,6 +259,11 @@ export const sidebarNav = [
         icon: "mdi:email-outline",
         label: "Messages",
       },
+      {
+        href: "/notifications",
+        icon: "mdi:bell-outline",
+        label: "Notifications",
+      },
     ],
   },
   {
