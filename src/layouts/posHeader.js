@@ -29,6 +29,9 @@ const PosHeader = ({
   selectedStoreId,
   setSelectedStoreId,
   stores: allStores,
+  selectedRegister,
+  setSelectedRegister,
+  registers,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -41,23 +44,8 @@ const PosHeader = ({
   const [showProfitModal, setShowProfitModal] = useState(false);
   const [sessionRefreshKey, setSessionRefreshKey] = useState(0);
   const handleSessionChanged = () => setSessionRefreshKey((k) => k + 1);
-  const [selectedRegister, setSelectedRegister] = useState(null);
   const [windowWidth, setWindowWidth] = useState(null);
 
-  // Persist selected register
-  useEffect(() => {
-    if (selectedRegister) {
-      localStorage.setItem("pos_selected_register", selectedRegister);
-    }
-  }, [selectedRegister]);
-
-  // Load persisted register on mount
-  useEffect(() => {
-    const savedRegister = localStorage.getItem("pos_selected_register");
-    if (savedRegister) {
-      setSelectedRegister(savedRegister);
-    }
-  }, []);
   const [userStoreName, setUserStoreName] = useState("");
   const [stores, setStores] = useState([]);
   // Demo state for SalesReturnModals
@@ -247,6 +235,7 @@ const PosHeader = ({
                         user={user}
                         selectedRegister={selectedRegister}
                         onRegisterChange={setSelectedRegister}
+                        registers={registers}
                       />
                     </div>
                     {/* Mobile: Session duration below */}
@@ -285,6 +274,7 @@ const PosHeader = ({
                       user={user}
                       selectedRegister={selectedRegister}
                       onRegisterChange={setSelectedRegister}
+                      registers={registers}
                     />
                     <SessionDuration
                       mode={mode}
